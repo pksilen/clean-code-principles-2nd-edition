@@ -1,0 +1,7 @@
+nodeEnv: production
+httpServer:
+  port: 8080
+database:
+  mongoDb:
+    host: my-service-mongodb
+    port: 27017

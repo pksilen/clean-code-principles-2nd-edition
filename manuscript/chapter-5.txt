@@ -1,0 +1,1216 @@
+# Security Principles
+
+This chapter describes principles related to security and addresses the main security features from a software developer's point of view.
+
+## Shift Security to Left Principle
+
+> ***Shift security implementation to the left. Implement security-related features sooner rather than later.***
+
+Security is integral to production-quality software, like the source code itself and all the tests.
+Suppose that security-related features are implemented only in a very late project phase. In that case, there is a greater
+possibility of not finding time to implement them or forgetting to implement them. For that reason, security-related features should be implemented first rather than last.
+The threat modeling process described in the next section should be used to identify the potential threats and provide
+a list of security features that need to be implemented as threat countermeasures.
+
+## Have a Product Security Lead Principle
+
+> ***Each product team should have a security lead appointed. The role of the security lead is to ensure that the product is secure.***
+
+The security lead works tightly with development teams. They educate teams on security-related processes and security features. The security lead facilitates the teams in the below-described threat modeling
+process, but following the process is the team's responsibility, as is the actual implementation of security features.
+
+## Use Threat Modelling Process Principle
+
+The threat modeling process enables you to identify, quantify, and address security risks associated with
+a software component or an application. The threat modeling process is composed of three high-level steps:
+
+-  Decompose the application
+-  Determine and rank threats
+-  Determine countermeasures and mitigation
+
+### Decompose Application
+
+The application decomposition step is to gain knowledge of what parts the application is composed of, the external dependencies,
+and how they are used. This step can be performed after the application architecture is designed. The results of this step are:
+
+- Identify an attacker's entry points to the application
+- Identify assets under threat. These assets are something that an attacker is interested in
+- Identify trust levels, e.g., what users with different user roles can do
+
+### Determine and Rank Threats
+
+A threat categorization methodology should be used to determine possible threats. The *STRIDE* method categorizes
+threats to the following categories:
+
+| Category | Description                                                                             |
+|----------|-----------------------------------------------------------------------------------------|
+| Spoofing | Attacker acting as another user without real authentication or using stolen credentials |
+| Tampering | Attacker maliciously changing data                                                       |
+| Repudiation | Attacker being able to perform prohibited operations                                    |
+| Information disclosure | Attacker gaining access to sensitive data                                               |
+| Denial of service | Attacker trying to make the service unusable                                            |
+| Elevation of privilege | Attacker gaining unwanted access rights                                                 |
+
+#### STRIDE Threat Examples
+
+- Spoofing
+     - The attacker can read other users' data using the other user's id when there is proper authorization missing
+     - The attacker can steal user credentials on the network because insecure protocol, like HTTP instead of HTTPS, is used
+     - The attacker creates a fake website login page to steal user credentials
+     - The attacker can intercept network traffic and replay some user's requests as such or modified
+ - Tampering
+     - The attacker gains access to the database using SQL injection and can change existing data
+     - The attacker can modify other users' data using the other user's id when there is proper authorization missing
+ - Repudiation
+     - The attacker can perform malicious action without notice when there is audit logging missing
+ - Information disclosure
+     - Sensitive information is accidentally sent in request responses (like error stack traces or business confidential data)
+     - Sensitive information is not adequately encrypted
+     - Sensitive information is accessible without proper authorization (e.g., role-based)
+ - Denial of service
+     - The attacker can create an unlimited number of requests when proper request rate limiting is missing
+     - Attacker can send requests with large amounts of data when data size is not limited at all
+     - Attacker can try to make regular expression DoS attacks by sending strings that can cause regular expression evaluation
+       to take a lot of CPU time
+     - The attacker can send invalid values in requests to try to crash the service or cause a forever loop if no proper input validation is in place
+ - Elevation of privilege
+     An attacker who does not have a user account can access the service because of missing authentication/authorization
+     - The attacker can act as an administrator because the service does not check that the user has a proper role
+     - The attacker can access the operating system with root rights because the process runs with root user rights.
+
+The *Application Security Frame* (ASF) categorizes application security features into the following categories:
+
+| Category        | Description                                                                            |
+|-----------------|----------------------------------------------------------------------------------------|
+| Audit & Logging | Logging user actions to detect, e.g., repudiation attacks                               |
+| Authentication | Prohibit identity spoofing attacks                                                     |
+| Authorization | Prohibit elevation of privilege attacks                                                |
+| Configuration Management | Proper storage of secrets and configuring the system with the least privileges                 |
+| Data Protection in Transit and Rest | Using secure protocols like TLS, encrypting sensitive information like PII in databases |
+| Data Validation | Validate input data from users to prevent, e.g., injection and ReDoS attacks            |
+| Exception Management | Do not reveal implementation details in error messages to end-users                    |
+
+When using the above-described threat categorization methodologies, threats in each category should be listed based
+on the information about the decomposed application: what are the application entry points and assets that
+need to be secured? After listing potential threats in each category, the threats should be ranked. There
+are several ways to rank threats. The simplest way to rank threats is to put them in one of the three categories based on
+the risk: high, medium, and low. As a basis for the ranking, you can use information about the threat's probability and
+how big an adverse effect (impact) it has. The idea of ranking is to prioritize security features.
+Security features for high-risk threats should be implemented first.
+
+### Determine Countermeasures and Mitigation
+
+The determining countermeasures step should list user stories for the needed security
+features. These security features should eliminate or at least mitigate the threats. If you have a threat that cannot be eliminated
+or mitigated, you can accept the risk if the threat is categorized as a low-risk threat.
+A low-risk threat has a low impact on the application, and the probability of the threat
+realization is low. Suppose you have found a threat with a very high risk in your application, and you cannot eliminate
+or mitigate that threat. In that case, you should eliminate the threat by completely removing the threat-related features from the application.
+
+### Threat Modeling Example using STRIDE
+
+Let's have a simple example of threat modeling in practice. We will perform threat modeling for a REST API microservice
+called *order-service*. The microservice handles orders (CRUD operations on order entities) in an e-commerce software system.
+Orders are persisted in a database. The microservice communicates with another microservice(s). The first step in the threat modeling process is to decompose the application.
+
+#### Decompose Application
+
+In this phase, we will decompose the *order-service* to see what parts it is composed of and what its dependencies are.
+
+![Decomposed Order Service](resources/chapter5/images/05_01.png)
+
+Based on the above view of the *order-service*, we shall next identify the following:
+
+- Identify an attacker's entry points to the application
+- Identify assets under threat. These assets are something that an attacker is interested in
+- Identify trust levels, e.g., what users with different user roles can do
+
+As drawn in the above picture, the attacker's entry points are from the internet (the *order-service* is exposed to the public internet via [API Gateway](https://en.wikipedia.org/wiki/API_management)),
+and an internal attacker could be able to sniff the network traffic between services.
+
+Assets under threat are the API Gateway, *order-service*, its database, and unencrypted network traffic.
+
+The *order-service* has the following trust levels:
+
+- Users can place orders for themselves (not for other users)
+- Users can view their orders (not other users)
+- Users can update their order only before it is packaged and shipped
+- Administrator can create/read/update/delete any order
+
+#### Determine and Rank Threats
+
+Next, we should list possible threats in each category of the STRIDE method. We also define the risk level for each possible threat.
+
+1. Spoofing
+    1. Attacker trying to create an order for someone else (Risk: High)
+    2. Attacker trying to read/update someone else's order (Risk: High)
+    3. Attacker acting as someone else using stolen credentials (Risk: Medium)
+2. Tampering
+    1. Attacker trying to tamper with database using SQL injection (Risk: High)
+    2. Attacker able to capture and modify unencrypted internet traffic (Risk: High)
+    3. Attacker able to capture and modify unencrypted internal network traffic (Risk: Low)
+3. Repudiation
+    1. Attacker being able to conduct malicious operations without getting caught (Risk: High)
+4. Information disclosure
+    1. The attacker can access sensitive information because it is not adequately encrypted (Risk: Medium)
+    2. The attacker receives sensitive information like detailed stack traces in request responses. (Risk: Medium)
+      The attacker can use that information and exploit possible security holes in the implementation.
+    3. Information is disclosed to the attacker because internet traffic is plain text, i.e., not secured (Risk: High)
+    4. Information is disclosed to the attacker because internal network traffic is plain text, i.e., not secured (Risk: Low)
+5. Denial of service
+    1. Attacker trying to make too many requests (Risk: High)
+    2. Attacker trying to send requests with large amounts of data when data size is not limited at all (Risk: High)
+    3. Attacker trying to make regular expression DoS (ReDos) attacks by sending strings that can cause regular expression evaluation
+            to take a lot of CPU time (Risk: High)
+    4. Attacker trying to send invalid values in requests to try to crash the service or cause a forever loop if no proper input validation is in place (Risk: High)
+6. Elevation of Privilege
+    1. An attacker who does not have a user account can access the service because of missing authentication/authorization (Risk: High)
+    2. Attacker can act as an administrator because the service does not check that the user has a proper role (Risk: High)
+    3. The attacker can access the operating system with root rights because the process is running with root user rights (Risk: Medium)
+
+### Determine Countermeasures and Mitigation
+
+Next, we shall define countermeasure user stories for each threat. The threat numbers a countermeasure is for are listed
+after the countermeasure.
+
+1. Allow only the user that owns a particular resource to access it (1.1, 1.2)
+2. Implement audit logging for operations that create/modify/delete orders (1.3, 3.1)
+3. Use parameterized SQL statements or ORM and configure the least permissions for the database user (2.1). The normal database user should not be able to do anything that is only administrator-related, like deleting, creating/dropping tables, etc.
+4. Only allow secure internet traffic to the API gateway (TLS is terminated at the API gateway) (1.3, 2.2)
+5. Implement [mTLS](https://en.wikipedia.org/wiki/Mutual_authentication) between services using a service mesh like [Istio](https://istio.io/) (2.3, 4.4)
+6. Encrypt all sensitive information like [Personally Identifiable Information](https://en.wikipedia.org/wiki/Personal_data) (PII) and critical business data in the database (4.1)
+7. Do not return error stack traces when the microservice is running in production (4.2)
+8. Implement request rate-limiting in the API gateway (5.1.)
+9. Validate input data to the microservice and define the maximum allowed string, array, and request lengths (5.2). Additionally, consider audit logging input validation failures
+10. Do not use regular expressions in validation or use regular expressions that cannot cause ReDoS (5.3.)
+11. Validate input data to the microservice, e.g., correct types, min/max of numeric values, and list of allowed values (5.4). Additionally, consider audit logging input validation failures
+12. Implement user authentication and authorization using JWTs (1.1, 1.2, 6.1). Consider audit logging authentication/authorization failures to detect possible attacks
+13. Verify that the JWT contains an admin role for administrator-only operations before allowing the operation (1.1, 1.2, 6.2). Additionally, configure the system so that admin operations are inaccessible from the internet unless needed.
+14. For the containerized microservice, define the following:
+    - Container should not be privileged
+    - All capabilities are dropped
+    - Container filesystem is read-only
+    - Only a non-root user is allowed to run inside the container
+    - Define the non-root user and group under which the container should run
+    - Disallow privilege escalation
+    - Use a distroless or the smallest possible container base image
+
+Next, we should prioritize the above user stories according to related threat risk levels. Let's calculate a priority index
+for each user story using the following values for threat risk levels:
+
+- High = 3
+- Medium = 2
+- Low = 1
+
+Here are the prioritized user stories from the highest priority index (PI) to the lowest:
+
+1. Implement user authentication and authorization using JWTs (PI: 9)
+2. For administrator-only operations, verify that the JWT contains an admin role before allowing the operation (PI: 9). Additionally, configure the system so that admin operations are not accessible from the internet unless needed
+3. Only allow secure internet traffic to the API gateway (TLS is terminated at the API gateway) (PI: 6)
+4. Allow only the user that owns a specific resource to access it (PI: 6)
+5. Implement audit logging for operations that create/modify/delete orders (PI: 5)
+6. Implement request rate-limiting, e.g. in the API gateway (PI: 3)
+7. Validate input data to the microservice and define maximum allowed string and array lengths (PI: 3)
+8. Use parameterized SQL statements or ORM, and configure the least permissions for the database user (PI: 3). The normal database user should not be able to do anything that is only administrator-related, like deleting, creating/dropping tables, etc.
+9. Do not use regular expression in validation or use regular expression that cannot cause ReDoS (PI: 3)
+10. Validate input data to the microservice, e.g., min/max numeric values, list of allowed values (PI: 3)
+11. Encrypt all sensitive information like Personally Identifiable Information (PII) and critical business data in the database (PI: 2)
+12. Implement mTLS between services using a service mesh like Istio (PI: 2)
+13. Do not return error stack traces when the microservice is running in production (PI: 2)
+14. For the containerized microservice, define the following: ... (PI: 2)
+
+The team should review the prioritized list of security user stories with the product security lead. Because security is an integral part of a software system, at least all the above user stories having a priority index greater than
+two should be implemented before delivering the first production version. The user stories with PI <= 2 could be delivered
+immediately in the first feature package after the initial delivery. This is just an example. Everything depends on what
+level of security is wanted and required. The relevant stakeholders should be involved in making the decisions about the level of product security.
+
+We did not list threats for missing security-related HTTP response headers in the above example. This is because
+they are the same for any REST API. These security-related HTTP response headers are discussed in a later section of
+this chapter. The sending of these headers should be consolidated to the API gateway so that all API microservices don't
+have to implement sending security headers themselves.
+
+### Threat Modeling Example Using ASF
+
+Threat modeling using ASF goes the same way as in the previous example using the STRIDE method. The only difference is that
+the threats are categorized differently. We should be able to find all the same threats. Let's try to put the earlier found threats into ASF categories:
+
+- Audit & Logging
+    - Attacker being able to conduct malicious operations without getting caught (Risk: High)
+    - Attacker acting as someone else using stolen credentials (Risk: Medium)
+- Authentication
+    An attacker who does not have a user account can access the service because of missing authentication/authorization (Risk: High)
+- Authorization
+    - The attacker can act as an administrator because the service does not check that the user has a proper role (Risk: High)
+    - Attacker trying to create an order for someone else (Risk: High)
+    - Attacker trying to read/update someone else's order (Risk: High)
+- Configuration Management
+    - The attacker can access the operating system with root rights because the process is running with root user rights (Risk: Medium)
+- Data Protection in Transit and Rest
+    - Attacker trying to tamper with database using SQL injection (Risk: High)
+    - Attacker able to capture and modify unencrypted internet traffic (Risk: High)
+    - Attacker able to capture and modify unencrypted internal network traffic (Risk: Low)
+    - Attacker able to access sensitive information because it is not adequately encrypted (Risk: Medium)
+    - Information is disclosed to the attacker because internet traffic is plain text, i.e., not secured (Risk: High)
+    - Information is disclosed to the attacker because internal network traffic is plain text, i.e., not secured (Risk: Low)
+- Data Validation
+    - Attacker trying to make too many requests (Risk: High)
+    - Attacker trying to send requests with large amounts of data when data size is not limited at all (Risk: High)
+    - Attacker trying to tamper with database using SQL injection (Risk: High)
+    - Attacker trying to make regular expression DoS (ReDos) attacks by sending strings that can cause regular expression evaluation
+    - Attacker trying to send invalid values in requests to try to crash the service or cause a forever loop if no proper input validation is in place (Risk: High)
+- Exception Management
+    - The attacker receives sensitive information like detailed stack traces in request responses. (Risk: Medium)
+
+You can even use two different threat categorization methods, like STRIDE and ASF, together because when using multiple
+methods, it is more likely to discover all the possible threats. Considering the ASF categorization, we can see
+that the Configuration Management category speaks about the storage of secrets. When we used STRIDE, we did not discover
+any secrets-related threats. But if we think about it, our *order-service* should have at least three secrets: database user name,
+database user password, and the encryption
+key used to encrypt sensitive data in the database. We must store these secrets safely, like using a Secret in a Kubernetes
+environment. None of these secrets should be hard-coded in the source code.
+
+## Security Features
+
+This section focuses on security features that are relevant for software developers. It lists the most common security features that need to be implemented in typical software systems. It also provides
+some guidance on how to implement these security features. For example, you should use a
+secure algorithm and encryption key when implementing encryption.
+
+### Authentication and Authorization
+
+When implementing user authentication and authorization for an application, use a 3rd party authorization service.
+Don't try to build an authorization service by yourself. You can easily make mistakes. Also, it can be a security risk if your
+application handles plaint-text user credentials. It is better to use a battle-tested solution that has the most significant
+bugs corrected and can store user credentials securely. We use [Keycloak](https://www.keycloak.org/) as an authorization service in the coming examples.
+
+Also, try using established 3rd party libraries as much as possible instead of writing all authorization-related code yourself.
+It is also helpful to create a single frontend authentication/authorization library and
+use that same library in multiple projects instead of constantly implementing authentication and authorization-related
+functionality from scratch in different projects.
+
+#### OpenID Connect Authentication and Authorization in Frontend
+
+Regarding frontend authorization, attention must be paid to the secure storage of authorization-related secrets
+like *code verifier* and *tokens*. Those must be stored in a secure location in the browser. Below is a list
+of some insecure storing mechanisms:
+
+- Cookies
+  - Sent automatically, a [CSRF](https://owasp.org/www-community/attacks/csrf) threat
+- [Session/Local Storage](https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API)
+  - Easily stolen by malicious code ([XSS](https://owasp.org/www-community/attacks/xss/) threat)
+- Encrypted session/local storage
+  - Easily stolen by malicious code because the encryption key is in plain text
+- Global variable
+  - Easily stolen by malicious code (XSS threat)
+
+Storing secrets in closure variables is not inherently insecure, but secrets are lost on page refresh or new page.
+
+Below is an example that uses a [service worker](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API)
+to store secrets securely. The additional benefit of a service worker is that it does not allow
+malicious 3rd party code to modify the service worker's `fetch` method so that it can, for example, steal access tokens.
+
+It is easy for malicious code to change the global `fetch` function:
+
+```ts
+fetch = () => console.log('hacked');
+fetch() // prints 'hacked' to console
+```
+
+Below is a more realistic example:
+
+```ts
+originalFetch = fetch;
+fetch = (url, options) => {
+  // Implement malicious attack here
+  // For example: change some data in the request body
+
+  // Then call original fetch implementation
+  return originalFetch(url, options);
+}
+```
+
+Of course, one can ask: why is it possible to modify the built-in method on the global object
+like that? Of course, it should not be possible, but unfortunately, it is.
+
+Let's create a [Vue.js](https://vuejs.org/) application that performs authentication and authorization using the [OpenID Connect](https://openid.net/developers/how-connect-works/) protocol,
+an extension of the [OAuth2](https://oauth.net/2/) protocol.
+
+In the main module below, we set up the global `fetch` to always return an error and only allow our `tryMakeHttpRequest` function
+to use the original global `fetch` method. Then, we register a service worker. If the service worker has already been registered, it
+is not registered again. Finally, we create the application (`App` component), activate the router, activate the [Pinia](https://pinia.vuejs.org/) middleware for state management, and mount the application to a DOM node:
+
+{format: ts}
+![main.ts](resources/chapter5/code/main.ts)
+
+Below is the definition of the `App` component. After mounting, it will check whether the user is already authorized.
+
+If the user is authorized, their authorization information
+will be fetched from the service worker, and the user's first name will be updated in the authorization information store. The user will
+be forwarded to the *Home* page. If the user is not authorized, authorization will be performed.
+
+{format: vue, type: code}
+![App.vue](resources/chapter5/code/App.vue)
+
+{format: ts}
+![authInfoStore.ts](resources/chapter5/code/authInfoStore.ts)
+
+The header of the application displays the first name of the logged-in user and a button for logging the user out:
+
+{format: vue, type: code}
+![HeaderView.vue](resources/chapter5/code/HeaderView.vue)
+
+The `tryMakeHttpRequest` function is a wrapper around the browser's global `fetch` method. It will start an
+authorization procedure if an HTTP request returns the HTTP status code 403 *Forbidden*.
+
+{format: ts}
+![tryMakeHttpRequest.ts](resources/chapter5/code/tryMakeHttpRequest.ts)
+
+Below is the implementation of the service worker:
+
+{format: js}
+![serviceWorker.js](resources/chapter5/code/serviceWorker.js)
+
+Authorization using the OAuth2 [Authorization Code Flow](https://oauth.net/2/grant-types/authorization-code/) is started with a browser redirect to a URL of the following kind:
+
+```
+https://authorization-server.com/auth?response_type=code&client_id=CLIENT_ID&redirect_uri=https://example-app.com/cb&scope=photos&state=1234zyx...ghvx3&code_challenge=CODE_CHALLENGE&code_challenge_method=SHA256
+```
+
+The query parameters in the above URL are the following:
+
+* *response_type=code* - Indicates that you expect to receive an authorization code
+* *client_id* - The client id you used when you created the client on the authorization server (We'll create the client a bit later)
+* *redirect_uri* - Indicates the URI to redirect the browser after authorization is completed. You also need to define this URI in the authorization server. (We'll see this a bit later)
+* *scope* - One or more scope values indicating which parts of the user's account you wish to access. Scopes should be separated by URL-encoded space characters
+* *state* - A random string generated by your application, which you'll verify later
+* *code_challenge* - PKCE extension: URL-safe base64-encoded SHA256 hash of the code verifier. A code verifier is a random string secret you generate
+* *code_challenge_method=S256* - PKCE extension: indicates which hashing method is used (S256 means SHA256)
+
+We should use the [PKCE](https://oauth.net/2/pkce/) extension as an additional security measure. PKCE extends
+the Authorization Code Flow to prevent CSRF and authorization code injection attacks.
+
+If authorization is successful, the authorization server will redirect the browser to the above-given *redirect_uri* with
+*code* and *state* given as URL query parameters, for example:
+
+```
+https://example-app.com/cb?code=AUTH_CODE_HERE&state=1234zyx...ghvx3
+```
+
+* *code* - The authorization code returned from the authorization server
+* *state* - The same state value that you passed earlier
+
+After the application is successfully authorized, tokens can be requested with the following kind of HTTP POST request:
+
+```http
+POST https://authorization-server.com/token HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=authorization_code&
+code=AUTH_CODE_HERE&
+redirect_uri=REDIRECT_URI&
+client_id=CLIENT_ID&
+code_verifier=CODE_VERIFIER
+```
+
+* *grant_type=authorization_code* - The grant type for this flow is _authorization*code*
+* *code=AUTH_CODE_HERE* - This is the code you received when the browser was redirected back to your application from the authorization server.
+* *redirect_uri=REDIRECT_URI* - Must be identical to the redirect URI provided earlier during authorization
+* *client_id=CLIENT_ID* - The client id you used when you created the client on the authorization server
+* *code_verifier=CODE_VERIFIER* - The random string secret you generated earlier
+
+Below is the implementation of the `AuthorizationService` class. It provides methods for authorization, getting
+tokens and logout.
+
+{format: ts}
+![AuthorizationService.ts](resources/chapter5/code/AuthorizationService.ts)
+
+Below is an example response you get when you execute the `tryMakeHttpRequest` function in the `tryGetTokens` method:
+
+```json
+{
+  "access_token": "eyJz93a...k4laUWw",
+  "id_token": "UFn43f...c5vvfGF",
+  "refresh_token": "GEbRxBN...edjnXbL",
+  "token_type": "Bearer",
+  "expires_in": 3600
+}
+```
+
+The `AuthorizationCallback` component is the component that will be rendered when the authorization
+server redirects the browser back to the application after successful authorization. This component
+stores the authorization code and the received state in the service worker and
+initiates a token request. After receiving tokens, it will route the application to the
+home page. As an additional security measure, the token request will only be performed if the original *state* and *received state* are equal.
+This check is done in the service worker code.
+
+{format: vue, type: code}
+![AuthorizationCallback.vue](resources/chapter5/code/AuthorizationCallback.vue)
+
+Other UI components the application uses are defined below:
+
+{format: vue, type: code}
+![AuthorizationError.vue](resources/chapter5/code/AuthorizationError.vue)
+
+{format: vue, type: code}
+![LoginView.vue](resources/chapter5/code/LoginView.vue)
+
+{format: vue, type: code}
+![HomeView.vue](resources/chapter5/code/HomeView.vue)
+
+The application's router is the following:
+
+{format: ts}
+![router.ts](resources/chapter5/code/router.ts)
+
+The below *authService* module contains definitions of needed constants and creates an instance of the `AuthorizationService` class.
+The below code contains hard-coded values for a local development environment. In real life, these values should be taken from environment variables.
+The below values work if you have a Keycloak service running at *localhost:8080* and the Vue app
+running at *localhost:5173*. You must create a client in the Keycloak named 'app-x'. Additionally, you
+must define a valid redirect URI and add an allowed web origin. Lastly, you must configure
+a valid post-logout redirect URI (see the below image). The default access token lifetime in Keycloak
+is just one minute. You can increase that for testing purposes in the realm settings (the token tab)
+
+![Keycloak Settings for the Client](resources/chapter5/images/Capture.PNG)
+
+{format: ts}
+![authService.ts](resources/chapter5/code/authService.ts)
+
+#### OAuth2 Authorization in Backend
+
+Only let authorized users access resources. The best way not to forget to
+implement authorization is to deny access to resources by default. For example, you can require that an authorization decorator is specified for all controller methods. If an API endpoint does not require authorization, a special decorator like
+`@allow_any_user` could be used. An exception should be thrown if a controller method lacks an authorization decorator. This way, you can never forget to add an authorization annotation to a controller method.
+
+Broken access control is number one in the [OWASP Top 10 for 2021](https://owasp.org/www-project-top-ten/). Remember to
+disallow users to create resources for other users. Also, you must disallow users to view, edit, or delete resources belonging to someone else
+(also known as [Insecure Direct Object Reference (IDOR) prevention](https://cheatsheetseries.owasp.org/cheatsheets/Insecure_Direct_Object_Reference_Prevention_Cheat_Sheet.html)). It is not enough to use universally unique ids (UUIDs) as ids for resources
+instead of basic integers. This is because if an attacker can obtain a URL for an object with a UUID, he can access the
+object behind the URL because there is no access control in place.
+
+Below is a [JWT](https://jwt.io/)-based authorizer class that can be used in a FastAPI API service. We use the following
+additional libraries in the example: [python-benedict](https://pypi.org/project/python-benedict/) and [pyjwt](https://pyjwt.readthedocs.io/en/latest/index.html). The below example utilizes role-based access control (RBAC), but
+there are more modern alternatives, including attribute-based access control (ABAC) and relationship-based access control (ReBAC).
+More information about those is available in [OWASP Authorization Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html)
+
+```python
+from typing import Protocol
+
+class Authorizer(Protocol):
+    # ...
+```
+
+{title: "jwt_authorizer.py"}
+```python
+import os
+from typing import Any, Final
+from collections.abc import Callable
+
+import requests
+from Authorizer import Authorizer
+from benedict import benedict
+from fastapi import HTTPException, Request
+from jwt import PyJWKClient, PyJWKClientError, decode
+from jwt.exceptions import InvalidTokenError
+
+
+class __JwtAuthorizer(Authorizer):
+    IAM_ERROR: Final = 'IAM error'
+
+    def __init__(self):
+        # OpenId Connect configuration endpoint in the IAM system
+        self.__oidc_config_url = os.environ['OIDC_CONFIG_URL']
+        self.__jwks_client = None
+
+        # With Keycloak you can use e.g., realm_access.roles
+        self.__roles_claim_path = os.environ['JWT_ROLES_CLAIM_PATH']
+
+        # This is the URL where you can fetch the user id for a
+        # specific 'sub' claim value in the access token
+        # For example: http://localhost:8082/user-service/users
+        self.__get_users_url = os.environ['GET_USERS_URL']
+
+    def authorize(self, request: Request) -> None:
+        self.__decode_jwt_claims(request.headers.get('Authorization'))
+
+    # Authorize a user to create a resource for self
+    # Checks that the supplied user_id is the same as the user_id
+    # of the user owning the JWT
+    # Note! For some IAM systems other than Keycloak,
+    # you might need to use 'uid'
+    # claim instead of 'sub' to get unique user id
+    def authorize_for_self(
+        self, user_id: int, request: Request
+    ) -> None:
+        jwt_user_id = self.__get_jwt_user_id(request)
+        user_is_authorized = user_id == jwt_user_id
+        if not user_is_authorized:
+            raise HTTPException(status_code=403, detail='Unauthorized')
+
+    # Authorize a user for his/hers own resources only
+    # If an entity with given id and user_id combination
+    # is not found, auth error is raised
+    def authorize_for_user_own_resources_only(
+        self,
+        id: int,
+        get_entity_by_id_and_user_id: Callable[[int, int], Any],
+        request: Request
+    ) -> None:
+        jwt_user_id = self.__get_jwt_user_id(request)
+
+        try:
+            get_entity_by_id_and_user_id(id, jwt_user_id)
+        except HTTPException as error:
+            if error.status_code == 404:
+                raise HTTPException(status_code=403, detail='Unauthorized')
+            # Log error details
+            raise HTTPException(status_code=500, detail=self.IAM_ERROR)
+
+    def authorize_if_user_has_one_of_roles(
+        self, allowed_roles: list[str], request: Request
+    ) -> None:
+        claims = self.__decode_jwt_claims(
+            request.headers.get('Authorization')
+        )
+
+        try:
+            roles = benedict(claims)[self.__roles_claim_path]
+        except KeyError as error:
+            # Log error details
+            raise HTTPException(status_code=500, detail=self.IAM_ERROR)
+
+        user_is_authorized = any(
+            [True for role in roles if role in allowed_roles]
+        )
+        if not user_is_authorized:
+            raise HTTPException(status_code=403, detail='Unauthorized')
+
+    def __decode_jwt_claims(
+        self, auth_header: str | None
+    ) -> dict[str, Any]:
+        if not auth_header:
+             raise HTTPException(status_code=401, detail='Unauthenticated')
+
+        try:
+            if not self.__jwks_client:
+                oidc_config_response = requests.get(self.__oidc_config_url)
+                oidc_config_response.raise_for_status()
+                oidc_config = oidc_config_response.json()
+                self.__jwks_client = PyJWKClient(oidc_config['jwks_uri'])
+
+            jwt = auth_header.split('Bearer ')[1]
+            signing_key = self.__jwks_client.get_signing_key_from_jwt(jwt)
+            jwt_claims = decode(jwt, signing_key.key, algorithms=['RS256'])
+        except (
+            requests.RequestException,
+            KeyError,
+            PyJWKClientError
+        ) as error:
+            # Log error details
+            raise HTTPException(status_code=500, detail=self.IAM_ERROR)
+        except (IndexError, InvalidTokenError):
+            raise HTTPException(status_code=403, detail='Unauthorized')
+
+        return jwt_claims
+
+    def __get_jwt_user_id(self, request: Request) -> int:
+        claims = self.__decode_jwt_claims(
+            request.headers.get('Authorization')
+        )
+
+        try:
+            sub_claim = claims['sub']
+            users_response = requests.get(
+                f'{self.__get_users_url}?sub={sub_claim}&fields=id'
+            )
+            users_response.raise_for_status()
+            # Response JSON is expected in the form [{ "id": 12345 }]
+            users = users_response.json()
+        except (KeyError, requests.RequestException) as error:
+            # Log error details
+            raise HTTPException(status_code=500, detail=self.IAM_ERROR)
+
+        try:
+            return users[0].id
+        except (IndexError, AttributeError):
+            raise HTTPException(status_code=403, detail='Unauthorized')
+
+
+authorizer = __JwtAuthorizer()
+```
+
+Below is an example API service that utilizes the above-defined `JwtAuthorizer`:
+
+```python
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
+from InputOrder import InputOrder
+from jwt_authorizer import authorizer
+from order_service import order_service
+# OrderUpdate is a DTO that should not have user_id attribute,
+# because it cannot be changed
+from OrderUpdate import OrderUpdate
+
+app = FastAPI()
+
+# Define a custom HTTPException handler that provides
+# admin logging and metrics update
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(
+    request: Request, error: StarletteHTTPException
+):
+    if error.status_code == 403:
+        # Audit log an unauthorized request
+
+    # Increment 'HTTP request failures' counter by one
+    # using the following metric labels: error.status_code, error.detail
+
+    return JSONResponse({'error: ': str(error.detail)}, status_code=error.status_code)
+
+@app.get('/sales-item-service/sales-items')
+async def get_sales_items():
+    # No authentication/authorization required
+    # Send sales items
+
+@app.post('/messaging-service/messages')
+async def create_message(request: Request):
+    authorizer.authorize(request)
+    # Authenticated user can create a message
+
+@app.get('/order-service/orders/{id}')
+async def get_order(id: int, request: Request):
+    authorizer.authorize_for_user_own_resources_only(
+        id,
+        order_service.get_order_by_id_and_user_id,
+        request
+    )
+
+    # Get order identified with 'id'
+    # and having user id of JWT's owner
+
+@app.post('/order-service/orders')
+async def create_order(order: InputOrder, request: Request):
+    authorizer.authorize_for_self(
+        order.user_id,
+        request
+    )
+
+    # Create an order for the user
+    # User cannot create orders for other users
+
+@app.put('/order-service/orders/{id}')
+async def update_order(id: int, order: OrderUpdate, request: Request):
+    authorizer.authorize_for_user_own_resources_only(
+        id,
+        order_service.get_order_by_id_and_user_id,
+        request
+    )
+
+    # Update an order identified with 'id'
+    # and user id of JWT's owner
+
+@app.delete('/order-service/orders/{id}')
+async def delete_order(id: int, request: Request):
+    authorizer.authorize_if_user_has_one_of_roles(
+        ['admin'], request
+    )
+
+    # Only admin user can delete an order
+```
+
+The authorization is separately coded inside each request handler in the above example. We could extract the authorization code
+from the request handler methods to decorators that can be used with the methods. The decorators could be implemented in a
+separate library, and they can accept any authorizer that implements the `Authorizer` protocol, not just the `JwtAuthorizer`:
+
+```python
+from collections.abc import Callable
+from functools import wraps
+from typing import Any
+
+from Authorizer import Authorizer
+
+
+class AuthDecorException(Exception):
+    pass
+
+
+def allow_any_user(handle_request):
+    return handle_request
+
+
+def allow_authorized_user(authorizer: Authorizer):
+    def decorate(handle_request):
+        @wraps(handle_request)
+        async def wrapped_handle_request(*args, **kwargs):
+            try:
+                authorizer.authorize(kwargs['request'])
+            except KeyError:
+                raise AuthDecorException(
+                    "Request handler must accept 'request' parameter"
+                )
+            return await handle_request(*args, **kwargs)
+        return wrapped_handle_request
+    return decorate
+
+
+def allow_for_self(authorizer: Authorizer):
+    def decorate(handle_request):
+        @wraps(handle_request)
+        async def wrapped_handle_request(*args, **kwargs):
+            try:
+                user_id = (
+                    kwargs['user_id']
+                    if kwargs.get('user_id')
+                    else kwargs[
+                        [
+                            key
+                            for key in kwargs.keys()
+                            if key.endswith('dto')
+                        ][0]
+                    ].user_id
+                )
+                authorizer.authorize_for_user_own_resources_only(
+                    user_id, kwargs['request']
+                )
+            except (AttributeError, IndexError, KeyError):
+                raise AuthDecorException("""
+                    Request handler must accept 'request' parameter,
+                    'user_id' integer parameter or DTO parameter
+                    with name ending with 'dto'. DTO parameter
+                    must have attribute 'user_id'
+                    """)
+            return await handle_request(*args, **kwargs)
+        return wrapped_handle_request
+    return decorate
+
+
+def allow_for_user_own_resources_only(
+    authorizer: Authorizer,
+    get_entity_by_id_and_user_id: Callable[[int, int], Any]
+):
+    def decorate(handle_request):
+        @wraps(handle_request)
+        async def wrapped_handle_request(*args, **kwargs):
+            try:
+                authorizer.authorize_for_user_own_resources_only(
+                    kwargs['id'],
+                    get_entity_by_id_and_user_id,
+                    kwargs['request']
+                )
+            except (KeyError):
+                raise AuthDecorException(
+                    "Request handler must accept 'id' and 'request' parameters"
+                )
+            return await handle_request(*args, **kwargs)
+        return wrapped_handle_request
+    return decorate
+
+
+def allow_for_user_roles(roles: list[str], authorizer: Authorizer):
+    def decorate(handle_request):
+        @wraps(handle_request)
+        async def wrapped_handle_request(*args, **kwargs):
+            try:
+                authorizer.authorize_if_user_has_one_of_roles(
+                    roles, kwargs['request']
+                )
+            except KeyError:
+                raise AuthDecorException(
+                    "Request handler must accept 'request' parameter"
+                )
+            return await handle_request(*args, **kwargs)
+        return wrapped_handle_request
+    return decorate
+```
+
+In the above example, we implemented decorators that can take parameters. Those decorators have three levels of nested functions
+compared to non-parameterized ones with only two levels of nested functions. Standard decorators without parameters can be used in the following way:
+
+```python
+def my_decorator(func):
+    # ...
+
+@my_decorator
+def func():
+   # ...
+
+# The above is same as:
+
+my_decorated_func = my_decorator(func)
+```
+
+Decorators that take parameters can be used in the following way:
+
+```python
+def my_decorator(arg):
+    def decorate(func):
+        # ...
+    return decorate
+
+@my_decorator(some_arg)
+def func():
+   # ...
+
+# The above is the same as:
+
+my_decorated_func = my_decorator(some_arg)(func)
+```
+
+In the above authorization decorator example, we used the `@wraps` decorator from the `functools` module. This is because how FastAPI works with the request handler methods. If we did not use the `@wraps` decorator, we would get an error, which states that FastAPI is expecting `args` and `kwargs` parameters for a request handler. All the authorization decorators except the `@allow_any_user` decorator require that FastAPI
+request handlers accept a `request` argument. The `@allow_for_self` decorator also requires that a FastAPI request handler
+accepts either a `user_id` argument or a DTO argument with the argument name ending with the `dto` word. This DTO argument must be an object having a `user_id` attribute.
+
+Now, we can use the above-defined authorization decorators when defining the request handlers as follows:
+
+```python
+# Imports ...
+
+@app.get('/sales-item-service/sales-items')
+@allow_any_user
+async def get_sales_items():
+    # ...
+
+@app.post('/messaging-service/messages')
+@allow_authorized_user(authorizer)
+async def create_message(request: Request):
+    # ...
+
+@app.get('/order-service/orders/{id}')
+@allow_for_user_own_resources_only(
+    authorizer,
+    order_service.get_order_by_id_and_user_id
+)
+async def get_order(id: int, request: Request):
+    # ...
+
+@app.post('/order-service/orders')
+@allow_for_user_own_resources_only(authorizer)
+async def create_order(
+    order_dto: InputOrder, request: Request
+):
+    # ...
+
+@app.put('/order-service/orders/{id}')
+@allow_for_user_own_resources_only(
+    authorizer,
+    order_service.get_order_by_id_and_user_id
+)
+async def update_order(
+    id: int, order: OrderUpdate, request: Request
+):
+    # ...
+
+@app.delete('/order-service/orders/{id}')
+@allow_for_user_roles(['admin'], authorizer)
+async def delete_order(id: int, request: Request):
+    # ...
+```
+
+Next, we create a function to check that all request handlers in a microservice project contain
+an authorization decorator. This function should be called before starting the microservice. You can put this
+function and its call into a microservice starter project so that all new microservices created from the starter
+project automatically check for the presence of an authorization decorator in all request handlers.
+
+```python
+import os
+
+
+class AuthDecorNotSpecifiedException(Exception):
+    def __init__(self, file_name: str, line_number: int):
+        self.__file_name = file_name
+        self.__line_number = line_number
+
+    def __str__(self):
+        return f'Auth decorator not specified in file {self.__file_name} line {self.__line_number}'
+
+
+def ensure_request_handlers_have_auth*decor():
+    for path, *, file_names in os.walk('./'):
+        for file_name in file_names:
+            if file_name.endswith('.py'):
+                file_path_name = os.path.join(path, file_name)
+                with open(file_path_name) as file:
+                    lines = file.readlines()
+                prev_line = ''
+                for line_index, line in enumerate(lines):
+                    line = line.strip()
+                    if any(
+                        [
+                            prev_line.startswith(decorator)
+                            for decorator in [
+                                '@app.get',
+                                '@app.put',
+                                '@app.patch',
+                                '@app.post',
+                                '@app.delete',
+                            ]
+                        ]
+                    ):
+                        if not line.startswith('@allow_'):
+                            line_number = line_index + 1
+                            raise AuthDecorNotSpecifiedException(
+                                file_name, line_number
+                            )
+                    prev_line = line
+
+
+if os.environ.get('ENV') == 'DEVELOPMENT':
+    ensure_request_handlers_have_auth_decor()
+```
+
+The above code walks all Python files in the current directory and its subdirectories, reads their contents, and verifies that an authorization decorator (`@allow_xxx`) is present after the following decorators: `@app.get/put/patch/post/delete`.
+
+### Password Policy
+
+Implement a password policy requiring strong passwords and prefer passphrases over passwords. A passphrase is supposed
+to contain multiple words. Passphrases are harder to guess by attackers and easier to remember
+by users than strong passwords. Allow passphrases to contain Unicode characters. This allows
+users to create passphrases using their mother tongue.
+
+You should require that passwords are strong and match the following criteria:
+
+- At least 12 characters long
+- At least one uppercase letter
+- At least one lowercase letter
+- At least one number
+- At least one special character
+- May not contain the username
+- May not contain too many identical digits or letters, e.g., a password containing "111111",  "aaaaaa," or "1a1a1a1a1a" should be denied
+- May not contain too many consecutive numbers or letters, e.g., a password containing "12345", "56789", "abcdef", or "klmno" should be denied
+- May not contain too many adjacent letters in the keyboard, e.g., a password containing "qwerty" should be denied
+- May not contain a black-listed word: black-list all commonly used, easy-to-guess passwords.
+
+Machine-to-machine (non-human-related) passwords (like database passwords) should be automatically generated separately for each production environment during the deployment. These passwords should be random and significantly longer than 12 characters.
+
+### Cryptography
+
+The following are the key security features to implement related to cryptography:
+
+- Do not transmit data in clear text
+  - You don't need to implement HTTPS in all the microservices because you can set up a service mesh, like Istio, and configure it to implement mTLS between services
+- Do not store sensitive information like personally identifiable information (PII) in clear text
+  - Encrypt sensitive data before storing it in a database and decrypt it upon fetching from the database
+  - Remember to identify which data is classified as sensitive according to privacy laws, regulatory requirements, or business needs
+  - Do not use legacy protocols such as FTP and SMTP for transporting sensitive data
+  - Discard sensitive data as soon as possible or use tokenization (e.g., PCI DSS compliant) or even truncation
+  - Do not cache sensitive data
+- Do not use old/weak cryptographic algorithms. Use robust algorithms like SHA-256 or AES-256
+- Do not allow the use of default/weak passwords or default encryption keys in a production environment
+  - You can implement validation logic for passwords/encryption keys in microservices. This validation logic should be automatically activated when the microservice runs in production. The validation logic should be the following: If passwords/encryption keys supplied to the microservice are not strong enough, the microservice should not run at all but exit with an error
+
+#### Encryption Key Lifetime and Rotation
+
+Encryption keys should be rotated (i.e., changed) when one or more of the following criteria is met:
+
+- The current key is known to be compromised, or there is a suspicion of compromise
+- A specified period of time has elapsed (this is known as the [cryptoperiod](https://en.wikipedia.org/wiki/Cryptoperiod))
+- The key has been used to encrypt a particular amount of data
+- There is a significant change to the security the used encryption algorithm provides (for example, a new attack was announced)
+
+Encryption key rotation should happen so that all existing data is decrypted and encrypted with the new key.
+This will happen gradually, so each encrypted database table row must contain an id of the
+used encryption key. When all existing data is encrypted with the new key, meaning all references to it are removed, the old key can be destroyed.
+
+### Denial-of-service (DoS) Prevention
+
+DoS prevention should happen at least in the following ways:
+
+- Establish request rate limiting for microservices. This can be done at the API gateway level or by the cloud provider
+- Use a [Captcha](https://en.wikipedia.org/wiki/CAPTCHA) to prevent non-human (robotic) users from performing potentially expensive operations like creating new resources or fetching large resources, like large files, for example
+
+### Database Security
+
+- Connection from a microservice to a database must be secured using TLS. In a Kubernetes environment, you
+  can implement this by taking a service mesh (like Istio) into use and configuring mTLS between all services
+  in the environment
+- Database credentials (username and password) must be stored in a secure location, like in a Secret in a Kubernetes environment.
+  Never store credentials in source code
+- Use a strong password, preferably an automatically generated one for the specific environment. The password must be random and long enough. The password should be at least 32 characters long if the database engine allows it
+- Configure different database user accounts for admin and regular usage. Assign minimum privileges to both user accounts. Have separate passwords for each account.
+  The regular database user can usually only execute the following SQL statements: SELECT, INSERT, UPDATE, and DELETE. Only an administrator database user can create/modify/drop tables/indexes, etc.
+
+### SQL Injection Prevention
+
+- Use [parameterized SQL statements](https://en.wikipedia.org/wiki/Prepared_statement). Do not concatenate user-supplied data directly to an SQL statement string
+- Remember that you cannot use parameterization in all parts of an SQL statement. If you must put user-supplied data
+  into an SQL statement without parameterization, sanitize/validate it first. For example, for `LIMIT`, you must validate
+  that the user-supplied value is an integer and in a given range
+- Migrate to use [ORM](https://en.wikipedia.org/wiki/Object%E2%80%93relational_mapping) (Object Relational Mapping)
+- Use proper limiting on the number of fetched records within queries to prevent mass disclosure of records
+- Verify the correct shape of at least the first query result row. Do not send the query result to the client if the shape of the data in the first row is wrong, e.g., it contains the wrong fields.
+
+### OS Command Injection Prevention
+
+You should not allow user-supplied data to be used when executing OS commands in a shell.
+For example, don't allow the following:
+
+```python
+import os
+
+user_supplied_dir = ...
+os.system(f'mkdir {user_supplied_dir}')
+```
+
+A malicious user can supply, for example, the following kind of directory:
+`some_dir && rm -rf /`.
+
+Instead, use a specific function provided by the `os` module:
+
+```
+import os
+
+user_supplied_dir = ...
+os.mkdir(user_supplied_dir)
+```
+
+### Security Configuration
+
+By default, the security context for containers should be the following:
+
+- Container should not be privileged
+- All capabilities are dropped
+- Container filesystem is read-only
+- Only a non-root user is allowed to run inside the container
+- Define the non-root user and group under which the container should run
+- Disallow privilege escalation
+
+The *DevSecOps principles* chapter later in the book gives an example of the above Docker container security configuration.
+
+Implement the sending of security-related HTTP response headers in the API gateway:
+
+- `X-Content-Type-Options: nosniff`
+- `Strict-Transport-Security: max-age: ; includeSubDomains`
+- `X-Frame-Options: DENY`
+- `Content-Security-Policy: frame-ancestors 'none'`
+- `Content-Type: application/json`
+- If caching is not specifically enabled and configured, the following header should be set: `Cache-Control: no-store`
+- `Access-Control-Allow-Origin: https://your_domain_here`
+
+If you are returning HTML instead of JSON, you should replace/add the following response headers:
+
+- `Content-Security-Policy: default-src 'none'`
+- `Referrer-Policy: no-referrer`
+
+Disable browser features that are not needed/wanted using the `Permissions-Policy` response header. The below example
+turns off all the listed features:
+
+```
+Permissions-Policy: accelerometer=(), ambient-light-sensor=(),
+  autoplay=(), battery=(), camera=(), cross-origin-isolated=(),
+  display-capture=(), document-domain=(), encrypted-media=(),
+  execution-while-not-rendered=(), execution-while-out-of-viewport=(),
+  fullscreen=(), geolocation=(), gyroscope=(), keyboard-map=(),
+  magnetometer=(), microphone=(), midi=(), navigation-override=(),
+  payment=(), picture-in-picture=(), publickey-credentials-get=(),
+  screen-wake-lock=(), sync-xhr=(), usb=(), web-share=(), xr-spatial-tracking=()
+```
+
+Read more about [HTTP response security headers](https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html).
+
+### Automatic Vulnerability Scanning
+
+Implement automatic vulnerability scanning in microservice CI pipelines and/or the container registry at regular intervals. It is vital to configure container vulnerability scanning in
+the container registry (e.g., Docker or one provided by the cloud vendor). This scanning should preferably happen once a day.
+All software components of the software system should be scanned. You should correct critical or high-severity vulnerabilities as soon as possible.
+
+### Integrity
+
+Use only container images with tags that have an SHA digest. If an
+attacker succeeds in publishing a malicious container image with the same tag, the SHA digest prevents that malicious image from being taken into use. Ensure you use libraries and
+dependencies from trusted sources, like PyPi. You can also host internal mirrors
+of repositories to avoid accidentally using any untrusted repository. Ensure a review process
+exists for all code (source, deployment, infrastructure) and configuration changes so that no malicious code
+can be introduced into your software system.
+
+### Error Handling
+
+Ensure that error messages in API responses do not contain sensitive information or details of the implementation.
+Do not add stack traces to error responses transmitted to clients in a production environment.
+
+For example, suppose an API request produces an internal server error related to connectivity to an IAM system. In that case, you should
+not reveal implementation details in the error response, like talk about *Keycloak 18.06* if that's what you are using, but use an abstract
+term, like the *IAM system*. Suppose an attacker gets an error response revealing details about a 3rd party software component and its version. In that case, the attacker
+can exploit possible vulnerabilities of the particular software component.
+
+### Logging
+
+When writing log entries, never write any of the below to the log:
+
+- Session ids
+- Access tokens
+- Personally identifiable information (PII)
+- Passwords
+- Database connection strings
+- Encryption keys
+- Information that is not legal to collect
+- Information that the end-user has opted out of the collection
+
+### Audit Logging
+
+Auditable end-user-related events, such as logins, failed logins, unauthorized or invalid requests, and high-value transactions, should be logged and stored
+in an external audit logging system. The audit logging system should automatically detect
+suspicious action related to an end-user and alert about it. See also [OWASP Logging Vocabulary Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Vocabulary_Cheat_Sheet.html)
+
+### Input Validation
+
+Always validate input from untrusted sources, like from an end-user. There are many ways to implement validation, and several libraries exist for that purpose. Let's assume you
+implement entities and data transfer objects (DTOs). The best way to ensure proper validation is to require that each
+DTO property must have a validation decorator. If a property in a DTO does not require any validation, annotate that property with a special annotation, like `@any_value`, for example.
+Don't use entities in data transfer. Always use DTOs in both directions, in data transfer from the client to the server and from the server to the client.
+This is because the entities usually contain some data that is not expected from clients and can contain sensitive/confidential information that should
+not be exposed to clients. The input DTOs verify that the client supplies correct data: All needed properties are supplied with correct types and semantics, and no extra properties are supplied. If you need dynamic validation, i.e., enforce a business rule, put that validation code into the entity class.
+It is essential to filter out extra properties because otherwise, those might end up in the database if a schemaless database table (e.g., a MongoDB collection) is used. Disallowing a schemaless database table in a production system is good practice.
+
+For example, a `User` entity might have an attribute `is_admin`. You should not expect a `User` entity as input from a client, but you should expect a DTO, `InputUser`, which has the same attributes as the `User` entity, except specific attributes like `id`, `created_at_timestamp` and `is_admin`. Similarly,
+if the `User` entity contains a `password` attribute, that attribute should not be sent to a client. For this reason, you need to define an `OutputUser` DTO, which has the same attributes as the `User` entity except the `password` attribute. When you use DTOs both in input and output data transfer, you safeguard the service against situations
+where you add a new sensitive or internal attribute to an entity, and that new sensitive or internal attribute should not be received from or transmitted to clients.
+
+Remember to validate data from all untrusted sources:
+
+- Command line arguments
+- Environment variables
+- Standard input (stdin)
+- Data from the file system
+- Data from a socket (network input)
+- Input from the user interface (UI)
+
+You don't need to validate function arguments in all functions, but always validate data from an untrusted source before passing that value to other functions in the software component.
+For example, don't access environment variables directly (using `os.environ`) all over the code, but create a dedicated class that provides controlled access to environment variables. That class should validate the environment variable values (correct type, allowed values, allowed value range, etc.). If the validation fails, a default value can be returned or an error raised.
+
+#### Validating Numbers
+
+When validating numeric values, always validate that a value is in a specified range. For example, if you use an unvalidated number to check if a loop should end and that number is huge, it can cause a denial of service (DoS).
+
+If a number should be an integer, don't allow floating-point values.
+
+#### Validating Strings
+
+When validating a string, always validate the maximum length of the string first. Only after that should additional validation be performed. Validating a long string using a regular expression can cause a regular expression denial of service (ReDoS).
+You should avoid crafting your own regular expressions for validation purposes. Instead, use a ready-made library that contains battle-tested
+code. Consider also using the [Google RE2 library](https://github.com/google/re2/tree/abseil/python). It is safer than regular expression functionality provided by many language runtimes, and your code will be less susceptible to ReDoS attacks.
+
+#### Validating Timestamps
+
+Timestamps (or times or dates) are usually given as an integer or string. Apply needed validation to a timestamp/time/date value. For example, you can validate if a timestamp is in the future or past or if a timestamp is earlier or later than another timestamp.
+
+#### Validating Arrays
+
+When validating an array, you should validate the size of the array. It should not be too small or large. You
+can validate the uniqueness of values if needed. Also, after validating the size of the array, remember to validate each value separately.
+
+#### Validating Objects
+
+Validate an object by validating each attribute of the object separately.
+Remember to validate nested objects also.
+
+#### Validating Files Uploaded to Server
+
+- Ensure the file name extension of the uploaded file is one of the allowed extensions
+- Ensure the file is not larger than a defined maximum size
+- Check the uploaded file against viruses and malware
+- If the uploaded file is compressed (e.g., a zip file) and you are going to unzip it, verify the following before unzipping:
+     - Target path is acceptable
+     - Estimated decompressed size is not too large
+- When storing an uploaded file on the server side, pay attention to the following:
+    - Do not use a file name supplied by the user, but use a new filename to store the file on the server
+    - Do not let the user choose the path where the uploaded file is stored on the server

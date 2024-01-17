@@ -1,0 +1,68 @@
+# Conclusion
+
+This book has presented a lot of valuable principles and patterns. It can be challenging to grasp them
+all at once. For this reason, I suggest you prioritize learning. Topics I have found most important during many years of coding are the following:
+
+- Code is read more often than written principle
+  - For this reason, pay attention to the fact that your code is easily readable and understandable. To achieve this, you can
+    use the uniform naming principle and avoid writing comments principle presented in this book
+- Prefer object composition over inheritance principle
+  - Consider always first if there is a *has-a* relationship between two objects, then use object composition. But if there is not a has-a relationship but a *is-a* relationship, then use inheritance
+- Encapsulation principle
+  - Don't automatically implement attribute getters and setters in a class. They can break encapsulation. Only implement them when needed. If you have getters
+    and setters for all or most attributes and little other behavior in your class, the class can be an anemic class. You might
+    not be following the don't ask, tell principle, which results in the feature envy code smell.
+- Single responsibility principle
+  - Whether it is a question about a software component or a class, try to make it have a single responsibility at a certain
+    level of abstraction to keep the software component or class small enough.
+    If the level of abstraction is high, the software component or class can become too large. What you can do is extract functionality from the large class to smaller classes and make the original class use the smaller ones
+- Program against interfaces principle
+  - This is a necessity if you want to follow the open-closed principle
+- Open-closed principle
+  - When you put new functionality into new classes, instead of modifying existing classes and their methods, you usually cannot accidentally break any existing functionality
+- TDD or USDD
+  - When creating new functions, use TDD or USDD to make it less likely to forget to implement some failure scenarios or edge cases.
+  Consider preferring TDD over USDD because of the following additional benefits:
+    - Refactoring becomes a norm and helps you achieve a better design
+    - Less stress and cognitive load
+    - You are bound to write testable code
+- Threat modeling
+  - Helps you and your team to create more secure software
+- Integration testing using BDD and ATDD
+  - Define integration tests using BDD and formal specifications and make those integration tests acceptance tests of a feature. This formalized way of specifying a feature makes it less likely not to forget to write integration tests for the features of the software component.
+
+Regarding design patterns, the following two patterns are the most valuable, and you can use them in almost every project. Other
+design patterns are not necessarily as widely used.
+
+- (Abstract) Factory pattern
+  - Use factories to instantiate different implementations of an interface
+- Adapter pattern
+  - You can create multiple implementations for a common interface using adapter classes that adapt another interface to the common interface
+
+If you want to master more design patterns, I suggest to learn the following:
+
+- Strategy pattern
+  - Make the class behavior dynamic by depending on an abstract strategy with multiple implementations.
+    When following this pattern, you implement different behaviors (strategies) in separate classes, making your code
+    follow the single responsibility principle and open-closed principle
+- Decorator pattern
+  - Augment the behavior of a class or function without modifying the class or function. For functions, this pattern
+    can be implemented using Python function decorators.
+- Proxy pattern
+  - Conditionally delegate to the wrapped class's or function's behavior. A good example of the proxy pattern is caching. The caching proxy class delegates to the wrapped class or function only when a result isn't available in the cache already. For functions, this pattern
+    can be implemented using Python function decorators. For example, Python has a built-in `@cache` decorator that utilizes the
+    proxy pattern.
+- Command/Action pattern
+  - Encapsulate functionality with parameters in a command/action object. This pattern allows you to follow
+    the open-closed principle because you can put new functionality in a new command/action class.
+- State pattern
+  - Don't treat state as enums. Use objects that have attached behavior related to a particular state.
+    Following this pattern allows you to replace conditionals with polymorphism.
+- Template method pattern
+  - Put a common algorithm that calls an abstract method to a base class in a class inheritance hierarchy. This abstract method call in the common
+    algorithm makes the method a template method. The final behavior of the common algorithm
+    is refined by the subclasses that implement the abstract method called from the template method.
+
+To fully embrace a principle or pattern, you need to apply it in real-life projects and see the benefits
+yourself. When you see the benefits in practice, the value of a principle or pattern becomes more evident and no longer feels like a law imposed by some authority that you are forced to obey.
+

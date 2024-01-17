@@ -1,0 +1,3962 @@
+# Coding Principles
+
+This chapter presents principles for coding. The following principles are presented:
+
+- Uniform variable naming principle
+- Uniform source code repository structure principle
+- Domain-based source code structure principle
+- Avoid comments principle
+- Function single return statement principle
+- Prefer statically typed language principle
+- Refactoring principle
+- Static code analysis principle
+- Error/Exception handling principle
+- Avoid off-by-one errors principle
+- Be critical when googling principle
+- Make one change at a time principle
+- Choosing right 3rd party component principle
+- Use appropriate data structure principle
+- Optimization principle
+
+## Uniform Variable Naming Principle
+
+> ***A good variable name should describe the variable's purpose and its type.***
+
+Writing your code with great names, at best, makes it read like prose. And remember that code is more
+often read than written, so code must be easy to read and understand.
+
+Naming variables with names that convey information about the variable's type is crucial in untyped languages
+and beneficial in typed languages because modern typed languages use automatic type deduction, and you won't always see the
+actual variable type. But when the variable's name tells its type, it does not matter if the type name is not visible.
+
+If a variable name is 20 or more characters long, consider making it shorter. Try to abbreviate
+one or more words in the variable name, but only use meaningful and well-known abbreviations. If such abbreviations don't exist, then
+don't abbreviate at all. For example, if you have a variable named `environment_variable_name`, you should try to shorten it because
+it is over 20 characters long. You can abbreviate *environment* to *environ* and *variable* to *var*, resulting in a variable
+name `environ_var_name` that is short enough. Both abbreviations `environ` and `var` are commonly used and well understood.
+Let's have another example with a variable named `loyalty_bonus_percentage`. You cannot abbreviate *loyalty*. You cannot abbreviate
+*bonus*. But you can abbreviate *percentage* to *percent* or even *pct*. I would rather use *percent* instead of *pct*. Using
+*percent* makes the variable name shorter than 20 characters (underscores are not counted as variable name characters).
+
+If a variable name is less than 20 characters long, you don't need to shorten it. If you have several variables named in
+a similar wording and one or more of them needs abbreviating, you can use that abbreviation in all the variable names for
+consistency. For example, if you have variables `configuration_file` and `configuration_file_parser`, you
+can abbreviate the both to `config_file` and `config_file_parser`.
+
+In the following sections, naming conventions for different types of variables are proposed.
+
+### Naming Integer Variables
+
+Some variables are intrinsically integers, like *age* or *year*. Everybody immediately understands that the type of
+an *age* or *year* variable is a number and, more specifically, an integer. So, you don't have to add anything to the variable's
+name to indicate its type. It already tells you its type.
+
+One of the most used categories of integer variables is a count or number of something. You see those kinds of variables in every piece
+of code. I recommend using the following convention for naming those variables: *number_of_&lt;something&gt;* or alternatively
+*&lt;something&gt;_count*. For example, *number_of_failures* or *failure_count*. You should not use a variable named *failures*
+to designate a failure count. The problem with that variable name is it does not clearly specify the variable type
+and thus can cause some confusion. This is because a variable named *failures* can be misunderstood as a collection variable
+(e.g., a list of failures).
+
+If the unit of a variable is not self-evident, always add information about the unit to the end of the variable name. For example, instead of
+naming a variable *tooltip_show_delay*, you should name it *tooltip_show_delay_in_millis* or *tooltip_show_delay_in_ms*. If you have a variable
+whose unit is self-evident, unit information is not needed. So, there is no need to name an *age* variable as *age_in_years*. But if you are
+measuring age in months, you must name the respective variable as *age_in_months* so that people don't assume that age is measured in
+years.
+
+### Naming Floating-Point Number Variables
+
+Floating-point numbers are not as common as integers, but sometimes you need them too. Some values are intrinsically floating-point numbers,
+like most un-rounded measures (e.g., price, height, width, or weight). A floating-point variable would be a safe bet if you need to store a measured value.
+
+If you need to store an amount of something that is not an integer, use a variable named *&lt;something&gt;_amount*, like *rainfall_amount*.
+When you see the “amount of something” in code, you can automatically think it is a floating-point number. If you need to use a number in arithmetic,
+depending on the application, you might want to use either floating-point or integer arithmetic. In the case of money, you should use
+integer arithmetic to avoid rounding errors. Instead of a floating-point *money_amount* variable, you should have
+an integer variable, like *money_in_cents*.
+
+If the unit of a variable is not self-evident, add information about the unit to the end of the variable name, like *rainfall_amount_in_mm*, *width_in_inches*,
+*angle_in_degrees* (values 0-360), *failure_percent* (values 0-100), or *failure_ratio* (values 0-1).
+
+### Naming Boolean Variables
+
+Boolean variables can have only one of two values: true or false. The name of a boolean variable should form a statement where the answer is
+true or false, or yes or no. Typical boolean variable naming patterns are: *is_&lt;something&gt;*, *has_&lt;something&gt;*, *did_&lt;something&gt;*,
+*should_&lt;something&gt;*, *can_&lt;something&gt;, or *will_&lt;something&gt;*. Some examples of variable names following the above patterns are
+*is_disabled*, *has_errors*, *did_update*, *should_update*, and *will_update*.
+
+The verb in the boolean variable name does not have to be at the beginning. It can and should be in the middle if it makes the code read better.
+Boolean variables are often used in if-statements where changing the word order in the variable name can make the code read
+better. Remember that, at best, code reads like beautiful prose and is read more often than written.
+
+Below is a code snippet where we have a boolean variable named `is_pool_full`:
+
+```python
+# ...
+
+is_pool_full = len(self.__pooled_messages) >= 200
+if is_pool_full:
+    # ...
+else:
+    # ...
+```
+
+We can change the variable name to `pool_is_full` to make the if-statement read more fluently. In the below example, the if-statement
+reads "if pool_is_full" instead of "if is_pool_full":
+
+```python
+# ...
+
+pool_is_full = len(self.__pooled_messages) >= 200
+if pool_is_full:
+    # ...
+else:
+    # ...
+```
+
+Don't use boolean variable names in the form of *&lt;passive-verb&gt;_something*, like *inserted_field*, because this can confuse the reader.
+It is unclear if the variable name is a noun (a field that was inserted) that names an object or a boolean statement.
+Instead, use either *did_insert_field* or *field_was_inserted*.
+
+Below is an example of the incorrect naming of a variable used to store a function return value. The `drop_redundant_tables` function
+returns a boolean. Someone might think the `tables_dropped` variable means a list of dropped table names. So, the name of the variable is obscure and should be changed.
+
+```python
+tables_dropped = drop_redundant_tables(
+    prefix,
+    vms_data,
+    config.database,
+    hive_client,
+    logger
+)
+
+if tables_dropped:
+    # ...
+```
+
+Below is the above example modified so that the variable name is changed to indicate a boolean statement:
+
+```python
+tables_were_dropped = drop_redundant_tables(
+    prefix,
+    vms_data,
+    config.database,
+    hive_client,
+    logger
+)
+
+if tables_were_dropped:
+    # ...
+```
+
+You could have used a variable named `did_drop_tables`, but the `tables_were_dropped` makes the if-statement more readable.
+If the return value of the `drop_redundant_tables` function were a list of dropped table names, I would name the
+return value receiving variable as `dropped_table_names`.
+
+When you read code containing a negated boolean variable, it usually reads terrible, for example:
+
+```python
+app_was_started = app.start()
+
+if not app_was_started:
+    # ...
+```
+
+To improve the readability, you can mentally move the `not` word to the correct place to make the sentence
+read like proper English. For example: *if app was not started*
+
+The other option is to negate the variable. That is done by negating both sides of the assignment by adding
+`not` on both sides of the assignment operator. Here is an example:
+
+```python
+app_was_not_started = not app.start()
+
+if app_was_not_started:
+    # ...
+```
+
+Below is a real-life example where a boolean property is named wrong:
+
+```
+sonar.buildBreaker.skip = true
+```
+
+The `skip` is not a correctly named boolean property. From the above statement, it is difficult to understand when a build is broken because no boolean statement that evaluates either true or false is made.
+Let's refactor the statement:
+
+```
+sonar.shouldBreakBuildOnQualityGateFailure = true
+```
+
+### Naming String Variables
+
+String variables are prevalent, and many things are intrinsically strings, like *name*, *title*, *city*, *country*, or *topic*.
+When you need to store numerical data in a string variable, tell the code reader clearly that it is a question about a number in
+string format, and use a variable name in the following format: *&lt;someValue&gt;_string* or *&lt;someValue&gt;_as_string*. It makes
+the code more prominent and easier to understand. For example:
+
+```python
+try:
+    year = int(year_as_string)
+except ValueError:
+    # ...
+```
+
+If you have a variable that could be confused with an object variable, like `schema` (could be confused with an instance of `Schema` class), but it is a string,
+add *string* to the end of the variable name, e.g., `schema_string`. Here is an example:
+
+```python
+schema = schema_parser.parse(schema_string)
+```
+
+### Naming Enum Variables
+
+Name enum variables with the same name as the enum type. For example, a `CarType` enum variable should be named `car_type`.
+If the name of an enum type is very generic, like `Result`, you might benefit from declaring an enum variable with some
+detail added to the variable name. Below is an example of a very generic enum type name:
+
+```python
+# Returns enum type 'Result'
+result = pulsar_client.create_producer(...)
+
+if result == Result.Ok:
+    # ...
+```
+
+Let's add some detail and context to the `result` variable name:
+
+```python
+producer_create_result = pulsar_client.create_producer(...)
+
+if producer_create_result == Result.Ok:
+    # ...
+```
+
+### Naming Collection (List and Set) Variables
+
+When naming lists and sets, you should use the plural form of a noun, like *customers*, *errors*, or *tasks*. These kinds of names work well in the code, for example:
+
+```python
+def process(customers: list[Customer]) -> list[Customer]:
+    # ...
+
+customers = [...]
+
+for customer in customers:
+    # ...
+
+processed_customers = process(customers)
+
+def is_even(integer: int) -> bool:
+    return integer % 2 == 0
+
+integers = [1, 2, 3, 4, 5]
+even_integers = filter(is_even, integers)
+```
+
+This plural noun naming convention is usually enough because you don't necessarily need to know the underlying collection implementation. Using this naming convention
+allows you to change the type of a collection variable without changing the variable name.
+If you are iterating over a collection, it does not matter if it is a list or set. Thus, it does not bring any
+benefit if you add the collection type name to the variable name, for example, *customer_list* or *task_set*. Those names are just longer.
+You might want to specify the collection type in some special cases. Then, you can use the following kinds of variable names:
+*queue_of_tasks*, *stack_of_cards*, or *set_of_timestamps*.
+
+Below is an example where the function is named correctly to return a collection (of categories), but the variable
+receiving the return value is not named according to the collection variable naming convention:
+
+```python
+vms_data = vms_client.get_categories(vms_url, logger)
+```
+
+Correct naming would be:
+
+```python
+vms_categories = vms_client.get_categories(vms_url, logger)
+```
+
+### Naming Dictionary Variables
+
+Dictionaries are accessed by requesting a *value* for a certain *key*. This is why I recommend naming dictionaries using the pattern *key_to_value*, *key_to_value_map*
+or *key_to_value_dict*.
+Let’s say we have a dictionary containing order counts for customer ids. This dictionary should be named `customer_id_to_order_count`, `customer_id_to_order_count_map`, or `customer_id_to_order_count_dict`.
+If we have a list of suppliers for product names, the mapping variable should be named `product_name_to_suppliers`, `product_name_to_suppliers_map`, or `product_name_to_suppliers_dict`.
+Below is an example of accessing dicts:
+
+```python
+order_count = customer_name_to_order_count.get(customer_name)
+suppliers = product_name_to_suppliers.get(product_name)
+```
+
+Below are examples of iterating over a dict:
+
+```python
+customer_name_to_order_count = {
+    'John': 10,
+    'Peter': 5
+}
+
+for customer_name in customer_name_to_order_count:
+    print(customer_name)
+
+for customer_name in customer_name_to_order_count.keys():
+    print(customer_name)
+
+for order_count in customer_name_to_order_count.values():
+    print(order_count)
+
+for (
+    customer_name,
+    order_count,
+) in customer_name_to_order_count.items():
+    print(customer_name, order_count)
+```
+
+### Naming Pair and Tuple Variables
+
+A variable containing a pair should be named using the pattern *variable1_and_variable2*. For example: `height_and_width`. And for tuples,
+the recommended naming pattern is *variable1_variable2_...and_variableN*. For instance: `height_width_and_depth`. If the tuple
+does not have values that should be individually named, you can treat it as an immutable list and name it according to the collection variable
+naming convention.
+
+Below is an example of using pairs and tuples:
+
+```python
+height_and_width = (100, 200)
+height, width = height_and_width
+height_width_and_depth = (100, 200, 40)
+height, *, depth = height_width_and_depth
+numbers = (1, 2, 3, 4, 5)
+print(numbers[-1]) # Prints 5
+print(numbers[0:2]) # Prints (1,2)
+print(numbers[:2]) # Prints (1,2)
+print(numbers[1:]) # Prints (2, 3, 4, 5)
+```
+
+### Naming Object Variables
+
+Object variables refer to an instance of a class. Class names are nouns written in CapWords, like
+*Person*, *CheckingAccount*, or *Task*. Object variable names should contain the related class name: a *person* object of
+the *Person* class, an *account* object of the *Account* class, etc. You can freely decorate the object’s name, for example, with
+an adjective: *completed_task*. Including the class name or at least a significant part of it at the end of the variable name is useful because looking at the end of the variable name tells what kind of object is in question.
+
+Do not add an article `a` or `an` to an object variable's name. This is redundant because you usually know if it is
+a question about an object variable when you follow all the naming conventions presented in this book. An article can also hinder
+the readability (due to added underscores):
+
+```python
+write_to(a_buffer, a_message)
+
+# versus
+write(message, buffer)
+```
+
+Sometimes, you might want to name an object variable so that the name of its class is implicit, for example:
+
+```python
+# The class of the function parameters, 'Location', is implicit
+drive(from=home, to=destination)
+```
+
+In the above example, the classes of `home` and `destination` objects are not explicit. In most cases, it is preferable to make the class name
+explicit in the variable name when it does not make the variable name too long. This is because of the variable type deduction.
+The types of variables are not necessarily visible in the code, so the
+variable name should communicate the type of a variable. Below is an example where the types of function parameters are explicit.
+
+```python
+# The class of the function parameters, 'Location', is now explicit
+drive(from=home_location, to=dest_location)
+```
+
+### Naming Optional Variables
+
+If you are using the `Optional[T]` class (presented earlier in this book), name variables of this type using the following pattern: *maybe_&lt;something&gt;*:
+
+```python
+maybe_logged_in_user.if_present(lambda logged_in_user: logged_in_user.logout())
+current_user = maybe_logged_in_user.or_else(guest_user)
+```
+
+When you create optional types using a type union, you don’t need any prefixes in optional variable names. In the below example, the `discount` parameter is optional:
+
+```python
+def add_tax(price: float, discount: int | None = None) -> float:
+    return 1.2 * (price - (0 if discount is None else discount))
+
+price_with_tax = add_tax(price_without_tax)
+```
+
+### Naming Function Variables (Callbacks)
+
+Callback functions are supplied to other functions to be called at some point. If a callback function returns a value,
+it can be named according to the returned value, but it should still contain a verb.
+If the callback function does not return a value, you should name the callback function like any other function:
+Indicating what the function does.
+
+```python
+from functools import reduce
+
+def doubled(number: int | float):
+    return 2 * number
+
+
+def squared(number: int | float):
+    return number**2
+
+
+def is_even(number: int | float):
+    return number % 2 == 0
+
+
+values = [1, 2, 3, 4, 5]
+doubled_values = [doubled(value) for value in values]
+doubled_values2 = list(map(doubled, values))
+squared_values = [squared(value) for value in values]
+squared_values2 = list(map(squared, values))
+even_values = [value for value in values if is_even(value)]
+even_values2 = list(filter(is_even, values))
+
+
+def trimmed(string: str):
+    return string.strip()
+
+
+strings = [" string1", "string2 "]
+trimmed_strings = [trimmed(string) for string in strings]
+trimmed_strings2 = list(map(trimmed, strings))
+
+def sum(accum_sum: int | float, number: int | float) -> int | float:
+    return accum_sum + number
+
+sum_of_values = reduce(sum, values, 0)
+```
+
+If the callback function is very simple and short, like the *doubled* and *squared* functions are, we can inline them
+in Python list/set/dict comprehensions and generator expressions, making them a bit shorter:
+
+```python
+doubled_values = [2 * value for value in values]
+squared_values = [value**2 for value in values]
+distinct_values = {value for value in values}
+value_to_squared_value = {value: value**2 for value in values}
+generator_of_doubled_values = (2 * value for value in values)
+first_doubled_value = generator_of_doubled_values.__next__()
+tuple_of_doubled_values = tuple(generator_of_doubled_values)
+```
+
+Let's have a quick detour with an example written in Clojure:
+
+```clojure
+(defn print-first-n-doubled-integers [n]
+  (println (take n (map (fn [x] (* 2 x)) (range)))))
+```
+
+To understand what happens in the above code, you should start reading from the innermost function call and
+proceed toward the outermost function call. A function call is inside parenthesis. When traversing the function call hierarchy, the difficulty lies in storing
+and retaining information about all the nested function calls in short-term memory.
+
+We could simplify reading the above example by naming the anonymous function and introducing variables (constants) for intermediate
+function call results. Of course, our code becomes more prolonged, but coding is not a competition to write the shortest possible code
+but to write the shortest, most readable, and understandable code for other people and your future self. It is a compiler's job
+to compile the longer code below into code that is as efficient as the shorter code above.
+
+Below is the above code refactored:
+
+```clojure
+(defn print-first-n-doubled-integers [n]
+  (let [doubled (fn [x] (* 2 x))
+        doubled-integers (map doubled (range))
+        first-n-doubled-integers (take n doubled-integers)]
+          (println first-n-doubled-integers)))
+```
+
+Let's think hypothetically: if Clojure's `map` function took parameters in a different order and the `range` function was
+named `integers` and the `take` function was named `take-first` (like there is the `take-last` function), we would have an even more explicit version
+of the original code:
+
+```clojure
+(defn print-first-n-doubled-integers [n]
+  (let [doubled (fn [x] (* 2 x))
+        doubled-integers (map (integers) doubled)
+        first-n-doubled-integers (take-first n doubled-integers)]
+          (println first-n-doubled-integers)))
+```
+
+There is a reason why the `map` function takes the parameters in that order. It is to make function partial application
+possible.
+
+### Naming Class Attributes
+
+Class attributes should be named so that the class name is not repeated in the attribute names. Below is an example of incorrect naming:
+
+```python
+class Order:
+    def __init__(self, order_id: int, order_state: OrderState):
+        self.__order_id = order_id
+        self.__order_state = order_state
+```
+
+Below is the above code with corrected names:
+
+```python
+class Order:
+    def __init__(self, id_: int, state: OrderState):
+        self.__id = id_
+        self._state = state
+```
+
+If you have an attribute to store a callback function (e.g., event handler or lifecycle callback), you should name it so that it tells on what occasion the stored
+callback function is called. Name attributes storing event handlers using the
+following pattern: `on` + `<event-type>`, e.g., `on_click` or `on_submit`. Name attributes storing lifecycle callbacks in a similar way you
+would name a lifecycle method, for example: `on_init`, `after_mount`, or `before_mount`.
+
+### General Naming Rules
+
+#### Use Short, Common Names
+
+When picking a name for something, use the most common shortest name. If you have a function named *relinquish_something*,
+consider a shorter and more common name for the function. You could rename the function to *release_something*, for example. The word "release" is
+shorter and more commonly used than the "relinquish" word. Use
+Google to search for word synonyms, e.g., "relinquish synonym", to find the shortest and most common similar term.
+
+#### Pick One Term And Use It Consistently
+
+Let's assume that you are building a data exporter microservice and you are currently using the following terms in the code:
+*message*, *report*, *record* and *data*. Instead of using four terms to describe the same thing, you should pick just one term, like *message*, and use it consistently throughout the microservice code. One way to avoid end up having multiple terms for the same thing is to conduct domain-driven design. It enables you to create a ubiquitous language.
+
+#### Avoid Obscure Abbreviations
+
+Many abbreviations are commonly used, like *str* for a string, *num/nbr* for a number, *prop* for a property, or *val* for a value.
+Most programmers use these, and I use them to make long names shorter. If a variable name is short, the full name should be used instead,
+like *number_of_items* instead of *nbr_of_items*. Use abbreviations in cases where the variable name otherwise becomes too long (20 or more characters).
+What you should especially try to avoid is using uncommon abbreviations. For example, do not abbreviate *amount* to *amnt* or *discount* to *dscnt* because those abbreviations are not really used.
+
+#### Avoid Too Short Or Meaningless Names
+
+Names that are too short do not communicate what the variable is about. Avoid using a single-character variable name like
+in the following example, where five threads are started:
+
+```python
+for i in range(1, 6):
+    start_thread(i)
+```
+
+Instead, use a proper variable name to indicate what the loop counter is for:
+
+```python
+for thread_number in range(1, 6):
+    start_thread(thread_number)
+```
+
+If you don't need to use the loop counter value inside the loop, you can use an underscore as the loop variable name
+to indicate that it is not used. The below loop loops `object_count` times:
+
+```python
+for _ in range(object_count):
+    objects.append(acquire_object())
+```
+
+Even if you don't agree with all naming conventions presented here and in the previous chapter, I recommend you create rules for naming code entities, like classes, functions, and variables. That would make your code look
+consistent and professional. It makes the code look pretty bad if no naming conventions are used, and naming inside a single module or even a function varies dramatically. For example, a 'customers' variable is used somewhere, while a `customer_list` variable is used elsewhere, and the `customers` variable is used to store a list of customers in some place and the number of customers in another place. It is preferable if a whole development team or, even better, all development teams could share a common set of naming conventions.
+
+## Uniform Source Code Repository Structure Principle
+
+> ***Structuring a source code repository systematically in a certain way makes it easy for other developers to discover wanted information quickly.***
+
+You can create source code repositories for starter projects. Create a source code repository containing a starter project per each technology stack to ensure the uniformity of the repository structures.
+Below is an example of structuring a source code repository for a Python microservice.
+In the below example, a containerized (Docker) microservice deployed to a Kubernetes cluster is assumed. Your CI/CD tool might require
+the CI/CD pipeline code to reside in a specific directory. But if not, place the CI/CD pipeline code in a *cicd* directory.
+
+```
+my-python-service
+├── cicd
+│   └── Jenkinsfile
+├── docker
+│   ├── Dockerfile
+│   └── docker-compose.yml
+├── docs
+├── env
+│   ├── .env.dev
+│   └── .env.ci
+├── helm
+│   └── my-python-service
+│       ├── templates
+│       ├── .helmignore
+│       ├── Chart.yaml
+│       ├── values.schema.json
+│       └── values.yaml
+├── integration-tests
+│   ├── features
+│   │   └── feature1.feature
+│   └── steps
+├── scripts
+│   └── // Bash scripts here...
+├── src
+├── venv
+├── .gitignore
+├── .pylintrc
+└── README.MD
+```
+
+Unit test modules should be in the same directory as source code modules, but you can also put them in a specific *test* directory.
+
+## Domain-Based Source Code Structure Principle
+
+> ***Structure source code tree primarily by domains, not by technical details. Each source code directory should have a single responsibility at its abstraction level.***
+
+Below is an example of a microservice's *src* directory that is *not* organized by domains but is
+incorrectly organized according to technical details:
+
+```
+example-service/
+└── src/
+    ├── controllers/
+    │   ├── AController.py
+    │   └── BController.py
+    ├── entities/
+    │   ├── AEntity.py
+    │   └── BEntity.py
+    ├── errors/
+    │   ├── AError.py
+    │   └── BError.py
+    ├── dtos/
+    │   ├── ADto.py
+    │   └── BDto.py
+    ├── repositories/
+    │   ├── ARepository.py
+    │   └── BRepository.py
+    └── services/
+        ├── AService.py
+        └── BService.py
+```
+
+Below is the above example modified so that directories are organized by domains:
+
+```
+example-service/
+└── src/
+    ├── domainA/
+    │   ├── AController.py
+    │   ├── ADto.py
+    │   ├── AEntity.py
+    │   ├── AError.py
+    │   ├── ARepository.py
+    │   └── AService.py
+    └── domainB/
+        ├── BController.py
+        ├── BDto.py
+        ├── BEntity.py
+        ├── BError.py
+        ├── BRepository.py
+        └── BService.py
+```
+
+You can have several levels of nested domains:
+
+```
+example-service/
+└── src/
+    ├── domainA/
+    │   ├── domainA-1/
+    │   │   ├── A1Controller.py
+    │   │   └── ...
+    │   └── domainA-2/
+    │       ├── A2Controller.py
+    │       └── ...
+    └── domainB/
+        ├── BController.py
+        └── ...
+```
+
+If you want, you can create subdirectories for technical details inside a domain directory. This is the recommended
+approach if, otherwise, the domain directory would contain more than 5 to 7 files. Below is an example of the *salesitem* domain:
+
+```
+sales-item-service
+└── src
+    └── salesitem
+        ├── dtos
+        │   ├── InputSalesItem.py
+        │   └── OutputSalesItem.py
+        ├── entities
+        │   └── SalesItem.py
+        ├── errors
+        │   ├── SalesItemServiceError.py
+        │   ├── Error1.py
+        │   └── Error2.py
+        ├── repository
+        │   ├── SalesItemRepository.py
+        │   └── SalesItemRepositoryImpl.py
+        ├── service
+        │   ├── SalesItemService.py
+        │   └── SalesItemServiceImpl.py
+        └── SalesItemController.py
+```
+
+To highlight the *clean microservice design principle*, we could also use the following kind of directory
+layout:
+
+```
+sales-item-service
+└── src
+    └── salesitem
+        ├── businesslogic
+        │    ├── dtos
+        │    │   ├── InputSalesItem.py
+        │    │   └── OutputSalesItem.py
+        │    ├── entities
+        │    │   └── SalesItem.py
+        │    ├── errors
+        │    │   ├── SalesItemServiceError.py
+        │    │   ├── Error1.py
+        │    │   └── Error2.py
+        │    ├── repository
+        │    │   └── SalesItemRepository.py
+        │    └── service
+        │        ├── SalesItemService.py
+        │        └── SalesItemServiceImpl.py
+        ├── RestSalesItemController.py
+        └── SqlSalesItemRepository.py
+```
+
+The *businesslogic* directory could also be named *core*, *model*, or even *usecases*, especially if you are also using the *vertical slice design* principle where you put each vertical slice (feature) in a subdirectory of the *usecases* directory.
+
+Or if we have multiple input interface adapters (controllers) and output interface adapters (repositories):
+
+```
+sales-item-service
+└── src
+    └── salesitem
+        ├── businesslogic
+        │    ├── dtos
+        │    │   ├── InputSalesItem.py
+        │    │   └── OutputSalesItem.py
+        │    ├── entities
+        │    │   └── SalesItem.py
+        │    ├── errors
+        │    │   ├── SalesItemServiceError.py
+        │    │   ├── Error1.py
+        │    │   └── Error2.py
+        │    ├── repository
+        │    │   └── SalesItemRepository.py
+        │    └── service
+        │        ├── SalesItemService.py
+        │        └── SalesItemServiceImpl.py
+        ├── controllers
+        │    ├── FlaskRestSalesItemController.py
+        │    └── AriadneGraphQlSalesItemController.py
+        └── repositories
+             ├── SqlSalesItemRepository.py
+             └── MongoDbSalesItemRepository.py
+```
+
+If you follow the *clean microservice design* principle and add or change an interface adapter (e.g., a controller or a repository),
+you should not need to make any code changes to the business logic part of the service (the *businesslogic* directory).
+
+Below is the source code directory structure for the data exporter microservice designed in the previous
+chapter. There are subdirectories for the four subdomains: input, internal message, transformer, and output.
+A subdirectory is created for each common
+nominator in the class names. You can locate a particular file effortlessly by navigating the directory tree.
+You can grasp the contents of a directory with a glance because the number of source code files in each directory is low. The problem with directories containing many files
+is that finding the wanted file is not easy. For this reason, a single source code directory should ideally have 2-4 files. The absolute
+maximum is 5-7 files.
+
+Note that a couple of directories are left unexpanded below to shorten the example. It should be easy for the reader
+to infer the contents of the unexpanded directories.
+
+```
+src
+├── common
+├── input
+│   ├── config
+│   │   ├── parser
+│   │   │   ├── InputConfigParser.py
+│   │   │   └── JsonInputConfigParser.py
+│   │   ├── reader
+│   │   │   ├── InputConfigReader.py
+│   │   │   └── LocalFileSystemInputConfigReader.py
+│   │   ├── InputConfig.py
+│   │   └── InputConfigImpl.py
+│   └── message
+│       ├── consumer
+│       │   ├── InputMsgConsumer.py
+│       │   └── KafkaInputMsgConsumer.py
+│       ├── decoder
+│       │   ├── InputMsgDecoder.py
+│       │   └── AvroBinaryInputMsgDecoder.py
+│       ├── InputMessage.py
+│       └── KafkaInputMessage.py
+├── internalmessage
+│   ├── field
+│   ├── InternalMessage.py
+│   └── InternalMessageImpl.py
+├── transformer
+│   ├── config
+│   ├── field
+│   │   ├── impl
+│   │   │   ├── CopyFieldTransformer.py
+│   │   │   ├── ExprFieldTransformer.py
+│   │   │   ├── FilterFieldTransformer.py
+│   │   │   └── TypeConvFieldTransformer.py
+│   │   ├── FieldTransformer.py
+│   │   ├── FieldTransformers.py
+│   │   └── FieldTransformersImpl.py
+│   └── message
+│       ├── MsgTransformer.py
+│       └── MsgTransformerImpl.py
+└── output
+    ├── config
+    └── message
+        ├── encoder
+        └── producer
+```
+
+We could also structure the code according to the *clean microservice design* in the following way:
+
+```
+src
+├── common
+├── businesslogic
+│   ├── input
+│   │   ├── config
+│   │   │   ├── InputConfig.py
+│   │   │   ├── InputConfigImpl.py
+│   │   │   ├── InputConfigParser.py
+│   │   │   └── InputConfigReader.py
+│   │   └── message
+│   │       ├── InputMessage.java
+│   │       ├── InputMsgConsumer.py
+│   │       └── InputMsgDecoder.py
+│   ├── internalmessage
+│   │   ├── field
+│   │   ├── InternalMessage.java
+│   │   └── InternalMessageImpl.java
+│   ├── transformer
+│   │   ├── config
+│   │   ├── field
+│   │   │   ├── impl
+│   │   │   │   ├── CopyFieldTransformer.py
+│   │   │   │   ├── ExprFieldTransformer.py
+│   │   │   │   ├── FilterFieldTransformer.py
+│   │   │   │   └── TypeConvFieldTransformer.py
+│   │   │   ├── FieldTransformer.py
+│   │   │   ├── FieldTransformers.py
+│   │   │   └── FieldTransformersImpl.py
+│   │   └── message
+│   │       ├── MsgTransformer.py
+│   │       └── MsgTransformerImpl.py
+│   └── output
+│       ├── config
+│       └── message
+└── ifadapters
+    ├── config
+    │   ├── parser
+    │   │   └── json
+    │   │       ├── JsonInputConfigParser.py
+    │   │       ├── JsonTransformerConfigParser.py
+    │   │       └── JsonOutputConfigParser.py
+    │   └── reader
+    │       └── localfilesystem
+    │           ├── LocalFileSystemInputConfigReader.py
+    │           ├── LocalFileSystemTransformerConfigReader.py
+    │           └── LocalFileSystemOutputConfigReader.py
+    ├── input
+    │   ├── kafka
+    │   │   ├── KafkaInputMsgConsumer.py
+    │   │   └── KafkaInputMessage.java
+    │   └── AvroBinaryInputMsgDecoder.py
+    └── output
+        ├── CsvOutputMsgEncoder.py
+        └── PulsarOutputMsgProducer.py
+```
+
+From the above directory structure, we can easily see the following:
+
+- Configurations are in JSON format and read from the local file system
+- For the input, Avro binary messages are read from Apache Kafka
+- For the output, CSV records are produced to Apache Pulsar
+
+Any change we want or need to make in the *ifadapters* directory should not affect the business logic part in the
+*businesslogic* directory.
+
+Below is the source code directory structure for the anomaly detection microservice designed in the previous
+chapter. The *anomaly* directory is expanded. We can see that our implementation is using
+JSON for various parsing activities and [self-organizing maps](https://en.wikipedia.org/wiki/Self-organizing_map) (SOM) is used for anomaly detection. JSON and Apache Kafka are used
+to publish anomaly indicators outside the microservice. Adding
+new concrete implementations to the below directory structure is straightforward. For example, if we wanted to add YAML support
+for configuration files, we could create *yaml* subdirectories to place YAML-specific implementation classes.
+
+```
+src
+├── anomaly
+│   ├── detection
+│   │   ├── configuration
+│   │   │   ├── factory
+│   │   │   │   ├── AnomalyDetectionConfigFactory.py
+│   │   │   │   └── AnomalyDetectionConfigFactoryImpl.py
+│   │   │   ├── parser
+│   │   │   │   ├── AnomalyDetectionConfigParser.py
+│   │   │   │   └── JsonAnomalyDetectionConfigParser.py
+│   │   │   ├── AnomalyDetectionConfig.py
+│   │   │   └── AnomalyDetectionConfigImpl.py
+│   │   ├── engine
+│   │   │   ├── AnomalyDetectionEngine.py
+│   │   │   └── AnomalyDetectionEngineImpl.py
+│   │   ├── rule
+│   │   │   ├── factory
+│   │   │   │   ├── AnomalyDetectionRuleFactory.py
+│   │   │   │   └── AnomalyDetectionRuleFactoryImpl.py
+│   │   │   ├── parser
+│   │   │   │   ├── AnomalyDetectionRuleParser.py
+│   │   │   │   └── AnomalyDetectionRuleParserImpl.py
+│   │   │   ├── AnomalyDetectionRule.py
+│   │   │   └── AnomalyDetectionRuleImpl.py
+│   │   ├── AnomalyDetector.py
+│   │   └── AnomalyDetectorImpl.py
+│   ├── indicator
+│   │   ├── factory
+│   │   │   ├── AnomalyIndicatorFactory.py
+│   │   │   └── AnomalyIndicatorFactoryImpl.py
+│   │   ├── publisher
+│   │   │   ├── AnomalyIndicatorPublisher.py
+│   │   │   └── KafkaAnomalyIndicatorPublisher.py
+│   │   ├── serializer
+│   │   │   ├── AnomalyIndicatorSerializer.py
+│   │   │   └── JsonAnomalyIndicatorSerializer.py
+│   │   ├── AnomalyIndicator.py
+│   │   └── AnomalyIndicatorImpl.py
+│   └── model
+│       ├── factory
+│       │   ├── AnomalyModelFactory.py
+│       │   └── AnomalyModelFactoryImpl.py
+│       ├── training
+│       │   ├── engine
+│       │   │   ├── AnomalyModelTrainingEngine.py
+│       │   │   └── AnomalyModelTrainingEngineImpl.py
+│       │   ├── AnomalyModelTrainer.py
+│       │   └── SomAnomalyModelTrainer.py
+│       ├── AnomalyModel.py
+│       └── SomAnomalyModel.py
+├── common
+├── measurement
+├── app.py
+```
+
+For full-stack Python developers, let's have one more example with a *data-visualization-web-client*.
+
+This web client's UI consists of the following pages, which all include a common header:
+
+- Dashboards
+- Data Explorer
+- Alerts
+
+The *Dashboards* page contains a dashboard group selector, dashboard selector, and chart area to display the selected dashboard's charts.
+You can select the shown dashboard by first selecting a dashboard group and then a dashboard from that group.
+
+![Dashboards Page](resources/chapter3/images/dashboards_page.png)
+
+The *Data Explorer* page contains selectors for choosing a data source, measure(s), and dimension(s). The page also contains
+a chart area to display charts. Using the selectors, a user can change the shown measure(s) and dimension(s) for
+the currently selected chart in the chart area.
+
+![Data Explorer Page](resources/chapter3/images/data_explorer_page.png)
+
+Based on the above design, the web client can be divided into the following subdomains:
+
+- Common UI components
+  - Chart Area
+    - Chart
+- Header
+- Pages
+  - Alerts
+  - Dashboards
+  - Data Explorer
+
+The source code tree should look like the following:
+
+```
+src
+├── app
+│   ├── common
+│   │   └── chartarea
+│   │       └── chart
+│   ├── header
+│   └── pages
+│       ├── alerts
+│       ├── dashboards
+│       │   └── selectors
+│       │       ├── dashboardgroup
+│       │       └── dashboard
+│       └── dataexplorer
+│           └── selectors
+│               ├── datasource
+│               ├── dimension
+│               └── measure
+├── index.ts
+└── store.ts
+```
+
+Below is an example of what a single subdomain directory would look like when using React, Redux, and
+SCSS modules:
+
+```
+src
+├── app
+│   └── header
+│       ├── model
+│       │   ├── actions
+│       │   │   ├── AbstractHeaderAction.ts
+│       │   │   └── NavigateToPageAction.ts
+│       │   ├── services
+│       │   └── state
+│       │       ├── types
+│       │       ├── HeaderState.ts
+│       │       └── initialHeaderState.ts
+│       ├── view
+│       │    ├── navigation
+│       │    │   ├── NavigationView.module.scss
+│       │    │   └── NavigationView.tsx
+│       │    ├── HeaderView.module.scss
+│       │    └── HeaderView.tsx
+│       └── headerController.ts
+├── index.ts
+└── store.ts
+```
+
+In the above example, we have created two directories for the technical details of the *header* domain: model and view directories. The model directory
+contains actions, services, and the state, and the view directory contains the view component, its possible subcomponents, and
+CSS definitions. The model's state directory can contain a subdirectory for types
+used in the subdomain state. The state directory should always contain the type definition for the subdomain's state and the initial state.
+The services directory contains one or more services that use the respective backend services to control the backend model.
+
+## Avoid Comments Principle
+
+> ***Avoid comments in code. The only exception is when documenting the public API of a library.***
+
+Comments can be problematic. You cannot trust them 100% because they can be misleading, outdated, or downright wrong. You can only
+trust the source code itself. Comments are often entirely unnecessary and only make the code more verbose. Allowing comments can produce
+unreadable code containing bad names, which are explained by attaching comments. The code typically also contains long functions where functionality blocks
+are described with attached comments instead of refactoring the code by extracting well-named functions. The idea behind this principle is that
+when writing comments is disallowed, you are forced to communicate better with the code only.
+The following sections describe several ways to avoid writing comments and still keep your code understandable. The following things
+can be done to avoid writing comments:
+
+- Name things like classes, functions, and variables properly
+  - For example, if you are using a particular algorithm, don't document that algorithm in a comment, but name the respective class/function
+    so that it contains the algorithm name. Readers can then google the algorithm by name if unfamiliar with it
+- You should not add comments about variable/function types. Use type annotations everywhere
+- You don't need to comment that a function can raise an error. Use the function name *try* prefix convention described later in this chapter
+- Don't add a comment to a piece of code, but extract a new well-named function
+- Keep your functions small. They are easier to understand because they cannot contain too complex logic that could justify a comment
+- Don't add as a comment information that can be obtained from the version control system
+- Don't comment out the code. Just remove the unused code. The removed code will be available in the version control system forever
+- You don't have to comment on a function's logic. Code readers should be able to infer that information from the code itself
+  and the related unit tests. Complex code logic and behavior do not usually need comments if you have practiced *test-driven development* and a complete set of well-named unit tests is available.
+
+Code comments often duplicate information already available in the code itself or related tests. This is called information duplication, which should be avoided according to the *don't repeat yourself* (DRY) principle. This principle was introduced in the *Pragmatic Programmer* book by *David Thomas* and *Andrew Hunt*.
+
+Comments for a public API in a library are needed because the library needs API documentation that can be
+automatically generated from the comments to avoid situations where API comments and docs are out of sync.
+API documentation is usually unnecessary in non-library software components because you can access the API interface,
+implementation, and unit tests. The unit tests, for example, specify what the function does in different scenarios. The unit test name
+tells the scenario, and the expectations and assertions in the unit test code tell the expected behavior in the particular situation.
+API implementation and unit tests are not typically available for library users, and even if they are,
+a user should not adhere to them because they are internal details subject to change.
+
+### Name Things Properly
+
+When you name things like a function poorly, you might end up attaching a comment to the function. It is imperative to focus on naming things correctly. When following the *single responsibility principle*
+and *uniform naming principle*, it should be easier to name things correctly and avoid comments. Below is an example of
+a function with a comment:
+
+```python
+class MessageBuffer:
+    # Return False if buffer full,
+    # True if message written to buffer
+    def write(self, message: Message) -> bool:
+        # ...
+```
+
+If we drop the comment, we will have the following code:
+
+```python
+class MessageBuffer:
+    def write(self, message: Message) -> bool:
+        # ...
+```
+
+Dropping the comment alone is not the best solution because some crucial information is now missing. What does that boolean return
+value mean? It is not 100% clear. We can assume that returning `True` means the message was successfully written, but
+nothing about returning `False` is communicated. We can only assume it is some error, but we are not sure what error.
+
+In addition to removing the comment, we should give a better name for the function and rename it as follows:
+
+```python
+class MessageBuffer:
+    def write_if_buf_not_full(self, message: Message) -> bool:
+        pass
+```
+
+Now, the purpose of the function is clear, and we can be sure what the boolean return value means. It
+means whether the message was written to the buffer. Now we also know why the writing of a message can fail: the
+buffer is full. This will give the function caller sufficient information about what to do next. It should
+probably wait a while so the buffer reader has enough time to read messages from the buffer
+and free up some space.
+
+Below is a real-life example of C++ code where the comment and the function name do not match. Don't worry, you don't
+need to understand C++ to understand the example.
+
+```cpp
+    /**
+     * @brief Add new counter or get existing, if same labels used already.
+     * @param counterName Name of the counter
+     * @param help Help text added for counter, if new countername
+     * @param labels Specific labels for counter.
+     * @return counter pointer used when increasing counter, or nullptr
+     *         if metrics not initialized or invalid name or labels
+    */
+    static prometheus::Counter* addCounter(
+        std::string counterName,
+        std::string help,
+        const std::map<std::string, std::string>& labels);
+```
+
+In the above example, the function name tells it adds a counter, but the comment says it adds or gets an existing counter.
+The real problem is that once someone first reads the function name `addCounter`, they do not necessarily
+read the 'brief' in the comments because they immediately understand what the function does after reading its name: it should add a counter.
+We could improve the function's name and rename it to `addOrGetExistingCounter` as a solution.
+
+Below is a real-life example from a book that I once read:
+
+```python
+from typing import Protocol
+
+from Person import Person
+
+
+class Mediator(Protocol):
+    # To register an employee
+    def register(self, person: Person) -> None:
+        pass
+
+    # To send a message from one employee to another employee
+    def connect_employees(
+        self,
+        from_person: Person,
+        to_person: Person,
+        msg: str
+    ) -> None:
+        pass
+
+    # To display currently registered members
+    def display_detail(self) -> None:
+        pass
+```
+
+There are three functions in the above example, each of which has a problem.
+The first function is registering a person, but the comment says it is registering an employee. So, there is a mismatch
+between the comment and the code. In this case, I trust the code over the comment. The correction is to remove the comment
+because it does not bring any value. It only confuses.
+
+The second function says in the comment that it sends a message from one employee to another. The function name speaks
+about connecting employees, but the parameters are persons. I assume that a part of the
+comment is correct: to send a message from someone to someone else. But once again, I trust the code over the comment and assume the message is sent from one person to another. We should remove the comment and rename the function.
+
+In the third function, the comment adds information missing from the function name. The comment also
+discusses members, as other parts of the code speak about employees and persons. There are three different
+terms used: employee, person, and member. Just one term should be picked. Let's choose the term *person* and use it systematically.
+
+Below is the refactored version without the comments:
+
+```python
+class Mediator(Protocol):
+    def register(self, person: Person) -> None:
+        pass
+
+    def send(message: str, sender: Person, recipient: Person) -> None:
+        pass
+
+    def display_details_of_registered_persons(self) -> None:
+        pass
+```
+
+### Single Return Of Named Value At The End Of Function
+
+> ***A function should have a single return statement and return a named value at the end of the function. This allows the code reader to infer the meaning of the return value by looking at the end of the function.***
+
+Consider the following example:
+
+```python
+from typing import Protocol
+
+from CounterFamily import CounterFamily
+
+
+class Metrics(Protocol):
+    # ...
+
+    def add_counter(
+        self,
+        counter_family: CounterFamily,
+        labels: dict[str, str]
+    ) -> int:
+        pass
+
+    def increment_counter(
+        self,
+        counter_index: int,
+        increment_amount: int
+    ) -> None:
+        pass
+
+    # def add_gauge ...
+    # def set_gauge ...
+```
+
+What is the return value of the `add_counter` function? Someone might think a comment is needed to describe
+the return value because it is unclear what `int` means. Instead of writing a comment, we can introduce a named value
+(= variable/constant) to be returned from the function. The idea behind the named return value is that it communicates the semantics of the return
+value without the need for a comment. Below is the implementation for the `add_counter` function:
+
+```
+from typing import Protocol
+
+from CounterFamily import CounterFamily
+
+
+class Metrics(Protocol):
+    def add_counter(
+        self,
+        counter_family: CounterFamily,
+        labels: dict[str, str]
+    ) -> int:
+        # Perform adding a counter here and
+        # set value for the 'counter_index' variable
+        return counter_index
+```
+
+In the above implementation, we have a single return of a named value at the end of the function. All we have to do is look
+at the end of the function and spot the return statement, which should tell us the meaning of the mysterious `int` typed return value: It is a counter index. We can spot that the `increase_counter` function requires a `counter_index` argument, and this establishes a connection between calling the `add_counter` function first, storing the returned counter index, and
+later using that stored counter index in calls to the `increase_counter` function.
+
+### Return Type Aliasing
+
+In the previous example, there was the mysterious return value of type `int` in the `add_counter` function. We learned how
+introducing a named value returned at the end of the function helped to communicate the semantics of the return value. But there is
+an even better way to communicate the semantics of a return value. We can use type aliasing. Below is an example where
+we introduce a `CounterIndex` type alias for the `int` type:
+
+```
+from typing import Protocol
+
+from CounterFamily import CounterFamily
+
+
+CounterIndex = int
+
+class Metrics(Protocol):
+    # ...
+
+    def add_counter(
+        self,
+        counter_family: CounterFamily,
+        labels: dict[str, str]
+    ) -> CounterIndex:
+        pass
+
+    def increment_counter(
+        self,
+        counter_index: CounterIndex,
+        increment_amount: int
+    ) -> None:
+        pass
+
+    # def add_gauge ...
+    # def set_gauge_value ...
+```
+
+We can improve the above metrics example more. First of all, we should avoid the primitive obsession. We should not be returning an index
+from the `add_counter` method, but we should rename the method as `create_counter` and return an instance of a `Counter` class from
+the method. Then we should make the example more object-oriented by moving the `increment_counter` method to the `Counter` class
+and renaming it just `increment`. Also, the name of the `Metrics` class should be changed to `MetricFactory`.
+
+### Extract Constant for Boolean Expression
+
+By extracting a constant for a boolean expression, we can eliminate comments. Below is an example where a comment is written below an if-statement and its boolean expression:
+
+```python
+from Message import Message
+
+
+class MessageBuffer:
+    def write_if_buf_not_full(self, message: Message) -> bool:
+        message_was_written = False
+        if len(self.__messages) < self.__max_length:
+            # Buffer is not full
+            self.__messages.append(message)
+            message_was_written = True
+        return message_was_written
+```
+
+By introducing a constant to be used in the "buffer is full" check, we can get rid of the "Buffer is not full" comment:
+
+```python
+from Message import Message
+
+
+class MessageBuffer:
+    def write_if_buf_not_full(self, message: Message) -> bool:
+        message_was_written = False
+        buffer_is_not_full = len(self.__messages) < self.__max_length
+        if buffer_is_not_full:
+            self.__messages.append(message)
+            message_was_written = True
+        return message_was_written
+```
+
+When writing comparison expressions, remember to write the comparison so that it is fluent to read:
+
+```python
+# Wrong, not fluent to read
+if 'John' == customer_name:
+    # ...
+
+# Correct
+if customer_name == 'John':
+    # ...
+
+# Wrong
+buffer_is_not_full = self.__max_length > len(self.__messages)
+
+# Correct
+buffer_is_not_full = len(self.__messages) < self.__max_length
+```
+
+You should also have matching names for the variables being compared:
+
+```python
+# Correct
+buffer_is_not_full = len(self.__messages) < self.__max_length
+
+# Incorrect
+# Left side of comparison speaks about length and
+# right side speaks about size
+buffer_is_not_full = len(self.__messages) < self.__max_size
+```
+
+### Extract Named Constant or Enumerated Type
+
+If you encounter a [magic number](https://en.wikipedia.org/wiki/Magic_number_(programming)) in your code, you should introduce either a named constant or an enumerated type (enum) for that value.
+In the below example, we are returning two magic numbers, 0 and 1:
+
+```python
+import sys
+
+from Application import Application
+
+
+application = Application()
+
+if application.run():
+    # Application was run successfully
+    sys.exit(0)
+
+# Exit code: failure
+sys.exit(1)
+```
+
+Let's introduce an enumerated type, `ExitCode,` and use it instead of magic numbers:
+
+```python
+import sys
+from enum import IntEnum
+
+from Application import Application
+
+
+class ExitCode(IntEnum):
+    Success = 0
+    Failure = 1
+
+
+app_was_run = Application().run()
+
+exit_code = (
+    ExitCode.Success if app_was_run else ExitCode.Failure
+)
+
+sys.exit(exit_code)
+```
+
+It is now easy to add more exit codes with descriptive names later if needed.
+
+### Extract Function
+
+If you are planning to write a comment above a piece of code, you should extract that piece of code to a new function.
+You don't need to write that comment when you extract a well-named function. The name
+of the newly extracted function serves as documentation. Below is an example with some commented code:
+
+```python
+from Message import Message
+
+
+class MessageBuffer:
+    def write_fitting(self, messages: list[Message]) -> None:
+        if len(self.__messages) + len(messages) <= self.__max_length:
+            # All messages fit in buffer
+            self.__messages.extend(messages)
+            messages.clear()
+        else:
+            # All messages do not fit, write only messages that fit
+            nbr_of_msgs_that_fit = self.__max_length - len(messages)
+            self.__messages.extend(messages[:nbr_of_msgs_that_fit])
+            del messages[:nbr_of_msgs_that_fit]
+```
+
+Here is the same code with comments refactored out by extracting two new methods:
+
+```python
+from Message import Message
+
+
+class MessageBuffer:
+    def write_fitting(self, messages: list[Message]) -> None:
+        all_messages_fit = (
+            len(self.__messages) + len(messages) <= self.__max_length
+        )
+
+        if all_messages_fit:
+            self.__write_all(messages)
+        else:
+            self.__write_only_fitting(messages)
+
+    def __write_all(self, messages: list[Message]) -> None:
+        self.__messages.extend(messages)
+        messages.clear()
+
+    def __write_only_fitting(self, messages: list[Message]) -> None:
+        nbr_of_msgs_that_fit = self.__max_length - len(messages)
+        self.__messages.extend(messages[:nbr_of_msgs_that_fit])
+        del messages[:nbr_of_msgs_that_fit]
+
+```
+
+### Avoid Comments for Regular Expression
+
+When you have a complex regular expression, you might be tempted to attach a comment to it to explain the meaning
+of it. But there is an alternative way. You can split the complex regular expression into well-named parts and construct the final regular expression from those well-named parts. For example, suppose you must create a regular expression to validate phone numbers in the international format. In that case, you can split the regular expression into
+the following parts: plus sign, country code, area code, and the rest of the phone number (local number). You can define
+the regular expression using the parts: `intl_phone_nbr_reg_expr = plus_sign + country_code + area_code +
+local_number`
+
+### Avoiding Comments in Bash Shell Scripts
+
+Many programmers, myself included, don't enjoy the mysterious syntax of Linux shell commands and scripts.
+Even the syntax of the simplest expressions can be hard to understand and remember if you don't regularly work
+with scripts and commands. Of course, the best thing is to avoid writing complex Linux shell scripts and
+use a proper programming language like Python instead. But sometimes, performing some actions
+using a shell script is easier. Because the syntax and commands in shell scripts can be hard to understand, many developers tend to
+solve the problem by adding comments to scripts.
+
+Next, alternative ways to make scripts more understandable
+without comments are presented. Let's consider the below example from one real-life script I have bumped into:
+
+```bash
+create_network() {
+  #create only if not existing yet
+  if [[ -z "$(docker network ls | grep $DOCKER_NETWORK_NAME )" ]];
+  then
+    echo Creating $DOCKER_NETWORK_NAME
+    docker network create $DOCKER_NETWORK_NAME
+  else
+    echo Network $DOCKER_NETWORK_NAME already exists
+  fi
+}
+```
+
+Below is the same example with the following changes:
+
+- The comment was removed, and the earlier commented expression was moved to a well-named function
+- The negation in the expression was removed, and the contents of the *then* and *else* branches were swapped
+- Variable names were made camel case to enhance readability. All-caps names are harder to read.
+
+```bash
+dockerNetworkExists() { [[ -n "$(docker network ls | grep $1 )" ]]; }
+
+createDockerNetwork() {
+  if dockerNetworkExists $networkName; then
+    echo Docker network $networkName already exists
+  else
+    echo Creating Docker network $networkName
+    docker network create $networkName
+  fi
+}
+```
+
+If your script accepts arguments, give the arguments proper names, for example:
+
+```bash
+dataFilePathName=$1
+schemaFilePathName=$2
+```
+
+The script reader does not have to remember what `$1` or `$2` means, and you don't have to insert
+any comments to clarify the meaning of the arguments.
+
+If you have a complex command in a Bash shell script, you should not attach a comment to it but extract a function
+with a proper name to describe the command.
+
+The below example contains a comment:
+
+```bash
+# Update version in Helm Chart.yaml file
+sed -i "s/^version:.*/version: $VERSION/g" helm/service/Chart.yaml
+```
+
+Here is the above example refactored to contain a function and a call to it:
+
+```bash
+updateHelmChartVersionInChartYamlFile() {
+  sed -i "s/^version:.*/version: $1/g" helm/service/Chart.yaml
+}
+
+updateHelmChartVersionInChartYamlFile $version
+```
+
+Here is another example:
+
+```bash
+getFileLongestLineLength() {
+  echo $(awk '{ if (length($0) > max) max = length($0) } END { print max }' $1)
+}
+
+configFileLongestLineLength = $(getFileLongestLineLength $configFilePathName)
+```
+
+## Function Single Return Principle
+
+> ***Prefer a single return statement at the end of a function to clearly communicate the return value's meaning and make refactoring the function easier.***
+
+A single return statement with a named value at the end of a function clearly communicates the return value semantics
+if the return value type does not directly communicate it. For example, if you return a value of a primitive
+type like an integer or boolean from a function, what the return value means is not necessarily 100% clear. But when you return a named value at the end of the
+function, the name of the returned variable communicates the semantics.
+
+You might think that being unable to return a value in the middle of a function would make
+the function less readable because of lots of nested if statements. This is possible, but one should remember that
+a function should be small. Aim to have a maximum of 5-9 lines of statements
+in a single function. Following that rule, you never have *a hell of nested if-statements* inside
+a single function.
+
+Having a single return statement at the end of a function makes refactoring the function easier. You can use automated
+refactoring tools provided by your IDE. It is always harder to extract a new function from code containing
+a return statement. The same applies to loops with a *break* or *continue* statement. It is easier to refactor code
+inside a loop that does not contain a break or continue statement.
+
+In some cases, returning a single value at the end of a function makes the code more straightforward and requires fewer lines.
+Below is an example of a function with two return locations:
+
+```python
+from threading import Thread
+
+from InputMessage import InputMessage
+
+
+class TransformThread(Thread):
+    # ...
+
+    def transform(self, input_message: InputMessage) -> bool:
+        output_message = self.__output_message_pool.acquire_message()
+
+       (
+           msg_was_transformed,
+           msg_is_filtered_in,
+       ) = self.__message_transformer.transform(
+           input_message, output_message
+       )
+
+        if msg_was_transformed and msg_is_filtered_in:
+            self.__output_messages.append(output_message)
+        else:
+            self.__output_message_pool.return_message(output_message)
+            if not msg_was_transformed:
+                return False
+
+        return True
+```
+
+When analyzing the above function, we notice that it transforms an input message into an output message.
+We can conclude that the function returns *True* on successful message transformation. We can shorten the function by refactoring
+it to contain only one return statement. After refactoring, it is also 100% clear what the function return value means.
+
+```python
+from threading import Thread
+
+from InputMessage import InputMessage
+
+
+class TransformThread(Thread):
+    # ...
+
+    def transform(self, input_message: InputMessage) -> bool:
+        output_message = self.__output_message_pool.acquire_message()
+
+        (
+            msg_was_transformed,
+            msg_is_filtered_in,
+        ) = self.__message_transformer.transform(
+            input_message, output_message
+        )
+
+        if msg_was_transformed and msg_is_filtered_in:
+            self.__output_messages.append(output_message)
+        else:
+            self.__output_message_pool.return_message(output_message)
+
+        return msg_was_transformed
+```
+
+As an exception to this rule, you can have multiple return statements in a function when the function has an optimal length (max 5-9 statements)
+and would become too long if it is refactored to contain a single return statement. Additionally, it is required that
+the semantic meaning of the return value is evident from the function name or the return type of the function. Below is
+an example of a function with multiple return statements. It is also evident from the function name what the return value means.
+Also, the length of the function is optimal: seven statements.
+
+```python
+from typing import Protocol, TypeVar
+
+T = TypeVar('T')
+
+
+class MyIterator(Protocol[T]):
+    def has_next_item(self) -> bool:
+        pass
+
+    def get_next_item(self) -> T:
+        pass
+
+def are_equal(
+    iterator: MyIterator[T],
+    another_iterator: MyIterator[T]
+) -> bool:
+    while iterator.has_next_item():
+        if another_iterator.has_next_item():
+            if (
+                iterator.get_next_item()
+                != another_iterator.get_next_item()
+            ):
+                return False
+        else:
+            return False
+
+    return True
+```
+
+If we refactored the above code to contain a single return statement, the code, as shown below, would become too long (10 statements) to
+fit in one optimal-sized function. In this case, we should prefer the above code over the below code.
+
+```python
+def are_equal(
+    iterator: MyIterator[T],
+    another_iterator: MyIterator[T]
+) -> bool:
+    iters_are_equal = True
+
+    while iterator.has_next_item():
+        if another_iterator.has_next_item():
+            if (
+                iterator.get_next_item()
+                != another_iterator.get_next_item()
+            ):
+                iters_are_equal = False
+                break
+        else:
+            iters_are_equal = False
+            break
+
+    return iters_are_equal
+```
+
+As the second exception to this rule, you can use multiple return locations in a factory because you know
+from the factory name what type of objects it creates. Below is an example factory with multiple return statements:
+
+```python
+from enum import Enum
+
+
+class CarType(Enum):
+    AUDI = 1
+    BMW = 2
+    MERCEDES_BENZ = 3
+
+
+class Car:
+    # ...
+
+
+class Audi(Car):
+    #...
+
+
+class Bmw(Car):
+    # ...
+
+
+class MercedesBenz(Car):
+    # ...
+
+
+class CarFactory:
+    def create_car(self, car_type: CarType) -> Car:
+        match car_type:
+            case CarType.AUDI:
+                return Audi()
+            case CarType.BWM:
+                return Bmw()
+            case CarType.MERCEDES_BENZ:
+                return MercedesBenz()
+            case _:
+                raise ValueError('Invalid car type')
+```
+
+## Use Type Annotations for Production Code Principle
+
+> ***Use type annotations when implementing production software. You can use untyped Python for non-production code like integration, end-to-end, and automated non-functional tests.***
+
+You can manage with a trivial software component without types, but when it grows bigger, and more people are involved, the benefits of static typing become evident.
+
+Let's analyze what potential problems using an untyped language might incur:
+
+- Function arguments might be given in the wrong order
+- Function argument might be given with the wrong type
+- Function return value type might be misunderstood
+- Refactoring code is more difficult
+- Forced to write public API comments to describe function signatures
+- Type errors are not necessarily found in testing
+
+### Function Arguments Might Be Given in Wrong Order
+
+When not using type annotations for functions, you can accidentally give function arguments in the wrong order.
+When you use type annotations, this kind of error is less common. Modern IDEs can display inlay hints for parameters in a function call. This is a feature you should consider enabling in your IDE.
+Those parameter hints might reveal cases where arguments for a function are not given in the correct order.
+
+### Function Argument Might Be Given with Wrong Type
+
+You can give a function argument with the wrong type when type annotations are not used. For example,
+a function requires a string representation of a number, but you provide a number. Naming function arguments correctly can help. Instead of
+naming a string argument, *amount*, the argument should be named as *amount_string* or *amount_as_string*.
+
+### Function Return Value Type Might Be Misunderstood
+
+Determining the function return value type can be difficult. It is not necessarily 100% clear from the name of the function. For example, if you have a function named `get_value`, the return value type is not 100% clear. It might be apparent only if you know the context of the function well. As an improvement,
+the function should be appropriately named, for example: `get_value_as_string()`, if the returned value is always a string. If the return value type is unclear
+when looking at the function name, you must analyze the function's source code to determine the return value
+type. That is unnecessary and error-prone manual work that can be avoided using function return type annotations.
+
+### Refactoring Code Is More Difficult
+
+Refactoring code is usually more difficult if you don't have type annotations. But when you have type annotations and
+make a change to, e.g., a function argument type, you will get type check errors in parts of code where this function
+is called. Then, it is easy to refactor those parts. But if you didn't have type annotations and made this same change, you
+would have to manually find all the places where a change is needed, which is clearly more error-prone.
+
+### Forced to Write Public API Comments
+
+You might be forced to document a public API using comments when not using type annotations.
+This is additional work that could be avoided by using type annotations. Writing API documentation with
+comments is error-prone. You can accidentally write wrong information in the API documentation or
+forget to update the documentation when you make changes to the API code itself. Similarly, the
+API documentation readers can make mistakes. They might not read the API documentation at all. Or they have read it earlier but later misremember it.
+
+### Type Errors Are Not Found in Testing
+
+This is the biggest problem. You might think that if you have mistakes in your code related to having correct function arguments
+with the correct types, testing will reveal those mistakes. This is typically a wrong assumption.
+Unit tests won't find the issues because you mock other classes and their methods. You can only find
+the issues in integration testing when you integrate the software component (i.e., test functions calling
+other real functions instead of mocks). According to the testing pyramid, integration tests only cover a subset of the codebase,
+less than unit tests. Depending on the code coverage of the integration tests, some function argument order
+or argument/return value type correctness issues may be left untested and escape to production.
+
+## Refactoring Principle
+
+> ***You cannot write the perfect code on the first try, so you should always reserve some time for future refactoring.***
+
+You must refactor even if you write code for a new software component. Refactoring is not related
+to legacy codebases only. If you don't refactor, you let technical debt grow in the software. The main idea
+behind refactoring is that no one can write the perfect code on the first try. Refactoring means that you
+change code without changing the actual functionality. After refactoring, most tests should still
+pass, the code is organized differently, and you have a better object-oriented design and improved naming of things.
+Refactoring does not usually affect integration tests but can affect unit tests depending on the type and scale
+of refactoring. Keep this in mind when estimating refactoring effort. When you practice test-driven development (TDD), you
+are bound to refactor. Refactoring is a practice built into the TDD process. In TDD, the final function implementation is a result of a series of
+refactorings. This is one of the biggest benefits of TDD. We will discuss TDD more in the next chapter.
+
+Software developers don't necessarily reserve any or enough time for refactoring when they plan things.
+When we provide work estimates for epics, features, and user
+stories, we should be conscious of the need to refactor and add some extra time to our initial work estimates
+(which don't include refactoring). When you use TDD, you start automatically reserving some time for refactoring because refactoring is an integral part of the TDD process.
+Refactoring is work that is not necessarily understood clearly by the management.
+The management should support the need to refactor even if it does not bring clear added
+value to an end user. But it brings value by not letting the codebase rot and removing technical debt. If you have
+software with lots of accumulated technical debt, developing new features and maintaining the software is costly. Also,
+the quality of the software is lower, which can manifest in several bugs and lowered customer satisfaction.
+
+Below is a list of the most common [code smells](https://en.wikipedia.org/wiki/Code_smell) and refactoring techniques to resolve them:
+
+| Code Smell                                 | Refactoring Solution                   |
+|--------------------------------------------|----------------------------------------|
+| Non-descriptive name                       | Rename                                 |
+| Long method                                | Extract method                         |
+| Large class                                | Extract class                          |
+| Complex expression                         | Extract constant                       |
+| Long switch-case or if/elif/else statement | Replace conditionals with polymorphism |
+| Long parameter list                        | Introduce parameter object             |
+| Shotgun surgery                            | Replace conditionals with polymorphism |
+| Negated boolean condition                  | Invert if-statement                    |
+| Anemic object                              | Creating rich object                   |
+
+There are other refactoring techniques, but the ones explained here are the most relevant and valuable. You can
+find other refactoring techniques in *Martin Fowler*'s book *Refactoring*. Some of the refactorings presented in that book
+are pretty self-evident for experienced OOP practitioners; others are also handled in this book but scattered around and described as part of different principles and patterns, and some refactorings are primarily for legacy code only. You don't need them when writing new code with appropriate linter settings active. One example of such a refactoring is "Remove Assignments to Parameters".
+You don't need that when writing new code because you should have a linting rule that disallows assignments to parameters.
+
+### Rename
+
+This is probably the single most used refactoring technique. You often don't get the names right on the first try
+and need to do renaming. Modern IDEs offer tools that help rename things in the code: interfaces, classes,
+functions, and variables. The IDE's renaming functionality is always better than the plain old
+search-and-replace method. When using the search-and-replace method, you can accidentally rename something you do not want to be renamed or don't rename something that should have been renamed.
+
+### Extract Method
+
+This is probably the second most used refactoring technique. When you implement a public method of a class, the method
+quickly grows in the number of code lines. A function should contain a maximum of 5-9 statements to keep it readable and understandable.
+When a public method is too long, you should extract one or more private methods and call these private methods
+from the public method. Every modern IDE has an *extract method* refactoring tool that allows you to extract
+private methods easily. Select the code lines you want to extract to a new method and press the IDE's shortcut key
+for the *extract method* functionality. Then, give a descriptive name for the extracted method, and you are
+done. (An additional thing you can do is to organize the arguments of the extracted method in better order
+before completing the extraction in the IDE). In some cases, the refactoring is not automatic. For example, if the code to be extracted contains a *return*, *break*,
+or *continue* statement, that affects the execution flow of the function (causing multiple return points). To keep
+your code refactorable, avoid using *break* and *continue* statements and have only a single return statement
+at the end of the function.
+
+### Extract Class
+
+This refactoring technique is used to make a large class smaller. A large class contains several hundreds of
+lines of code or tens of methods. To make a class smaller, you need to extract one or more behavioral classes from it and use them in the original class. This refactoring technique allows you to use the *strategy pattern* described
+in the previous chapter. Let's have a simple example with a `Bird` class, which we assume to be large:
+
+```python
+class Bird:
+    def move(self):
+        # This method uses the below helper methods
+        # ...
+
+    def make_sound(self):
+        # This method uses the below helper methods
+        # ...
+
+    # Possibly some other public methods ...
+
+    def __move_helper1(self):
+        # ...
+
+    # ...
+
+    def __move_helper4(self):
+        # ...
+
+    def make_sound_helper1(self):
+        # ...
+
+    # ...
+
+    def make_sound_helper4(self):
+        # ...
+```
+
+To make the above class smaller, we can extract two behavioral classes: `BirdMover` and `BirdSoundMaker`.
+After refactoring, we have the following classes:
+
+```python
+from typing import Protocol
+
+class BirdMover(Protocol):
+    def move(self):
+        pass
+
+
+class BirdMoverImpl(BirdMover):
+    def move(self):
+        # ...
+
+    def __move_helper1(self):
+            # ...
+
+    # ...
+
+    def __move_helper4(self):
+        # ...
+
+
+class BirdSoundMaker:
+    def make_sound(self):
+        pass
+
+
+class BirdSoundMakerImpl(BirdSoundMaker):
+    def make_sound(self):
+        # ...
+
+    def make_sound_helper1(self):
+        # ...
+
+    # ...
+
+    def make_sound_helper4(self):
+        # ...
+
+
+class Bird:
+    def __init__(self, mover: BirdMover, sound_maker: BirdSoundMaker):
+        self.__mover: Final = mover
+        self.__sound_maker: Final = sound_maker
+
+    def move(self):
+        # Call self.__mover.move()
+
+    def make_sound(self):
+        # Call self.__sound_maker.make_sound()
+
+     # Possibly some other public methods ...
+```
+
+The above solution allows us to use the *strategy pattern*. We can introduce new classes that implement the `BirdMover` and `BirdSoundMaker` protocols and supply them to the `Bird` class constructor. We can now modify the behavior of the `Bird` class
+using the *open-closed principle*.
+
+### Extract Constant
+
+If you have a complex expression (boolean or numeric), assign the value of the expression to a constant.
+The name of the constant conveys information about the expression. Below is an example where we make the if-statements read better
+by extracting expressions to constants:
+
+```python
+# ...
+
+if (
+    data_source_selector_is_open
+    and measure_selector_is_open
+    and dimension_selector_is_open
+):
+    data_source_selector.style.height = f'{0.2 * available_height}px'
+    measure_selector.style.height =  f'{0.4 * available_height}px'
+    dimension_selector.style.height = f'{0.4 * availableHeight}px'
+elif (
+     not data_source_selector_is_open
+     and not measure_selector_is_open
+     and dimension_selector_is_open
+):
+    dimension_selector.style.height = f'{available_height}px'
+```
+
+Let's extract constants:
+
+```python
+# ...
+
+all_selectors_are_open = (
+    data_source_selector_is_open
+    and measure_selector_is_open
+    and dimension_selector_is_open
+)
+
+only_dimension_selector_is_open = (
+    not data_source_selector_is_open
+    and not measure_selector_is_open
+    and dimension_selector_is_open
+)
+
+if all_selectors_are_open:
+    data_source_selector.style.height = f'{0.2 * available_height}px'
+    measure_selector.style.height =  f'{0.4 * available_height}px'
+    dimension_selector.style.height = f'{0.4 * availableHeight}px'
+elif only_dimension_selector_is_open:
+    dimension_selector.style.height = f'{available_height}px'
+```
+
+Below is an example where we return a boolean expression:
+
+```python
+class AvroFieldSchema:
+    # ...
+
+    def equals(self, other_field_schema: 'AvroFieldSchema') -> bool:
+        return (
+            self.__type == other_field_schema.type
+            and self.__name[self.__name.find('.') + 1 :]
+            == other_field_schema.name[
+                other_field_schema.name.find('.') + 1 :
+            ]
+        )
+```
+
+It can be challenging to understand what the boolean expression means.
+We could improve the function by adding a comment: (We assume
+that each field name has a root namespace that cannot contain a dot character)
+
+```python
+class AvroFieldSchema:
+    # ...
+
+    def equals(self, other_field_schema: 'AvroFieldSchema') -> bool:
+        # Field schemas are equal if field types are equal and
+        # field names without the root namespace are equal
+        return (
+            self.__type == other_field_schema.type
+            and self.__name[self.__name.find('.') + 1 :]
+            == other_field_schema.name[
+                other_field_schema.name.find('.') + 1 :
+            ]
+        )
+```
+
+But we should not write comments because comments are never 100% trustworthy. It is possible that a comment and the related code are not in synchrony: someone has changed the function without updating the comment or modified only the comment but
+did not change the function. Let's refactor the above example by removing the comment and extracting multiple constants.
+The below function is longer than the original, but it is, of course, more readable. If you look
+at the last two statements of the method, you can understand in what case two field schemas
+are equal. It should be the compiler's job to make the longer version of the function below as performant as the original
+function.
+
+```python
+class AvroFieldSchema:
+    # ...
+
+    def equals(self, other_field_schema: 'AvroFieldSchema') -> bool:
+        name_without_root_ns = self.__name[self.__name.find('.') + 1 :]
+
+        other_field_name_without_root_ns = other_field_schema.name[
+            other_field_schema.name.find('.') + 1 :
+        ]
+
+        types_and_names_without_root_ns_are_equal = (
+            self.__type == other_field_schema.type
+            and name_without_root_ns == other_field_name_without_root_ns
+        )
+
+        return types_and_names_without_root_ns_are_equal
+```
+
+### Replace Conditionals with Polymorphism
+
+Suppose you encounter a sizeable match-case statement or if/elif-structure in your code (not considering
+code in factories). It means your software component does not have a proper object-oriented design.
+You should replace the conditionals with polymorphism. When you introduce proper OOD
+in your software component, you move the functionality from a match statement's case branches to different
+classes that implement a particular interface. And similarly, you move the code from if and elif-statements
+to different classes that implement a specific interface. This way, you can eliminate the match-case and if/elif-statements
+and replace them with polymorphic method calls. Crafting proper OOD helps in creating a software component with classes
+that have high cohesion. The functionality of the classes is no longer scattered around in the codebase.
+
+Below is an example of a non-object-oriented design:
+
+```python
+def do_something_with(chart: Chart):
+    if chart.type == 'column':
+        # do this ...
+    elif chart.type == 'pie':
+        # do that ...
+    elif chart.type == 'geographic-map':
+        # do a third thing ...
+```
+
+Let's replace the above conditionals with polymorphism:
+
+```python
+from typing import Protocol
+
+
+class Chart(Protocol):
+    def do_something(self) -> None:
+        pass
+
+
+class ColumnChart(Chart):
+    def do_something(self) -> None:
+        # do this ...
+
+
+class PieChart(Chart):
+    def do_something(self) -> None:
+        # do that ...
+
+
+class GeographicMapChart(Chart):
+    def do_something(self) -> None:
+        # do a third thing
+
+
+def do_something_with(chart: Chart):
+    chart.do_something()
+```
+
+Suppose you are implementing a data visualization application and have many places in your code where you check the chart type and need to introduce a new chart type.
+It could mean you must add a new *case* or *elif* statement in many places in the code. This approach is very error-prone.
+It is called *shotgun surgery* because you need to find all the places in the codebase where the code needs to be modified.
+What you should do is conduct proper object-oriented design and introduce a new chart class containing the new functionality
+instead of introducing that new functionality by modifying code in multiple places.
+
+### Introduce Parameter Object
+
+If you have more than 5-7 parameters for a function, you should introduce a parameter object to reduce
+the number of parameters to keep the function signature more readable. Below is an example constructor
+with too many parameters:
+
+```python
+class KafkaConsumer:
+    def __init__(
+        self,
+        brokers: list[str],
+        topics: list[str],
+        extra_config_entries: list[str],
+        tls_is_used: bool,
+        cert_should_be_verified: bool,
+        ca_file_path_name: str,
+        cert_file_path_name: str,
+        key_file_path_name: str
+   ):
+       # ...
+```
+
+Let's group the Transport Layer Security (TLS) related parameters to a parameter class named `TlsOptions`:
+
+```python
+class TlsOptions:
+    def __init__(
+        self,
+        tls_is_used: bool,
+        cert_should_be_verified: bool,
+        ca_file_path_name: str,
+        cert_file_path_name: str,
+        key_file_path_name: str
+    ):
+        # ...
+```
+
+Now we can modify the `KafkaConsumer` constructor to utilize the `TlsOptions` parameter class:
+
+```python
+from TlsOptions import TlsOptions
+
+
+class KafkaConsumer:
+    def __init__(
+        self,
+        brokers: list[str],
+        topics: list[str],
+        extra_config_entries: list[str],
+        tls_options: TlsOptions
+   ):
+       # ...
+```
+
+### Invert If-Statement
+
+This is a refactoring that a modern IDE can do for you.
+
+Below is a Python example with a negated boolean expression in the if-statement condition.
+Notice how difficult the boolean expression reads: `host_mount_folder is not None`. It is a double-negative statement
+and thus can be difficult to read.
+
+```python
+import os
+
+
+def get_behave_test_folder(relative_test_folder: str = ''):
+    host_mount_folder = os.environ.get("HOST_MOUNT_FOLDER")
+
+    if host_mount_folder is not None:
+        final_host_mount_folder = host_mount_folder
+        if host_mount_folder.startswith('/mnt/c/'):
+            final_host_mount_folder = host_mount_folder.replace(
+                '/mnt/c/', '/c/', 1
+            )
+        behave_test_folder = (
+            final_host_mount_folder + '/' + relative_test_folder
+        )
+    else:
+        behave_test_folder = os.getcwd()
+
+    return behave_test_folder
+```
+
+Let's refactor the above code so that the if and else statements are inverted:
+
+```python
+def get_behave_test_folder(relative_test_folder: str = ''):
+    host_mount_folder = os.environ.get("HOST_MOUNT_FOLDER")
+
+    if host_mount_folder is None:
+        behave_test_folder = os.getcwd()
+    else:
+        final_host_mount_folder = host_mount_folder
+        if host_mount_folder.startswith('/mnt/c/'):
+            final_host_mount_folder = host_mount_folder.replace(
+                '/mnt/c/', '/c/', 1
+            )
+        behave_test_folder = (
+            final_host_mount_folder + '/' + relative_test_folder
+        )
+
+    return behave_test_folder
+```
+
+Below is another example:
+
+```python
+if name != 'some name':
+    # Do thing 1 ...
+else:
+    # Do thing 2 ...
+```
+
+We should not have a negation in the condition of the if-statement. Let's refactor the above example:
+
+```python
+if name == 'some name':
+    # Do thing 2 ...
+else:
+    # Do thing 1 ...
+```
+
+### Creating Rich Object
+
+An object can be a so-called [anemic object](https://en.wikipedia.org/wiki/Anemic_domain_model) with little or no behavior.
+The object class might only contain attributes and getters and setters for them, making it a kind of data class only.
+Sometimes, this is okay if there is no business
+logic related to the object, but many times, there exists some business logic, but that logic is not implemented in the anemic object
+class itself but in other places in the code. This kind of software "design" (a better term is lack of design) is deemed to be problematic when you need to change the anemic object class. You might need to make changes to various unrelated places in the code. Making all these changes is manual and error-prone work.
+Making those changes is called [shotgun surgery](https://en.wikipedia.org/wiki/Shotgun_surgery). What you should do is make an anemic object a rich object.
+This is done by moving behavior from other classes to the anemic class, making it a rich class. A rich class typically has attributes and behavior but
+it lacks getters and setters to enforce proper encapsulation of the object state.
+
+Let's have an example of a anemic class:
+
+```python
+class Rectangle:
+    def __init__(self, width: float, height: float):
+        self.__width = width
+        self.__height = height
+
+    @property
+    def width(self) -> float:
+        return self.__width
+
+    @property
+    def height(self) -> float:
+        return self.__height
+
+    @width.setter
+    def width(self, width: float) -> None:
+        self.__width = width
+
+    @height.setter
+    def height(self, height: float) -> None:
+        self.__height = height
+
+
+class Drawer:
+    # ...
+
+    def draw_rectangle(rectangle: Rectangle) -> None:
+        # ...
+
+class Calculator:
+    # ...
+
+    def calc_rect_area(rectangle: Rectangle) -> float:
+        # ...
+
+    def calc_rect_perimeter(rectangle: Rectangle) -> float:
+        # ...
+
+class Sizer:
+    # ...
+
+    def increase_rect_width(
+        rectangle: Rectangle,
+        percentage: float
+    ) -> None:
+        # ...
+
+     def increase_rect_height(
+        rectangle: Rectangle,
+        percentage: float
+    ) -> None:
+        # ...
+```
+
+What we should do is to make the `Rectangle` objects rich objects by moving functionality from various classes
+into the `Rectangle class` and removing the getters and setters:
+
+```python
+class Rectangle:
+    def __init__(self, width: float, height: float):
+        self.__width = width
+        self.__height = height
+
+    def draw(self) -> None:
+        # Implement drawing here ...
+
+    def calculate_area(self) -> float:
+        # Calculate area here ...
+
+    def calculate_perimeter(self) -> float:
+        # Calculate perimeter here ...
+
+    def increase_width(self, percentage: float) -> None:
+        # Increase width here ...
+
+    def increase_height(self, percentage: float) -> None:
+        # Increase height here ...
+```
+
+Let's imagine that the methods added to the `Rectangle` class are large, and the whole class becomes too large.
+In that case, we can use the *bridge pattern* and refactor the classes as shown below. We still have a rich `Rectangle` class
+with attached behaviour and we do not need any getters or setters because we are not passing the `self` to any outside
+object of the `Rectangle` class.
+
+```python
+class Drawer:
+    # ...
+
+    def draw_rectangle(self, width: float, height: float) -> None:
+        pass
+
+
+class Calculator:
+    # ...
+
+    def calc_rect_area(self, width: float, height: float) -> float:
+        pass
+
+    def calc_rect_perimeter(self, width: float, height: float) -> float:
+        pass
+
+
+class Sizer:
+    # ...
+
+    def increase(self, length: float, percentage: float) -> float:
+        pass
+
+
+class Rectangle:
+    def __init__(
+        self,
+        width: float,
+        height: float,
+        drawer: Drawer,
+        calculator: Calculator,
+        sizer: Sizer,
+    ):
+        self.__width = width
+        self.__height = height
+        self.__drawer = drawer
+        self.__calculator = calculator
+        self.__sizer = sizer
+
+    def draw(self) -> None:
+        self.__drawer.draw_rectangle(self.__width, self.__height)
+
+    def calculate_area(self) -> float:
+        return self.__calculator.calc_rect_area(
+            self.__width, self.__height
+        )
+
+    def calculate_perimeter(self) -> float:
+        return self.__calculator.calc_rect_perimeter(
+            self.__width, self.__height
+        )
+
+    def increase_width(self, percentage: float) -> None:
+        self.__width = self.__sizer.increase(self.__width, percentage)
+
+    def increase_height(self, percentage: float) -> None:
+        self.__height = self.__sizer.increase(self.__height, percentage)
+```
+
+You can see from the above code that we no longer need to perform *shotgun surgery* if we need to change the `Rectangle` class. For example, let's say that our rectangles should always have a height double the width. We can refactor the `Rectangle` class to the following:
+
+```python
+class Rectangle:
+    def __init__(
+        self,
+        width: float,
+        drawer: Drawer,
+        calculator: Calculator,
+        sizer: Sizer,
+    ):
+        self.__width = width
+        self.__height = 2 * width
+        self.__drawer = drawer
+        self.__calculator = calculator
+        self.__sizer = sizer
+
+    def draw(self) -> None:
+        self.__drawer.draw_rectangle(self.__width, self.__height)
+
+    def calculate_area(self) -> float:
+        return self.__calculator.calc_rect_area(
+            self.__width, self.__height
+        )
+
+    def calculate_perimeter(self) -> float:
+        return self.__calculator.calc_rect_perimeter(
+            self.__width, self.__height
+        )
+
+    def increase_width(self, percentage: float) -> None:
+        self.__width = self.__sizer.increase(self.__width, percentage)
+        self.__height = 2 * self.__width
+
+    def increase_height(self, percentage: float) -> None:
+        self.__height = self.__sizer.increase(self.__height, percentage)
+        self.__width = self.__height / 2
+```
+
+## Static Code Analysis Principle
+
+> ***Let the computer find bugs and issues in the code for you.***
+
+Static code analysis tools find bugs and design-related issues on your behalf. Use multiple static code analysis tools to get the full benefit. Different tools might detect
+different issues. Using static code analysis tools frees people's time in code reviews to focus on things that automation cannot tackle.
+
+Below is a list of some popular static code analysis tools for Python:
+
+- [PyLint](https://pylint.pycqa.org/en/latest/index.html)
+- [Ruff](https://docs.astral.sh/ruff/)
+- [SonarLint](https://www.sonarsource.com/products/sonarlint/)
+- [SonarQube/SonarCloud](https://www.sonarsource.com/products/sonarqube/)
+- [Black](https://black.readthedocs.io/en/stable/) (Code formatter)
+- [Blue](https://blue.readthedocs.io/en/latest/) (Code formatter)
+- [Mypy](https://mypy-lang.org/)
+- [Jetbrains PyCharm](https://www.jetbrains.com/pycharm/) inspections
+
+Infrastructure and deployment code should be treated the same way as source code. Remember to run static code analysis
+tools on your infrastructure and deployment code, too. Several tools are available for analyzing infrastructure and deployment code,
+like [Checkcov](https://www.checkov.io/), which can be used for analyzing Terraform, Kubernetes, and Helm code. Helm tool contains a linting command
+to analyze Helm chart files, and [Hadolint](https://github.com/hadolint/hadolint) is a tool for analyzing *Dockerfiles* statically.
+
+### Common Static Code Analysis Issues
+
+| Issue                                                                                        | Description/Solution                                                                                                                                                                                                                                |
+|----------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Chain of instance of checks                                                                  | This issue indicates a chain of conditionals in favor of object-oriented design. Use the *replace conditionals with polymorphism* refactoring technique to solve this issue.                                                                        |
+| Feature envy                                                                                 | Use the *don't ask, tell principle* from the previous chapter to solve this issue.                                                                                                                                                                  |
+| Use of concrete classes                                                                      | Use the *program against interfaces* principle from the previous chapter to solve this issue.                                                                                                                                                       |
+| Assignment to a function argument                                                            | Don't modify function arguments but introduce a new variable.                                                                                                         |
+| Commented-out code                                                                           | Remove the commented-out code. If you need that piece of code in the future, it is available in the version control system forever.                                                                                                                 |
+| Const correctness                                                                            | Make attributes and variables `Final` whenever possible to achieve immutability and avoid accidental modifications.                                                                                                                          |
+| Nested match statement                                                                       | Use match statements mainly only in factories. Do not nest them.                                                                                                                                                                                   |
+| Nested conditional expression (ternary operator)                                              | Conditional expression should not be nested because it greatly hinders the code readability.                                                                                                                                                   |
+| Overly complex boolean expression                                                            | Split the boolean expression into parts and introduce constants to store the parts and the final expression.                                                                                                                                         |
+| Expression can be simplified                                                                 | This can be refactored automatically by an IDE.                                                                                                                                                                                                    |
+| Match statement without default branch                                                      | Always introduce a default branch and raise an exception there. Otherwise, when you use a match statement with an enum, you might encounter strange problems after adding a new enum value not handled by the match statement. |
+| Law of Demeter                                                                               | The object knows too much. It is coupled to the dependencies of another object, which creates additional coupling and makes code harder to change. Making code easy to change is an objective, but not needing to change code is an even greater objective. (Remember the *open-closed principle*)                                                                                                 |
+| Reuse of local variable                                                                      | Introduce a new variable instead of reusing a variable for a different purpose. That new variable can be named appropriately to describe its purpose.                                                                                              |
+| Scope of variable is too broad                                                               | Introduce a variable only just before it is needed.                                                                                                                                                                                                 |
+| Protected field                                                                              | Subclasses can modify the protected state of the superclass without the superclass being able to control that. This is an indication of breaking the encapsulation and should be avoided.                                                           |
+| Breaking the encapsulation: Return of modifiable/mutable field                               | Use the *don't leak modifiable internal state outside an object principle* from the previous chapter to solve this issue.                                                                                                                           |
+| Breaking the encapsulation: Assignment from a method parameter to a modifiable/mutable field | Use the *don't assign from a method parameter to a modifiable field principle* from the previous chapter to solve this issue.                                                                                                                       |
+| Non-constant public field                                                                    | Anyone can modify a public field. This breaks the encapsulation and should be avoided.                                                                                                                                                              |
+| Overly broad except-block                                                                    | This can indicate a wrong design. Don't catch the language's base exception class if you should only catch your application's base error class, for example. Read more about handling exceptions in the next section.                               |
+
+## Error/Exception Handling Principle
+
+Python and many other languages like C++, Java, and JavaScript/TypeScript have an exception-handling mechanism that can
+handle errors and exceptional situations. First of all, I want to make a clear distinction between these two words:
+
+> ***An error can happen, and one should be prepared for it. An exception is something that should never happen.***
+
+You define errors in your code and raise them in your functions. For example, if you try to write to
+a file, you must be prepared for the error that the disk is full, or if you are reading a file, you must be prepared
+for the error that the file does not exist (anymore).
+
+Some errors are recoverable. You can delete files
+from the disk to free up some space to write to a file. Or, in case a file is not found, you can give a "file not found" error to the user,
+who can then retry the operation using
+a different file name, for example.
+
+You usually don't need to define your own exceptions in your application, but the system
+raises built-in exceptions in *exceptional situations*, like when a programming error is encountered.
+An exception can be raised, for example, when memory is low, and memory
+allocation cannot be performed, or when a programming error results in an array index out of bounds or
+an object does not have a specific attribute. When an exception is raised, the program cannot continue executing
+normally and might need to terminate. This is why many exceptions can be categorized as unrecoverable errors. In some cases,
+it is possible to recover from exceptions. Suppose a web service encounters an exception while handling an HTTP request. In that case,
+you can terminate the handling of the current request, return an error response to the client, and continue handling further
+requests normally. It depends on the software component how it should handle exceptional situations. This is important
+to consider when designing a new software component. You should define (and document) how the software component should handle exceptions.
+Should it terminate the process or perhaps do something else?
+
+Errors define situations where the execution of a function fails for some reason. Typical examples of errors are
+a file not found error, an error in sending an HTTP request to a remote service, or a failure to parse a configuration
+file. Suppose a function can raise an error. The function caller can decide how to handle the error depending on the error. With transient errors, like
+a failing network request, the function caller can wait a while and call the function again. Or, the function caller
+can use a default value. For example, if a function tries to
+load a configuration file that does not exist, it can use some default configuration instead. In some cases,
+the function caller cannot do anything but leave the error unhandled or expect the error but raise
+another error at a higher level of abstraction. Suppose a function tries to load a configuration file, but the loading fails, and no
+default configuration exists. In that case, the function cannot do anything but pass the error to its caller. Eventually,
+this error bubbles up in the call stack, and the whole process is terminated due to the inability to
+load the configuration. This is because the configuration is needed to run the application. Without configuration,
+the application cannot do anything but exit.
+
+When defining error classes, define a base error class for your software component. You can name the base error class according to the name of the software component.
+For example, for the data exporter
+microservice, you can define a `DataExporterError` (or `DataExporterServiceError`) base error class. For *common-utils-lib*, you can define `CommonUtilsError` (or `CommonUtilsLibError`), and for *sales-item-service*, you can define `SalesItemServiceError`.
+The popular [requests](https://requests.readthedocs.io/en/latest/) library implements this convention.
+It defines a `requests.RequestException,` which is the base class for all other errors the library methods can raise.
+Many other Python libraries also define a common base error class.
+
+For each function that can raise an error, define a base error class
+at the same abstraction level as the function. That error class should extend the software component's base error class. For example, if you have a `parse(config_str)` function in the `ConfigParser` class, define a base error class for the function inside the class with the name `ParseError`, i.e., `ConfigParser.ParseError`. If you have a `read_file` function in the `FileReader` class, define a base error class in the `FileReader` class
+with the name `ReadFileError`, i.e., `FileReader.ReadFileError`. If all the methods in a class can raise the same error, it is enough to define
+only one error at the class level. For example, if you have a `HttpClient` class where all methods like `get`, `post`, `put` etc., can raise
+an error, you can only define a single `Error` error class in the `HttpClient` class.
+
+Below is an example of errors defined for the data exporter microservice:
+
+```python
+# Base error class for the software component
+class DataExporterError(Exception):
+    pass
+
+
+class FileReader:
+    # Base error class for the 'read_file' method
+    # Extends the base error class of the software component
+    class ReadFileError(DataExporterError):
+        pass
+
+    def read_file(self, file_path_name: str):
+        # ...
+        # raise self.ReadFileError()
+
+
+class ConfigParser:
+    # Base error class for the 'parse' method
+    # Extends the base error class of the software component
+    class ParserError(DataExporterError):
+        pass
+
+    def parse(self, config_str: str):
+        # ...
+        # raise self.ParseError()
+```
+
+Following the previous rules makes catching errors in the code easy because you can infer the error class
+name from the called method name. In the below example, we can infer the `ReadFileError` error class name
+from the `read_file` method name:
+
+```python
+try:
+    file_contents = file_reader.read_file(...)
+except FileReader.ReadFileError as error:
+    # Handle error ...
+```
+
+You can also catch all user-defined errors using the software component's base error class in the *except*
+clause.
+
+```python
+try:
+    config_string = file_reader.read_file(...)
+    return config_parser.parse(config_string)
+except DataExporterError as error:
+    # Handle error situation
+```
+
+Don't catch the language's base exception class or another too-generic exception class because that will catch exceptions and all user-defined errors. It would catch exceptions like `MemoryError` or `ZeroDivisionError`, which is probably not what you want. So, do
+not catch a too-generic exception class like this:
+
+```python
+try:
+    config_string = file_reader.read_file(...)
+    return config_parser.parse(config_string)
+except BaseException as error:
+    # Don't do this!
+```
+
+Catch all exceptions only in a special place(s) in your code, like in the main function or the main loop, like the loop in a web server
+processing HTTP requests or the main loop of a thread. Below is an example of correctly catching the language's base exception class in the main function.
+When you catch an unrecoverable exception in the main function, log it and exit the process with an appropriate error code. When you catch an
+unrecoverable error in a main loop, log it and continue the loop if possible.
+
+```python
+try:
+    application.run(...)
+except BaseException as exception:
+    logger.log(exception)
+    sys.exit(1)
+else:
+    sys.exit(0)
+```
+
+Using the above-described rules, you can make your code future-proof or forward-compatible so that adding new errors to be raised in a function
+in the future is possible. Let's say that you are using a `fetch_config` function like this:
+
+```python
+try:
+    configuration = config_fetcher.fetch_config(url)
+except ConfigFetcher.FetchConfigError as error:
+    # Handle error ...
+```
+
+Your code should still work if a new type of error is raised in the `fetch_config` function. Let's say that the following new errors
+could be raised in the `fetch_config` function:
+
+- Malformed URL error
+- Server not found error
+- Connection timeout error
+
+When classes for these new errors are implemented, they must extend the function's base error class, in this case, the `FetchConfigError` class.
+Below are the error classes defined:
+
+```python
+from Config import Config
+From DataExporterError import DataExporterError
+
+
+class ConfigFetcher:
+    # Base error class for 'fetch_config' method
+    # Extends the base error class of the software component
+    class FetchConfigError(DataExporterError):
+        pass
+
+    # An additional error for 'fetch_config' method
+    # Extends the base error class of the method
+    class MalformedUrlError(FetchConfigError):
+        pass
+
+    # An additional error for 'fetch_config' method
+    # Extends the base error class of the method
+    class ServerNotFoundError(FetchConfigError):
+        pass
+
+    # An additional error for 'fetch_config' method
+    # Extends the base error class of the method
+    class ConnectionTimeoutError(FetchConfigError):
+        pass
+
+    def fetch_config(self, url: str) -> Config:
+        # ...
+        # raise self.MalformedUrlError()
+        # raise self.ServerNotFoundError()
+        # raise self.ConnectionTimeoutError()
+```
+
+You can enhance your code at any time to handle different errors raised from the `fetch_config` method differently.
+For example, you might want to handle a `ConnectionTimeoutError` so that the function will wait a while and then retry the
+operation because the error is usually transient:
+
+```python
+try:
+    configuration = config_fetcher.fetch_config(url)
+except ConfigFetcher.ConnectionTimeoutError as error):
+    # Retry after a while
+except ConfigFetcher.MalformedUrlError as error:
+    # Inform caller that URL should be checked
+except ConfigFetcher.ServerNotFoundError as error:
+    # Inform caller that URL host/port cannot be reached
+except ConfigFetcher.FetchConfigError as error:
+    # Handle possible other error situations
+    # This will catch any error that could be raised
+    # in 'fetch_config' method now and in the future
+```
+
+In the above examples, we handled raised errors correctly, but you can easily forget to handle a raised error.
+This is because nothing in the function signature tells you whether the function can raise an error. The only way to find out
+is to check the documentation (if available) or investigate the source code (if available). This is one of the biggest problems
+regarding exception handling because you must know and remember that a function can raise an error, and you must remember to catch and handle errors.
+You don't always want to handle an error immediately, but still, you must be aware that the error will bubble up in the call stack and should be
+dealt with eventually somewhere in the code.
+
+Below is an example extracted from the documentation of the popular *requests* library:
+
+```python
+import requests
+
+r = requests.get('https://api.github.com/events')
+r.json()
+# [{'repository': {'open_issues': 0, 'url': 'https://github.com/...
+```
+
+Did you know that both `requests.get` and `r.json` can raise an error? Unfortunately, the above documentation extract does not include error handling at all.
+If you copy-paste the above code sample directly into your production code, you forget to handle errors.
+If you go to the API reference documentation of the *requests* library, you can find the documentation for the `get` method.
+That documentation (when writing this book) does not tell that the method can raise an error. The documentation only
+speaks about the method parameters, return value, and its type. Scrolling down the documentation page, you will find
+a section about exceptions. But what if you don't scroll down? You might think that the method does not raise an
+error. The `get` method documentation should be corrected to tell that the method can raise an error and contain a link to the section where
+possible errors are described.
+
+The above-described problem can be mitigated, at least on some level, when practicing *test-driven development* (TDD).
+TDD will be described in the next chapter, which covers testing-related principles. In TDD, you define the tests before
+the implementation, forcing you to think about error scenarios and make tests for them. When you have tests
+for error scenarios, leaving those scenarios unhandled in the actual implementation code is impossible.
+
+One great solution to the problem that error handling might be forgotten is to make raising errors more explicit:
+
+> ***Use a 'try' prefix in a function name if the function can raise an error.***
+
+This is a straightforward rule. If a function can raise an error, name the function so that its name starts with `try`.
+This makes it clear to every caller that the function can raise an error, and the caller should be prepared
+for that. For the caller of the function, there are three alternatives to deal with a raised error:
+
+1) Catch the base error class of the called function (or software component) and handle the error, e.g., catch `DataFetcher.FetchDataError` if you are calling a method named `try_fetch_data` in a class named `DataFetcher`.
+2) Catch the base error class of the called function (or software component) and raise a new error on a higher level of abstraction. You must also name the calling function with a `try` prefix.
+3) Don't catch errors. Let them propagate upwards in the call stack. You must also name the calling function with a `try` prefix.
+
+Here is an example of alternative 1:
+
+```python
+from Config import Config
+from ConfigParser import ConfigParser
+from DataFetcher import DataFetcher
+
+
+class ConfigFetcher:
+    def fetch_config(self, url: str) -> Config:
+        try:
+            config_str = self.__data_fetcher.try_fetch_data(url)
+            return self.__config_parser.try_parse(config_str)
+        except (
+            DataFetcher.FetchDataError,
+            ConfigParser.ParseError
+        ) as error:
+            # You could also catch errors in two different
+            # except blocks
+            # You could also catch the base error class 'DataExporterError'
+            # of the software component
+```
+
+And here is an example of alternative 2:
+
+```python
+from Config import Config
+from ConfigParser import ConfigParser
+from DataFetcher import DataFetcher
+
+
+class ConfigFetcher:
+    class FetchConfigError(DataExporterError):
+        pass
+
+    def try_fetch_config(self, url: str) -> Config:
+        try:
+            config_str = self.__data_fetcher.try_fetch_data(url)
+            return self.__config_parser.try_parse(config_str)
+        except (
+            DataFetcher.FetchDataError,
+            ConfigParser.ParseError
+        ) as error:
+            # Error on higher level of abstraction is raised
+            # This function must be named with the 'try' prefix
+            # to indicate that it can raise an error
+            raise self.FetchConfigError(error)
+```
+
+And here is an example of alternative 3:
+
+```python
+from Config import Config
+
+
+class ConfigFetcher:
+    def try_fetch_config(self, url: str) -> Config:
+        # No try-except, all raised errors from both try_fetch_data
+        # and try_parse method calls propagate
+        # to the caller and
+        # this function must be named with the 'try' prefix
+        # to indicate that it can raise an error
+        config_str = self.__data_fetcher.try_fetch_data(url)
+        return self.__config_parser.try_parse(config_str)
+```
+
+```python
+from DataExporterError import DataExporterError
+
+
+class DataExporter:
+    def initialize(self) -> None:
+        try:
+            config = self.__config_fetcher.try_fetch_config(url)
+        except DataExporterError as error:
+            # In this case you must catch the base error class of
+            # the software component (DataExporterError), because
+            # you don't know what errors try_fetch_config can
+            # raise, because no FetchConfigError class
+            # has been defined in the ConfigFetcher class
+```
+
+If we go back to the *requests* library usage example, the error-raising methods `requests.get` and `Response.json`
+could be renamed to `requests.try_get` and `Response.try_parse_json`. That would make the earlier example look like
+the following:
+
+```python
+import requests
+
+r = requests.try_get('https://api.github.com/events')
+r.try_parse_json()
+# [{'repository': {'open_issues': 0, 'url': 'https://github.com/...
+```
+
+Now, we can see that the two methods can raise an error. It is easier to remember to put them inside a try/except-block:
+
+```python
+import requests
+
+try:
+    r = requests.try_get('https://api.github.com/events')
+    r.try_parse_json()
+    # [{'repository': {'open_issues': 0, 'url': 'https://github.com/...
+except ...
+    # ...
+```
+
+To make the try-prefix convention even better, a linting rule that enforces the correct naming of error-raising functions could be developed.
+The rule should force the function name to have a *try* prefix if the function raises or propagates errors. A function propagates errors
+when it calls an error-raising (try-prefixed) method outside a try-except block.
+
+You can also create a library that has try-prefixed functions that wrap error-raising functions that don't follow the try-prefix rule:
+
+```python
+import json
+
+
+class JsonParser:
+    class ParseError(Exception):
+        pass
+
+    @staticmethod
+    def try_parse(json_string: str, **kwargs):
+        try:
+            return json.loads(json_string, **kwargs)
+        except json.JSONDecodeError as error:
+            raise JsonParser.ParseError(error)
+```
+
+Now, if you use the `JsonParser`'s `try_parse` method, you can easily infer the class name of the possibly raised errors without the
+need to consult any documentation.
+
+When using a web framework, the framework usually provides an error-handling mechanism. The framework catches all possible errors and exceptions when
+processing a request and maps them to HTTP responses with HTTP status codes indicating a failure. Typically, the default status code is 500 *Internal Server Error*. When you utilize the web framework's error-handling mechanism,
+there is no significant benefit in naming error-raising functions with the try-prefix because it won't be problematic if you forget to
+catch an error. So, you can opt out of the try-prefix rule. Many times, this is what you want to do: pass the error to the web framework's error handler. Usually,
+you provide your own error handler instead of using the default one, so you get responses in the format you want. We will discuss API error handling again in the *API design principles* chapter.
+
+It is usually a good practice to document the error handling mechanism used in the software component's documentation.
+
+The best way to avoid forgetting to handle errors is to practice rigorous *test-driven development* (TDD) described
+in the next chapter. Another great way to not forget to handle errors is to walk through the code line by line and check
+if the particular line can produce an error. If it can produce an error, what kind of error, and are there multiple
+errors the line can produce? Let's have an example with the following code (we focus only on possible
+errors, not what the function does):
+
+```python
+from typing import Any
+
+import requests
+from jwt import PyJWKClient, decode
+
+class JwtAuthorizer:
+    # ...
+
+    def __try_get_jwt_claims(
+            self, auth_header: str | None
+        ) -> dict[str, Any]:
+            if not self.__jwks_client:
+                oidc_config_response = requests.get(self.__oidc_config_url)
+                oidc_config = oidc_config_response.json()
+                self.__jwks_client = PyJWKClient(oidc_config['jwks_uri'])
+
+            jwt = auth_header.split('Bearer ')[1] if auth_header else ''
+            signing_key = self.__jwks_client.get_signing_key_from_jwt(jwt)
+            jwt_claims = decode(jwt, signing_key.key, algorithms=['RS256'])
+            return jwt_claims
+```
+
+The code on the first line cannot produce an error. On the second line, the `requests.get` method can raise an
+error on connection failure, for example. Can it produce other errors? It can produce the following errors:
+
+- Malformed URL (`requests.URLRequired`)
+- Connection error (`requests.ConnectionError`)
+- Connection timeout (`requests.ConnectTimeout`)
+- Read timeout (`requests.ReadTimeout`)
+
+It can also produce an error response, e.g., an internal server error.
+Our code does not handle that currently, which is why we should add the following line after the `requests.get` method call:
+`oidc_config_response.raise_for_status()`, which will raise an `HttpError` if the response status code is >= 400. The third line can raise a `JSONDecodeError` if the response is not valid JSON. The fourth line can raise a `KeyError` because it is possible that the key `jwks_uri` does not exist in the response JSON. The fifth line can raise an `IndexError` because the list returned
+by the `split` does not necessarily have an element at index one. Also, the sixth line can raise an error when
+the JWKS client cannot connect to the IAM system or the JWT is invalid. The second last line can raise an `InvalidTokenError` when the JWT is invalid.
+In summary, all the lines in the above code can produce at least one kind of error except the first and last lines.
+
+Let's modify the code to implement error handling instead of passing all possible errors and exceptions to the caller:
+
+```python
+from typing import Any
+
+import requests
+from jwt import PyJWKClient, PyJWKClientError, decode
+from jwt.exceptions import InvalidTokenError
+
+
+class JwtAuthorizer:
+    class GetJwtClaimsError(Exception):
+        pass
+
+    def __try_get_jwt_claims(
+        self, auth_header: str | None
+    ) -> dict[str, Any]:
+        try:
+            if not self.__jwks_client:
+                oidc_config_response = requests.get(self.__oidc_config_url)
+                oidc_config_response.raise_for_status()
+                oidc_config = oidc_config_response.json()
+                self.__jwks_client = PyJWKClient(oidc_config['jwks_uri'])
+
+            jwt = auth_header.split('Bearer ')[1] if auth_header else ''
+            signing_key = self.__jwks_client.get_signing_key_from_jwt(jwt)
+            jwt_claims = decode(jwt, signing_key.key, algorithms=['RS256'])
+            return jwt_claims
+        except (
+            # RequestException is the base error for all errors
+            # in the requests library
+            requests.RequestException,
+            KeyError,
+            IndexError,
+            PyJWKClientError,
+            # Base error when decode() fails on a token
+            InvalidTokenError,
+        ) as error:
+            raise self.GetJwtClaimsError(error)
+```
+
+Make yourself a habit of walking through the code of a function line by line once you think it is ready to find out if you have accidentally missed handling some error.
+
+### Returning Errors
+
+As an alternative to raising errors, it is possible to
+communicate erroneous behavior to the function caller using a return value. Using an exception-handling mechanism
+provides some advantages over returning errors. When a function can return an error, you must always check
+for the error right after the function call. This can cause the code to contain nested if-statements, which hinders code readability.
+The exception-handling mechanism allows you to propagate an error
+to a higher level in the call stack. You can also execute multiple function calls that can fail inside
+a single `try` block and provide a single error handler in the `except` block.
+
+#### Returning Failure Indicator
+
+You can return a failure indicator from a failable function when the function does not need to return any additional value.
+It is enough to return a failure indicator from the function when there is no need to return any specific error code or message.
+This can be because there is only one reason the function can fail, or function callers are not interested in error details.
+To return a failure indicator, return a boolean value from the function: *True* means a successful operation, and *False* indicates a failure:
+
+```python
+def perform_task(...) -> bool:
+    # Perform the task and set the value of
+    # the 'task_was_performed' variable
+
+    return task_was_performed
+```
+
+#### Returning an Optional Value
+
+Suppose a function should return a value, but the function call can fail, and there is precisely one cause
+why the function call can fail. In this case,
+return an optional value from the function. In the below example, getting a value from the cache can only fail when
+no value for a specific key is stored in the cache. We don't need to return any error code or message.
+
+```Python
+from typing import Protocol, TypeVar
+
+TKey = TypeVar('TKey')
+TValue = TypeVar('TValue')
+
+
+class Cache(Protocol[TKey, TValue]):
+    def add(self, key: TKey, value: TValue) -> None:
+        pass
+
+    def get(self, key: TKey) -> TValue | None:
+        pass
+```
+
+Or, if you want to use a more functional approach, return an `Optional` object. (The `Optional` class was defined
+in the previous chapter)
+
+```python
+from typing import Protocol, TypeVar
+
+from Optional import Optional
+
+TKey = TypeVar('TKey')
+TValue = TypeVar('TValue')
+
+
+class Cache(Protocol[TKey, TValue]):
+    def add(self, key: TKey, value: TValue) -> None:
+        pass
+
+    def get(self, key: TKey) -> Optional[TValue]:
+        pass
+```
+
+#### Returning an Error Object
+
+When you need to provide details about an error to the function caller, you can return an error object from the function:
+
+```python
+from dataclasses import dataclass
+
+
+@dataclass
+class BackendError:
+    http_status_code: int
+    error_code: int
+    message: str
+```
+
+If a function does not return any value but can produce an error, you can return either an error object or
+*None*:
+
+```python
+from typing import Awaitable, TypeVar
+
+from BackendError import BackendError
+from Entity import Entity
+
+T = TypeVar('T', bound=Entity)
+
+
+class DataStore:
+    async def update_entity(
+        self,
+        id_: int,
+        entity: T
+    ) -> Awaitable[BackendError | None]:
+        # ...
+```
+
+Alternatively, return an optional error, as shown below. (The `Optional` class was defined
+in the previous chapter)
+
+```python
+from typing import Awaitable, TypeError
+
+from BackendError import BackendError
+from Entity import Entity
+from Optional import Optional
+
+T = TypeVar('T', bound=Entity)
+
+
+class DataStore:
+    async def update*entity(
+        self,
+        id*: int,
+        entity: T
+    ) -> Awaitable[Optional[BackendError]]:
+        # ...
+```
+
+Suppose a function needs to return a value or an error. In that case, you can use a 2-tuple (i.e., a pair) type, where
+the first value in the tuple is the actual value or *None* in case of an error and the second value
+in the tuple is an error object or *None* value in case of a successful operation. Below is an example.
+
+```python
+from typing import Awaitable, TypeVar, Union
+
+from BackendError import BackendError
+from Entity import Entity
+
+T = TypeVar('T', bound=Entity)
+
+
+class DataStore:
+    async def create_entity(
+        self,
+        entity: T
+    ) ->  Awaitable[Union[(T, None), (None, BackendError)]]:
+        # ...
+```
+
+If we want to make our method more functional, we should return an `Either` type from it, but Python does not have that.
+Either type contains one of two values, either a left value or a right value. The `Either` type can be defined as follows.
+(The `Optional` class was defined in the previous chapter).
+
+```python
+from collections.abc import Callable
+from typing import Any, TypeVar, Generic
+
+from Optional import Optional
+
+TLeft = TypeVar('TLeft')
+TRight = TypeVar('TRight')
+T = TypeVar('T')
+U = TypeVar('U')
+
+
+class PrivateConstructor(type):
+    def __call__(
+        cls: type[T],
+        *args: tuple[Any, ...],
+        **kwargs: dict[str, Any]
+     ):
+        raise TypeError('Constructor is private')
+
+    def _create(
+        cls: type[T],
+        *args: tuple[Any, ...],
+        **kwargs: dict[str, Any]
+    ) -> T:
+        return super().__call__(*args, **kwargs)
+
+
+class Either(Generic[TLeft, TRight], metaclass=PrivateConstructor):
+    def __init__(
+        self,
+        maybe_left_value: Optional[TLeft],
+        maybe_right_value: Optional[TRight]
+    ):
+        self.__maybe_left_value = maybe_left_value
+        self.__maybe_right_value = maybe_right_value
+
+    @classmethod
+    def with_left(cls, value: TLeft) -> 'Either[TLeft, TRight]':
+        return cls._create(Optional.of(value), Optional.empty())
+
+    @classmethod
+    def with_right(cls, value: TRight) -> 'Either[TLeft, TRight]':
+        return cls._create(Optional.empty(), Optional.of(value))
+
+    def has_left_value(self) -> bool:
+        return self.__maybe_left_value.is_present()
+
+    def has_right_value(self) -> bool:
+            return self.__maybe_right_value.is_present()
+
+    def map_left(
+        self,
+        to_value: Callable[[TLeft], U]
+    ) -> 'Either[U, TRight]':
+        return Either._create(
+            self.__maybe_left_value.map(to_value),
+            self.__maybe_right_value
+        )
+
+    def map_right(
+        self,
+        to_value: Callable[[TRight], U]
+    ) -> 'Either[TLeft, U]':
+        return Either._create(
+            self.__maybe_left_value,
+            self.__maybe_right_value.map(to_value)
+        )
+
+    def map(
+        self,
+        left_to_value: Callable[[TLeft], U],
+        right_to_value: Callable[[TRight], U]
+    ) -> U:
+        return self.__maybe_left_value.map(left_to_value).or_else_get(
+            lambda: self.__maybe_right_value.map(right_to_value).try_get()
+        )
+
+    def apply(
+        self,
+        consume_left_value: Callable[[TLeft], None],
+        consume_right_value: Callable[[TRight], None]
+    ) -> None:
+        self.__maybe_left_value.if_present(consume_left_value)
+        self.__maybe_right_value.if_present(consume_right_value)
+```
+
+Below are some examples of how to use the `Either` class:
+
+```python
+class Error(Exception):
+    pass
+
+
+int_or_error: Either[int, Error] = Either.with_left(3)
+int_or_error2: Either[int, Error] = Either.with_right(Error())
+
+print(int_or_error.has_left_value()) # Prints True
+print(int_or_error2.has_right_value()) # Prints True
+print(
+    int_or_error.map_left(lambda number: number * 2).has_left_value()
+)
+# Prints True
+
+print(int_or_error.map(lambda number: number * 2, lambda error: 0))
+# Prints 6
+
+print(int_or_error2.map(lambda number: number * 2, lambda error: 0))
+# Prints 0
+```
+
+Now, we can use the new `Either` type and rewrite the example as follows:
+
+```python
+from typing import Awaitable, TypeVar
+
+from BackendError import BackendError
+from Entity import Entity
+
+T = TypeVar('T', bound=Entity)
+
+
+class DataStore:
+    async def create_entity(
+        self,
+        entity: T
+    ) ->  Awaitable[Either[T, BackendError]]:
+        # ...
+```
+
+#### Adapt to Wanted Error Handling Mechanism
+
+You can adapt to a desired error-handling mechanism by creating an adapter class. For example, if a library has an error-raising method,
+you can create an adapter class with a method returning an optional value. The below `Url` class has a `try_create_url`
+factory method that can raise an error:
+
+```python
+class Url:
+    # ...
+
+    class CreateUrlError(Exception):
+        pass
+
+    @classmethod
+    def try_create_url(
+        cls,
+        scheme: str,
+        host: str,
+        port: int,
+        path: str,
+        query: str
+    ) -> 'Url':
+        # ...
+        # Potentially raise a CreateUrlError here ...
+```
+
+We can create a `UrlFactory` adapter class with a non-error-raising method, `create_url`.
+
+```python
+from Url import Url
+
+
+class UrlFactory:
+    def create_url(
+        self,
+        scheme: str,
+        host: str,
+        port: int,
+        path: str,
+        query: str
+    ) -> Url | None:
+        try:
+            return Url.try_create_url(scheme, host, port, path, query)
+        except Url.CreateUrlError:
+            return None
+```
+
+If the code using the `UrlFactory` is interested in the error details,
+we can also create a method that does not raise an error but returns either a value or an error:
+
+```python
+from typing import Union
+
+from Url import Url
+
+
+class UrlFactory:
+    def create_url_or_error(
+        self,
+        scheme: str,
+        host: str,
+        port: int,
+        path: str,
+        query: str
+    ) -> Union[(Url, None), (None, Url.CreateUrlError)]:
+        try:
+            return (
+                Url.try_create_url(scheme, host, port, path, query),
+                None,
+            )
+        except Url.CreateUrlError as error:
+            return None, error
+```
+
+#### Functional Exception Handling
+
+The below `Failable` class can be used in functional error handling. A `Failable` object represents either
+a value of type `T` or an instance of the `Exception` class, i.e., `Failable[T]` is the same as `Either[T, Exception]`
+
+```python
+from collections.abc import Callable
+from typing import Any, Generic, TypeVar
+
+from Either import Either
+
+T = TypeVar('T')
+
+
+class PrivateConstructor(type):
+    def __call__(
+        cls: type[T],
+        *args: tuple[Any, ...],
+        **kwargs: dict[str, Any]
+     ):
+        raise TypeError('Constructor is private')
+
+    def _create(
+        cls: type[T],
+        *args: tuple[Any, ...],
+        **kwargs: dict[str, Any]
+    ) -> T:
+        return super().__call__(*args, **kwargs)
+
+
+TError = TypeVar('TError', bound=Exception)
+U = TypeVar('U')
+
+
+class Failable(Generic[T], metaclass=PrivateConstructor):
+    def __init__(self, value_or_error: Either[T, Exception]):
+        self.__value_or_error = value_or_error
+
+    @classmethod
+    def with_value(cls, value: T) -> 'Failable[T]':
+        return cls._create(Either.with_left(value))
+
+    @classmethod
+    def with_error(cls, error: Exception) -> 'Failable[T]':
+        return cls._create(Either.with_right(error))
+
+    def or_raise(self, error_cls: type[TError]) -> T:
+        return self.__value_or_error.map(
+            lambda value: value,
+            lambda error: self.__raise(error_cls(error))
+        )
+
+    def or_else(self, other_value: T) -> T:
+        return self.__value_or_error.map(
+            lambda value: value,
+            lambda error: other_value
+        )
+
+    def map_value(
+        self,
+        to_value: Callable[[T], U]
+    ) -> 'Failable[U]':
+        return Failable._create(self.__value_or_error.map_left(to_value))
+
+    def map_error(
+        self,
+        to_error: Callable[[Exception], Exception]
+    ) -> 'Failable[T]':
+        if self.__value_or_error.has_left_value():
+            error = to_error(Exception())
+            return Failable.with_error(error)
+        else:
+            return Failable._create(
+                self.__value_or_error.map_right(to_error)
+            )
+
+    def __raise(self, error: Exception) -> None:
+            raise error
+```
+
+In the below example, the `read_config` method returns a `Failable[Configuration]`. The `try_initialize` method either obtains an instance of
+`Configuration` or raises an error of type `Application.InitializeError`.
+
+```python
+from DataExporterError import DataExporterError
+
+
+class Application:
+    # ...
+
+    class InitializeError(DataExporterError):
+        pass
+
+    def try_initialize(self) -> None:
+        configuration = self.__config_reader \
+            .read_config(...) \
+            .or_raise(self.InitializeError)
+```
+
+The benefit of the above functional approach is that it is shorter than an entire try-catch block. The above functional approach is also as understandable as a try-catch block.
+Remember that one should write the shortest, most understandable code. When a method returns a `Failable` instance, you don't have to name the method
+with the *try* prefix because the method does not raise an error. The call to the `or_raise` method on `Failable` converts the functional code back to imperative.
+
+You can also use other methods of the `Failable` class. For example, a default value can be returned with the `or_else` method:
+
+```try
+from DefaultConfig import DefaultConfig
+
+
+class Application:
+    # ...
+
+    def initialize(self) -> None:
+        configuration = self.__config_reader.read_config(...).or_else(
+            DefaultConfig()
+        )
+```
+
+You can also transform multiple imperative error-raising statements into functional, failable statements. For example, instead of writing:
+
+```python
+from DataExporterError import DataExporterError
+
+
+class Application:
+    # ...
+
+    class InitializeError(DataExporterError):
+        pass
+
+    def try_initialize(self) -> None:
+        try:
+            config_json = self.__data_fetcher.try_fetch_data(
+                self.__config_url
+            )
+
+            configuration = self.__config_parser.try_parse(config_json)
+        except DataExporterError as error:
+            raise self.InitializeError(error)
+```
+
+You can write:
+
+```python
+from DataExporterError import DataExporterError
+
+
+class Application:
+    # ...
+
+    class InitializeError(DataExporterError):
+        pass
+
+    def try_initialize(self) -> None:
+        configuration = (
+           self.__data_fetcher.fetch_data(self.__config_url)
+           .map_value(self.__config_parser.parse)
+           .or_raise(self.InitializeError)
+       )
+```
+
+The above functional code is shorter than the same imperative code, but it is slightly less readable, for which reason
+you might want to use the imperative approach instead of the functional approach.
+
+It can be error-prone to use error-raising imperative code together with functional programming constructs.
+For example, let's assume we have the below code that reads and parses multiple configuration files to
+a single configuration object using a functional programming construct `reduce`. We have named the config reading function
+`try_read_config` with the try-prefix because it can raise an error. When we use the `reduce` function, we must remember to surround it
+with a try-except block because the `reduce` function will call the `try_read_config` function that can throw.
+
+```python
+import json
+from functools import reduce
+from typing import Any
+
+
+def try_read_config(
+    accumulated_config: dict[str, Any],
+    config_file_path_name: str
+):
+    with open(config_file_path_name) as config_file:
+        config_json = config_file.read()
+
+    config = json.loads(config_json)
+    return accumulated_config | config
+
+
+def get_config(config_file_path_names: list[str]) -> dict[str, Any]:
+    try:
+        return reduce(try_read_config, config_file_path_names, {})
+    except:
+        # ...
+```
+
+We could turn the above example more functional by making the `get_config` function return a `Failable` instance:
+
+```python
+import json
+from functools import reduce
+from typing import Any
+
+from Failable import Failable
+
+
+def to_config_or_error(
+    accum_config_or_error: Failable[dict[str, Any]],
+    config_file_path_name: str
+) -> Failable[dict[str, Any]]:
+    try:
+       with open(config_file_path_name) as config_file:
+               config_json = config_file.read()
+
+       config = json.loads(config_json)
+
+       return accum_config_or_error.map_value(
+            lambda accum_config: accum_config | config
+        )
+    except (OSError, json.JSONDecodeError) as error:
+        return accum_config_or_error.map_error(
+            lambda accum_error: RuntimeError(
+                f'{str(accum_error)}\n{config_file_path_name}: {str(error)}'
+            )
+        )
+
+
+def get_config(
+    config_file_path_names: list[str]
+) -> Failable[dict[str, Any]]:
+    return reduce(
+        to_config_or_error,
+        config_file_path_names,
+        Failable.with_value({})
+    )
+```
+
+If we have a *config1.json* file with the following contents:
+
+```json
+{
+    "foo": 1,
+    "bar": 2
+}
+```
+
+and we have a *config2.json* file with the following contents:
+
+```json
+{
+    "xyz": 3
+}
+```
+
+Then, we can run the following code:
+
+```python
+config_file_path_names = ['config1.json', 'config2.json']
+maybeConfig = get_config(config_file_path_names)
+print(maybeConfig.or_raise(RuntimeError))
+# Prints {'foo': 1, 'bar': 2, 'xyz': 3}
+```
+
+Let's introduce an error (a missing comma after the first property) in the *config1.json* file:
+
+```json
+{
+    "foo": 1
+    "bar": 2
+}
+```
+
+Let's also try to provide a non-existing configuration file *config3.json*:
+
+```python
+config_file_path_names = ['config1.json', 'config3.json']
+maybeConfig = get_config(config_file_path_names)
+print(maybeConfig.or_raise(RuntimeError))
+# Raises a RuntimeError with the following message:
+# config1.json: Expecting ',' delimiter: line 3 column 3 (char 16)
+# config3.json: [Errno 2] No such file or directory: 'config3.json'
+```
+
+## Avoid Off-By-One Errors Principle
+
+Off-by-one errors usually result from the fact that collections in programming languages are indexed with
+zero-based indexes. Zero-based indexing is unnatural for human beings but excellent for computers. However, programming languages
+should be designed with humans in mind. People never speak about getting the zeroth value of an array.
+We speak of getting the first value in the array. As the null value was called a
+billion-dollar mistake, I would call the zero-based indexing another billion-dollar mistake. Let's hope
+that someday we get a programming language with one-based indexing! But then we must unlearn the zero-based indexing habit... And that's another problem!
+
+In some languages, you can create for-loops with a loop counter.
+Below are two examples of programming errors in JavaScript that are easy to make if you are not careful enough:
+
+```js
+for (let index = 0; index <= values.length; index++) {
+  // ...
+}
+
+for (let index = 0; index < values.length - 1; index++) {
+  // ...
+}
+```
+
+In the first example, there should be '&lt;' instead of '&lt;=', and in the latter example, there should
+be '&lt;=' instead of '&lt;'. Fortunately, the above mistakes can be avoided in Python:
+
+```python
+for value in values:
+  # ...
+```
+
+In Python's `range` function, you must remember it starts from zero, and the end of the range is exclusive.
+You will have an off-by-one error if you assume the start to be one or
+the end of the range is inclusive. The off-by-one errors are caused by the fact that, given a range, people assume it is inclusive at both ends by default. So, a `range(6)` gives values from 0 to 5, not from 1 to 6. And `range(1, 6)`
+gives values from 1 to 5, not from 1 to 6. The same thing is with slices, e.g. `values[:6]` starts from index 0 and
+ends at index 5. If you want a slice that is all but the last item, you can use negative indexing: `values[:-1]` gives values except the last one. Using -1 is much safer than using `values[:len(values) - 1]`, which might produce
+an off-by-one error if you forget the -1. And similarly using `values[:-2]` is less error-prone than using `values[:len(values) - 2]`.
+You can also use negative indexing, e.g., to get the last value with `values[-1]` instead of `values[len(values) - 1]`.
+A negative index is a one-based index starting from the end of a list.
+
+Additionally, unit tests are your friend when trying to spot off-by-one errors. So remember to write unit tests for the edge cases, too.
+
+## Be Critical When Googling or Using Generative AI Principle
+
+> ***You should always analyze code taken from the web to ensure it meets the criteria for production code. Don't let the AI be the master, but an apprentice.***
+
+We all have done it, and we have done it hundreds of times: googled for answers.
+Usually, you find good resources by googling, but the problem often is that examples
+in the Google results are not necessarily production quality. One specific thing missing in them is error
+handling. If you copy and paste code from a website, it is possible that errors are not handled
+appropriately. You should always analyze the copy-pasted code to see if error handling needs to be added.
+
+When you provide answers for other people, try to make the code as production-like as possible.
+In [Stack Overflow](https://stackoverflow.com/), you find the most up-voted answer right below the question. If the answer is missing error handling,
+you can comment on that and let the author improve their answer. You can also up-vote an
+answer that seems the most production-ready. The most up-voted answers tend to be pretty old. For this reason, it is
+useful to scroll down to see if a more modern solution fits your needs better. You can also up-vote that more modern
+solution to make it eventually rank higher in the list of answers.
+
+Regarding open-source libraries, the first examples in their documentation can describe only the "happy path" usage scenario,
+and error handling is described only in later parts of the documentation.
+This can cause problems if you copy-paste code from the "happy path" example and forget to add error handling.
+For this reason, open-source library authors should give production-quality examples early in the documentation.
+
+Regarding generative AI, e.g., ChatGPT, I have a couple of experiences. I asked ChatGPT to generate simple Django code.
+The generated code was about 95% correct, but it did not work. The problem was that ChatGPT forgot to provide code
+for generating the database tables (makemigrations, migrate). If you are inexperienced with the Django framework, that
+problem might be challenging to solve. In that case, continue the discussion with ChatGPT and ask it to solve the problem for you.
+
+My other experiment with ChatGPT was to generate GraphQL server code using the *Ariadne* library.
+The ChatGPT-generated code was for an old version of Ariadne and did not work correctly with a newer version of the
+Ariadne library. (Notice that the data used to train ChatGPT contains more older than newer data. ChatGPT could not
+prioritize the less and newer data over the older and more data.) It also generated some lines of code in the wrong order, which made the GraphQL API not work at all.
+It took quite a lot of debugging for such a small program to find out what was wrong:
+The executable schema was created before the query resolver. It should have been created only after defining the
+resolver.
+
+You should familiarize yourself with the AI-generated code when using ChatGPT or other generative AI tools. Otherwise, you
+don't know what your program is doing, and if the AI-generated code contains bug(s), those will be hard to find
+because you don't clearly understand what the code is actually doing. Don't let the AI be the master, but an apprentice.
+
+The best way to prevent bugs related to code taken from the web is to practice *test-driven development* (TDD). TDD is better described
+in the next chapter. The idea behind TDD is to specify the function first and write unit test cases for different
+scenarios: edge/corner cases, error scenarios, and security scenarios. For example, let's say you are new
+to Python and google for a code snippet to perform an HTTP request to an API endpoint.
+You copy-paste the code into your function. Now, error scenarios are not handled. What you should do is practice TDD and write unit test cases for different scenarios, like, what if the remote server cannot be
+contacted or the contact results in timeout, or what if the remote server responds with an error (an HTTP response with
+a status code greater than or equal to 400). What if you need to parse the result from the API (e.g., parse JSON), and it fails?
+Once you have written a unit test case for all those scenarios, you can be sure that error handling in the function
+implementation is not forgotten.
+
+## Make One Change At A Time Principle
+
+> ***Don't try to make multiple distinct changes at the same time.***
+
+If you try to make multiple unrelated changes simultaneously, you are focusing on too many things, and you are more likely to introduce a bug or bugs. Don't try to implement two distinct features at the same time. Don't try to
+make two distinct refactorings at the same time. Don't try to implement a new feature and do refactoring simultaneously.
+Try to make a single change as small and isolated as possible. I have violated this principle so many times. I have thought,
+okay, this is a small change I can do together with this other change. But later, I realized that the changes were not so
+small after all and that I had created some bugs. I didn't know which of the many changes caused the bug. That made the bug hunting more difficult than it should have been.
+So, resist the urge to make multiple distinct changes simultaneously. Have all changes that need to be made as separate user stories in the team backlog or list small changes to be done in a TODO.MD file so that they are not forgotten.
+
+If you need to implement a new feature, analyze if you should refactor the code first to make the feature implementation
+easier. If the refactoring is not necessary for the feature and the feature is important, you can implement the feature first and refactor the code later.
+If you gain benefit by refactoring first and the feature is not time-critical, refactor first and only after that implement the feature.
+
+## Choosing Right 3rd Party Component Principle
+
+When choosing the right 3rd party component, you should take the following into account:
+
+- It provides the needed functionality
+- If you are looking for an open-source component, check that the license is appropriate, e.g., without a viral effect (GPL)
+- Prefer a well-established component over a brand new component because the new component may have bugs, and there is a smaller community that can offer you support
+- Prefer a component that has a higher number of contributors because you can have your reported bugs corrected faster and also new features
+  implemented faster.
+- Ensure that dependencies are up-to-date. It is a red flag if the component has its dependencies updated like several years ago
+
+## Use Appropriate Data Structure Principle
+
+Next, the main built-in Python data structures with their use cases will be presented.
+
+### List
+
+> *Use a list when you need an ordered collection or should be able to store the same item multiple times.*
+
+The implementation of a Python list is similar to C++'s `std::vector` or the `ArrayList` class in Java. Lists are mutable
+and can contain duplicate elements. Each element can be accessed by its index in a performant way. If you need to add or remove
+elements at the beginning of the list, that is not a cheap operation because all existing elements in the list must be
+moved by one index to the right or left. Similarly, if you add an element to the end of a list and the allocated space for
+the list is full, new space for the list must be allocated, and the list elements must be copied to the newly allocated space.
+
+### Dictionary
+
+> *Use a dictionary when you need quick access to a value by a key.*
+
+Python dictionary is similar to a `HashMap` in Java. Accessing a value by its key is always a cheap operation.
+You can iterate over a dictionary using one of the following methods: `keys()`, `values()`, or `items()`. Combining two
+dictionaries is easy with the unpacking operator (`{**dict1, **dict2}`) or with the merge operator (`dict1 | dict2`).
+
+### Tuple
+
+> *Use a tuple instead of a list when you need an immutable ordered collection.*
+
+In a tuple, each element can be accessed by its index in a performant way. Like a list, a tuple can contain various
+type of elements and the same element multiple times.
+
+### Set
+
+> *Use a set when you don't need an ordered collection, and duplicate elements are not allowed.*
+
+Accessing a set by a value is cheap because Python sets are implemented as hash tables. On the contrary, if you have a list, the whole list may need to be gone through
+to find a specific value. If you have a list and want to remove
+duplicates from it, you can convert the list into a set: `set(my_list)`. Python also offers frozen sets with the `frozenset` constructor. These sets are immutable.
+
+### String
+
+> *Use a string to store an immutable ordered collection of characters.*
+
+In Python, strings are lists of Unicode characters. Strings are always immutable. Accessing a character by its index is
+always a cheap operation O(1).
+
+### Bytearray
+
+> *Use a byte array to store an ordered collection of values between 0 and 256.*
+
+A byte array is created with the `bytearray` constructor. Accessing a byte by its index is always a cheap operation O(1).
+Here are two examples of creating a byte array: `bytearray((255, 50, 20)` or `bytearray(b'\xFF\x32\x14')`.
+
+### Counter
+
+> *Use a counter to store counts for various elements.*
+
+A counter is a dictionary where elements are stored as keys, and their counts are stored as values. Counter objects
+differ from traditional dictionary objects when a value for a missing key is requested, value zero is returned instead
+of a `KeyError`.
+
+### OrderedDict
+
+> *Use the `OrderedDict` class if the dictionary needs to remember the insertion order of entries.*
+
+When you iterate over an `OrderedDict` object, you get the entries in the insertion order.
+
+### Deque (Double Ended Queue)
+
+> *Use a deque when you need cheap insertion and removal of elements at either or both ends of the collection.*
+
+Adding and removing elements at the ends of a deque are cheap (O(1))
+operations because the deque is implemented as a doubly linked list. The drawback of the deque is that randomly
+accessing an element at a specific index is slow (O(n)).
+
+### Customized Built-In Collections
+
+> *If you need to customize the behavior of a built-in list, string, or dictionary, make your custom class extend one of the following classes: `UserList`, `UserString`, or `UserDict`.*
+
+### Stack (LIFO Queue)
+
+> *A stack can be implemented using a deque.*
+
+You can push an element into the stack with the deque's `append` method and pop an element out of the stack with the deque's `pop` method.
+You can also implement a stack using a list, but operations can be slower sometimes, especially if the stack is large.
+When you implement a stack using a list, you use the `append` and `pop` methods like with a deque.
+
+### Queue (FIFO Queue)
+
+> *A queue can be implemented using a deque.*
+
+You can add an element to a queue with the deque's `append` method and pop an element from the queue with the deque's `popleft` method.
+You can also implement a queue using a list, but operations can be slower sometimes, especially if the queue is large.
+When you implement a queue using a list, you use the `append` and `pop(0)` methods.
+
+### Priority Queue
+
+> *Use a priority queue to retrieve elements based on their priority.*
+
+You can implement a priority queue using the `PriorityQueue` class from the `queue` module. That class is also thread-safe.
+
+### Synchronized Queues (LIFO/FIFO)
+
+> * Use a synchronized queue for implementing thread-safe multi-consumer, multi-producer queues.*
+
+Python provides two thread-safe queue implementations in the `queue` module: `Queue` and `LifoQueue`.
+
+## Optimization Principle
+
+Code optimization makes code run faster and/or consume less memory.
+Faster code improves the end-user experience, and optimization reduces the need for computing resources (CPU/memory), making operating the software cheaper.
+
+> ***Avoid premature optimization. Premature optimization may hinder crafting a proper object-oriented design for a software component.***
+
+Measure unoptimized performance first. Then, decide if optimization is needed. Implement optimizations individually and
+measure the performance after each optimization to determine if the particular optimization matters. You can then utilize
+the knowledge you gained in future projects only to make optimizations that boost performance significantly enough.
+Sometimes, you can make performance optimization in the early phase of a project if you know that a particular optimization
+is needed (e.g., from previous experience), and the optimization can be implemented without negatively affecting the
+object-oriented design.
+
+### Optimization Patterns
+
+The following optimization patterns are described in this section:
+
+- Optimize busy loops only pattern
+- Remove unnecessary functionality pattern
+- Object pool pattern
+- Use optimal data structures pattern
+- Algorithm complexity reduction pattern
+- Cache function results pattern
+- Buffer file I/O pattern
+- Share identical objects, a.k.a flyweight pattern
+
+#### Optimize Busy Loops Only Pattern
+
+Optimizations should primarily target only the busy loop or loops in a software component. Busy loops are the loops in threads that
+execute over and over again, possibly thousands or more iterations in a second. Performance optimization should not target
+functionality that executes only once or a couple of times during the software component's lifetime, and running that
+functionality does not take a long time. For example, an application can execute configuration reading and parsing
+functionality when it starts. This functionality takes a short time to execute. It is
+not reasonable to optimize that functionality because it runs only once.
+It does not matter if you can read and parse the configuration in 200 or 300 milliseconds, even if there is a 50% difference in performance.
+
+Let's use the data exporter microservice as an example. Our data exporter microservice consists of input, transformer, and output parts.
+The input part reads messages from a data source. We cannot affect the message reading part if we use a 3rd party library for that purpose.
+Of course, if multiple 3rd party libraries are available, it is possible to craft performance tests and evaluate which library offers the best performance.
+If several 3rd party libraries are available for the same functionality, we tend to use the
+most popular library or a library we know beforehand. If performance is an issue, we should evaluate different libraries and compare their performances.
+
+The data exporter microservice has the following functionality in its busy loop: decode an input message to an internal message, perform
+transformations, and encode an output message. Decoding an input message requires
+decoding each field in the message. Let's say there are 10000 messages handled per second, each with 100 fields.
+During one second, 100,000 fields must be decoded. This reveals that the optimization of the decoding functionality
+is crucial. The same applies to output message encoding. We at Nokia have implemented the decoding and encoding Avro binary fields ourselves.
+We were able to make them faster than what was provided by a 3rd party library.
+
+#### Remove Unnecessary Functionality Pattern
+
+Removing unnecessary functionality is something that will boost performance. Every now and then, you should stop and think critically about your software component:
+Is my software component doing only the necessary things considering all circumstances?
+
+Let's consider the data exporter's functionality in a special case. It is currently decoding an input message to an internal message.
+This internal message is used when making various transformations to the data. Transformed data is encoded to a wanted output format.
+The contents of the final output message can be a small subset
+of the original input message. This means that only a tiny part of the decoded message is used. In that case, it is unnecessary
+to decode all the fields of an input message if, for example, only 10% of the fields are used in the transformations and
+output messages. By removing unnecessary decoding, we can improve
+the performance of the data exporter microservice.
+
+#### Object Pool Pattern
+
+In garbage-collected languages like Python, the benefit of using an object pool is evident from the
+garbage-collection point of view. Objects are created only once in the object pool pattern and then reused.
+This will take pressure away from garbage collection. If we didn't use an object pool,
+new objects could be created in a busy loop repeatedly, and soon after they were created, they
+could be discarded. This would cause many objects to be made available for garbage collection in
+a short time. Garbage collection takes processor time, and if the garbage collector has a lot of garbage to collect,
+it can slow the application down for an unknown duration at unknown intervals.
+
+#### Use Optimal Data Structures Pattern
+
+If you are performing number crunching in your application, do not use the regular Python data structures, but
+find a suitable library, like [numpy](https://numpy.org/), that contains optimized data structures for a particular use case.
+
+#### Algorithm Complexity Reduction Pattern
+
+Choose an algorithm with reduced complexity as measured using the [Big-O notation](https://en.wikipedia.org/wiki/Big_O_notation). This usually boosts the performance. In the below example, we are using the find algorithm with a list:
+
+```python
+values = [1, 2, 3, 4, 5, ..., 2000]
+if 2000 in values:
+    print("Value 2000 found")
+```
+
+The above algorithm must traverse the list, which makes it slower compared to the find algorithm with a set:
+
+```python
+values = {1, 2, 3, 4, 5, ..., 2000}
+if 2000 in values:
+    print("Value 2000 found")
+```
+
+The below algorithm (list comprehension) will generate a list of 20,000 values:
+
+```python
+values = [value for value in range(20_000)]
+```
+
+If we don't need all the 20,000 values in the memory at the same time,
+we could use a different algorithm (generator expression) which consumes much less memory,
+because not all the 20,000 values are in the memory:
+
+```python
+values = (value for value in range(20_000))
+```
+
+The type of the `values` object in the above example is `Generator`, which inherits from `Iterator`. You can use
+the `values` anywhere an iterator is expected.
+
+#### Cache Function Results Pattern
+
+You can benefit from caching the function results if you have an expensive pure function that always returns the same result for the same input without any side effects. You can cache function results using the `@cache` or `@lru_cache` decorator. Here is an example:
+
+```python
+from functools import lru_cache
+
+# Results of 500 most recent calls to the function
+# will be cached
+@lru_cache(maxsize=500)
+def make_expensive_calc(value: int):
+    # ...
+
+print(make_expensive_calc(1))
+# After the first call,
+# the function result for the input value 1
+# will be cached
+
+print(make_expensive_calc(1))
+# The result of function call is fetched from the cache
+```
+
+`@cache` is the same as `@lru_cache(maxsize=None)`, i.e., the cache does not have a maximum size limit.
+
+#### Buffer File I/O Pattern
+
+You can benefit from setting custom buffer sizes if you are reading/writing large files. The below examples set buffer sizes to 1MB:
+
+```python
+with open('data.json', 'r', buffering=1_048_576) as data_file:
+    data = data_file.read()
+
+with open('data.json', 'w', buffering=1_048_576) as data_file:
+    data_file.write(data)
+```
+
+#### Share Identical Objects a.k.a Flyweight Pattern
+
+If your application has many objects with some identical properties, those parts of the
+objects with identical properties are wasting memory. You should extract the
+common properties to a new class and make the original objects reference a shared object of that
+new class. Now, your objects share a single common object, and possibly significantly less
+memory is consumed. This design pattern is called the *flyweight pattern* and was described in more detail
+in the earlier chapter.

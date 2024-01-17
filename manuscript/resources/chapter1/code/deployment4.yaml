@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "microservice.fullname" . }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "microservice.selectorLabels" . | nindent 6 }}
+  template:
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.imageRegistry }}/{{ .Values.imageRepository }}:{{ .Values.imageTag }}"
+          livenessProbe:
+            httpGet:
+              path: /isAlive
+              port: 8080
+            initialDelaySeconds: 30
+            failureThreshold: 3
+            periodSeconds: 3

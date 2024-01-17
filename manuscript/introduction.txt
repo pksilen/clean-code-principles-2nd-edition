@@ -1,0 +1,101 @@
+# Introduction
+
+This book teaches you how to write clean code. It presents software design and development principles and patterns in a very practical manner.
+This book is suitable for both junior and senior developers. Some basic knowledge of programming in Python is required.
+All examples in this book are presented in Python, except some examples related to frontend code, which are in JavaScript/TypeScript.
+The content of this book is divided into ten chapters. All Python examples in this book require Python 3.11 or later.
+This is a book for primarily software developers. For that reason, some topics are not covered exhaustively. This includes topics
+related to architecture, DevSecOps, E2E, and non-functional testing. Those are topics most relevant to software architects,
+DevOps specialists and test/QA engineers. I want to cover them in this book because it is always good to have a basic
+understanding of topics closely related to software development.
+
+This book presents a lot of principles, best practices, and patterns. It can be difficult to grasp them all on a single read,
+which is not the purpose. You should pick *the most relevant topics for yourself*, embrace them, and try to put them into use in everyday coding.
+You can always return to the book to learn additional topics.
+Some principles, patterns, and practices can be subjective and open for debate, but I have only put into this book such principles, patterns, and practices that I have used or would use myself.
+In the last *Conclusion* chapter, I will list the topics that I consider the most important based on my experience in real-life projects.
+
+The *second chapter* is about *architectural design principles* that enable the development of true cloud-native microservices.
+The first architectural design principle described is the single responsibility principle, which defines that a piece of software
+should be responsible for one thing at its abstraction level.
+Then, a uniform naming principle for microservices, clients, APIs, and libraries is presented.
+The encapsulation principle defines how each software component should hide its internal state behind a public API.
+The service aggregation principle is introduced with a detailed explanation of how a higher-level microservice can aggregate lower-level microservices.
+Architectural patterns like event sourcing, command query responsibility segregation (CQRS), and distributed transactions are discussed.
+Distributed transactions are covered with examples using the saga orchestration pattern and the saga choreography pattern.
+You get answers on how to avoid code duplication at the architectural level. The externalized configuration principle describes how service
+configuration should be handled in modern environments. We discuss the service substitution principle, which states that dependent services
+a microservice uses should be easily substitutable. The importance of autopilot microservices is discussed from the point of view of statelessness, resiliency,
+high availability, observability, and automatic scaling. Towards the end of the chapter, there is a discussion about different ways
+microservices can communicate. Several rules are presented on how to version software components. The chapter ends with discussing why limiting the number of technologies used in a software system is helpful.
+
+The *third chapter* presents *object-oriented design principles*. We start the chapter with object-oriented programming concepts and programming paradigms followed by the SOLID principles:
+Single responsibility principle, open-closed principle, Liskov's substitution principle, interface segregation principle, and dependency inversion principle.
+Each SOLID principle is presented with realistic but simple examples. The uniform naming principle defines a uniform way to name interfaces,
+classes, functions, function pairs, boolean functions (predicates), builder, factory, conversion, and lifecycle methods.
+The encapsulation principle describes that a class should encapsulate its internal state and how immutability helps ensure state encapsulation.
+The encapsulation principle also discusses the importance of not leaking an object's internal state out. The object composition principle defines that
+composition should be preferred over inheritance. Tactical Domain-driven design (DDD) is presented with two real-world examples.
+All the design patterns from the *GoF's* *Design Patterns* book are presented with realistic yet straightforward examples. The don't ask, tell principle
+is presented as a way to avoid the feature envy design smell. The chapter also discusses avoiding primitive obsession
+and the benefits of using semantically validated function arguments. The chapter ends by presenting the dependency injection principle
+and avoiding code duplication principle.
+
+The *fourth chapter* is about *coding principles*. The chapter starts with a principle for uniformly naming variables in code.
+A uniform naming convention is presented for integer, floating-point, boolean, string, enum, and collection variables.
+Also, a naming convention is defined for maps, pairs, tuples, objects, and callback functions.
+The uniform source code repository structure principle is presented with examples. Next, the avoid comments principle lists reasons why most comments are unnecessary and defines
+concrete ways to remove unnecessary comments from the code. The following concrete actions are presented: naming things correctly,
+returning a named value, return-type aliasing, extracting a constant for a boolean expression, extracting a constant for a complex expression,
+extracting enumerated values, and extracting a function. The chapter discusses the benefits of using type hints. We discuss
+the most common refactoring techniques: renaming, extracting a method, extracting a variable,
+replacing conditionals with polymorphism, introducing a parameter object, and making anemic objects rich objects. The importance of static code analysis is described,
+and the most popular static code analysis tools are listed. The most common static code analysis issues and
+the preferred way to correct them are listed. Handling errors and exceptions correctly in code is fundamental and can be easily
+forgotten or done wrong. This chapter instructs how to handle errors and exceptions and return errors by returning
+a boolean failure indicator, an optional value, or an error object. The chapter instructs how to adapt code to a wanted error-handling mechanism
+and handle errors functionally. Ways to avoid off-by-one errors are presented. Readers are instructed on handling situations where some code is copied from a web page found by googling or generated by AI.
+Advice is given on what data structure is the most appropriate for a given use case. The chapter ends with a discussion about code optimization: when and how to optimize.
+
+The *fifth chapter* is dedicated to *testing principles*. The chapter starts with the introduction of the functional testing pyramid.
+Then, we present unit testing and instruct how to use test-driven development (TDD) and behavior-driven development for individual functions. We give unit test examples with mocking.
+When introducing software component integration testing, we discuss behavior-driven development (BDD), acceptance test-driven development (ATDD), and the Gherkin language to specify features formally.
+Integration test examples are given using Behave and the Postman API development platform. The chapter also discusses the integration testing of UI software components.
+We end the integration testing section with an example of setting up an integration testing environment using Docker Compose. We give a complete example of applying multiple design approaches (BDD, ATDD, DDD, OOD, and TDD) in a small project.
+Lastly, the purpose of end-to-end (E2E) testing is discussed with some examples. The chapter ends with a discussion about
+non-functional testing. The following categories of non-functional testing are covered in more detail: performance testing,
+stability testing, reliability testing, security testing, stress, and scalability testing.
+
+The *sixth chapter* handles *security principles*. The threat modeling process is introduced, and there is an example of how to conduct
+threat modeling for a simple API microservice. A full-blown frontend OpenID Connect/OAuth 2.0
+authentication and authorization example for a SPA (single-page application) with TypeScript, Vue.js, and Keycloak is implemented.
+Then, we discuss how authorization by validating a JWT should be handled in the backend. The chapter
+ends with a discussion of the most important security features: password policy, cryptography, denial-of-service prevention,
+SQL injection prevention, security configuration, automatic vulnerability scanning, integrity, error handling, audit logging, and input validation.
+
+The *seventh chapter* is about *API design principles*. First, we tackle design principles for frontend-facing APIs.
+We discuss how to design JSON-based RPC, REST, and GraphQL APIs. Also, subscription-based and real-time APIs are presented with
+realistic examples using Server-Sent Events (SSE) and the WebSocket protocol.
+The last part of the chapter discusses inter-microservice API design and event-driven architecture. gRPC is introduced as a synchronous inter-microservice communication method, and examples of request-only and request-response asynchronous APIs are presented.
+
+The *8th chapter* discusses *databases and related principles*. We cover the following types of databases: relational databases,
+document databases (MongoDB), key-value databases (Redis), wide-column databases (Cassandra), and search engines.
+For relational databases, we present how to use object-relational mapping (ORM), define one-to-one, one-to-many and many-to-many relationships,
+and parameterized SQL queries. Finally, we present three normalization rules for relational databases.
+
+The *9th chapter* presents *concurrent programming principles* regarding threading and thread safety.
+For thread safety, we present several ways to achieve thread synchronization: locks, atomic variables, and thread-safe collections.
+We also discuss publishing changes to a shared state and subscribing to them from two different threads.
+
+The *10th chapter* discusses *teamwork principles*. We explain the importance of using an agile framework and discuss the fact that a developer
+usually never works alone and what that entails. We discuss how to document a software component so that onboarding new developers is quick and easy.
+Technical debt in software is something that each team should avoid. Some concrete actions to prevent technical debt are presented. Code reviews are something teams should do,
+and this chapter gives guidance on what to focus on in code reviews. The chapter ends with a discussion of developer roles
+each team should have and provides hints on enabling a team to develop software as concurrently as possible.
+
+The *11th chapter* is dedicated to *DevSecOps*. DevOps describes practices that integrate software development (Dev) and software operations (Ops).
+It aims to shorten the software development life cycle through parallelization and automation and provides continuous delivery
+with high software quality. DevSecOps is a DevOps augmentation where security practices are integrated into the DevOps practices.
+This chapter presents the phases of the DevOps lifecycle: plan, code, build and test, release, deploy, operate, and monitor.
+The chapter gives an example of creating a microservice container image and how to specify the deployment of a microservice to a Kubernetes cluster.
+Also, a complete example of a CI/CD pipeline using GitHub Actions is provided. Guidance on how to implement microservice observability (logging, metrics, alerts) is given with some examples.

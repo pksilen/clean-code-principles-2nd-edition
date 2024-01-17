@@ -1,0 +1,4486 @@
+# Testing Principles
+
+Testing is traditionally divided into two categories: functional and non-functional testing.
+This chapter will first describe the functional testing principles and then the non-functional testing
+principles.
+
+## Functional Testing Principles
+
+Functional testing is divided into three phases:
+
+- Unit testing
+- Integration testing
+- End-to-end (E2E) testing
+
+Functional test phases can be described with the [testing pyramid](https://martinfowler.com/articles/practical-test-pyramid.html):
+
+![Testing Pyramid](resources/chapter4/images/testing-pyramid.png)
+
+The testing pyramid depicts the relative number of tests in each phase. Most tests are unit tests. The second most tests are
+integration tests; the fewest are E2E tests. Unit tests should cover the whole codebase of a software component.
+Unit testing focuses on testing individual public functions as units (of code). Software component integration tests cover
+the integration of the unit-tested functions to a complete working software component, including testing the interfaces
+to external services. External services include a database, a message broker, and other microservices. E2E testing
+focuses on testing the end-to-end functionality of a complete software system.
+
+There are various other terms used to describe different testing phases:
+
+- Module testing (an older term for unit testing)
+- (Software) Component testing (same as integration testing)
+- System (Integration) testing (same as E2E testing)
+
+The term *component testing* is also used to denote only the integration of the unit-tested modules in a software component without
+testing the external interfaces. In connection with the *component testing* term, there is the term *integration testing*
+used to denote the testing of external interfaces of a software component. Here, I use the term *integration testing* to
+denote both the integration of unit-tested modules and external interfaces.
+
+### Unit Testing Principle
+
+> ***Unit tests should test the functionality of public functions as isolated units with as high coverage as possible. The isolation means that dependencies (other classes/modules/services) are mocked.***
+
+Unit tests should be written for public functions only. Do not try to test private functions separately. They
+should be tested indirectly when testing public functions. Unit tests should test the function specification, i.e., what
+the function is expected to do in various scenarios, not how the function is implemented. When you unit test only public functions,
+you can easily refactor the function implementation, e.g., rewrite the private functions that the public function uses without
+modifying the related unit tests (or with minimal changes).
+
+Below is an example of a public function using a private function:
+
+{format: python}
+![parse_config.py](resources/chapter4/code/parse_config.py)
+
+In the above *parse_config.py* module, there is one public function, `parse_config`, and one private function, `__read_file`. In unit testing,
+you should test the public `parse_config` function in isolation and mock the `do_something` function, which is imported from another module.
+And you indirectly test the private `__read_file` function when testing the public `parse_config` function.
+
+Below is the same example rewritten using classes. You test the class-based version in a similar way as the above version. You
+write unit tests for the public `parse_config` method only. Those tests will test the private `__read_file` method indirectly.
+You must supply a mock instance of the `OtherClass` class for the `ConfigParser` constructor.
+
+```python
+class OtherClass:
+    # ...
+
+    def do_something(self, ...) -> None:
+        # ...
+
+
+class ConfigParser:
+    def __init__(self, other_class: OtherClass):
+        self.__other_class = other_class
+
+    # ...
+
+    def parse_config(self, ...):
+        # ...
+        # self.__read_file(...)
+        # self.__other_class.do_something(...)
+        # ...
+
+    def __read_file(self, ...):
+        # ...
+```
+
+If you have a public function using many private methods, testing the public method can become complicated, and the test method becomes long, possibly with many expectations on mocks. It can be challenging to remember to test every scenario that exists in the public and related private methods.
+What you should do is refactor all or some private methods into public methods of one or more new classes (This is the *extract class* refactoring technique explained in the previous chapter).
+Then, the test method in the original class becomes shorter and more straightforward, with less expectation of mocks. This is an essential
+refactoring step that should not be forgotten. It helps keep both the source code and unit tests readable and well-organized. The unit test code must be the same high quality as the source. Unit test code should use type annotations and the same linter rules as the source code itself. The unit test code should not contain duplicate code. A unit test method should be a maximum of 5-9 statements long. Aim for a single assertion or put assertions in one well-named private method. If you have more than 5-6 expectations on mocks, you need to refactor the source code as described above to reduce the number of expectations and to make the test method shorter.
+
+Unit tests should test all the functionality of a public function: happy path(s),
+possible failure situations, security issues, and edge/corner cases so that each code line of the function is covered by at least one unit test.
+Security issues in functions are mostly related to the input the function gets. Is that input secure? If your function receives unvalidated
+input data from an end-user, that data must be validated against a possible attack by a malicious end-user.
+
+Below are some examples of edge/corner test cases listed:
+
+- Is the last loop counter value correct? This test should detect possible off-by-one errors
+- Test with an empty array
+- Test with the smallest allowed value
+- Test with the biggest allowed value
+- Test with a negative value
+- Test with a zero value
+- Test with a very long string
+- Test with an empty string
+- Test with floating-point values having different precisions
+- Test with floating-point values that are rounded differently
+- Test with an extremely small floating-point value
+- Test with an extremely large floating-point value
+
+Unit tests should not test the functionality of dependencies. That is something to be tested
+with integration tests. A unit test should test a function in isolation. If a function has one
+or more dependencies on other functions defined in different classes (or modules), those
+dependencies should be mocked. A *mock* is something that mimics the behavior of a real object or function. Mocking
+will be described in more detail later in this section.
+
+Testing functions in isolation has two benefits. It makes tests faster. This is a real benefit because
+you can have a lot of unit tests, and you run them often, so the execution time of the unit tests must be as short as possible. Another benefit is that you don't need to set up external
+dependencies, like a database, a message broker, and other microservices, because you are mocking the functionality
+of the dependencies.
+
+Unit tests give you protection against introducing accidental bugs when refactoring code. Unit tests ensure that the implementation code meets the
+function specification. It should be remembered that it is hard to write the perfect code
+on the first try. You are bound to practice refactoring to keep your code base clean and free of technical debt.
+And when you refactor, the unit tests are on your side to prevent accidentally introducing bugs.
+
+#### Test-Driven Development (TDD)
+
+Test-driven development (TDD) is a software development process in which software requirements are formulated as
+(unit) test cases before the software is implemented. This is as opposed to the practice where software is
+implemented first, and test cases are written only after that.
+
+The benefits of TDD are many:
+
+- Lesser likelihood of forgetting to implement some failure scenarios or edge cases
+- No big upfront design, but emergent (and usually better) design because of constant refactoring
+- Existing tests make the developer feel confident when refactoring
+- Less cognitive load for the developer because only one scenario is implemented at a time
+- You automatically write unit-testable code
+- You don't write unnecessary code because you only write code that makes the tests pass (you can follow the [YAGNI principle](https://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it))
+- Less need for debugging
+
+TDD aims to maximize the external and internal quality of the software. External quality is the quality the users see, e.g., a minimal number of bugs and correct features.
+Internal quality is what the developers see. If internal quality is low, it is less likely that a developer can introduce bugs (i.e., cause low external quality) to
+the software. High internal quality can be achieved with TDD. You have a comprehensive set of tests and a good design with low technical debt. It will be easy for a developer to maintain and develop such software further.
+
+I have been in the industry for almost 30 years, and when I began coding, there were no automated tests or
+test-driven development. Only since around 2010 have I been writing automated unit tests. Due to this
+background, TDD has been quite difficult for me because there is something I have grown accustomed to: Implement
+the software first and then do the testing. I assume many of you have also learned it like that, which can make switching to TDD
+rather difficult. Little material exists that teaches topics using TDD. The internet is full of books, courses, videos, blogs, and
+other posts that don't teach you the proper way of development: TDD. The same applies to this book, also. I present code samples in the book but don't always use TDD because it would make everything complicated and more verbose.
+We are constantly taught to program test-last!
+When asking people who have conducted TDD, they say the main benefit is that it reduces stress because you don't have to achieve multiple goals simultaneously, like designing the function and thinking of and implementing (and remembering to implement) all possible execution paths.
+
+TDD can feel unnatural at the beginning. It can slow you down at first. You just have to keep practicing it systematically. In that way, you can start gradually seeing the benefits and
+build a habit of always using TDD. Later, you will notice that it begins to feel natural, and it does not slow you down anymore but brings you the many benefits depicted above.
+
+The complete TDD cycle, as instructed by *Kent Beck* in his book *Test-Driven Development by Example* consists of the following steps:
+
+1) Add a test for a specified functionality
+2) Run all the tests (The just added test should fail if the functionality it is testing is not implemented yet)
+3) Write the simplest possible code that makes the tests pass
+4) Run all the tests. (They should pass now)
+5) Refactor as needed (Existing tests should ensure that anything won't break)
+6) Start again from the first step until all functionality is implemented, refactored, and tested
+
+Instead of TDD, you should use low-level behavior-driven development (BDD). We discuss BDD later in this chapter
+when addressing integration testing. Low-level BDD extends TDD by more formally defining the low-level (function/unit-level) behavior. To use BDD,
+ensure the following in your unit tests:
+
+- Test method name tells the tested public function name (feature name) and the scenario that is tested in that particular test method
+- The test method body is organized into three sections: Given, When, and Then steps. This is basically the same thing as Arrange-Act-Assert, which is the suggested way to structure unit tests. In the Given/Arrange phase, you prepare everything for the test. In the Act/When phase, you perform an operation; in the Assert/Then phase, you make assertions about the operation result. Try to keep the assertion phase as simple as possible. The best is to have only a single assertion, but that is not always possible. You can also extract multiple assertions into a well-named private method and call that method from the test method in the assertion phase.
+
+Some TDD practitioners suggest you name a test method after the feature it is testing, including a description of the scenario and expected outcome.
+That approach can easily make the test method names too long and hard to read. You can always see the expected result by looking at the end of the test method, which should preferably contain only a single assertion. I also like to put test methods in a test class in the same order I have in the tested class. Also, the scenarios can be ordered from a more specialized scenario to a more generalized scenario (or vice versa). All this makes navigating between test methods a breeze. Also, there is not much difference between a class's features and its public methods. Each public method should implement a single feature only (remember the *single responsibility principle*). A single feature (method) consists of one or more scenarios. For example, a `Stack` has four features: You can `push` an item to the stack and `pop` an item from the stack. You can also ask if the stack `is_empty` or ask its `size`. These features have multiple scenarios: for example, how they behave if the stack is empty versus the stack with items in it. When you add features to a class, you should put them into new methods or, preferably, use the *open-closed principle* and put them in a totally new class.
+
+Below are two examples of test method names in a `StackTests` class. The first one contains the method name that is tested, and the second one is named after the feature:
+
+```python
+class StackTests(unittest.TestCase):
+    def test_pop__when_stack_is_empty(self):
+        # ...
+
+        # WHEN + THEN
+        # self.assertRaises(...)
+
+    # You can also use method name prefixed with 'it':
+    # it_should_raise_error_when_popping_item_from_empty_stack
+    def should_raise_error_when_popping_item_from_empty_stack(self):
+        # ...
+
+        # WHEN + THEN
+        # self.assertRaises(...)
+```
+
+Here is another example:
+
+```python
+class CarTests(unittest.TestCase):
+    def test_accelerate(self):
+        # GIVEN
+        # initial_speed = ...
+        # car = Car(initial_speed)
+
+        # WHEN
+        # car.accelerate()
+
+        # THEN
+        self.assertGreater(car.speed, initial_speed)
+
+    def test_decelerate(self):
+        # GIVEN
+        # initial_speed = ...
+        # car = Car(initial_speed)
+
+        # WHEN
+        # car.accelerate()
+
+        # THEN
+        self.assertLess(car.speed, initial_speed)
+
+    def should_increase_speed_when_accelerates(self):
+        # GIVEN
+        # initial_speed = ...
+        # car = Car(initial_speed)
+
+        # WHEN
+        # car.accelerate()
+
+        # THEN
+        self.assertGreater(car.speed, initial_speed)
+
+    def should_decrease_speed_when_decelerates(self):
+        # GIVEN
+        # initial_speed = ...
+        # car = Car(initial_speed)
+
+        # WHEN
+        # car.accelerate()
+
+        # THEN
+        self.assertLess(car.speed, initial_speed)
+```
+
+You could make the assertion even more readable by extracting a well-named method, for example:
+
+```python
+class CarTests(unittest.TestCase):
+    __initial_speed = ...
+    __car = Car(initial_speed)
+
+    def test_accelerate(self):
+        # WHEN
+        # self.__car.accelerate()
+
+        # THEN
+        self.__assert_speed_is_increased()
+
+    def __assert_speed_is_increased(self):
+        self.assertGreater(self.__car.speed, self.__initial_speed)
+``
+
+You can use the feature-based naming instead of the method-based naming convention if you want. I use the method-based naming convention in all unit tests in this book.
+
+Let's continue with an example. Suppose there is the following user story in the backlog waiting to be implemented:
+
+> *Parse configuration properties from a configuration string to a configuration object. Configuration properties can be accessed from the configuration object. If parsing the configuration fails, an error should be produced.*
+
+Let's first write a test for the simplest 'happy path' scenario of the specified functionality: parsing a single property only.
+
+```python
+import unittest
+
+from ConfigParserImpl import ConfigParserImpl
+
+
+class ConfigParserTests(unittest.TestCase):
+    config_parser = ConfigParserImpl()
+
+    def test_parse__when_successful(self):
+        # GIVEN
+        config_str = 'propName1=value1'
+
+        # WHEN
+        config = self.config_parser.parse(config_str)
+
+        # THEN
+        self.assertEqual(config.get_property_value('propName1'), 'value1')
+```
+
+If we run the test, we get a compilation error, meaning the test case we wrote won't pass. Next,
+we shall write the simplest possible code to make the test case both compile and pass. We can make shortcuts like using a fixed value (constant) instead of a more generalized solution. That is called
+*faking it*. We can fake it until we make it, which happens when we add a new test that forces us to eliminate the constant value and write more generalized code. The part of TDD where you add more
+tests to drive for a more generalized solution is called *triangulation*.
+
+```python
+from typing import Protocol, Final
+
+
+class Configuration(Protocol):
+    def get_property_value(self, property_name: str) -> str:
+        pass
+
+
+class ConfigurationImpl(Configuration):
+    def get_property_value(self, property_name: str) -> str | None:
+        return 'value1'
+
+
+class ConfigParser(Protocol):
+    def parse(self, config_str: str) -> Configuration:
+        pass
+
+
+class ConfigParserImpl(ConfigParser):
+    def parse(self, config_str: str) -> Configuration:
+        return ConfigurationImpl()
+```
+
+Let's write a test for a 'happy path' scenario where we have two properties. This forces us to make the
+implementation more generalized. We cannot use a constant anymore, and we should not use two constants with
+an if/else-statement because if we want to parse more than two properties, the approach using constants does not scale.
+
+```python
+import unittest
+
+from ConfigParserImpl import ConfigParserImpl
+
+
+class ConfigParserTests(unittest.TestCase):
+    config_parser = ConfigParserImpl()
+
+    def test_parse__when_successful(self):
+        # GIVEN
+        config_str = 'propName1=value1\npropName2=value2'
+
+        # WHEN
+        config = self.config_parser.parse(config_str)
+
+        # THEN
+        self.assertEqual(config.get_property_value('propName1'), 'value1')
+        self.assertEqual(config.get_property_value('propName2'), 'value2')
+```
+
+If we run all the tests, the new test will fail in the second assertion. Next,
+we shall write code to make the test cases pass:
+
+```python
+from typing import  Final
+
+class ConfigurationImpl(Configuration):
+    def __init__(self, prop_name_to_value: dict[str, str]):
+        self.__prop_name_to_value: Final = prop_name_to_value
+
+    def get_property_value(self, property_name: str) -> str | None:
+        return self.__prop_name_to_value.get(property_name);
+
+
+class ConfigParserImpl(ConfigParser):
+    def parse(self, config_str: str) -> Configuration:
+        # Parse config_str and assign properties to
+        # 'prop_name_to_value' variable
+
+        return ConfigurationImpl(prop_name_to_value)
+```
+
+Now, the tests pass, and we can add new functionality. Let's add a test for the case when parsing fails.
+We can now repeat the TDD cycle from the beginning by creating a failing test first:
+
+```python
+import unittest
+
+from ConfigParser import ConfigParser
+
+
+class ConfigParserTests(unittest.TestCase):
+    # ...
+
+    def test_try_parse__when_parsing_fails(self):
+        # GIVEN
+        config_str = 'invalid'
+
+        try:
+            # WHEN
+            self.config_parser.try_parse(config_str)
+
+            # THEN
+            self.fail('ConfigParser.ParseError should have been raised')
+        except ConfigParser.ParseError:
+            # THEN error was successfully raised
+```
+
+Next, we should refactor the implementation to make the second test pass:
+
+```python
+from typing import Protocol
+
+from Configuration import Configuration
+from DataExporterError import DataExporterError
+
+
+class ConfigParser(Protocol):
+    class ParseError(DataExporterError):
+        pass
+
+    def try_parse(self, config_str: str) -> Configuration:
+        pass
+
+
+class ConfigParserImpl(ConfigParser):
+    def try_parse(self, config_str: str) -> Configuration:
+        # Try parse config_str and if successful
+        # assign config properties to 'prop_name_to_value'
+        # variable
+
+        if prop_name_to_value is None:
+            raise self.ParseError()
+        else:
+            return ConfigurationImpl(prop_name_to_value)
+```
+
+We must also refactor the other unit tests to call `try_parse` instead of `parse`.
+We could continue the TDD cycle by adding new test cases for additional functionality if such existed.
+
+Before starting the TDD process, list all the requirements (scenarios) with bullet points so you don't forget any. The scenarios should cover all
+happy paths, edge cases, and failure/security scenarios. For example:
+
+- Edge case scenarios
+  - Scenario A
+  - Scenario B
+- Failure scenarios
+  - Scenario C
+  - Scenario D
+- Security scenarios
+  - Scenario E
+- Success scenarios
+  - Scenario F
+
+Listing all scenarios is an important step in order not to forget to test something because if you don't write a test for something, it's highly likely you won't implement it either. During the TDD process, you should
+add any missing scenarios to that list. Order the list so that the most specialized scenarios are listed first. Then, start the TDD process by following the ordered list. The most specialized scenarios are typically the easiest to implement, and this is why you should start with them. Specialized scenarios include edge cases and failure scenarios.
+
+In the simplest case, a specialized scenario can be implemented, for example, by returning a constant from a function. An example of a specialized scenario with a `List` class's `is_empty` method is when the list is empty after creating a new `List` object. Test that first, and only after that test a scenario where something is added to the list, and it is no longer empty.
+
+At the end of the list are the generalized scenarios that should make the function work with any input. To summarize, during the TDD process, you work from a specialized implementation towards a more generalized implementation.
+
+The drawback of TDD is that you cannot always be 100% sure if you have a generalized enough implementation. You can only be 100% sure that your implementation works with the input used in the tests, but you cannot be sure if any input works correctly. To ensure that, you would have to test all possible input values (like all integer values), which is typically unreasonable.
+
+Let's have another TDD example with a function that has edge cases. We should implement a `contains` method for a string class (we assume here that the `in` operator does not exists). The method should
+do the following:
+
+> *The method takes a string argument, and if that string is found in the string the string object represents, then `True` is returned. Otherwise, `False` is returned.*
+
+There are several scenarios we might want to test to make sure that the function works correctly in every
+case:
+
+- Edge cases
+    1) Strings are equal
+    2) Both strings are empty
+    3) Argument string is empty
+    4) The string under test is empty
+    5) Argument string is found at the beginning of the other string
+    6) Argument string is found at the end of the other string
+    7) Argument string is longer than the other string
+
+- Happy paths
+    8) Argument string is found in the middle of the other string
+    9) Argument string is not found in the other string
+
+Let's start with the first scenario:
+
+```python
+import unittest
+
+
+class StringTests(unittest.TestCase):
+    def test_contains__strings_are_equal(self):
+        # GIVEN
+        string = MyString('String')
+        another_string = 'String'
+
+        # WHEN
+        string_contains_another_string = string.contains(another_string)
+
+        # THEN
+        self.assertTrue(string_contains_another_string)
+```
+
+Next, we do as much implementation as is needed to make the above test pass. The simplest thing to do is to return
+a constant:
+
+```python
+from typing import Final
+
+
+class MyString:
+    def __init__(self, value: str):
+        self.__value: Final = value
+
+    def contains(self, another_string: str) -> bool:
+        return True
+```
+
+Let's add a failing test for the second scenario:
+
+```pyhton
+class StringTests(unittest.TestCase):
+    # ...
+
+    def test_contains__when_both_strings_are_empty(self):
+        # GIVEN
+        string = MyString('')
+        another_string = ''
+
+        # WHEN
+        string_contains_another_string = string.contains(another_string)
+
+        # THEN
+        self.assertTrue(string_contains_another_string)
+```
+
+We don't have to modify the implementation to make the above test pass.
+Let's add a test for the third scenario:
+
+```pyhton
+class StringTests(unittest.TestCase):
+    # ...
+
+    def test_contains__when_argument_string_is_empty(self):
+        # GIVEN
+        string = MyString('String')
+        another_string = ''
+
+        # WHEN
+        string_contains_another_string = string.contains(another_string)
+
+        # THEN
+        self.assertTrue(string_contains_another_string)
+```
+
+We don't have to modify the implementation to make the above test pass.
+Let's add a test for the fourth scenario:
+
+```pyhton
+class StringTests(unittest.TestCase):
+    # ...
+
+    def test_contains__when_string_is_empty(self):
+        # GIVEN
+        string = MyString('')
+        another_string = 'String'
+
+        # WHEN
+        string_contains_another_string = string.contains(another_string)
+
+        # THEN
+        self.assertFalse(string_contains_another_string)
+```
+
+Let's modify the implementation to make the above (and earlier tests) to pass:
+
+```python
+from typing import Final
+
+
+class MyString:
+    def __init__(self, value: str):
+        self.__value: Final = value
+
+    def contains(self, another_string: str) -> bool:
+        if not self.__value and another_string:
+            return False
+        return True
+```
+
+Let's add a test for the fifth scenario:
+
+```pyhton
+class StringTests(unittest.TestCase):
+    # ...
+
+    def test_contains__when_arg_string_is_found_at_begin(self):
+        # GIVEN
+        string = MyString("String")
+        another_string = "Str"
+
+        # WHEN
+        string_contains_another_string = string.contains(another_string)
+
+        # THEN
+        self.assertTrue(string_contains_another_string)
+```
+
+We don't have to modify the implementation to make the above test pass.
+Let's add a test for the sixth scenario:
+
+```pyhton
+class StringTests(unittest.TestCase):
+    # ...
+
+    def test_contains__when_arg_string_is_found_at_end(self):
+        # GIVEN
+        string = MyString("String")
+        another_string = "ng"
+
+        # WHEN
+        string_contains_another_string = string.contains(another_string)
+
+        # THEN
+        self.assertTrue(string_contains_another_string)
+```
+
+Let's add a test for the seventh scenario:
+
+```python
+class StringTests(unittest.TestCase):
+    # ...
+
+    def test_contains__when_arg_string_is_longer_than_other_string(self):
+        # GIVEN
+        string = MyString('String')
+        another_string = 'String111'
+
+        # WHEN
+        string_contains_another_string = string.contains(another_string)
+
+        # THEN
+        self.assertFalse(string_contains_another_string)
+```
+
+Let's modify the implementation:
+
+```python
+from typing import Final
+
+
+class MyString:
+    def __init__(self, value: str):
+        self.__value: Final = value
+
+    def contains(self, another_string: str) -> bool:
+        if (
+            not self.__value
+            and another_string
+            or len(another_string) > len(self.__value)
+        ):
+            return False
+        return True
+```
+
+Let's add a test for the eigth scenario:
+
+```python
+class StringTests(unittest.TestCase):
+    # ...
+
+    def test_contains__when_arg_string_is_found_in_middle(self):
+        # GIVEN
+        string = MyString('String')
+        another_string = 'ri'
+
+        # WHEN
+        string_contains_another_string = string.contains(another_string)
+
+        # THEN
+        self.assertTrue(string_contains_another_string)
+```
+
+We don't have to modify the implementation to make the above test pass.
+Let's add the final test:
+
+```python
+class StringTests(unittest.TestCase):
+    # ...
+
+    def test_contains__when_arg_string_is_not_found(self):
+        # GIVEN
+        string = MyString('String')
+        another_string = 'aa'
+
+        # WHEN
+        string_contains_another_string = string.contains(another_string)
+
+        # THEN
+        self.assertFalse(string_contains_another_string)
+```
+
+Let's modify the implementation to make the above (and earlier tests) to pass:
+
+```python
+from typing import Final
+
+
+class MyString:
+    def __init__(self, value: str):
+        self.__value: Final = value
+
+    def contains(self, another_string: str) -> bool:
+        if (
+            not self.__value
+            and another_string
+            or len(another_string) > len(self.__value)
+            or self.__value.find(another_string) == -1
+        ):
+            return False
+        return True
+```
+
+Let's add a test for the eigth scenario:
+
+```python
+class StringTests(unittest.TestCase):
+    # ...
+
+    def test_contains__when_arg_string_is_found_at_middle(self):
+        # GIVEN
+        string = MyString('String')
+        another_string = 'ri'
+
+        # WHEN
+        string_contains_another_string = string.contains(another_string)
+
+        # THEN
+        self.assertTrue(string_contains_another_string)
+```
+
+We don't have to modify the implementation to make the above test pass.
+
+Next, we should refactor. We can notice that the if-statement condition can be simplified to the following:
+
+```python
+from typing import Final
+
+
+class MyString:
+    def __init__(self, value: str):
+        self.__value: Final = value
+
+    def contains(self, another_string: str) -> bool:
+        if self.__value.find(another_string) == -1:
+            return False
+        return True
+```
+
+You may have noticed that some refactoring was needed until we came up with the final solution. This is what
+happens with TDD. You only consider implementation one scenario at a time, which can result in writing code that
+will be removed/replaced when making a test for the next scenario pass. This is called *emergent design*.
+
+The above example is
+a bit contrived because we finally used the `find` method, which we could have done already in the first test case, but we didn't because we were supposed to write the simplest implementation to make the test pass. Consider the same example when no `find` method is available, and we must implement the `find` method functionality (looping through the characters, etc.) in the `contains` method ourselves. Then, all the tests start to make sense. Many of them are testing edge/corner cases that are important to test. If you are still in doubt, think about implementing the `contains` method in a language that does not have a for-in loop, but you must use character indexes. Then, you would finally understand the importance of testing the edge cases: reveal possible off-by-one errors, for example.
+
+When you encounter a bug, it is usually due to a missing scenario: An edge case is not considered, or implementation for a failure scenario or happy path is missing.
+To remedy the bug, you should practice TDD by adding a failing test for the missing scenario and then make the bug correction in the code to make the added test (and other tests) pass.
+
+There will be one more TDD example later in this chapter when we have an example using BDD, DDD, OOD, and TDD. If you are not yet fully convinced about
+TDD, the following section presents an alternative to TDD that is still better than doing tests last.
+
+#### Unit Specification-Driven Development (USDD)
+
+For some of you, the above-described TDD cycle may sound cumbersome, or you may not be fully convinced about the benefits it brings. For this reason, I am presenting an alternative to TDD that you can use until you feel ready to try TDD out.
+The approach I am presenting is inferior to TDD but superior to the traditional "test-last" approach because it reduces the number of bugs by concentrating on the unit (function) specification before the implementation.
+There are clear benefits in specifying the function behavior beforehand. I call this approach *unit specification-driven development* (USDD).
+When function behavior is defined first, one is usually less likely to forget to test or implement something. The USDD approach forces you to consider the function specification: happy path(s), possible security issues, edge, and failure cases.
+
+If you don't practice USDD and always do the implementation first, it is more likely you will forget an edge case or a particular
+failure/security scenario. When you don't practice USDD, you go straight to the implementation, and you tend to think about
+the happy path(s) only and strive to get them working. When focusing 100% on getting the happy path(s) working,
+you don't consider the edge cases and failure/security scenarios. You might forget to implement them or at least some of them.
+If you forget to implement an edge case or failure scenario, you don't also test it. You
+can have 100% unit test coverage for a function, but a particular edge case or failure/security scenario is left
+unimplemented and untested. This is what has happened to me, also. And it has happened more than once. After realizing that the USDD approach
+could save me from those bugs, I started to take it seriously.
+
+You can conduct USDD as an alternative to TDD/BDD. In USDD,
+you first specify the unit (i.e., function). You extract all the needed tests from the function specification, including the "happy path" or "happy paths", edge cases, and failure/security scenarios. Then, you put a `fail` call in all the tests so as not to forget to implement them later. Additionally, you can add a comment on the expected result of a test. For example, in failure scenarios, you can write a comment
+that tells what kind of error is expected to be raised, and in an edge case, you can put a comment that tells with the input of *x*, the output of *y* is
+expected. (Later, when the tests are implemented, the comments can be removed.)
+
+Let's say that we have the following function specification:
+
+> *Configuration parser's `parse` method parses configuration in JSON format into a configuration object. The method should produce an error if the configuration JSON cannot be parsed. Configuration JSON consists of optional and mandatory properties (name and value of specific type). A missing mandatory property should produce an error, and a missing optional property should use a default value. Extra properties should be discarded. A property with an invalid type of value should produce an error. Two property types are supported: integer and string. Integers must have value in a specified range, and strings have a maximum length. The mandatory configuration properties are the following: `name` (`type`) ... The optional configuration properties are the following: `name` (`type`) ...*
+
+Let's first write a failing test case for the "happy path" scenario:
+
+```python
+import unittest
+
+
+class ConfigParserTests(unittest.TestCase):
+    def test_try_parse__when_successful(self):
+        # Happy path scenario, returns a 'Config' object
+        self.fail()
+```
+
+Next, let's write a failing test case for the other scenarios extracted from the above function specification:
+
+```python
+import unittest
+
+
+class ConfigParserTests(unittest.TestCase):
+    # ...
+
+    def test_try_parse__when_json_parsing_fails(self):
+        # Failure scenario, should produce an error
+        self.fail()
+
+    def test_try_parse__when_mandatory_prop_is_missing(self):
+        # Failure scenario, should produce an error
+        self.fail()
+
+    def test_try_parse__when_optional_prop_is_missing(self):
+        # Should use default value
+        self.fail()
+
+    def test_try_parse__with_extra_props(self):
+        # Extra props should be discarded
+        self.fail()
+
+    def test_try_parse__when_prop_has_invalid_type(self):
+        # Failure scenario, should produce an error
+        self.fail()
+
+    def test_try_parse__when_integer_prop_out_of_range(self):
+        # Input validation security scenario, should produce an error
+        self.fail()
+
+    def test_try_parse__when_string_prop_too_long(self):
+        # Input validation security scenario, should produce an error
+        self.fail()
+```
+
+Now, you have a high-level specification of the function in the form of scenarios. Next, you can continue with
+the function implementation. After you have completed the function implementation, implement the tests
+one by one and remove the `fail` calls from them.
+
+Compared to TDD, the benefit of this approach is that you don't have to switch continuously between the implementation source
+code file and the test source code file. In each phase, you can focus on one thing:
+
+1) Function specification
+   - What does the function do? (The happy path scenario(s))
+   - What failures are possible? (The failure scenario(s))
+     - For example, if a function makes a REST API call, all scenarios related to the failure of the call should
+       be considered: connection failure, timeout, response status code not being 2xx, any response data parsing failures
+   - Are there security issues? (The security scenarios)
+     - For example, if the function gets input from the user, it must be validated, and in case of invalid input, a proper action is taken
+       , like raising an error. Input from the user can be obtained via environment variables, reading files, reading a network socket
+       , and reading standard input.
+   - Are there edge cases? (The edge case scenario(s))
+   - When you specify the function, it is not mandatory to write the specification down. You can do it in your head if the function is simple. With a more complex function, you might benefit from writing the specification down to fully understand what the function should do
+2) Define different scenarios as failing unit tests
+3) Function implementation
+4) Implementation of unit tests
+
+In real life, the initial function specification is not always 100% correct or complete. During the function implementation,
+you might discover, e.g., a new failure scenario that was not in the initial function specification. You should immediately
+add a new failing unit test for that new scenario so you don't forget to implement it later. Once you think your function implementation
+is complete, go through the function code line-by-line and check if any line can produce an error that has not yet been considered.
+Having this habit will reduce the possibility of accidentally leaving some error unhandled in the function code.
+
+Sometimes, you need to modify an existing function because you are not always able to follow the *open-closed principle*
+for various reasons, such as not possible or feasible. When you need to modify an existing function, follow the below steps:
+
+1) Specification of changes to the function
+   - What changes in function happy path scenarios?
+   - What changes in failure scenarios?
+   - What changes in security scenarios?
+   - What changes in edge cases?
+2) Add/Remove/Modify tests
+    - Add new scenarios as failing tests
+    - Remove tests for removed scenarios
+    - Modify existing tests
+3) Implementation changes to the function
+4) Implement added unit tests
+
+Let's have an example where we change the configuration parser so that it should produce an error if the configuration
+contains extra properties. Now we have the specification of the change defined. Next, we need to modify the tests.
+We need to modify the `test_try_parse__with_extra_props` method as follows:
+
+```python
+import unittest
+
+
+class ConfigParserTests(unittest.TestCase):
+    # ...
+
+    def test_try_parse__with_extra_props(self):
+        # Change this scenario so that an error
+        # is expected
+```
+
+Next, we implement the wanted change and check that all tests pass.
+
+Let's have another example where we change the configuration parser so that the configuration can be given
+in YAML in addition to JSON. We need to add the following failing unit tests:
+
+```python
+import unittest
+
+
+class ConfigParserTests(unittest.TestCase):
+    # ...
+
+    def test_try_parse__when_yaml_parsing_succeeds(self):
+        self.fail()
+
+    def test_try_parse__when_yaml_parsing_fails(self):
+        # Should produce an error
+        self.fail()
+```
+
+We should also rename the following test methods: `test_try_parse__when_successful` and `test_try_parse__when_parsing_fails` to
+`test_try_parse__when_json_parsing_succeeds` and `test_try_parse__when_json_parsing_fails`. Next, we
+implement the changes to the function, and lastly, we implement the two new tests. (Depending on the actual test implementation, you may
+or may not need to make small changes to JSON parsing-related tests to make them pass.)
+
+As the final example, let's make the following change: Configuration has no optional properties, but all properties are
+mandatory. This means that we can remove the following test: `test_try_parse__when_optional_prop_is_missing`. We also need
+to change the `test_try_parse__when_mandatory_prop_is_missing` test:
+
+```python
+import unittest
+
+
+class ConfigParserTests(unittest.TestCase):
+    # ...
+
+    def test_try_parse__when_mandatory_prop_is_missing(self):
+       # Change this scenario so that an error
+       # is expected
+```
+
+Once we have implemented the change, we can run all the tests and ensure they pass.
+
+I have presented two alternative methods for writing unit tests: TDD and USDD. As a professional developer, you should use either of them. TDD brings more benefits, but USDD is much better than *test-last*, i.e., writing unit tests only after implementation is ready. If you think you are not ready for TDD yet, try USDD first and reconsider TDD at some point in the future.
+
+#### Naming Conventions
+
+When functions to be tested are in a class, a respective class for unit tests should be created.
+For example, if there is a `ConfigParser` class, the respective class for unit tests should be
+`ConfigParserTests`. This makes locating the file containing unit tests for a particular
+implementation class easy.
+
+name of the
+tested method should come. For example, if the tested method is `try_parse`, the test method name should be `test_try_parse`.
+There are usually several tests for a single function. All test method
+names should begin with *test_&lt;function-name&gt;*, but the test method name should also contain a description
+of the specific scenario the test method tests, for example: `test_try_parse__when_parsing_fails`. The name of the
+tested scenario is separated from the tested function name by two underscores.
+
+#### Mocking
+
+Python has a `unittest.mock` library for mocking in unit tests. It allows you to replace parts of your [system under test](https://en.wikipedia.org/wiki/System_under_test)
+with mock objects and make assertions about how they have been used. Mocks are one form of *test doubles*. Test doubles are any kind of pretend objects used in place of real objects for testing purposes.
+The following kinds of test doubles can be identified:
+
+- *Fakes* are objects that have working implementations but are usually simplified versions (suitable for testing) of the real implementations.
+- *Stubs* are objects providing fixed responses to calls made to them.
+- *Spies* are stubs that record information based on how they were called.
+- *Mocks* are the most versatile test doubles. They are objects pre-programmed with expectations (e.g., what a method should return when it is called), and like spies, they record information based on how they were called, and those calls can be verified in the test. Mocks are probably the ones you use on a daily basis.
+
+The Python mocking library provides the following ways
+to mock:
+
+- Patch class/object/attribute/method using `@patch`
+- Patch object attribute/method using `@patch.object`
+- Create a mock function with `Mock` constructor
+- Patch a dictionary
+
+Let's have examples that cover all four different ways of mocking. First, we will have a Kafka client that allows the creation of a topic on a Kafka broker. We want the topic creation to be idempotent, i.e., it does not do anything if the topic already exists.
+We will use the *unit specification driven development* (USDD) in this exercise by first specifying the functionality of the Kafka client as failing unit tests:
+
+```python
+from unittest import TestCase
+
+
+class KafkaClientTests(TestCase):
+    def test_try_create_topic__when_create_succeeds(self):
+        self.fail()
+
+    def test_try_create_topic__when_create_fails(self):
+        # Raise an error
+        self.fail()
+
+    def test_try_create_topic__when_topic_exists(self):
+        self.fail()
+```
+
+Next, we will write the implementation for the `KafkaClient` class:
+
+```python
+from confluent_kafka import KafkaError, KafkaException
+from confluent_kafka.admin import AdminClient
+from confluent_kafka.cimpl import NewTopic
+
+from DataExporterError import DataExporterError
+
+
+class KafkaClient:
+    def __init__(self, kafka_host: str):
+        self.__admin_client = AdminClient(
+            {'bootstrap.servers': kafka_host}
+        )
+
+    class CreateTopicError(DataExporterError):
+        pass
+
+    def try_create_topic(
+        self,
+        name: str,
+        num_partitions: int,
+        replication_factor: int,
+        retention_in_secs: int,
+        retention_in_gb: int
+    ):
+        topic = NewTopic(
+            name,
+            num_partitions,
+            replication_factor,
+            config={
+                'retention.ms': str(retention_in_secs * 1000),
+                'retention.bytes': str(retention_in_gb * pow(10, 9))
+            }
+        )
+
+        try:
+            topic_name_to_creation_future = (
+                self.__admin_client.create_topics([topic])
+            )
+
+            topic_name_to_creation_future[name].result()
+        except KafkaException as error:
+            if error.args[0].code() != KafkaError.TOPIC_ALREADY_EXISTS:
+                raise self.CreateTopicError(error)
+```
+
+Let's implement the first test method to test the successful execution of the `try_create_topic` method:
+
+```python
+from unittest import TestCase
+from unittest.mock import Mock, patch
+
+from KafkaClient import KafkaClient
+
+
+class KafkaClientTests(TestCase):
+    @patch('asyncio.Future')
+    @patch('KafkaClient.NewTopic')
+    @patch('KafkaClient.AdminClient')
+    def test_try_create_topic__when_create_succeeds(
+        self,
+        admin_client_class_mock: Mock,
+        new_topic_class_mock: Mock,
+        future_class_mock: Mock,
+    ):
+        # GIVEN
+        admin_client_mock = admin_client_class_mock.return_value
+        topic_creation_future_mock = future_class_mock.return_value
+
+        admin_client_mock.create_topics.return_value = {
+            'test': topic_creation_future_mock
+        }
+
+        kafka_client = KafkaClient('localhost:9092')
+
+        # WHEN
+        kafka_client.try_create_topic(
+            'test',
+            num_partitions=3,
+            replication_factor=2,
+            retention_in_secs=5 * 60,
+            retention_in_gb=100,
+        )
+
+        # THEN
+        admin_client_class_mock.assert_called_once_with(
+            {'bootstrap.servers': 'localhost:9092'}
+        )
+
+        new_topic_class_mock.assert_called_once_with(
+            'test',
+            3,
+            2,
+            config={
+                'retention.ms': str(5 * 60 * 1000),
+                'retention.bytes': str(100 * pow(10, 9)),
+            },
+        )
+
+        admin_client_mock.create_topics.assert_called_once_with(
+            [new_topic_class_mock.return_value]
+        )
+
+        topic_creation_future_mock.result.assert_called_once()
+```
+
+In the above example, we use two classes, `AdminClient` and `NewTopic` from the [Confluent Kafka library](https://docs.confluent.io/kafka-clients/python/current/overview.html). We should not access these
+dependencies directly in our unit tests. So, we must mock them. This means we patch both `NewTopic` and `AdminClient` classes imported from the `KafkaClient`, which
+imports them from `confluent_kafka.cimpl` and `confluent_kafka.admin` respectively. The mocks are created using `@patch` decorators.
+We also mock the `asyncio.Future` class because `AdminClient.create_topics` returns a dict containing a `Future` instance.
+The mocked versions of the classes are supplied as arguments to the `test_try_create_topic__when_create_succeeds` method.
+We can access the mocked `AdminClient` and `Future` instances from the mocked classes using the `return_value` property. After executing the test, we need to verify calls to the mocks.
+
+Let's add another test for the case when the topic creation fails:
+
+```python
+from unittest import TestCase
+from unittest.mock import Mock, patch
+
+from confluent_kafka import KafkaError, KafkaException
+from KafkaClient import KafkaClient
+
+
+class KafkaClientTests(TestCase):
+    @patch('asyncio.Future')
+    @patch('KafkaClient.NewTopic')
+    @patch('KafkaClient.AdminClient')
+    def test_try_create_topic__when_create_fails(
+        self,
+        admin_client_class_mock: Mock,
+        new_topic_class_mock: Mock,
+        future_class_mock: Mock,
+    ):
+        # GIVEN
+        kafka_client = KafkaClient('localhost:9092')
+        admin_client_mock = admin_client_class_mock.return_value
+        topic_creation_future_mock = future_class_mock.return_value
+
+        admin_client_mock.create_topics.return_value = {
+            'test': topic_creation_future_mock
+        }
+
+        topic_creation_future_mock.result.side_effect = KafkaException(KafkaError(1))
+
+        # WHEN
+        try:
+            kafka_client.try_create_topic(
+                'test',
+                num_partitions=3,
+                replication_factor=2,
+                retention_in_secs=5 * 60,
+                retention_in_gb=100,
+            )
+
+            self.fail('KafkaClient.CreateTopicError should have been raised')
+        except KafkaClient.CreateTopicError:
+            pass
+
+        # THEN
+        admin_client_class_mock.assert_called_once_with(
+            {'bootstrap.servers': 'localhost:9092'}
+        )
+
+        new_topic_class_mock.assert_called_once_with(
+            'test',
+            3,
+            2,
+            config={
+                'retention.ms': str(5 * 60 * 1000),
+                'retention.bytes': str(100 * pow(10, 9)),
+            },
+        )
+
+        admin_client_mock.create_topics.assert_called_once_with(
+            [new_topic_class_mock.return_value]
+        )
+```
+
+The key in the above test is to make the `Future` mock instance's `result` method raise a `KafkaException` as
+a side effect. Then, in the test code, we ensure that a `KafkaClient.CreateTopicError` is thrown. If not, we fail the test with
+a message telling us that a `KafkaClient.CreateTopicError` should have been raised.
+
+The above two test methods contain duplicate code. We should also keep the test code clean. Let's refactor the test
+case to remove duplicated code. We introduce a `__set_up` method to set up the mocks and create the `KafkaClient` instance.
+We refactor the common mock call assertions into a separate private method used by
+both tests. The `@patch` decorators are moved for the whole test case class, meaning the unit test framework will patch each
+method starting with a *test* prefix.
+
+```python
+from unittest import TestCase
+from unittest.mock import Mock, patch
+
+from confluent_kafka import KafkaError, KafkaException
+from KafkaClient import KafkaClient
+
+
+@patch('asyncio.Future')
+@patch('KafkaClient.NewTopic')
+@patch('KafkaClient.AdminClient')
+class KafkaClientTests(TestCase):
+    def test_try_create_topic__when_create_succeeds(
+        self,
+        admin_client_class_mock: Mock,
+        new_topic_class_mock: Mock,
+        future_class_mock: Mock,
+    ):
+        # GIVEN
+        self.__set_up(admin_client_class_mock, future_class_mock)
+
+        # WHEN
+        self.kafka_client.try_create_topic('test', **self.topic_params)
+
+        # THEN
+        self.__assert_mock_calls(
+            admin_client_class_mock, new_topic_class_mock
+        )
+
+        self.topic_creation_future_mock.result.assert_called_once()
+
+    def test_try_create_topic__when_create_fails(
+        self,
+        admin_client_class_mock: Mock,
+        new_topic_class_mock: Mock,
+        future_class_mock: Mock,
+    ):
+        # GIVEN
+        self.__set_up(admin_client_class_mock, future_class_mock)
+        self.topic_creation_future_mock.result.side_effect = KafkaException(KafkaError(1))
+
+        # WHEN
+        try:
+            self.kafka_client.try_create_topic('test', **self.topic_params)
+            self.fail('KafkaClient.CreateTopicError should have been raised')
+        except KafkaClient.CreateTopicError:
+            pass
+
+        # THEN
+        self.__assert_mock_calls(
+            admin_client_class_mock, new_topic_class_mock
+        )
+
+     def __set_up(
+        self,
+        admin_client_class_mock: Mock,
+        future_class_mock: Mock,
+    ) -> None:
+        # GIVEN
+        self.admin_client_mock = admin_client_class_mock.return_value
+        self.topic_creation_future_mock = future_class_mock.return_value
+
+        self.admin_client_mock.create_topics.return_value = {
+            'test': self.topic_creation_future_mock
+        }
+
+        self.topic_params = {
+            'num_partitions': 3,
+            'replication_factor': 2,
+            'retention_in_secs': 5 * 60,
+            'retention_in_gb': 100,
+        }
+
+        self.kafka_client = KafkaClient('localhost:9092')
+
+    def __assert_mock_calls(
+        self, admin_client_class_mock: Mock, new_topic_class_mock: Mock
+    ):
+        admin_client_class_mock.assert_called_once_with(
+            {'bootstrap.servers': 'localhost:9092'}
+        )
+
+        new_topic_class_mock.assert_called_once_with(
+            'test',
+            3,
+            2,
+            config={
+                'retention.ms': str(5 * 60 * 1000),
+                'retention.bytes': str(100 * pow(10, 9)),
+            },
+        )
+
+        self.admin_client_mock.create_topics.assert_called_once_with(
+            [new_topic_class_mock.return_value]
+        )
+```
+
+Let's add implementation for the final test method:
+
+```python
+@patch('asyncio.Future')
+@patch('KafkaClient.NewTopic')
+@patch('KafkaClient.AdminClient')
+class KafkaClientTests(TestCase):
+    # ...
+
+    def test_try_create_topic__when_topic_exists(
+        self,
+        admin_client_class_mock: Mock,
+        new_topic_class_mock: Mock,
+        future_class_mock: Mock,
+    ):
+        # GIVEN
+        self.__set_up(admin_client_class_mock, future_class_mock)
+        self.topic_creation_future_mock.result.side_effect = (
+            KafkaException(KafkaError(KafkaError.TOPIC_ALREADY_EXISTS))
+        )
+
+        # WHEN
+        self.kafka_client.try_create_topic('test', **self.topic_params)
+
+        # THEN
+        self.__assert_mock_calls(
+            admin_client_class_mock, new_topic_class_mock
+        )
+```
+
+In the above examples, we used `patch` to create mocks for classes. Let's have another example where we patch library
+methods directly. We should implement an HTTP client that fetches JSON data parsed to a dict from a URL.
+Let's utilize the USDD and list all possible scenarios for the HTTP client:
+
+- Successfully fetch and parse JSON data from the URL
+- Successfully fetch data from the URL, but parsing the data fails. An error should be raised.
+- Fetching data from the URL fails with an HTTP status code >=400. An error should be raised.
+- Not being able to connect to URL successfully (e.g., malformed URL, connection refused, connection timeout, etc.). An error should be raised.
+
+Let's write a test case with the following failing test methods:
+
+```python
+from unittest import TestCase
+
+
+class HttpClientTests(TestCase):
+    def test_try_fetch_resource__when_fetch_succeeds(self):
+        self.fail()
+
+    def test_try_fetch_resource__when_json_parse_fails(self):
+        # Should raise an error
+        self.fail()
+
+    def test_try_fetch_resource__when_response_has_error(self):
+        # Should raise an error
+        self.fail()
+
+    def test_try_fetch_resource__when_remote_connection_fails(self):
+        # Should raise an error
+        self.fail()
+```
+
+Now we can implement the `HttpClient` class so that it provides the functionality specified by the above test
+methods.
+
+```python
+from typing import Any
+
+import requests
+
+
+class HttpClient:
+    # Replace the 'Exception' below with the base error
+    # class of the software component
+    class Error(Exception):
+        pass
+
+    def try_fetch_resource(self, url: str) -> dict[str, Any]:
+        try:
+            response = requests.get(url, timeout=60)
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as error:
+            raise self.Error(error)
+```
+
+If we didn't use USDD, we could have easily ended up with the following implementation, focusing solely on the
+happy path:
+
+```python
+from typing import Any
+
+import requests
+
+
+class HttpClient:
+    def fetch_resource(self, url: str) -> dict[str, Any]:
+        response = requests.get(url, timeout=60)
+        response.raise_for_status()
+        return response.json()
+```
+
+The problem is that it is easy to forget to handle the errors possibly thrown from the `requests.get` and
+`Response.json` methods if we directly dive into the implementation. Using USDD forces us to stop before implementing anything and think about the possible
+error scenarios and edge cases in addition to the happy path scenario.
+
+Let's implement the first test method:
+
+```python
+from unittest import TestCase
+from unittest.mock import Mock, patch
+
+from HttpClient import HttpClient
+
+URL = 'https://localhost:8080/'
+DICT = {'test': 'test'}
+
+
+class HttpClientTests(TestCase):
+    @patch('requests.Response.__new__')
+    @patch('requests.get')
+    def test_try_fetch_resource__when_fetch_succeeds(
+        self, requests_get_mock: Mock, response_mock: Mock
+    ):
+        # GIVEN
+        requests_get_mock.return_value = response_mock
+        response_mock.json.return_value = DICT
+
+        # WHEN
+        response_dict = HttpClient().try_fetch_resource(URL)
+
+        # THEN
+        requests_get_mock.assert_called_once_with(URL, timeout=60)
+        self.assertDictEqual(response_dict, DICT)
+```
+
+Let's implement the second test method:
+
+```python
+import json
+from unittest import TestCase
+from unittest.mock import Mock, patch
+
+import requests
+from HttpClient import HttpClient
+
+URL = 'https://localhost:8080/'
+DICT = {'test': 'test'}
+
+
+class HttpClientTests(TestCase):
+    @patch('requests.Response.__new__')
+    @patch('requests.get')
+    def test_try_fetch_resource__when_json_parse_fails(
+        self, requests_get_mock: Mock, response_mock: Mock
+    ):
+        # GIVEN
+        requests_get_mock.return_value = response_mock
+        response_mock.json.side_effect = requests.JSONDecodeError(
+            'JSON decode error', json.dumps(DICT), 1
+        )
+
+        # WHEN
+        try:
+            HttpClient().try_fetch_resource(URL)
+            self.fail('HttpClient.Error should have been raised')
+        except HttpClient.Error as error:
+            # THEN
+            self.assertIn('JSON decode error', str(error))
+
+        # THEN
+        requests_get_mock.assert_called_once_with(URL, timeout=60)
+```
+
+We once again have duplicated test code, and we must refactor the tests:
+
+```python
+import json
+from unittest import TestCase
+from unittest.mock import Mock, patch
+
+import requests
+from HttpClient import HttpClient
+
+URL = 'https://localhost:8080/'
+DICT = {'test': 'test'}
+
+
+@patch('requests.Response.__new__')
+@patch('requests.get')
+class HttpClientTests(TestCase):
+    def test_try_fetch_resource__when_fetch_succeeds(
+        self, requests_get_mock: Mock, response_mock: Mock
+    ):
+        # GIVEN
+        requests_get_mock.return_value = response_mock
+        response_mock.json.return_value = DICT
+
+        # WHEN
+        dict_ = HttpClient().try_fetch_resource(URL)
+
+        # THEN
+        requests_get_mock.assert_called_once_with(URL, timeout=60)
+        self.assertDictEqual(dict_, DICT)
+
+    def test_try_fetch_resource__when_json_parse_fails(
+        self, requests_get_mock: Mock, response_mock: Mock
+    ):
+        # GIVEN
+        requests_get_mock.return_value = response_mock
+        response_mock.json.side_effect = requests.JSONDecodeError(
+            'JSON decode error', json.dumps(DICT), 1
+        )
+
+        # WHEN
+        self.assertRaises(
+            HttpClient.Error, HttpClient().try_fetch_resource, URL
+        )
+
+        # THEN
+        requests_get_mock.assert_called_once_with(URL, timeout=60)
+```
+
+Let's add the final two test methods to complete the test case. I also changed to try-except blocks to use `assertRaises` method to showcase an alternative way to verify that a function call raises an error.
+Use the `assertRaises` method if possible because it shortens and simplifies the test code.
+
+```python
+import json
+from unittest import TestCase
+from unittest.mock import Mock, patch
+
+import requests
+from HttpClient import HttpClient
+
+URL = 'https://localhost:8080/'
+DICT = {'test': 'test'}
+
+
+@patch('requests.Response.__new__')
+@patch('requests.get')
+class HttpClientTests(TestCase):
+    # ...
+
+    def test_try_fetch_resource__when_response_has_error(
+        self, requests_get_mock: Mock, response_mock: Mock
+    ):
+        # GIVEN
+        requests_get_mock.return_value = response_mock
+        response_mock.raise_for_status.side_effect = requests.HTTPError()
+
+        # WHEN
+        self.assertRaises(
+            HttpClient.Error, HttpClient().try_fetch_resource, URL
+        )
+
+        # THEN
+        requests_get_mock.assert_called_once_with(URL, timeout=60)
+
+    def test_try_fetch_resource__when_remote_connection_fails(
+        self, requests_get_mock: Mock, response_mock: Mock
+    ):
+        # GIVEN
+        requests_get_mock.side_effect = requests.ConnectionError()
+
+        # WHEN
+        self.assertRaises(
+            HttpClient.Error, HttpClient().try_fetch_resource, URL
+        )
+
+        # THEN
+        requests_get_mock.assert_called_once_with(URL, timeout=60)
+```
+
+Let's have an example where we use `@patch.dict`. Let's assume that we have the following code without unit tests:
+
+```python
+import os
+import sys
+
+from KafkaClient import KafkaClient
+
+
+def get_environ_var(name: str) -> str:
+    return (
+        os.environ.get(name)
+        or f'Environment variable {name} is not defined'
+    )
+
+
+def main():
+    kafka_client = KafkaClient(get_environ_var('KAFKA_HOST'))
+
+    try:
+        kafka_client.try_create_topic(
+            get_environ_var('KAFKA_TOPIC'),
+            num_partitions=3,
+            replication_factor=2,
+            retention_in_secs=5 * 60,
+            retention_in_gb=100,
+        )
+    except KafkaClient.CreateTopicError:
+        sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()
+```
+
+In the unit test case, we use `@patch.dict` to patch the `os.environ` dict. In the second test method, we also use the `@patch.object` decorator
+instead of the plain `@patch` decorator. The `@patch.object` method patches a method/attribute with a mock in `KafkaClient` type objects.
+
+```python
+import os
+from unittest import TestCase
+from unittest.mock import Mock, patch
+
+from KafkaClient import KafkaClient
+from main import main
+
+KAFKA_HOST = 'localhost:9092'
+KAFKA_TOPIC = 'test'
+
+
+@patch.dict(os.environ, {'KAFKA_HOST': KAFKA_HOST})
+@patch.dict(os.environ, {'KAFKA_TOPIC': KAFKA_TOPIC})
+class MainTests(TestCase):
+    @patch('main.KafkaClient')
+    def test_main__when_exec_succeeds(self, kafka_client_class_mock: Mock):
+        # GIVEN
+        kafka_client_mock = kafka_client_class_mock.return_value
+
+        # WHEN
+        main()
+
+        # THEN
+        kafka_client_class_mock.assert_called_once_with(KAFKA_HOST)
+        kafka_client_mock.try_create_topic.assert_called_once_with(
+            KAFKA_TOPIC,
+            num_partitions=3,
+            replication_factor=2,
+            retention_in_secs=5 * 60,
+            retention_in_gb=100,
+        )
+
+    @patch.object(KafkaClient, '__init__')
+    @patch.object(KafkaClient, 'try_create_topic')
+    @patch('sys.exit')
+    def test_main__when_exec_failed(
+        self,
+        sys_exit_mock: Mock,
+        try_create_topic_mock: Mock,
+        kafka_client_init_mock: Mock,
+    ):
+        # GIVEN
+        kafka_client_init_mock.return_value = None
+        try_create_topic_mock.side_effect = KafkaClient.CreateTopicError()
+
+        # WHEN
+        main()
+
+        # THEN
+        kafka_client_init_mock.assert_called_once_with(KAFKA_HOST)
+        sys_exit_mock.assert_called_once_with(1)
+```
+
+Let's create a unit test case for source code that uses dependency injection. We have the following code from an earlier chapter, and
+we would like to create a unit test for the `Application` class `run` method. In the below example, we assume that
+each class is in its own module named according to the class name, and the `di_container = DiContainer()` definition
+is in a module named *di_container.py*.
+
+```python
+from enum import Enum
+from typing import Protocol
+
+from dependency_injector import containers, providers
+from dependency_injector.wiring import Provide, inject
+
+class LogLevel(Enum):
+    ERROR = 1
+    WARN = 2
+    INFO = 3
+    # ...
+
+
+class Logger(Protocol):
+    def log(self, log_level: LogLevel, message: str):
+        pass
+
+
+class StdOutLogger(Logger):
+    def log(self, log_level: LogLevel, message: str):
+        # Log to standard output
+
+
+class DiContainer(containers.DeclarativeContainer):
+    wiring_config = containers.WiringConfiguration(
+        modules=['Application']
+    )
+
+    logger = providers.Singleton(StdOutLogger)
+
+
+di_container = DiContainer()
+
+
+class Application:
+    @inject
+    def __init__(self, logger: Logger = Provide['logger']):
+        self.__logger = logger
+
+    def run(self):
+        self.__logger.log(LogLevel.INFO, 'Starting application')
+        # ...
+```
+
+In the below unit test, we first create a mock instance of the `Logger` class and then override the `logger` provider in the DI container to use the mock. We use the `override` context manager
+to define the scope of the override.
+
+```python
+from unittest import TestCase
+from unittest.mock import Mock
+
+from Application import Application
+from di_container import di_container
+from Logger import Logger, LogLevel
+
+
+class ApplicationTests(TestCase):
+    def test_run__when_execution_succeeds(self):
+        logger_mock = Mock(Logger)
+
+        with di_container.logger.override(logger_mock):
+            # GIVEN
+            application = Application()
+
+            # WHEN
+            application.run()
+
+            # THEN
+            logger_mock.log.assert_called_once_with(
+                LogLevel.INFO, 'Starting application'
+            )
+```
+
+#### Web UI Component Unit Testing
+
+UI component unit testing differs from regular unit testing because you cannot necessarily test the functions of a
+UI component in isolation if you have, for example, a React functional component. You must conduct UI component unit testing
+by mounting the component to the DOM and then perform tests by triggering events, for example. This way, you can test
+the event handler functions of a UI component. The rendering part should also be tested. It can be tested by producing a snapshot of
+the rendered component and storing that in version control. Further rendering tests should compare the rendered result to the snapshot stored in the version control.
+
+Below is an example of testing the rendering of a React component, `NumberInput`:
+
+{title: "NumberInput.test.jsx"}
+```js
+import renderer from 'react-test-renderer';
+// ...
+
+describe('NumberInput') () => {
+  // ...
+
+  describe('render', () => {
+    it('renders with buttons on left and right"', () => {
+      const numberInputAsJson =
+        renderer
+          .create(<NumberInput buttonPlacement="leftAndRight"/>)
+          .toJSON();
+
+      expect(numberInputAsJson).toMatchSnapshot();
+    });
+
+    it('renders with buttons on right', () => {
+      const numberInputAsJson =
+        renderer
+          .create(<NumberInput buttonPlacement="right"/>)
+          .toJSON();
+
+      expect(numberInputAsJson).toMatchSnapshot();
+    });
+  });
+});
+```
+
+Below is an example unit test for the number input's decrement button's click event handler function,
+`decrementValue`:
+
+{title: "NumberInput.test.jsx"}
+```js
+import { render, fireEvent, screen } from '@testing-library/react'
+// ...
+
+describe('NumberInput') () => {
+  // ...
+
+  describe('decrementValue', () => {
+    it('should decrement value by given step amount', () => {
+      render(<NumberInput value="3" stepAmount={2} />);
+      fireEvent.click(screen.getByText('-'));
+      const numberInputElement = screen.getByDisplayValue('1');
+      expect(numberInputElement).toBeTruthy();
+    });
+  });
+});
+```
+
+In the above example, we used the [testing-library](https://testing-library.com/), which has implementations for all the common UI
+frameworks: React, Vue, and Angular. It means you can use mostly the same testing API regardless
+of your UI framework. There are tiny differences, basically only in the syntax of the `render` method.
+If you had implemented some UI components and unit tests for them with React, and you would like to reimplement them with Vue, you don't need to reimplement all the unit tests. You only
+need to modify them slightly (e.g., make changes to the `render` function calls). Otherwise, the existing
+unit tests should work because the behavior of the UI component
+did not change, only its internal implementation technology from React to Vue.
+
+### Software Component Integration Testing Principle
+
+> ***Integration testing aims to test that a software component works against actual dependencies and that its public methods***
+> ***correctly understand the purpose and signature of other public methods they are using.***
+
+The target of software component integration testing is that all public functions of the software component should be touched by at least one integration test.
+Not all functionality of the public functions should be tested because that has already been done in the unit testing phase. This is
+why there are fewer integration tests than unit tests. The term *integration testing* sometimes refers to integrating
+a complete software system or a product. However, it should be used to describe software
+component integration only. When testing a product or a software system, the term *end-to-end testing* should be used to avoid
+confusion and misunderstandings.
+
+The best way to do the integration testing is using [black-box testing](https://en.wikipedia.org/wiki/Black-box_testing).
+The software component is treated as a black box with inputs and outputs. Test automation developers can use any programming language and testing
+framework to develop the tests. Integration tests do not depend on the source code. It can be changed or completely rewritten in a different programming language without the need to modify the integration tests.
+Test automation engineers can also start writing integration tests immediately and don't have to wait for implementation to be ready.
+
+The best way to define integration tests is by using [behavior-driven development](https://en.wikipedia.org/wiki/Behavior-driven_development) (BDD).
+and [acceptance test-driven development](https://en.wikipedia.org/wiki/Acceptance_test-driven_development) ATDD. BDD and ATDD encourage teams to
+use domain-driven design and concrete examples to formalize a shared understanding of how a software component
+should behave. In BDD and ATDD, behavioral specifications are the root of the integration tests. A development team should create behavioral
+specifications for each backlog feature. The specifications are the basis for integration tests that also serve as acceptance tests for the feature.
+When the team demonstrates a complete feature in a system demo, they should also demonstrate the passing acceptance tests.
+This practice will shift the integration testing to the left, meaning writing the integration tests can start early and proceed in parallel with the actual implementation. The development
+team writes a failing integration test and only after that implement enough source code to make that test pass.
+BDD and ATDD also ensure that it is less likely to forget to test some functionality because the functionality is first formally specified as tests before any implementation begins.
+
+When writing behavioral specifications, happy-path scenarios and the main error scenarios should be covered. The idea is not to test every possible
+error that can occur.
+
+One widely used way to write behavioral specifications is the [Gherkin](https://cucumber.io/docs/gherkin/) language. However, it is not the only way. So, we cannot say that BDD equals Gherkin.
+You can even write integration tests using a unit testing framework if you prefer. An example of that approach is available in *Steve Freeman*'s and *Nat Pryce*'s book *Growing Object-Oriented Software, Guided by Tests*.
+The problem with using a unit testing framework for writing integration tests is how to test the external dependencies, like a database. Finally, there is a clean and easy solution available to this problem called [testcontainers](https://testcontainers-python.readthedocs.io/). They allow you to programmatically start and stop containerized external dependencies, like a database in your test cases with only one or two lines of code.
+
+When using the Gherkin language, the behavior of a software component is described as features. There should be a separate
+file for each feature. These files have the *.feature* extension. Each feature file
+describes one feature and one or more scenarios for that feature. The first scenario should be
+the so-called "happy path" scenario, and other possible scenarios should handle additional happy paths, failures, and edge cases
+that need to be tested. Remember that you don't have to test every failure and edge case because those were already tested in
+the unit testing phase.
+
+When the integration tests are black-box tests, the Gherkin features should be end-to-end testable (from software component input to output); otherwise, writing integration tests would be challenging. For example, suppose you have a backlog feature for the data exporter
+microservice for consuming Avro binary messages from Kafka. In that case, you cannot write an integration test because it is not end-to-end testable.
+You can't verify that an Avro binary message was successfully read from Kafka because there is no output in the feature to compare the input with.
+If you cannot write integration tests for a backlog feature, then you cannot prove and demonstrate to relevant stakeholders that the feature is completed by executing the integration (i.e., acceptance) tests,
+e.g., in a SAFe system demo. For this reason, it is recommended to make all backlog features such that they can be demonstrated with an end-to-end integration (=acceptance) test case.
+
+Let's consider the data exporter microservice. If we start implementing it from scratch, we should define features in such an order that we first build
+capability to test end-to-end, for example:
+
+- Export a message from Apache Kafka to Apache Pulsar
+- Export single field Avro binary message from Apache Kafka to Apache Pulsar with copy transformation and field type *x*
+  - Repeat the above feature for all possible Avro field types (primitive and complex)
+- Message filtering
+- Type conversion transformations from type x to type y
+- Expression transformations
+- Output field filtering
+- Pulsar export with TLS,
+- Kafka export,
+- Kafka export with TLS,
+- CSV export
+- JSON export
+
+The first feature in the above list builds the capability for black-box/E2E integration tests (from software component input to output).
+This process is also called creating a *walking skeleton* of the software component first. After you have a walking skeleton, you
+can start adding some "flesh" (other features) around the bones.
+
+Below is a simplified example of one feature in a *data-visualization-configuration-service*. We assume that the service
+is a REST API. The feature is for creating a new chart. (In a real-life scenario, a chart contains more properties like
+the chart's data source and what measure(s) and dimension(s) are shown in the chart, for example). In our simplified example,
+a chart contains the following properties: layout id, type, number of x-axis categories shown, and how many rows of chart data
+should be fetched from the chart's data source.
+
+```gherkin
+Feature: Create chart
+  Creates a new chart
+
+  Scenario: Creates a new chart successfully
+    Given chart layout id is 1
+    And chart type is "line"
+    And X-axis categories shown count is 10
+    And fetched row count is 1000
+
+    When I create a new chart
+
+    Then I should get the chart given above
+         with response code 201 "Created"
+```
+
+The above example shows how the feature's name is given after the `Feature` keyword. You can add free-form text below the feature's name
+to describe the feature in more detail. Next, a scenario is defined after the `Scenario` keyword.
+First, the name of the scenario is given. Then comes the steps of the scenario. Each step is defined using
+one of the following keywords: `Given`, `When`, `Then`, `And`, and `But`. A scenario should follow this pattern:
+
+- Step(s) to describe initial context/setup (Given/And steps)
+- Step to describe an event (When step)
+- Step(s) to describe the expected outcome for the event (Then/And steps)
+
+We can add another scenario to the above example:
+
+```gherkin
+Feature: Create chart
+  Creates a new chart
+
+  Scenario: A new chart is created successfully
+    Given chart layout id is 1
+    And chart type is "line"
+    And X-axis categories shown count is 10
+    And fetched row count is 1000
+
+    When I create a new chart
+
+    Then I should get the chart given above
+         with status code 201 "Created"
+
+  Scenario: Chart creation fails due to missing mandatory parameter
+    When I create a new chart
+
+    Then I should get a response with status code 400 "Bad Request"
+    And response body should contain an errorMessage property with
+        "is mandatory field" entry for following fields
+      | layoutId                 |
+      | fetchedRowCount          |
+      | xAxisCategShownCount     |
+      | type                     |
+```
+
+Now, we have one feature with two scenarios specified. Next, we shall implement the scenarios. We want to implement the integration
+tests in Python, so we will use [Behave](https://behave.readthedocs.io/en/latest/) BDD tool that supports the Gherkin language.
+
+We place integration test code into the source code repository's *integrationtests* directory.
+The feature files are put in the *integrationtests/features* directory. Feature directories should be organized
+into subdirectories like source code: creating subdirectories for subdomains. We can put the above *create_chart.feature*
+file to the *integrationtests/features/chart* directory.
+
+Let's first create an *environment.py* file in the *integration-tests/features* to store things common to all
+step implementations:
+
+```python
+BASE_URL = 'http://localhost:8080/data-visualization-configuration-service/'
+```
+
+Next, we need to provide an implementation for each step in the scenarios. Let's start with the first scenario. We shall
+create a *create_chart_steps.py* file in the *src/integrationtests/features/chart/steps* directory for the implementation of the steps:
+
+```python
+import requests
+from behave import given, then, when
+from behave.runner import Context
+from environment import BASE_URL
+
+input_chart = {}
+
+
+@given('chart layout id is {layout_id:d}')
+def step_impl(context: Context, layout_id: int):
+    input_chart['layoutId'] = layout_id
+
+
+@given('chart type is "{type}"')
+def step_impl2(context: Context, type: str):
+    input_chart['type'] = type
+
+
+@given('X-axis categories shown count is {x_axis_categ_shown_count:d}')
+def step_impl3(context: Context, x_axis_categ_shown_count: int):
+    input_chart['xAxisCategShownCount'] = x_axis_categ_shown_count
+
+
+@given('fetched row count is {fetched_row_count:d}')
+def step_impl4(context: Context, fetched_row_count: int):
+    input_chart['fetchedRowCount'] = fetched_row_count
+
+
+@when('I create a new chart')
+def step_impl5(context: Context):
+    context.response = requests.post(BASE_URL + 'charts', data=input_chart)
+    context.response_dict = context.response.json()
+
+
+@then(
+    'I should get the chart given above with status code {status_code:d} "{reason}"'
+)
+def step_impl6(context: Context, status_code: int, reason: str):
+    assert context.response.status_code == status_code
+    assert context.response.reason == reason
+    created_chart = context.response_dict
+    assert int(created_chart['id']) > 0
+    assert created_chart['layoutId'] == input_chart['layoutId']
+    assert created_chart['type'] == input_chart['type']
+
+    assert created_chart['xAxisCategShownCount'] == (
+        input_chart['xAxisCategShownCount']
+    )
+
+    assert created_chart['fetchedRowCount'] == (
+        input_chart['fetchedRowCount']
+    )
+```
+
+The above implementation contains a function for each step. Each function is decorated with a decorator
+for a specific Gherkin keyword: `@given`, `@when`, and `@then`. Note that a step in a scenario
+can be templated. For example, the step `Given chart layout id is 1` is templated and implemented in the function
+`@Given("chart layout id is {layout_id:d}")` `def step_impl(context: Context, layout_id: int)`
+where the actual layout id is given as a parameter to the function. You can use this templated step
+in different scenarios that can give a different value for the layout id, for example:
+`Given chart layout id is 8`. The `:d` modifier after the `layout_id` tells Behave that this variable should be
+converted to an integer.
+
+The `@when('I create a new chart')` step implementation uses the *requests* library for submitting an HTTP POST request
+to the *data-visualization-configuration-service*. The `@then('I should get the chart given above with status code {status_code:d} "{reason}")` step implementation takes the HTTP POST response stored in the `context` and validates the status code and the properties in the response body.
+
+The second scenario is a common failure scenario where you create something with missing parameters. Because
+this scenario is common (i.e., we can reuse the same steps in other features), we put the step definitions
+in a file named *common_steps.py* in the *common* subdirectory of the *integrationtests/features/steps* directory.
+
+Here are the step implementations:
+
+```python
+from behave import then
+from behave.runner import Context
+
+
+@then(
+    'I should get a response with status code {status_code:d} "{reason}"'
+)
+def step_impl1(context: Context, status_code: int, reason: str):
+    assert context.response.status_code == status_code
+    assert context.response.reason == reason
+
+
+@then(
+    'response body should contain error object with {error} entry for following fields'
+)
+def step_impl2(context: Context, error: str):
+    error_message = context.response_dict['errorMessage']
+    for field_name in context.table:
+        assert f'{field_name} {error}' in error_message
+```
+
+To execute the integration tests with Behave, run the `behave` command in the *integration-tests* directory. You can add tags to features and scenarios.
+You can add a command line parameter for the `behave` command to run features/scenarios with a specific tag or tags only.
+
+Some frameworks offer their way of creating integration tests. For example, the Django web framework offers its own
+way of doing integration tests. There are two reasons why I don't recommend using framework-specific testing tools.
+The first reason is that your integration tests are coupled to the framework, and if you decide to reimplement your
+microservice using a different language or framework, you also need to reimplement the integration tests.
+When you use a generic BDD tool like Behave, your integration tests are not coupled to any
+microservice implementation programming language or framework. The second reason is that there is less learning and information
+burden for QA/test engineers when they don't have to master multiple framework-specific integration testing tools. If you
+use a single tool like Behave in all the microservices in a software system, it will be easier for
+QA/test engineers to work with different microservices.
+
+For API microservices, one more alternative to implement integration tests is an API development platform like
+[Postman](https://www.postman.com/). Postman can be used to write integration tests using JavaScript.
+
+Suppose we have an API microservice called *sales-item-service* that offers CRUD operations on sales items.
+Below is an example API request for creating a new sales item. You can define this in Postman as a new request:
+
+```http
+POST http://localhost:3000/sales-item-service/sales-items HTTP/1.1
+Content-Type: application/json
+
+{
+  "name": "Test sales item",
+  "price": 10,
+}
+```
+
+Here is a Postman test case to validate the response to the above request:
+
+```javascript
+pm.test("Status code is 201 Created", function () {
+  pm.response.to.have.status(201);
+});
+
+const salesItem = pm.response.json();
+pm.collectionVariables.set("salesItemId", salesItem.id)
+
+pm.test("Sales item name", function () {
+  return pm.expect(salesItem.name).to.eql("Test sales item");
+})
+
+pm.test("Sales item price", function () {
+  return pm.expect(salesItem.price).to.eql(10);
+})
+```
+
+In the above test case, the response status code is verified first, and then the `salesItem` object is parsed
+from the response body. Value for the variable `salesItemId` is set. This variable will be used
+in subsequent test cases. Finally, the values of the `name` and `price` properties are checked.
+
+Next, a new API request could be created in Postman to retrieve the just created sales item:
+
+```http
+GET http://localhost:3000/sales-item-service/sales-items/{{salesItemId}} HTTP/1.1
+```
+
+We used the value stored earlier in the `salesItemId` variable in the request URL. Variables can be used in the URL
+and request body using the following notation: `{{<variable-name>}}`. Let's create a test case for
+the above request:
+
+```javascript
+pm.test("Status code is 200 OK", function () {
+  pm.response.to.have.status(200);
+});
+
+const salesItem = pm.response.json();
+
+pm.test("Sales item name", function () {
+  return pm.expect(salesItem.name).to.eql("Test sales item");
+})
+
+pm.test("Sales item price", function () {
+  return pm.expect(salesItem.price).to.eql(10);
+})
+```
+
+API integration tests written in Postman can be utilized in a CI pipeline. An easy way to do that is to export
+a Postman collection to a file that contains all the API requests and related tests. A Postman collection
+file is a JSON file. Postman offers a Node.js command-line utility called [Newman](https://learning.postman.com/docs/running-collections/using-newman-cli/installing-running-newman/).
+It can run API requests and related tests from an exported Postman collection file.
+
+YYou can run integration tests stored in an exported Postman collection file with the below command in a CI pipeline:
+
+```bash
+newman run integrationtests/integrationTestsPostmanCollection.json
+```
+
+In the above example, we assume that a file named
+*integrationTestsPostmanCollection.json* has been exported from the Postman to the *integrationtests* directory in the source code repository.
+
+#### Web UI Integration Testing
+
+You can also use the Gherkin language when specifying UI features. For example, the [TestCafe](https://testcafe.io/) UI testing tool can be
+used with the [gherkin-testcafe](https://www.npmjs.com/package/gherkin-testcafe) tool to make TestCafe support the Gherkin syntax. Let's create a simple UI feature:
+
+```gherkin
+Feature: Greet user
+  Entering user name and clicking submit button
+  displays a greeting for the user
+
+  Scenario: Greet user successfully
+    Given there is "John Doe" entered in the input field
+    When I press the submit button
+    Then I am greeted with text "Hello, John Doe"
+```
+
+Next, we can implement the above steps in JavaScript using the TestCafe testing API:
+
+```javascript
+// Imports...
+
+// 'Before' hook runs before the first step of each scenario.
+// 't' is the TestCafe test controller object
+Before('Navigate to application URL', async (t) => {
+  // Navigate browser to application URL
+  await t.navigateTo('...');
+});
+
+Given('there is {string} entered in the input field',
+      async (t, [userName]) => {
+  // Finds an HTML element with CSS id selector and
+  // enters text to it
+  await t.typeText('#user-name', userName);
+});
+
+When('I press the submit button', async (t) => {
+  // Finds an HTML element with CSS id selector and clicks it
+  await t.click('#submit-button');
+});
+
+When('I am greeted with text {string}', async (t, [greeting]) => {
+  // Finds an HTML element with CSS id selector
+  // and compares its inner text
+  await t.expect(Selector('#greeting').innerText).eql(greeting);
+});
+```
+
+Another tool similar to TestCafe is [Cypress](https://www.cypress.io/). You can also use Gherkin with Cypress with the
+[cypress-cucumber-preprocessor](https://github.com/badeball/cypress-cucumber-preprocessor) library. Then, you can write your UI integration tests like this:
+
+```gherkin
+Feature: Visit duckduckgo.com website
+
+  Scenario: Visit duckduckgo.com website successfully
+    When I visit duckduckgo.com
+    Then I should see the search bar
+```
+
+```javascript
+import { When, Then } from
+  '@badeball/cypress-cucumber-preprocessor';
+
+When("I visit duckduckgo.com", () => {
+  cy.visit("https://www.duckduckgo.com");
+});
+
+Then("I should see the search bar", () => {
+  cy.get("input").should(
+    "have.attr",
+    "placeholder",
+    "Search the web without being tracked"
+  );
+});
+```
+
+#### Setting Up Integration Testing Environment
+
+If you have implemented integration tests as black-box tests outside the microservice, an integration testing environment must be set up before integration tests can be run. An integration testing
+environment is where the tested microservice and all its dependencies are running. The easiest way to
+set up an integration testing environment for a containerized microservice is to use [Docker Compose](https://docs.docker.com/compose/),
+a simple container orchestration tool for a single host. If you have implemented integration tests using a unit testing framework, i.e., inside the microservice,
+you don't need to set up a testing environment (so this section does not apply). You can set up the needed environment (external dependencies) in each integration test separately by using testcontainers, for example.
+
+When a developer needs to debug a failing test in integration tests using Docker Compose, they must attach
+the debugger to the software component's running container, which is a bit more work compared to normally debugging source code.
+Another possibility is to introduce temporary debug-level logging in the microservice source code. That logging can be removed after the bug is found and corrected. However, if you cannot debug the microservice in a customer's production environment, it is good practice to have some debug-level logging in the source code to enable troubleshooting of a customer's problems that cannot be reproduced in a local environment.
+To enable viewing logs, the integration tests should write logs to the console in case of a test failure. This can be done, e.g., by running the `docker logs` command for the application container.
+It should be noted that when the application development has been done using low-level (unit/function-level) BDD (or TDD), the debugging need at the integration testing level is significantly reduced.
+
+Let's create a *docker-compose.yml* file for the *sales-item-service* microservice, which has a MySQL database as a dependency.
+The microservice uses the database to store sales items.
+
+{title: "docker-compose.yaml"}
+```yaml
+version: "3.8"
+
+services:
+  wait-for-services-ready:
+    image: dokku/wait
+  sales-item-service:
+    restart: always
+    build:
+      context: .
+    env_file: .env.ci
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mysql
+  mysql:
+    image: mysql:8.0.22
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    cap_add:
+      - SYS_NICE
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3306:3306"
+```
+
+In the above example, we first define a service *wait-for-services-ready*, which we will use later.
+Next, we define our microservice, *sales-item-service*. We ask Docker Compose to build a container image
+for the *sales-item-service* using the *Dockerfile* in the current directory. Then, we define the environment for
+the microservice to be read from an *.env.ci* file. We expose port 3000 and tell that our microservice
+depends on the *mysql* service.
+
+Next, we define the `mysql` service. We tell what image to use, give a command-line parameter, and
+define the environment and expose a port.
+
+Before we can run the integration tests, we must spin the integration testing environment up using
+the `docker-compose up` command:
+
+```bash
+docker-compose up --env-file .env.ci --build -d
+```
+
+We tell the `docker-compose` command to read environment variables from an *.env.ci* file that should contain
+an environment variable named `MYSQL_PASSWORD`. We ask Docker Compose to always build the *sales-item-service* by specifying the
+`--build` flag. The `-d` flag tells the `docker-compose` command to run in the background.
+
+Before we can run the integration tests, we must wait until all services defined in the *docker-compose.yml* are
+up and running. We use the *wait-for-services-ready* service provided by the
+[dokku/wait](https://hub.docker.com/r/dokku/wait) image. We can wait for the services to be ready by issuing the following
+command:
+
+```bash
+docker-compose
+  --env-file .env.ci
+  run wait-for-services-ready
+  -c mysql:3306,sales-item-service:3000
+  -t 600
+```
+
+The above command will finish after *mysql* service's port 3306 and *sales-item-service's* port 3000 can be
+connected (as specified with the `-c` flag, the `-t` flag specifies a timeout for waiting). After the above command is finished, you can run the integration tests. In the below example, we run the integration
+tests using the *newman* CLI tool:
+
+```bash
+newman run integrationtests/integrationTestsPostmanCollection.json
+```
+
+If your integration tests are implemented using Behave, you can run them by going to the *integrationtests* directory
+and run the `behave` command there. Instead of using the *dokku/wait* image for waiting services to be ready, you can do the waiting in
+Behave's `before_all` function. Just make a loop that tries to make a TCP connection to `mysql:3306` and `sales-item-service:3000`.
+When both connections succeed, break the loop to start the tests.
+
+After integration tests are completed, you can shut down the integration testing environment:
+
+```bash
+docker-compose down
+```
+
+If you need other dependencies in your integration testing environment, you can add them to the *docker-compose.yml*
+file. If you need to add other microservices with dependencies, you must also add transitive dependencies. For example,
+if you needed to add another microservice that uses a PostgreSQL database, you would have to add the other microservice and PostgreSQL database to the *docker-compose.yml* file as new services.
+
+Let's say the *sales-item-service* depends on Apache Kafka 2.x
+that depends on a Zookeeper service. The *sales-item-service's* *docker-compose.yml* looks
+like the below after adding Kafka and Zookeeper:
+
+{title: "docker-compose.yaml"}
+```yaml
+version: "3.8"
+
+services:
+  wait-for-services-ready:
+    image: dokku/wait
+  sales-item-service:
+    restart: always
+    build:
+      context: .
+    env_file: .env.ci
+    ports:
+      - 3000:3000
+    depends_on:
+      - mysql
+      - kafka
+  mysql:
+    image: mysql:8.0.22
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    cap_add:
+      - SYS_NICE
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3306:3306"
+  zookeeper:
+    image: bitnami/zookeeper:3.7
+    volumes:
+      - "zookeeper_data:/bitnami"
+    ports:
+      - 2181:2181"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+  kafka:
+    image: bitnami/kafka:2.8.1
+    volumes:
+      - "kafka_data:/bitnami"
+    ports:
+      - "9092:9092"
+    environment:
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    depends_on:
+      - zookeeper
+
+volumes:
+  zookeeper_data:
+    driver: local
+  kafka_data:
+    driver: local
+```
+
+### Complete Example with BDD, ATDD, DDD, OOD and TDD
+
+Let's have a complete example using the following design principles: BDD, ATDD, DDD, OOD, and TDD. We will implement a *gossiping bus drivers* application, which some of you might be familiar with. Product management gives us the following user story:
+
+> *Each bus driver drives a bus along a specified circular route. A route consists of one or more bus stops. Bus drivers drive the route and stop at each bus stop. Bus drivers have a set of rumors. At the bus stop, drivers gossip (share rumors) with other drivers stopped at the same bus stop. The application stops when all rumors are shared, or bus drivers have driven for a maximum number of bus stops. Upon exit, the application should inform the user whether all rumors were successfully shared.*
+
+We start with BDD and ATDD and write a formal behavioral specification for the above informal description:
+
+```gherkin
+Feature: Gossiping bus drivers
+
+  Scenario: Bus drivers successfully share all rumors
+    Given maximum number of bus stops driven is 100
+    Given bus drivers with the following routes and rumors
+      | Route                                   | Rumors                 |
+      | stop-a, stop-b, stop-c                  | rumor1, rumor2         |
+      | stop-d, stop-b, stop-e                  | rumor1, rumor3, rumor4 |
+      | stop-f, stop-g, stop-h, stop-i, stop-e  | rumor1, rumor5, rumor6 |
+
+    When bus drivers have completed driving
+    Then all rumors are successfully shared
+
+  Scenario: Bus drivers fails to share all rumors due to driving maximum number of stops
+    Given maximum number of bus stops driven is 5
+    Given bus drivers with the following routes and rumors
+      | Route                                   | Rumors                 |
+      | stop-a, stop-b, stop-c                  | rumor1, rumor2         |
+      | stop-d, stop-b, stop-e                  | rumor1, rumor3, rumor4 |
+      | stop-f, stop-g, stop-h, stop-i, stop-e  | rumor1, rumor5, rumor6 |
+
+      When bus drivers have completed driving
+      Then all rumors are not shared
+
+  Scenario: Bus drivers fail to share all rumors because bus routes never cross
+     Given maximum number of bus stops driven is 100
+     Given bus drivers with the following bus routes and rumors
+       | Route                    | Rumors                 |
+       | stop-a, stop-b, stop-c   | rumor1, rumor2         |
+       | stop-d, stop-e, stop-f   | rumor1, rumor3, rumor4 |
+
+     When bus drivers have completed driving
+     Then all rumors are not shared
+```
+
+Next, we add a task to the team's backlog for write integration (acceptance) tests for the above scenarios.
+The implementation of the integration tests can start parallel to the actual
+implementation of the user story. The user story description provided by product management does not specify how below things should be exactly implemented:
+
+- Upon application exit, inform the user whether all rumors were successfully shared or not
+- How bus drivers are supplied to the application
+
+The team should discuss the above two topics and consult the product manager for specific requirements. If there is no feedback from the product manager, the team can
+decide how to implement the above things. For example, the team could specify the following:
+
+- If all rumors were successfully shared, the application should exit with an exit code zero; otherwise, exit with a non-zero exit code.
+- Application gets the maximum number of driven bus stops as the first command line parameter
+- Application gets drivers as subsequent command line parameters
+- Each driver is specified with a string in the following format: *<bus route as a comma-separated list of bus stops>;<comma-separated list of rumors>*, e.g., `bus-stop-a,bus-stop-b;rumor-1,rumor-2`
+
+Below are the step implementations for the above Gherkin feature specification:
+
+```python
+import subprocess
+
+from behave import given, then, when
+from behave.runner import Context
+
+
+@given(
+    'maximum number of bus stops driven is {max_driven_bus_stop_count:d}'
+)
+def step_impl(context: Context, max_driven_bus_stop_count: int):
+    context.max_driven_bus_stop_count = max_driven_bus_stop_count
+
+
+@given('bus drivers with the following routes and rumors')
+def step_impl2(context: Context):
+    context.drivers = []
+
+    for driver in context.table:
+        bus_route = ','.join(
+            bus_stop.strip() for bus_stop in driver['Route'].split(',')
+        )
+
+        rumors = ','.join(
+            rumor.strip() for rumor in driver['Rumors'].split(',')
+        )
+
+        context.drivers.append(f'{bus_route};{rumors}')
+
+
+@when('bus drivers have completed driving')
+def step_impl3(context: Context):
+    context.exit_code = subprocess.run(
+        [
+            'python main.py',
+            str(context.max_driven_bus_stop_count),
+            ' '.join(context.drivers),
+        ]
+    ).returncode
+
+
+@then('all rumors are successfully shared')
+def step_impl4(context: Context):
+    assert context.exit_code == 0
+
+
+@then('all rumors are not shared')
+def step_impl5(context: Context):
+    assert context.exit_code != 0
+```
+
+In the `@given` steps, we store information in the `context.` We store driver definitions as strings to the `drivers` attribute of
+the `context`. In the `@when` step, the application is launched with command line arguments, and in the `@then` steps, the exit code of the sub-process is examined to be either 0 (successful sharing of all rumors) or non-zero (sharing of
+all rumors failed).
+
+Before starting the implementation using TDD, we must first design our application using DDD and then OOD. Let's continue
+with the DDD phase. We can start with event storming and define the *domain events* first:
+
+- The maximum number of driven bus stops is parsed from the command line
+- Bus drivers are parsed from the command line
+- The bus driver has driven to the next bus stop according to the bus route
+- Rumors are shared with the drivers at the bus stop
+- Bus drivers have driven until all rumors have been shared
+
+Let's introduce the *actors*, *commands* and *entities* related to the above domain events:
+
+- The maximum number of driven bus stops is parsed from the command line
+    - Actor: MaxDrivenStopCountParser, Command: parse
+
+- Bus drivers are parsed from the command line
+   - Actor: BusDriversParser, Command: parse, Entities: BusDriver
+
+- Bus drivers have driven until all rumors have been shared
+    - Actor: GossipingBusDrivers, Command: drive_until_all_rumors_shared, Entities: Rumor, BusDriver
+
+- The bus driver has driven to the next bus stop according to the bus route
+    - Actor: BusDriver, Command: drive_to_next_bus_stop, Entities: BusStop
+    - Actor: BusRoute, Command: get_next_bus_stop, Entities: BusStop
+
+- Rumors are shared with the drivers at the bus stop
+    - Actor: BusStop, Command: share_rumors_with_drivers, Entities BusDriver, Rumor
+
+Based on the above output of the DDD phase, we can design our classes using OOD. We design actor classes and put public
+behavior to them and design the `Rumor` entity class with no behavior.
+Below is the class diagram:
+
+![Class diagram](resources/chapter4/images/gbd.drawio.svg)
+
+We should not forget the *program against interfaces principle* (dependency inversion principle). So, let's add interfaces
+to the class diagram:
+
+![Class diagram with interfaces](resources/chapter4/images/gbd2.drawio.svg)
+
+Now that we have our design done, we can add the following tasks to the team's backlog:
+
+- GossipingBusDrivers class implementation
+- BusDriverImpl class implementation
+- CircularBusRoute class implementation
+- BusStopImpl class implementation
+- Rumor class implementation
+- MaxDrivenStopCountParser class implementation
+- BusDriversParser class implementation
+
+We already had the integration tests implementation task added to the backlog earlier. There are eight tasks in the backlog, and each
+can be implemented (either entirely or at least partially) in parallel. If the team has eight team members, each of them can pick a task for themselves and
+proceed in parallel to complete the user story as fast as possible.
+
+We can start implementing classes one public method at a time. Let's start with the most straightforward class, `Rumor,` which does not have behavior at all:
+
+```python
+class Rumor:
+    pass
+```
+
+Next, we can implement the `CircularBusRoute` class using TDD. Let's start with the simplest case, which is also a failure scenario: If the bus route has no bus stops, a `ValueError` with an informative message should be raised. Let's implement a unit test for that scenario:
+
+```python
+class CircularBusRouteTests(unittest.TestCase):
+    def test_constructor__when_no_bus_stops(self):
+        try:
+            # WHEN
+            CircularBusRoute([])
+
+            self.fail('ValueError should have been raised')
+        except ValueError as error:
+            # THEN
+            self.assertEqual(
+                str(error), 'Bus route must have at least one bus stop'
+            )
+```
+
+Let's implement the constructor of the `CircularBusRoute` class to make the above test pass:
+
+```python
+class BusStop(Protocol):
+    pass
+
+
+class BusRoute(Protocol):
+    pass
+
+
+class CircularBusRoute(BusRoute):
+    def __init__(self, bus_stops: list[BusStop]):
+        if not bus_stops:
+            raise ValueError('Bus route must have at least one bus stop')
+
+        self.__bus_stops: Final = bus_stops.copy()
+```
+
+The unit test for the next scenario is the following: if there is only one stop in the bus route, the `get_next_bus_stop` method should always
+return that bus stop (because the bus route is circular).
+
+```python
+class CircularBusRouteTests(unittest.TestCase):
+    def test_get_next_bus_stop__when_one_bus_stop(self):
+        # GIVEN
+        bus_stop = BusStopImpl()
+        bus_route = CircularBusRoute([bus_stop])
+
+        # WHEN
+        next_bus_stop = bus_route.get_next_bus_stop(bus_stop)
+
+        # THEN
+        self.assertEqual(next_bus_stop, bus_stop)
+```
+
+Let's implement the `get_next_bus_stop` method to make the above test to pass:
+
+```python
+class BusRoute(Protocol):
+    def get_next_bus_stop(self, current_bus_stop: BusStop):
+        pass
+
+
+class CircularBusRoute(BusRoute):
+    # ...
+
+    def get_next_bus_stop(self, current_bus_stop: BusStop) -> BusStop:
+        return self.__bus_stop[0]
+```
+
+Let's implement a unit test for the following scenario: If the `get_next_bus_stop` method's argument is a bus stop not belonging to the bus route, a `ValueError` with an informative message should be raised.
+
+```python
+class CircularBusRouteTests(unittest.TestCase):
+    # GIVEN
+    bus_stop_a = BusStopImpl()
+    bus_route = CircularBusRoute([bus_stop_a])
+    bus_stop_b = BusStopImpl()
+
+    try:
+        # WHEN
+        bus_route.get_next_bus_stop(bus_stop_b)
+
+        self.fail('ValueError should have been raised')
+    except ValueError as error:
+        # THEN
+        self.assertEqual(
+            str(error), 'Bus stop does not belong to bus route'
+        )
+```
+
+Let's modify the `get_next_bus_stop` implementation:
+
+```python
+class CircularBusRoute(BusRoute):
+   # ...
+
+    def get_next_bus_stop(self, current_bus_stop: BusStop) -> BusStop:
+        if current_bus_stop not in self.__bus_stops:
+            raise ValueError('Bus stop does not belong to bus route')
+
+        return self.__bus_stop[0]
+```
+
+Next, we specify two scenarios of how the `get_next_bus_stop` method should behave when there is more than one stop in the bus route:
+
+> *When a current bus stop is given, the `get_next_bus_stop` method should return the next bus stop in a list of bus stops for the route.*
+
+Let's write a failing unit test for the above scenario:
+
+```python
+class CircularBusRouteTests(unittest.TestCase:
+    def test_get_next_bus_stop__when_next_bus_stop_in_list_exists(self):
+        # GIVEN
+        bus_stop_a = BusStopImpl()
+        bus_stop_b = BusStopImpl()
+        bus_route = CircularBusRoute([bus_stop_a, bus_stop_b])
+
+        # WHEN
+        next_bus_stop = bus_route.get_next_bus_stop(bus_stop_a)
+
+        # THEN
+        self.assertEqual(next_bus_stop, bus_stop_b)
+```
+
+Let's modify the source code to make the above test pass:
+
+```python
+class CircularBusRoute(BusRoute):
+    # ...
+
+    def get_next_bus_stop(self, current_bus_stop: BusStop) -> BusStop:
+        if current_bus_stop not in self.__bus_stops:
+            raise ValueError('Bus stop does not belong to bus route')
+
+        if len(self.__bus_stops) == 1:
+            return self.__bus_stops[0]
+
+        curr_bus_stop_index = self.__bus_stops.index(current_bus_stop)
+        return self.__bus_stops[curr_bus_stop_index + 1]
+```
+
+Let's add a test for the following scenario:
+
+> *If there is no next bus stop in the list of the route's bus stops, the `get_next_bus_stop` method should return the first bus stop (due to the route being circular).*
+
+```python
+class CircularBusRouteTests(unittest.TestCase):
+    def test_get_next_bus_stop__when_no_next_bus_stop_in_list(self):
+        # GIVEN
+        bus_stop_a = BusStopImpl()
+        bus_stop_b = BusStopImpl()
+        bus_route = CircularBusRoute([bus_stop_a, bus_stop_b])
+
+        # WHEN
+        next_bus_stop = bus_route.get_next_bus_stop(bus_stop_b)
+
+        # THEN
+        self.assertEqual(next_bus_stop, bus_stop_a)
+```
+
+Let's make the above test pass:
+
+```python
+class CircularBusRoute(BusRoute):
+    # ...
+
+    def get_next_bus_stop(self, current_bus_stop: BusStop) -> BusStop:
+        if current_bus_stop not in self.__bus_stops:
+            raise ValueError('Bus stop does not belong to bus route')
+
+        bus_stop_count = len(self.__bus_stops)
+
+        if bus_stop_count == 1:
+            return self.__bus_stops[0]
+
+        curr_bus_stop_index = self.__bus_stops.index(current_bus_stop)
+        next_bus_stop_index = curr_bus_stop_index + 1
+
+        if (next_bus_stop_index <= bus_stop_count - 1):
+            return self.__bus_stops[next_bus_stop_index]
+        else:
+            return self.__bus_stops[0]
+```
+
+Our code could benefit from refactoring. With the help of existing
+unit tests, we can safely refactor the code to the following:
+
+```python
+class CircularBusRoute(BusRoute):
+    def __init__(self, bus_stops: list[BusStop]):
+        if not bus_stops:
+            raise ValueError('Bus route must have at least one bus stop')
+
+        self.__bus_stops: Final = bus_stops.copy()
+        self.__bus_stop_count: Final = len(bus_stops)
+
+    def get_next_bus_stop(self, current_bus_stop: BusStop) -> BusStop:
+        try:
+            curr_bus_stop_index = self.__bus_stops.index(current_bus_stop)
+        except ValueError:
+            raise ValueError('Bus stop does not belong to bus route')
+
+        next_bus_stop_index = (
+            curr_bus_stop_index + 1
+        ) % self.__bus_stop_count
+
+        return self.__bus_stops[next_bus_stop_index]
+```
+
+Next, we shall implement the `BusStopImpl` class and the `share_rumors_with_drivers` method. Let's start by specifying
+what that method should do: After the execution of the method is completed, all the drivers at the bus stop should have the same set of rumors
+that is a union of all the rumors that the drivers at the bus stop have.
+
+Let's create a test for the above specification. We will have three bus drivers at a bus stop. Because bus drivers
+are implemented in a separate class, we will use mocks for the drivers.
+
+```python
+class BusStopImplTests(unittest.TestCase):
+    @patch('BusDriverImpl.__new__')
+    @patch('BusDriverImpl.__new__')
+    @patch('BusDriverImpl.__new__')
+    def test_share_rumors_with_drivers(
+        self,
+        bus_driver_mock3: Mock,
+        bus_driver_mock2: Mock,
+        bus_driver_mock1: Mock,
+    ):
+        # GIVEN
+        bus_drivers = [bus_driver_mock1, bus_driver_mock2, bus_driver_mock3]
+
+        rumor1 = Rumor()
+        rumor2 = Rumor()
+        rumor3 = Rumor()
+        all_rumors = {rumor1, rumor2, rumor3}
+
+        bus_driver_mock1.get_rumors.return_value = {rumor1, rumor2}
+        bus_driver_mock2.get_rumors.return_value = {rumor2}
+        bus_driver_mock3.get_rumors.return_value = {rumor2, rumor3}
+
+        bus_stop = BusStopImpl()
+        bus_stop.add(bus_driver_mock1)
+        bus_stop.add(bus_driver_mock2)
+        bus_stop.add(bus_driver_mock3)
+
+        # WHEN
+        bus_stop.share_rumors_with_drivers()
+
+        # THEN
+        self.__assert_rumors_are_set(all_rumors, bus_drivers)
+
+    def __assert_rumors_are_set(self, all_rumors, bus_driver_mocks):
+        for bus_driver_mock in bus_driver_mocks:
+            bus_driver_mock.set_rumors.assert_called_with(all_rumors)
+```
+
+Let's implement the `BusStopImpl` class to make the above test pass:
+
+```python
+class BusDriver(Protocol):
+    def get_rumors(self) -> set[Rumor]:
+        pass
+
+    def set_rumors(self, rumors: set[Rumor]) -> None:
+       pass
+
+
+class BusStop(Protocol):
+    def share_rumors_with_drivers(self) -> None:
+        pass
+
+    def add_bus_driver(self, bus_driver: BusDriver) -> None:
+        pass
+
+
+class BusStopImpl(BusStop):
+    def __init__(self):
+        self.__bus_drivers: Final = set()
+
+    def share_rumors_with_drivers(self) -> None:
+        all_rumors = {
+            rumor
+            for bus_driver in self.__bus_drivers
+            for rumor in bus_driver.get_rumors()
+        }
+
+        for bus_driver in self.__bus_drivers:
+            bus_driver.set_rumors(all_rumors)
+
+    def add(self, bus_driver: BusDriver) -> None:
+        self.__bus_drivers.add(bus_driver)
+```
+
+Let's implement the `BusDriverImpl` class next. As shown above, we needed to add two methods, `get_rumors` and `set_rumors`, to the `BusDriver` interface.
+Let's make a unit test for the `get_rumors` method, which returns the rumors given for the driver in the constructor:
+
+```python
+class BusDriveImplTests(unittest.TestCase):
+    rumor1 = Rumor()
+    rumor2 = Rumor()
+
+    @patch('CircularBusRoute.__new__')
+    def test_get_rumors(self, bus_route_mock: Mock):
+        # GIVEN
+        bus_driver = BusDriverImpl(
+            bus_route_mock, {self.rumor1, self.rumor2}
+        )
+
+        # WHEN
+        rumors = bus_driver.get_rumors()
+
+        # THEN
+        self.assertEqual(rumors, {self.rumor1, self.rumor2})
+```
+
+Now we can implement the `get_rumors` method to make the above test pass:
+
+```python
+class BusDriverImpl(BusDriver):
+    def __init__(self, rumors: set[Rumor]):
+        self.__rumors = rumors.copy()
+
+    def get_rumors(self) -> set[Rumor]:
+        return self.__rumors
+```
+
+Let's make a unit test for the `set_rumors` method, which should override the rumors given in the constructor:
+
+```python
+class BusDriveImplTests(unittest.TestCase):
+    @patch('CircularBusRoute.__new__')
+    def test_set_rumors(self, bus_route_mock: Mock):
+        # GIVEN
+        rumor3 = Rumor()
+        rumor4 = Rumor()
+
+        bus_driver = BusDriverImpl(
+            bus_route_mock, {self.rumor1, self.rumor2}
+        )
+
+        # WHEN
+        bus_driver.set_rumors({rumor3, rumor4})
+
+        # THEN
+        self.assertEqual(bus_driver.get_rumors(), {rumor3, rumor4})
+```
+
+Now we can implement the `get_rumors` method to make the above test pass:
+
+```python
+class BusDriverImpl(BusDriver):
+    # ...
+
+    def set_rumors(self, rumors: set[Rumor]) -> None:
+        self.__rumors = rumors.copy()
+```
+
+We need to implement the `drive_to_next_bus_stop` method in the `BusDriverImpl` class: A bus driver
+has a current bus stop that is initially the first bus stop of the route. The driver drives to the next bus stop according to its route. When the driver
+arrives at the next bus stop, the driver is added to the bus stop. The driver is removed from the current bus stop, which is changed to the next bus stop.
+
+```python
+class BusDriverImplTests(unittest.TestCase):
+    @patch('BusStopImpl.__new__')
+    @patch('BusStopImpl.__new__')
+    @patch('CircularBusRoute.__new__')
+    def test_drive_to_next_bus_stop(
+        self,
+        bus_route_mock: Mock,
+        bus_stop_a_mock: Mock,
+        bus_stop_b_mock: Mock,
+    ):
+        # GIVEN
+        bus_route_mock.get_first_bus_stop.return_value = bus_stop_a_mock
+        bus_route_mock.get_next_bus_stop.return_value = bus_stop_b_mock
+        bus_driver = BusDriverImpl(bus_route_mock, set())
+
+        # WHEN
+        bus_driver.drive_to_next_bus_stop()
+
+        # THEN
+        bus_stop_a_mock.remove.assert_called_with(bus_driver)
+        bus_stop_b_mock.add.assert_called_with(bus_driver)
+
+        self.assertEqual(
+            bus_driver.get_current_bus_stop(), bus_stop_b_mock
+        )
+```
+
+Let's implement the `BusDriverImpl` class to make the above test pass. Before that, we must add a test for the new `get_first_bus_stop` method in the `BusRouteImpl` class.
+
+```python
+class CircularBusRouteTests(unittest.TestCase):
+    def test_get_first_bus_stop(self):
+        # GIVEN
+        bus_stop_a = BusStopImpl()
+        bus_stop_b = BusStopImpl()
+        bus_route = CircularBusRoute([bus_stop_a, bus_stop_b])
+
+        # WHEN
+        first_bus_stop = bus_route.get_first_bus_stop()
+
+        # THEN
+        self.assertEqual(first_bus_stop, bus_stop_a)
+```
+
+Let's modify the `CircularBusRoute` class to make the above test pass:
+
+```python
+class BusRoute(Protocol):
+    # ...
+
+    def get_first_bus_stop(self) -> BusStop:
+        pass
+
+
+class CircularBusRoute(BusRoute):
+    # ...
+
+    def get_first_bus_stop(self) -> BusStop:
+        return self.__bus_stops[0]
+```
+
+Here is the implementation of the `drive_to_next_bus_stop` method in the `BusDriverImpl` class:
+
+```python
+class BusDriverImpl(BusDriver):
+    def __init__(self, bus_route: BusRoute, rumors: set[Rumor]):
+        self.__bus_route = bus_route
+        self.__current_bus_stop = bus_route.get_first_bus_stop()
+        self.__current_bus_stop.add(self)
+        self.__rumors = rumors.copy()
+
+    def drive_to_next_bus_stop(self) -> BusStop:
+       self.__current_bus_stop.remove(self)
+
+       self.__current_bus_stop = self.__bus_route.get_next_bus_stop(
+           self.__current_bus_stop
+       )
+
+       self.__current_bus_stop.add(self)
+       return self.__current_bus_stop
+
+    def get_current_bus_stop(self) -> BusStop:
+        return self.__current_bus_stop
+
+    # ...
+```
+
+Finally, we should implement the `GossipingBusDrivers` class and its `drive_until_all_rumors_shared`.
+Let's write a unit test for the first scenario when all rumors are shared after driving from one bus stop to the next.
+The `drive_until_all_rumors_shared` method
+makes drivers drive to the next bus stop (the same for both drivers) and share rumors there.
+
+```python
+class GossipingBusDrivers(unittest.TestCase):
+    rumor1 = Rumor()
+    rumor2 = Rumor()
+    all_rumors = {rumor1, rumor2}
+
+    @patch('BusStopImpl.__new__')
+    @patch('BusDriverImpl.__new__')
+    @patch('BusDriverImpl.__new__')
+    def test_drive_until_all_rumors_shared__after_one_stop(
+        self,
+        bus_driver_mock1: Mock,
+        bus_driver_mock2: Mock,
+        bus_stop_mock: Mock,
+    ):
+        # GIVEN
+        bus_driver_mock1.drive_to_next_bus_stop.return_value = (
+            bus_stop_mock
+        )
+
+        bus_driver_mock2.drive_to_next_bus_stop.return_value = (
+            bus_stop_mock
+        )
+
+        bus_driver_mock1.get_rumors.return_value = self.all_rumors
+        bus_driver_mock2.get_rumors.return_value = self.all_rumors
+
+        gossiping_bus_drivers = GossipingBusDrivers(
+            [bus_driver_mock1, bus_driver_mock2]
+        )
+
+        # WHEN
+        all_rumors_were_shared = (
+            gossiping_bus_drivers.drive_until_all_rumors_shared(100)
+        )
+
+        # THEN
+        self.assertTrue(all_rumors_were_shared)
+        bus_stop_mock.share_rumors_with_drivers.assert_called_once()
+```
+
+Let's make the above test pass with the below code.
+
+```python
+class GossipingBusDrivers:
+    def __init__(self, bus_drivers: list[BusDriver]):
+        self.__bus_drivers = bus_drivers.copy()
+        self.__all_rumors = self.__get_all_rumors()
+
+    def drive_until_all_rumors_shared(self) -> bool:
+        while True:
+            for bus_driver in self.__bus_drivers:
+                bus_stop = bus_driver.drive_to_next_bus_stop()
+                bus_stop.share_rumors_with_drivers()
+
+            if self.__all_rumors_are_shared():
+                return True
+
+    def __get_all_rumors():
+        return {
+            rumor
+            for bus_driver in self.__bus_drivers
+            for rumor in bus_driver.get_rumors()
+        }
+
+    def __all_rumors_are_shared(self) -> bool:
+        return all(
+            [
+                bus_driver.get_rumors() == self.__all_rumors
+                for bus_driver in self.__bus_drivers
+            ]
+        )
+```
+
+Let's add a test for a scenario where two bus drivers drive from their starting bus stops to two different bus stops and must continue driving
+because all rumors were not shared at the first bus stop. Rumors are shared when drivers continue driving to their next bus stop, which is the same for both drivers.
+
+```python
+class GossipingBusDriversTests(unittest.TestCase):
+    # ...
+
+    @patch('BusStopImpl.__new__')
+    @patch('BusStopImpl.__new__')
+    @patch('BusStopImpl.__new__')
+    @patch('BusDriverImpl.__new__')
+    @patch('BusDriverImpl.__new__')
+    def test_drive_until_all_rumors_shared__after_two_stops(
+        self,
+        bus_driver_mock1: Mock,
+        bus_driver_mock2: Mock,
+        bus_stop_mock1: Mock,
+        bus_stop_mock2: Mock,
+        bus_stop_mock3: Mock,
+    ):
+        # GIVEN
+        bus_stop_mocks = [bus_stop_mock1, bus_stop_mock2, bus_stop_mock3]
+
+        bus_driver_mock1.drive_to_next_bus_stop.side_effect = [
+            bus_stop_mock1,
+            bus_stop_mock3,
+        ]
+
+        bus_driver_mock2.drive_to_next_bus_stop.side_effect = [
+            bus_stop_mock2,
+            bus_stop_mock3,
+        ]
+
+        bus_driver_mock1.get_rumors.side_effect = [
+            {self.rumor1},
+            {self.rumor1},
+            self.all_rumors,
+        ]
+
+        bus_driver_mock2.get_rumors.side_effect = [
+            {self.rumor2},
+            {self.rumor2},
+            self.all_rumors,
+        ]
+
+        gossiping_bus_drivers = GossipingBusDrivers(
+            [bus_driver_mock1, bus_driver_mock2]
+        )
+
+        # WHEN
+        all_rumors_were_shared = (
+            gossiping_bus_drivers.drive_until_all_rumors_shared(100)
+        )
+
+        # THEN
+        self.assertTrue(all_rumors_were_shared)
+
+        for bus_stop_mock in bus_stop_mocks:
+            bus_stop_mock.share_rumors_with_drivers.assert_called_once()
+```
+
+Let's modify the implementation:
+
+```python
+class GossipingBusDrivers:
+    # ...
+
+    def drive_until_all_rumors_shared(self) -> bool:
+        while True:
+            bus_stops = {
+                bus_driver.drive_to_next_bus_stop()
+                for bus_driver in self.__bus_drivers
+            }
+
+            for bus_stop in bus_stops:
+                bus_stop.share_rumors_with_drivers()
+
+            if self.__all_rumors_are_shared():
+                return True
+    # ...
+```
+
+Next, we should implement a test where drivers don't have common bus stops and they have driven the maximum number of bus stops:
+
+```python
+class GossipingBusDriversTests(unittest.TestCase):
+    # ...
+
+    @patch('BusStopImpl.__new__')
+    @patch('BusStopImpl.__new__')
+    @patch('BusDriverImpl.__new__')
+    @patch('BusDriverImpl.__new__')
+    def test_drive_until_all_rumors_shared__when_rumors_are_not_shared(
+        self,
+        bus_driver_mock1: Mock,
+        bus_driver_mock2: Mock,
+        bus_stop_mock1: Mock,
+        bus_stop_mock2: Mock,
+    ):
+        # GIVEN
+        bus_stop_mocks = [bus_stop_mock1, bus_stop_mock2]
+
+        bus_driver_mock1.drive_to_next_bus_stop.return_value = (
+            bus_stop_mock1
+        )
+
+        bus_driver_mock2.drive_to_next_bus_stop.return_value = (
+            bus_stop_mock2
+        )
+
+        bus_driver_mock1.get_rumors.return_value = {self.rumor1}
+        bus_driver_mock2.get_rumors.return_value = {self.rumor2}
+
+        gossiping_bus_drivers = GossipingBusDrivers(
+            [bus_driver_mock1, bus_driver_mock2]
+        )
+
+        max_driven_stop_count = 2
+
+        # WHEN
+        all_rumors_were_shared = (
+            gossiping_bus_drivers.drive_until_all_rumors_shared(
+                max_driven_stop_count
+            )
+        )
+
+        # THEN
+        self.assertFalse(all_rumors_were_shared)
+
+        for bus_stop_mock in bus_stop_mocks:
+            self.assertEqual(
+                bus_stop_mock.share_rumors_with_drivers.call_count, 2
+            )
+```
+
+Let' modify the implementation to make the above test to pass:
+
+```python
+class GossipingBusDrivers:
+    def __init__(self, bus_drivers: list[BusDriver]):
+        self.__bus_drivers = bus_drivers.copy()
+        self.__nbr_of_stops_driven = 0
+
+    def drive_until_all_rumors_shared(
+        self, max_driven_stop_count: int
+    ) -> bool:
+        while True:
+            bus_stops = {
+                bus_driver.drive_to_next_bus_stop()
+                for bus_driver in self.__bus_drivers
+            }
+
+            self.__nbr_of_stops_driven += 1
+
+            for bus_stop in bus_stops:
+                bus_stop.share_rumors_with_drivers()
+
+            if self.__all_rumors_are_shared():
+                return True
+            elif self.__nbr_of_stops_driven == max_driven_stop_count:
+                return False
+    # ...
+```
+
+Let's refactor the method slightly so that it is not too long (max 5-9 statements):
+
+```python
+class GossipingBusDrivers:
+    # ...
+
+    def drive_until_all_rumors_shared(
+        self, max_driven_stop_count: int
+    ) -> bool:
+        while True:
+            bus_stops = {
+                bus_driver.drive_to_next_bus_stop()
+                for bus_driver in self.__bus_drivers
+            }
+
+            self.__driven_stop_count += 1
+            self.__share_rumors(bus_stops)
+
+            if self.__all_rumors_are_shared():
+                return True
+            elif self.__driven_stop_count == max_driven_stop_count:
+                return False
+
+    @staticmethod
+    def __share_rumors(bus_stops: set[BusStop]):
+        for bus_stop in bus_stops:
+            bus_stop.share_rumors_with_drivers()
+
+    # ...
+```
+
+Next, we shall implement the `MaxDrivenStopCountParser` and its 'parse' method. Let's create a failing test:
+
+```python
+class MaxDrivenStopCountParserTests(unittest.TestCase):
+    def test_parse__when_it_succeeds(self):
+        # GIVEN
+        max_driven_stop_count_as_str = '2'
+
+        # WHEN
+        max_driven_stop_count = MaxDrivenStopCountParserImpl().parse(
+            max_driven_stop_count_as_str
+        )
+
+        # THEN
+        self.assertEqual(max_driven_stop_count, 2)
+```
+
+Now we can implement the class to make the above test to pass:
+
+```python
+class MaxDrivenStopCountParser(Protocol):
+    def parse(self, max_driven_stop_count_as_str: str) -> int:
+        pass
+
+
+class MaxDrivenStopCountParserImpl(MaxDrivenStopCountParser):
+    def parse(self, max_driven_stop_count_as_str: str) -> int:
+        return int(max_driven_stop_count_as_str)
+```
+
+Next, we specify that the `parse` method should throw a `ValueError` if the parsing fails:
+
+```python
+class MaxDrivenStopCountParserTests(unittest.TestCase):
+     def test_parse__when_it_fails(self):
+         # GIVEN
+         max_driven_stop_count_as_str = 'invalid'
+
+         # WHEN + THEN
+         self.assertRaises(
+             ValueError,
+             MaxDrivenStopCountParserImpl().parse,
+             max_driven_stop_count_as_str,
+         )
+```
+
+The above test will pass without modification to the implementation.
+
+Next, we shall implement the `BusDriversParser` and its 'parse' method. We will skip the failure scenarios, like when a bus driver
+specification does not contain at least one bus stop and one rumor. Let's first create
+a failing test for a scenario where we have only one driver with one bus stop and one rumor:
+
+```python
+class BusDriversParserImplTests(unittest.TestCase):
+    def test_parse__with_one_driver_that_has_one_bus_stop_and_one_rumor(self):
+        # GIVEN
+        bus_driver_spec = 'bus-stop-a;rumor1'
+
+        # WHEN
+        bus_drivers = BusDriversParserImpl().parse([bus_driver_spec])
+
+        # THEN
+        self.__assert_has_circular_bus_route_with_one_stop(bus_drivers)
+        self.assertEqual(len(bus_drivers[0].get_rumors()), 1)
+
+    def __assert_has_circular_bus_route_with_one_stop(self, bus_drivers):
+        self.assertEquals(len(bus_drivers), 1)
+        bus_stop = bus_drivers[0].get_current_bus_stop()
+        next_bus_stop = bus_drivers[0].drive_to_next_bus_stop()
+        self.assertEqual(bus_stop, next_bus_stop)
+```
+
+Let's implement the `parse` method to make the above test pass:
+
+```python
+class BusDriversParser(Protocol):
+    def parse(self, bus_driver_specs: list[str]) -> list[BusDriver]:
+        pass
+
+
+class BusDriversParserImpl(Protocol):
+    def parse(self, bus_driver_specs: list[str]) -> list[BusDriver]:
+        return [
+            self.__get_bus_driver(bus_driver_spec)
+            for bus_driver_spec in bus_driver_specs
+        ]
+
+    def __get_bus_driver(self, bus_driver_spec: str) -> BusDriver:
+        return BusDriverImpl(CircularBusRoute([BusStopImpl()]), {Rumor()})
+```
+
+Let's create a test for a scenario where we have multiple drivers with one bus stop and one rumor each; both the bus stops
+and rumors for drivers are different:
+
+```python
+class BusDriversParserImplTests(unittest.TestCase):
+    def test_parse__with_multiple_drivers_with_different_bus_stop_and_rumor(self):
+        # GIVEN
+        bus_driver_spec = ['bus-stop-a;rumor1', 'bus-stop-b;rumor2']
+
+        # WHEN
+        bus_drivers = BusDriversParserImpl().parse(bus_driver_spec)
+
+        # THEN
+        self.__assert_bus_stops_are_not_same(bus_drivers)
+
+        self.assertNotEqual(
+            bus_drivers[0].get_rumors(), bus_drivers[1].get_rumors()
+        )
+
+    def __assert_bus_stops_are_not_same(self, bus_drivers):
+        self.assertEqual(len(bus_drivers), 2)
+        driver1_stop1 = bus_drivers[0].get_current_bus_stop()
+        driver2_stop1 = bus_drivers[1].get_current_bus_stop()
+        self.assertNotEqual(driver1_stop1, driver2_stop1)
+```
+
+The above test will pass without modifications to the implementation.
+
+Let's create a test for a scenario where we have multiple drivers with one bus stop and one rumor each; the bus stops
+are the same, but rumors are different:
+
+```python
+class BusDriversParserImplTests(unittest.TestCase):
+    def test_parse__with_multiple_drivers_with_a_common_bus_stop(self):
+        # GIVEN
+        bus_driver_spec = ["bus-stop-a;rumor1", "bus-stop-a;rumor2"]
+
+        # WHEN
+        bus_drivers = BusDriversParserImpl().parse([bus_driver_spec])
+
+        # THEN
+        self.__assert_bus_stops_are_same(bus_drivers)
+
+    def assert_bus_stop_are_same(self, bus_drivers):
+        driver1_stop = bus_driver[0].get_current_bus_stop()
+        driver2_stop = bus_driver[1].get_current_bus_stop()
+        self.assertEqual(driver1_stop, driver2_stop)
+```
+
+Let's modify the implementation to make the above test pass:
+
+```python
+class BusDriversParserImpl(Protocol):
+    def __init__(self):
+        self.__name_to_bus_stop = {}
+
+    def parse(self, bus_driver_specs: list[str]) -> list[BusDriver]:
+        return [
+            self.__get_bus_driver(bus_driver_spec)
+            for bus_driver_spec in bus_driver_specs
+        ]
+
+    def __get_bus_driver(self, bus_driver_spec: str) -> BusDriver:
+        bus_stop_name, _ = bus_driver_spec.split(';')
+
+        if self.__name_to_bus_stop.get(bus_stop_name) is None:
+            self.__name_to_bus_stop[bus_stop_name] = BusStopImpl()
+
+        return BusDriverImpl(
+            CircularBusRoute([self.__name_to_bus_stop[bus_stop_name]]),
+            {Rumor()},
+        )
+```
+
+Let's create a test for a scenario where we have multiple drivers with one rumor each. The rumors are the same:
+
+```python
+class BusDriversParserImplTests(unittest.TestCase):
+    def test_parse__with_multiple_drivers_and_a_common_rumor(
+        self,
+    ):
+        # GIVEN
+        bus_driver_spec = ['bus-stop-a;rumor1', 'bus-stop-b;rumor1']
+
+        # WHEN
+        bus_drivers = BusDriversParserImpl().parse(bus_driver_spec)
+
+        # THEN
+        self.assertEqual(
+            bus_drivers[0].get_rumors(), bus_drivers[1].get_rumors()
+        )
+```
+
+Let's modify the implementation to make the test pass:
+
+```python
+class BusDriversParserImpl(Protocol):
+    def __init__(self):
+        self.__name_to_bus_stop = {}
+        self.__name_to_rumor = {}
+
+    def parse(self, bus_driver_specs: list[str]) -> list[BusDriver]:
+        return [
+            self.__get_bus_driver(bus_driver_spec)
+            for bus_driver_spec in bus_driver_specs
+        ]
+
+    def __get_bus_driver(self, bus_driver_spec: str) -> BusDriver:
+        bus_stop_name, rumor_name = bus_driver_spec.split(';')
+
+        if self.__name_to_bus_stop.get(bus_stop_name) is None:
+            self.__name_to_bus_stop[bus_stop_name] = BusStopImpl()
+
+        if self.__name_to_rumor.get(rumor_name) is None:
+            self.__name_to_rumor[rumor_name] = Rumor()
+
+        return BusDriverImpl(
+            CircularBusRoute([self.__name_to_bus_stop[bus_stop_name]]),
+            {self.__name_to_rumor[rumor_name]},
+        )
+```
+
+Let's create a test for a scenario where we have multiple drivers with multiple bus stops (the first bus stop is the same):
+
+```python
+class BusDriversParserImplTests(unittest.TestCase):
+    def test_parse__with_multiple_drivers_and_multiple_bus_stops_where_first_is_common(self):
+        # GIVEN
+        bus_driver_spec = [
+            'bus-stop-a,bus-stop-b;rumor1',
+            'bus-stop-a,bus-stop-c;rumor2',
+        ]
+
+        # WHEN
+        bus_drivers = BusDriversParserImpl().parse(bus_driver_spec)
+
+        # THEN
+        self.__assert_only_first_bus_stops_are_same(bus_drivers)
+
+
+    def assert_only_first_bus_stops_are_same(self, bus_drivers):
+        driver1_stop1 = bus_drivers[0].get_current_bus_stop()
+        driver2_stop1 = bus_drivers[1].get_current_bus_stop()
+        self.assertEqual(driver1_stop1, driver2_stop1)
+
+        driver1_stop2 = bus_drivers[0].drive_to_next_bus_stop()
+        driver2_stop2 = bus_drivers[1].drive_to_next_bus_stop()
+        self.assertNotEqual(driver1_stop2, driver2_stop2)
+```
+
+Let's make the above test pass:
+
+```python
+class BusDriversParserImpl(Protocol):
+    # ...
+
+    def parse(self, bus_driver_specs: list[str]) -> list[BusDriver]:
+        return [
+            self.__get_bus_driver(bus_driver_spec)
+            for bus_driver_spec in bus_driver_specs
+        ]
+
+    def __get_bus_driver(self, bus_driver_spec: str) -> BusDriver:
+        bus_route_spec, rumor_name = bus_driver_spec.split(';')
+        bus_stop_names = bus_route_spec.split(',')
+
+        for bus_stop_name in bus_stop_names:
+            if self.__name_to_bus_stop.get(bus_stop_name) is None:
+                self.__name_to_bus_stop[bus_stop_name] = BusStopImpl()
+
+        bus_stops = [
+            self.__name_to_bus_stop[bus_stop_name]
+            for bus_stop_name in bus_stop_names
+        ]
+
+        if self.__name_to_rumor.get(rumor_name) is None:
+            self.__name_to_rumor[rumor_name] = Rumor()
+
+        return BusDriverImpl(
+            CircularBusRoute(bus_stops), {self.__name_to_rumor[rumor_name]}
+        )
+```
+
+Let's create a test for a scenario where we have multiple drivers with multiple rumors (one of which is the same):
+
+```python
+class BusDriversParserImplTests(unittest.TestCase):
+    def test_parse__with_multiple_drivers_and_multiple_rumors(self):
+        # GIVEN
+        bus_driver_specs = [
+            'bus-stop-a;rumor1,rumor2,rumor3',
+            'bus-stop-b;rumor1,rumor3',
+        ]
+
+        # WHEN
+        bus_drivers = BusDriversParserImpl().parse(bus_driver_specs)
+
+        # THEN
+        self.__assert_rumors_differ_by_one(bus_drivers)
+
+    def __assert_rumors_differ_by_one(self, bus_drivers):
+        self.assertEqual(len(bus_drivers[0].get_rumors()), 3)
+        self.assertEqual(len(bus_drivers[1].get_rumors()), 2)
+
+        rumor_diff = (
+            bus_drivers[0]
+            .get_rumors()
+            .difference(bus_drivers[1].get_rumors())
+        )
+
+        self.assertEqual(len(rumor_diff), 1)
+```
+
+Let's modify the implementation to make the above test pass:
+
+```python
+class BusDriversParserImpl(Protocol):
+    # ...
+
+    def parse(self, bus_driver_specs: list[str]) -> list[BusDriver]:
+        return [
+            self.__get_bus_driver(bus_driver_spec)
+            for bus_driver_spec in bus_driver_specs
+        ]
+
+    def __get_bus_driver(self, bus_driver_spec: str) -> BusDriver:
+        bus_route_spec, rumors_spec = bus_driver_spec.split(';')
+        bus_stop_names = bus_route_spec.split(',')
+
+        for bus_stop_name in bus_stop_names:
+            if self.__name_to_bus_stop.get(bus_stop_name) is None:
+                self.__name_to_bus_stop[bus_stop_name] = BusStopImpl()
+
+        bus_stops = [
+            self.__name_to_bus_stop[bus_stop_name]
+            for bus_stop_name in bus_stop_names
+        ]
+
+        rumor_names = rumors_spec.split(',')
+
+        for rumor_name in rumor_names:
+            if self.__name_to_rumor.get(rumor_name) is None:
+                self.__name_to_rumor[rumor_name] = Rumor()
+
+        rumors = {
+            self.name_to_rumor[rumor_name] for rumor_name in rumor_names
+        }
+
+        return BusDriverImpl(CircularBusRoute(bus_stops), rumors)
+```
+
+Now that we have implemented all tests, we can refactor the `parse` to the following:
+
+```python
+class BusDriversParserImpl(Protocol):
+    def __init__(self):
+        self.__name_to_bus_stop = {}
+        self.__name_to_rumor = {}
+
+    def parse(self, bus_driver_specs: list[str]) -> list[BusDriver]:
+        return [
+            self.__get_bus_driver(bus_driver_spec)
+            for bus_driver_spec in bus_driver_specs
+        ]
+
+    def __get_bus_driver(self, bus_driver_spec: str) -> BusDriver:
+        bus_route_spec, rumors_spec = bus_driver_spec.split(';')
+        bus_stop_names = bus_route_spec.split(',')
+        bus_stops = self.__get_bus_stops(bus_stop_names)
+        rumor_names = rumors_spec.split(',')
+        rumors = self.__get_rumors(rumor_names)
+        return BusDriverImpl(CircularBusRoute(bus_stops), rumors)
+
+    def __get_bus_stops(self, bus_stop_names: list[str]) -> list[BusStop]:
+        for name in bus_stop_names:
+            if self.__name_to_bus_stop.get(name) is None:
+                self.__name_to_bus_stop[name] = BusStopImpl()
+
+        return [self.__name_to_bus_stop[name] for name in bus_stop_names]
+
+    def __get_rumors(self, rumor_names: list[str]) -> set[Rumor]:
+        for name in rumor_names:
+            if self.__name_to_rumor.get(name) is None:
+                self.__name_to_rumor[name] = Rumor()
+
+        return {self.__name_to_rumor[name] for name in rumor_names}
+```
+
+Finally we need to implement the *main.py*:
+
+```
+class Main:
+    @staticmethod
+    def run():
+        max_driven_stop_count = MaxDrivenStopCountParserImpl().parse(
+            sys.argv[1]
+        )
+
+        bus_drivers = BusDriversParserImpl().parse(sys.argv[2:])
+
+        all_rumors_were_shared = GossipingBusDrivers(
+            bus_drivers
+        ).drive_until_all_rumors_shared(max_driven_stop_count)
+
+        code = 0 if all_rumors_were_shared else 1
+        sys.exit(code)
+
+
+if __name__ == '__main__':
+    Main().run()
+```
+
+The program can be run from the command line, for example:
+
+```bash
+python main.py 100 "stop-a;rumor-1" "stop-a;rumor2"
+```
+
+Let's say that product management wants a new feature and puts the following user story on the backlog:
+- Support a back-and-forth bus route in addition to the circular bus route.
+
+Because we used the *program against interfaces principle* earlier, we can implement this new feature using the
+*open-closed principle* by implementing a new `BackNForthBusRoute` class that implements the `BusRoute` interface.
+How about integrating that new class with existing code? Can we also do it by following the *open-closed principle*?
+For the most part, yes. As I have mentioned earlier, it is challenging and often impossible to 100% follow
+the *open-closed principle* principle. And that is not the goal. However, we should use it as much as we can. In the above code,
+the `CircularBusRoute` class was hardcoded in the `BusDriversParserImpl` class. We should create a 
+bus route factory that creates either circular or back-and-forth bus routes. Here, we again follow the *open-closed principle*.
+Then, we use that factory in the `BusDriversParserImpl` class instead of the hard-coded `CircularBusRoute` constructor.
+The `BusDriversParserImpl` class's `parse` method should get the bus route type as a parameter and forward it to the bus route factory.
+These last two modifications are not following the *open-closed principle* because we were obliged to modify an existing class.
+
+Similarly, we could later introduce other new features using the *open-closed principle*:
+
+- Quick bus stops where drivers don't have time to share rumors could be implemented in a new `QuickBusStop` class implementing
+  the `BusStop` interface
+- Forgetful bus drivers that remember others' rumors only, e.g., for a certain number of bus stops, could be implemented with
+  a new `ForgetfulBusDriver` class that implements the `BusDriver` interface
+
+As another example, let's consider implementing a simple API containing CRUD operations. Product management has defined the following feature (or epic)
+in the backlog:
+
+> *Sales item API creates, reads, updates, and deletes sales items. Sales items are stored in a persistent storage. Each sales item consists of the following attributes: unique ID, name, and price. Sales items can be created, updated, and deleted only by administrators.*
+
+First, the architecture team should provide technical guidance on implementing the backlog feature (or epic). The guidance could be the
+following: API should be a REST API, MySQL database should be used as persistent storage, and Keycloak should be used as the IAM system.
+Next, the development team should perform threat modeling (facilitated by the product security lead if needed). Threat modelling
+should result in additional security-related user stories that should be added to the backlog feature (or epic) and implemented
+by the team.
+
+{aside}
+Consider implementing the above-specified sales item API in a real-life scenario as two separate APIs for improved security: One public internet-facing API for reading sales items and another private API for administrator-related operations. The private admin API
+is accessible only from the company intranet and should not be accessible from the public internet directly, but access from the internet should require a company VPN connection (and proper authorization, of course), for example.
+{/aside}
+
+The development team should split the backlog feature into user stories in the [PI planning](https://scaledagileframework.com/pi-planning/) (or before it in the [IP iteration](https://scaledagileframework.com/innovation-and-planning-iteration/)).
+The team will come up with the following user stories:
+
+1) As an admin user, I want to create a new sales item in a persistent storage. A sales item contains the following attributes: id, name, and price
+2) As a user, I want to read sales items from the persistent storage
+3) As an admin user, I want to update a sales item in the persistent storage
+4) As an admin user, I want to delete a sales item from the persistent storage
+
+Next, the team should continue by applying BDD to each user story:
+
+User story 1:
+
+{title: "create_sales_item.feature"}
+```gherkin
+Feature: Create sales item
+
+  Background: Database is available and a clean table exists
+    Given database is available
+    And table is empty
+    And auto increment is reset
+
+
+  Scenario: Successfully create sales item as admin user
+    When the following sales items are created as admin user
+       | name         | price |
+       | Sales item 1 | 10    |
+       | Sales item 2 | 20    |
+       | Sales item 3 | 30    |
+
+    Then a response with status code 201 is received
+    And the following sales items are received as response
+      | name         | price | Id |
+      | Sales item 1 | 10    | 1  |
+      | Sales item 2 | 20    | 2  |
+      | Sales item 3 | 30    | 3  |
+
+
+   Scenario: Try to create a sales item with invalid data
+      When the following sales items are created as admin user
+        | name         | price |
+        | Sales item 1 | aa    |
+
+      Then a response with status code 400 is received
+
+
+    Scenario: Try to create new sales when database is unavailable
+      Given database is unavailable
+
+      When the following sales items are created as admin user
+        | name         | price |
+        | Sales item 1 | 10    |
+
+      Then a response with status code 503 is received
+
+
+    Scenario: Try to create a sales item as normal user
+      When the following sales items are created as normal user
+        | name         | price |
+        | Sales item 1 | 10    |
+
+      Then a response with status code 403 is received
+
+
+    Scenario: Try to create a sales item unauthenticated
+      When the following sales items are created unauthenticated
+        | aame         | price |
+        | Sales item 1 | aa    |
+
+      Then a response with status code 401 is received
+```
+
+User story 2:
+
+{title: "read_sales_item.feature"}
+```gherkin
+Feature: Read sales items
+
+  Background: Database is available and a clean table exists
+    Given database is available
+    And table is empty
+    And auto increment is reset
+
+
+  Scenario: Successfully read sales items
+    Given the following sales items are created
+      | name         | price |
+      | Sales item 1 | 10    |
+      | Sales item 2 | 20    |
+      | Sales item 3 | 30    |
+
+    When sales items are read
+
+    Then a response with status code 200 is received
+    And the following sales items are received as response
+      | name         | price | Id |
+      | Sales item 1 | 10    | 1  |
+      | Sales item 2 | 20    | 2  |
+      | Sales item 3 | 30    | 3  |
+
+
+  Scenario: Try to read sales items when database is unavailable
+    Given database is unavailable
+    When sales items are read
+    Then a response with status code 503 is received
+```
+
+User story 3:
+
+{title: "update_sales_item.feature"}
+```gherkin
+Feature: Update sales item
+
+  Background: Database is available and a clean table exists
+    Given database is available
+    And table is empty
+    And auto increment is reset
+
+
+  Scenario: Successfully update sales item as admin user
+    Given the following sales items are created as admin user
+      | name         | price |
+      | Sales item 1 | 10    |
+
+    When the created sales item is updated to the following as admin user
+       | name         | price |
+       | Sales item X | 100   |
+
+    Then reading the sales item should provide the following response
+      | name         | price |
+      | Sales item X | 100   |
+
+
+  Scenario: Try to update sales item with invalid data
+    When sales item with id 1 is updated to the following
+      | name         | price |
+      | Sales item X | aa    |
+
+    Then a response with status code 400 is received
+
+
+  Scenario: Sales item update fails because sales item is not found
+    When sales item with id 999 is updated to the following
+      | name         | price |
+      | Sales item X | 100   |
+
+    Then a response with status code 404 is received
+
+
+  Scenario: Try to update sales item when database is unavailable
+    Given database is unavailable
+
+    When sales item with id 1 is updated to the following
+      | name         | price  |
+      | Sales item X | 100    |
+
+    Then a response with status code 503 is received
+
+
+  Scenario: Try to update sales as normal user
+    When sales item with id 1 is updated to the following as normal user
+      | name         | price |
+      | Sales item X | aa    |
+
+    Then a response with status code 403 is received
+
+
+  Scenario: Try to update sales unauthenticated
+    When sales item with id 1 is updated to the following unauthenticated
+      | name         | price |
+      | Sales item X | aa    |
+
+    Then a response with status code 401 is received
+```
+
+User story 4:
+
+{title: "delete_sales_item.feature"}
+```gherkin
+Feature: Delete sales item
+
+  Background: Database is available and clean table exists
+    Given database is available
+    And table is empty
+    And auto increment is reset
+
+
+  Scenario: Successfully delete sales item as admin user
+    Given the following sales items are created as admin user
+      | name         | price |
+      | Sales item 1 | 10    |
+
+    When the created sales item is deleted as admin user
+
+    Then a response with status code 204 is received
+    And reading sales items should provide an empty array as response
+
+
+  Scenario: Try to delete a non-existent sales with
+    When sales item with id 9999 is deleted as admin user
+    Then a response with status code 204 is received
+
+
+  Scenario: Try to delete a sales item when database is unavailable
+    Given database is unavailable
+    When sales item with id 1 is deleted as admin user
+    Then a response with status code 503 is received
+
+
+  Scenario: Try to delete a sales as normal user
+    When sales item with id 1 is deleted as normal user
+    Then a response with status code 403 is received
+
+
+  Scenario: Try to delete a sales unauthenticated
+    When sales item with id 1 is deleted unauthenticated
+    Then a response with status code 401 is received
+```
+
+In the above features, we have considered the main failure scenarios in addition to the happy path scenario. Remember that you
+should also test the most common failure scenarios as part of integration testing.
+
+All of the above features include a `Background` section defining steps executed before each scenario.
+In the `Background` section, we first ensure the database is available. This is needed because some scenarios make
+the database unavailable on purpose. Then, we clean the sales items table in the database. This can be done by connecting
+to the database and executing SQL statements like `DELETE FROM sales_items` and `ALTER TABLE sales_items AUTO_INCREMENT=1`.
+Here, I am assuming a MySQL database is used.
+The database availability
+can be toggled by issuing `docker pause` and `docker unpause` commands for the database server container using `subprocess.run` or
+`subprocess.Popen`. You should put the step implementations for the `Background` section into a common `background_steps.py` file
+because the same `Background` section is used in all features. Before being able to execute integration tests, a *docker-compose.yml*
+file must be created. The file should define the microservice itself and its dependencies, the database (MySQL), and the IAM system (Keycloak).
+
+Additionally, we must configure the IAM system before executing the integration tests. This can be done in the *environment.py* file
+in the `before_all` function. This function is executed by the `behave` command before executing the integration tests.
+Let's assume we are using Keycloak as the IAM system. To configure Keycloak, we can use the Keycloak's Admin REST API.
+We need to perform the following (Change the hardcoded version number in the URLs to the newest):
+
+- Create a client ([https://www.keycloak.org/docs-api/23.0.2/rest-api/index.html#_clients](https://www.keycloak.org/docs-api/23.0.2/rest-api/index.html#_clients))
+- Create an admin role for the client ([https://www.keycloak.org/docs-api/23.0.2/rest-api/index.html#_roles](https://www.keycloak.org/docs-api/23.0.2/rest-api/index.html#_roles))
+- Create an admin user with the admin role ([https://www.keycloak.org/docs-api/23.0.2/rest-api/index.html#_users](https://www.keycloak.org/docs-api/23.0.2/rest-api/index.html#_users))
+- Create a regular user without the admin role
+
+An alternative method to test authorization is to use a configurable mock OAuth2 server instead of a real IAM system.
+
+Let's implement the steps for the first scenario of the first user story (creating a sales item):
+
+{title: "create_sales_item_steps.py"}
+```python
+import requests
+from behave import then, when
+from behave.runner import Context
+from environment import SALES_ITEM_API_URL
+
+
+@when('the following sales items are created {user_type}')
+def step_impl(context: Context, user_type: str):
+    # Obtain an 'access token' for an admin or normal user based on 'user_type'
+    # from the IAM system using OAuth2 Resource Owner Password Flow
+    # https://auth0.com/docs/get-started/authentication-and-authorization-flow/resource-owner-password-flow
+    # Using this flow, you exchange client_id, client_secret,
+    # username and password for an access token
+
+    auth_header = (
+        None
+        if user_type == 'unauthenticated'
+        else f'Bearer {access_token}'
+    )
+
+    context.received_sales_items = []
+    context.status_codes = []
+
+    for row in context.table:
+        sales_item = {key: row[key] for key in row.keys()}
+
+        response = requests.post(
+            SALES_ITEM_API_URL,
+            sales_item,
+            headers={'Authorization': auth_header},
+        )
+
+        context.status_codes.append(response.status_code)
+        received_sales_item = response.json()
+        context.received_sales_items.append(received_sales_item)
+
+
+@then('a response with status code {expected_status_code:d} is received')
+def step_impl(context: Context, expected_status_code: int):
+    for received_status_code in context.status_codes:
+        assert received_status_code == expected_status_code
+
+
+@then('the following sales items are received as response')
+def step_impl(context: Context):
+    recv_and_expected_sales_items = zip(
+        context.received_sales_items,
+        context.table,
+    )
+
+    for (
+        recv_sales_item,
+        expected_sales_item,
+    ) in recv_and_expected_sales_items:
+        for key in expected_sales_item.keys():
+            assert recv_sales_item[key] == expected_sales_item[key]
+```
+
+To make the rest of the scenarios for the first feature pass, we need to add the following:
+
+{title: "common_steps.py"}
+```python
+@given('database is unavailable')
+def step_impl(context: Context):
+    # Use subprocess.run or subprocess.Popen to execute
+    # 'docker pause' command for the
+    # database container
+```
+
+We will skip implementing the rest of the steps because they are similar to those we implemented above. The main difference is using different methods of the `request` library: `get` for reading,
+`put` for updating and `delete` for deleting.
+
+Next, the development team should perform DDD for the user stories. The first user story is comprised of the following
+domain events:
+
+- user is authorized
+- sales item is validated
+- sales item is created
+- sales item is persisted
+
+From the above domain events, we can infer the following:
+
+- Actor: UserAuthorizer, Command: authorize
+- Actor: InputSalesItemValidator, Command: validate, Entity: InputSalesItem
+- Actor: CreateSalesItemService: Command: create_sales_item, Entities: InputSalesItem, OutputSalesItem
+- Actor: CreateSalesItemRepository, Command: save, Entity: SalesItem
+
+Let's conduct DDD for the second user story. We will have the following domain events:
+
+- sales items are read from the persistent store
+- sales items are converted to output format
+
+From the above domain events, we can infer the following:
+
+- Actor: ReadSalesItemsRepository, Command: read_all, Entity: SalesItem
+- Actor: ReadSalesItemsService: Command: read_sales_items, Entities: OutputSalesItem
+
+The team decides to use the *clean microservice design principle*. Thus, interfaces and controller classes should be added for both user stories. The source code directory should look like the following:
+
+```
+sales-item-service
+└── src
+    └── sales-items
+        ├── common
+        │   ├── dtos
+        │   │   ├── InputSalesItem.py
+        │   │   └── OutputSalesItem.py
+        │   ├── entities
+        │   │   └── SalesItem.py
+        │   └── validator
+        │       └── InputSalesItemValidator.py
+        ├── create
+        │   ├── CreateSalesItemRepository.py
+        │   ├── CreateSalesItemService.py
+        │   ├── CreateSalesItemServiceImpl.py
+        │   ├── RestCreateSalesItemController.py
+        │   └── SqlCreateSalesItemRepository.py
+        └── read
+            ├── ReadSalesItemsRepository.py
+            ├── ReadSalesItemsService.py
+            ├── ReadSalesItemsServiceImpl.py
+            ├── RestReadSalesItemsController.py
+            └── SqlReadSalesItemsRepository.py
+```
+
+
+When we continue with DDD for the rest of the user stories, we should eventually have subdirectories for `update` and `delete` features
+like those for `create` and `read` features. What we ended up having is called *vertical slice design or architecture*, which
+we presented in the second chapter. A different team member can implement each user story, and each team
+member has their own subdirectory (a vertical slice) to work on to minimize merge conflicts. Things common to all features are put into
+the `common` subdirectory. The development continues with each team member conducting TDD for the public methods in the classes.
+This kind of parallel development provides better agility when the whole team (instead of just one team member) can focus on the
+same feature (or epic) to complete it as fast as possible, and only after that proceed to the next feature (or epic) on the prioritized backlog.
+The implementation details of the classes are not shown here, but the coming chapters about API design and databases show
+details how to create a REST controller, DTOs, a service class, and repositories like ORM, SQL, and MongoDB.
+
+As I mentioned earlier, Gherkin is not the only syntax, and Behave is not the only tool to conduct BDD. I want to give you an example where
+[Robot Framework](https://robotframework.org/) (RF) is used as an alternative to Gherkin and Behave. You don't have to completely say goodbye to
+the Gherkin syntax because the Robot framework also supports a Gherkin-style way to define test cases. The below example is for the first user story we defined earlier: creating a sales item. The example shows how to test that user story's first two scenarios (or *test cases* in RF vocabulary). The below *.robot* file resembles the Gherkin *.feature* file. Each test case in the *.robot* file contains a list of steps that are *keywords*, defined in the *.resource* files.
+Each keyword defines code (a list of functions) to execute. The functions are implemented in the *libraries*.
+
+{title: "create_sales_item.robot"}
+```robot
+*** Settings ***
+Documentation   Create sales item
+Resource        database_setup.resource
+Resource        create_sales_item.resource
+Test Setup      Database is available and a clean table exists
+
+*** Test Cases ***
+Successfully create sales item as admin user
+    When a sales item is created as admin user              salesitem1  ${10}
+    Then a response with status code is received            ${201}
+    And the following sales item is received as response    salesitem1  ${10}
+
+Try to create a sales item with invalid data
+    When a sales item is created as admin user              salesitem   aa
+    Then a response with status code is received            ${400}
+```
+
+{title: "database_setup.resource"}
+```robot
+*** Settings ***
+Documentation
+Library         ./DatabaseSetup.py
+
+*** Keywords ***
+Database is available and a clean table exists
+    Start database if needed
+    Clear table
+    Reset auto increment
+```
+
+{title: "create_sales_item.resource"}
+```robot
+*** Settings ***
+Documentation
+Library         ./CreateSalesItem.py
+
+*** Keywords ***
+Database is available and a clean table exists
+    Start database if needed
+    Clear table
+    Reset auto increment
+
+A sales item is created as admin user
+    [Arguments]    ${name}    ${price}
+    Create sales item as admin user     ${name}     ${price}
+
+A response with status code is received
+    [Arguments]    ${status_code}
+    Verify response     ${status code}
+
+The following sales item is received as response
+    [Arguments]    ${name}    ${price}
+    Verify received sales item  ${name}     ${price}
+```
+
+{title: "DatabaseSetup.py"}
+```python
+class DatabaseSetup:
+    def __init__(self):
+        pass
+
+    def start_database_if_needed(self):
+        # ...
+
+    def clear_table(self):
+        # ...
+
+    def reset_auto_increment(self):
+        # ...
+```
+
+{title: "CreateSalesItem.py"}
+```python
+import requests
+from environment import SALES_ITEM_API_URL
+
+
+class CreateSalesItem:
+    def __init__(self):
+        self.response = None
+
+    def create_sales_item_as_admin_user(self, name: str, price: str | int):
+        # Obtain admin user access token from the IAM system
+        access_token = ''
+        sales_item = {'name': name, 'price': price}
+
+        self.response = requests.post(
+            SALES_ITEM_API_URL,
+            sales_item,
+            headers={'Authorization': f'Bearer {access_token}'},
+        )
+
+    def verify_response(self, status_code: int):
+        assert self.response.status_code == status_code
+
+    def verify_received_sales_item(self, name: str, price: int):
+        sales_item = self.response.json()
+        assert sales_item['name'] == name
+        assert sales_item['price'] == price
+```
+
+### End-to-End (E2E) Testing Principle
+
+> ***End-to-end (E2E) testing should test a complete software system (i.e., the integration of microservices) so that each test case is end-to-end (from the software system's south-bound interface to the software system's north-bound interface).***
+
+As the name says, in E2E testing, test cases should be end-to-end. They should test that each microservice is deployed correctly
+to the test environment and connected to its dependent services. The idea of E2E test cases
+is not to test details of microservices' functionality because that has already been tested in unit and
+software component integration testing. This is why there should be only a handful of E2E test cases.
+
+Let's consider a telecom network analytics software system that consists of the following applications:
+
+- Data ingestion
+- Data correlation
+- Data aggregation
+- Data exporter
+- Data visualization
+
+![Telecom Network Analytics Software System](resources/chapter4/images/06-02.png)
+
+The southbound interface of the software system is the data ingestion
+application. The data visualization application provides a web client as a northbound interface. The data exporter application also provides another northbound interface for the software system.
+
+E2E tests are designed and implemented similarly to software component integration tests.
+We are just integrating different things (microservices instead of functions). E2E testing starts with the specification of E2E features.
+These features can be specified using, for example, the Gherkin language and put in *.feature* files.
+
+You can start specifying and implementing E2E tests right after the architectural design for the software system is completed.
+This way, you can shift the implementation of the E2E test to the left and speed up the development phase.
+You should not start specifying and implementing E2E only after the whole software system is implemented.
+
+Our example software system should have at least two happy-path E2E features. One is for testing the data flow from data ingestion
+to data visualization, and another feature is to test the data flow from data ingestion to data export. Below is the specification
+of the first E2E feature:
+
+```gherkin
+Feature: Visualize ingested, correlated and
+         aggregated data in web UI's dashboard's charts
+
+  Scenario: Data ingested, correlated and aggregated is visualized
+            successfully in web UI's dashboard's charts
+
+    Given southbound interface simulator is configured
+          to send input messages that contain data...
+    And data ingester is configured to read the input messages
+        from the southbound interface
+    And data correlator is configured to correlate
+        the input messages
+    And data aggregator is configured to calculate
+        the following counters...
+    And data visualization is configured with a dashboard containing
+        the following charts viewing the following counters/KPIs...
+
+    When southbound interface simulator sends the input messages
+    And data aggregation period is waited
+    And data content of each data visualization web UI's dasboard's
+        chart is exported to a CSV file
+
+    Then CSV export file of the first chart should
+         contain the following values...
+    And the CSV export file of the second chart should
+         contain the following values...
+    .
+    .
+    .
+    And CSV export file of the last chart should
+         contain the following values...
+```
+
+Then, we can create another feature that tests the E2E path from data ingestion to data export:
+
+```gherkin
+Feature: Export ingested, correlated and transformed data
+         to Apache Pulsar
+
+  Scenario: Data ingested, correlated and transformed is
+            successfully exported to Apache Pulsar
+    Given southbound interface simulator is configured to send
+          input messages that contain data...
+    And data ingester is configured to read the input messages
+        from the southbound interface
+    And data correlator is configured to correlate
+       the input messages
+    And data exporter is configured to export messages with
+        the following transformations to Apache Pulsar...
+
+    When southbound interface simulator sends the input messages
+    And messages from Apache Pulsar are consumed
+
+    Then first message from Apache Pulsar should have
+         the following fields with following values...
+    And second message from Apache Pulsar should have
+        the following fields with following values...
+    .
+    .
+    .
+    And last message from Apache Pulsar should have
+        the following fields with following values...
+```
+
+Next, E2E tests can be implemented. Any programming language and tool compatible with the Gherkin
+syntax, like Behave with Python, can be used. If the QA/test engineers in the development teams already use Behave for integration tests, it would be a natural choice to use Behave also for the E2E tests.
+
+The software system we want to E2E test must reside in a production-like test environment.
+Usually, E2E testing is done in both the CI and the staging environment(s). Before running the E2E tests, the software needs
+to be deployed to the test environment.
+
+If we consider the first feature above, implementing the E2E test steps
+can be done so that the steps in the `Given` part of the scenario are implemented using an externalized configuration. If our software
+system runs in a Kubernetes cluster, we can configure the microservices by creating
+the needed ConfigMaps. The southbound interface simulator can be controlled by launching a Kubernetes Job
+or, if it is a microservice with an API, commanding it via its API.
+After waiting for all the ingested data to be aggregated and visualized, the E2E test can launch a test tool suited for web UI testing
+(like TestCafe) to export chart data from the web UI to downloaded files. Then, the E2E test compares the content
+of those files with expected values.
+
+You can run E2E tests in a CI environment after each commit to the main branch (i.e., after the microservice CI
+pipeline run has finished) to test that the new commit did not break any E2E tests. Alternatively, if the E2E tests are complex and
+take a long time to execute, you can run the E2E tests in the CI environment on a schedule, like hourly, but at least nightly.
+
+You can run E2E tests in a staging environment using a separate pipeline in your CI/CD tool.
+
+## Non-Functional Testing Principle
+
+> ***In addition to multi-level functional testing, non-functional testing, as automated as possible, should be performed for a software system.***
+
+The most important categories of non-functional testing are the following:
+
+- Performance testing
+- Data volume testing
+- Stability testing
+- Reliability testing
+- Stress and scalability testing
+- Security testing
+
+### Performance Testing
+
+The goal of performance testing is to verify the performance of a software system. This verification can be
+done on different levels and in different ways, for example, by verifying each performance-critical microservice separately.
+
+To measure the performance of a microservice, performance tests can be created to benchmark the busy loop or
+loops in the microservice. If we take the data exporter microservice as an example, there is a busy loop that performs message decoding, transformation, and encoding.
+We can create a performance test using a unit testing framework for this busy loop. The performance test
+should execute the code in the busy loop for a certain number of rounds (like 50,000 times) and verify that the execution
+duration does not exceed a specified threshold value obtained on the first run of
+the performance test. The performance test aims to verify that performance remains at the same
+level as it has been or is better. If the performance has worsened, the test won't pass. In this way, you cannot accidentally introduce
+changes that negatively affect the performance without noticing it.
+This same performance test can also be used to measure the effects of optimizations. First, you write
+code for the busy loop without optimizations, measure the performance, and use that measure as a reference point. After
+that, you introduce optimizations individually and see if and how they affect the performance.
+
+The performance test's execution time threshold value must be separately specified for each
+developer's computer. This can be achieved by having a different threshold value for each
+computer hostname running the test.
+
+You can also run the performance test in a CI pipeline, but you must first measure the performance in that
+pipeline and set the threshold value accordingly. Also, the computing instances running CI pipelines must be
+homogeneous. Otherwise, you will get different results on different CI pipeline runs.
+
+The above-described performance test was for a unit (one public function without mocking), but performance testing can also be done
+on the software component level. This is useful if the software component has external dependencies whose performance
+needs to be measured. In the telecom network analytics software system, we could introduce a performance test for the *data-ingester-service*
+to measure how long it takes to process a certain number of messages, like one million. After executing that test, we have a performance measurement available for reference. When we try to optimize
+the microservice, we can measure the performance of the optimized microservice and compare it to the reference value.
+If we make a change known to worsen the performance, we have a reference value to which we can compare
+the deteriorated performance and see if it is acceptable. And, of course, this reference value will prevent a developer
+from accidentally making a change that negatively impacts the microservice's performance.
+
+You can also measure end-to-end performance. In the telecom network analytics software system, we could measure the performance
+from data ingestion to data export, for example.
+
+### Data Volume Testing
+
+The goal of data volume testing is to measure the performance of a database by comparing an empty database to
+a database with a sizeable amount of data stored in it. With data volume testing, we can measure the impact of data volume
+on a software component's performance. Usually, an empty database has better performance than a database
+containing a high amount of data. This depends on the database and how it scales with large amounts of data.
+
+### Stability Testing
+
+Stability testing aims to verify that a software system remains stable when running for an extended period
+of time under load. This testing is also called *load*, *endurance*, or *soak* testing. The term "extended period" can be interpreted
+differently depending on the software system. But this period should be many hours, preferably several
+days, even up to one week. Stability testing aims to discover problems like sporadic bugs or memory leaks.
+A sporadic bug is a bug that occurs only in certain conditions or at irregular intervals. A memory leak can be so small
+that the software component must run for tens of hours after it becomes clearly visible. It is recommended that when running
+the software system for a longer period, the induced load to the software system follows a natural pattern
+(mimicking the production load), meaning that there are peaks and lows in the load.
+
+Stability testing can be partly automated. The load to the system can be generated using tools created for that purpose,
+like Apache JMeter, for example. Each software component can measure crash count, and those statistics can be analyzed
+automatically or manually after the stability testing is completed. Analyzing memory leaks can be trickier, but crashes due
+to out-of-memory and situations where a software component is scaling out due to lack of memory should be registered.
+
+### Reliability Testing
+
+Reliability testing aims to verify that a software system runs reliably. The software system is reliable when
+it is resilient to failures and recovers from failures automatically as fast as possible. Reliability testing is also called availability,
+*recovery*, or *resilience* testing.
+
+Reliability testing involves chaos engineering to induce various failures in the software system's
+environment. It should also ensure the software system stays available and can automatically recover from failures.
+
+Suppose you have a software system deployed to a Kubernetes cluster. You can make stateless services highly available
+by configuring them to run multiple pods. If one node goes down,
+it will terminate one of the pods (never allow scheduling all the microservice pods on the same node). However, the service remains available and usable because
+at least one other pod is still running on a different node. Also, after a short while, when Kubernetes notices that
+one pod is missing, it will create a new pod on a new node, and
+there will be the original number of pods running, and the recovery from the node down is successful.
+
+Many parts of the reliability testing can be automated. You can use ready-made chaos engineering tools or create and use
+your tools. Use a tool to induce failures in the environment. Then verify based on the service's business-criticality that the service remains highly available or swiftly recovers from a failure.
+
+Considering the telecom network analytics software system, we could introduce a test case where the message broker (e.g., Kafka) is shut down. Then, we expect alerts to be triggered
+after a while by the microservices that try to use the unavailable message broker. After the message broker is restarted, the alerts should
+cancel automatically, and the microservices should continue normal operation.
+
+### Stress and Scalability Testing
+
+Stress testing aims to verify that a software system runs under high load. In stress testing, the
+software system is exposed to a load higher than the system's usual load. The software system
+should be designed as scalable, which means that the software system should also run under high load. Thus,
+stress testing should test the scalability of the software system and see that microservices scale out when needed.
+At the end of stress testing, the load is returned back to the normal level, and scaling in the microservices can also be verified.
+
+You can specify a HorizontalPodAutoscaler (HPA) for a Kubernetes Deployment. In the HPA manifest, you must specify the minimum
+number of replicas. This should be at least two if you want to make your microservice highly
+available. You also need to specify the maximum number of replicas so that your microservice does not consume too many
+computing resources in some weird failure case. You can make the horizontal scaling (in and out) happen
+by specifying a target utilization rate for CPU and memory. Below is an example Helm chart template for defining a Kubernetes
+HPA:
+
+```yaml
+{{- if eq .Values.env "production" }}
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "microservice.fullname" . }}
+  labels:
+    {{- include "microservice.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "microservice.fullname" . }}
+  minReplicas: {{ .Values.hpa.minReplicas }}
+  maxReplicas: {{ .Values.hpa.maxReplicas }}
+  metrics:
+    {{- if .Values.hpa.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        targetAverageUtilization: {{ .Values.hpa.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.hpa.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        targetAverageUtilization: {{ .Values.hpa.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}
+```
+
+It is also possible to specify the autoscaling to use an external metric. An external metric could be Kafka consumer lag, for instance.
+If the Kafka consumer lag grows too high, the HPA can scale the microservice out for more processing power for the Kafka consumer group.
+When the Kafka consumer lag decreases below a defined threshold, HPA can scale in the microservice to reduce the number of pods.
+
+### Security Testing
+
+Security testing aims to verify that a software system is secure and does not contain security vulnerabilities.
+One part of security testing is performing vulnerability scans of the software artifacts. Typically, this means
+scanning the microservice containers using an automatic vulnerability scanning tool. Another essential part of security
+testing is penetration testing, which simulates attacks by a malicious party. Penetration testing can be performed
+using an automated tool like [ZAP](https://www.zaproxy.org/) or [Burp Suite](https://portswigger.net/).
+
+Penetration testing tools try to find security vulnerabilities in the following categories:
+
+- Cross-site scripting
+- SQL injection
+- Path disclosure
+- Denial of service
+- Code execution
+- Memory corruption
+- Cross-site request forgery (CSRF)
+- Information disclosure
+- Local/remote file inclusion
+
+A complete list of possible security vulnerabilities found by the ZAP tool can be found at [ZAP Alert Details](https://www.zaproxy.org/docs/alerts/).
+
+### Other Non-Functional Testing
+
+Other non-functional testing is documentation testing and several UI-related non-functional testing, including
+accessibility (A11Y) testing, visual testing, usability testing, and localization and internationalization (I18N) testing.
+
+#### Visual Testing
+
+I want to bring up visual testing here because it is important. [Backstop.js](https://github.com/garris/BackstopJS) and [cypress-plugin-snapshots](https://github.com/meinaart/cypress-plugin-snapshots) test web UI's HTML and CSS
+using snapshot testing. Snapshots are screenshots taken of the web UI. Snapshots are compared to ensure that the visual look of the
+application stays the same and no bugs are introduced with HTML or CSS changes.

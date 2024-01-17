@@ -1,0 +1,485 @@
+# Teamwork Principles
+
+This chapter presents teamwork principles. The following principles are described:
+
+- Use an agile framework principle
+- Define the done principle
+- You write code for other people principle
+- Avoid technical debt principle
+- Software component documentation principle
+- Code review principle
+- Uniform code formatting principle
+- Highly concurrent development principle
+- Pair programming principle
+- Mob programming principle
+- Ask and offer help principle
+- Well-defined development team roles principle
+- Competence transfer principle
+
+## Use Agile Framework Principle
+
+> ***Using an agile framework can bring numerous benefits to an organization, including an increase in productivity,***
+> ***improvements in quality, faster time-to-market, and better employee satisfaction.***
+
+The above statements come from [SAFe customer stories](https://scaledagile.com/insights-customer-stories/) of
+some companies having adopted [Scaled Agile Framework (SAFe)](https://www.scaledagileframework.com/).
+
+An agile framework describes a standardized way of developing software, which is essential, especially in large
+organizations. In today's work environments, people change jobs frequently, and teams tend to change often,
+which can lead to a situation where there is no common understanding of the way of working unless a particular
+agile framework is used. An agile framework establishes a clear division of responsibilities, and everyone can focus on what they do best.
+
+In the *SAFe*, for example, during a [program increment (PI) planning](https://scaledagileframework.com/pi-planning/), development teams plan features for the
+next [PI](https://v5.scaledagileframework.com/program-increment/) (consisting of 4 iterations, two weeks per iteration, a total of 8 weeks followed by an [IP iteration](https://scaledagileframework.com/innovation-and-planning-iteration/)). In the PI planning, teams split features
+into user stories and see which features fit the PI. Planned user stories will be assigned story points and stories will be placed into iterations.
+
+{aside}
+Story points can be measured in concrete units, like person days. Use a slightly modified Fibonacci sequence, like 1, 2, 3, 5, 8, 13, 20, 40, to estimate the size of a user story.
+The benefit of using the Fibonacci sequence is that it takes into account the fact that the effort estimation accuracy decreases when the needed work amount increases.
+Story points can also be measured in abstract units of work. Then, you compare a user story to a so-called *golden user story* (a medium-sized user story known to all team members) and assign
+the effort estimate for the user story based on how much smaller or larger it is compared to the golden user story. When using abstract story points,
+you can also use a Fibonacci sequence, e.g., 1 (XS), 2 (S), 3 (M), 5 (L), 8 (XL). Let's say you have a medium-sized golden user story with three story points, and you need
+to estimate work effort for a new user story known to be bigger than the golden user story. Then, you assign either 5 or 8 story points to the new user story, depending on how much bigger it is compared to the golden user story. Similarly, if a new user story is known to be smaller than the golden user story,
+you assign either 2 or 1 story points to it. If the new user story is roughly the same amount of work as the golden user story, assign three story points
+to the user story. Remember that a single user story should be completed in one iteration. If you think a user story is bigger than that, it must be split into smaller user stories. Smaller user stories are always better because they are easier to estimate, and the estimates will be more accurate.
+
+There are several ways to estimate story points for user stories:
+
+- If a user story has a single assignee, they can estimate the effort. The assignee might be the person who knows most about the particular user story.
+- Team can decide together, e.g., using [planning poker](https://en.wikipedia.org/wiki/Planning_poker)
+- Lead developer can provide initial estimates, which are gone through with the team
+
+When using concrete story points (person days), the team velocity for an iteration is also calculated in person days. This makes it easy to adjust
+the iteration velocity based on estimated ad-hoc and maintenance work, as well as public holidays and vacations. If the team uses abstract story points, the
+team velocity is inferred from past iterations. This method does not allow straightforward adjustments to the velocity due to team size changes, sudden changes in the amount of ad-hoc/maintenance work, and leaves.
+I like to estimate in person days, because I use time as a unit for anything else I estimate in the world, so why not use time with story points also. I find it difficult to figure out relative estimates in my head. I also feel that estimating in person days allows me to give more accurate estimates.
+{/aside}
+
+This planning phase results in a plan
+the team should follow in the PI. Junior SAFe practitioners can make mistakes like underestimating the work needed to complete a user story. But this is a self-correcting issue. When teams and individuals develop, they can better estimate the needed
+work amount, making plans more solid. Teams and developers learn that they must make all work visible. For example, reserve time for maintenance activities, reserve time to learn new things, like a programming language or framework, and reserve time for refactoring.
+When you estimate the effort needed for a user story, you should rather overestimate than underestimate. Let's have an example with a user story measured in concrete units, i.e., person days. If you think you can do it in half a day, assign one story point to that user story. If you think it takes two days, if everything goes well, assign three story points for that user story so that you have some safety margin if things go awry.
+Being able to keep the planned schedule and sometimes even completing work early is very satisfying. This will make you feel like a true professional and boost your self-esteem.
+
+Teams and individuals estimate their work. There is no management involved. Managers don't tell you how
+much time you have for something. They don't come asking when something is ready or pressure you to complete
+tasks earlier than estimated. Also, they don't come to you with extra work to do. All of this will make your work feel less stressful.
+
+My personal experience with SAFe for over five years is mainly positive. I feel I can concentrate more on "the real work", which makes me happier.
+There are fewer meetings, fewer irrelevant emails, and fewer interruptions in the development flow in general. This is mainly because the team has a *product owner* and *scrum master* whose role is to protect the team members from any "waste" or "the management stuff" and allow them to concentrate on their work.
+
+If a team has work that does not require effort estimation, Kanban can be used instead of Scrum. For example, in my organization, the DevOps team
+uses Kanban, and all development teams use Scrum. A Scrum development team can commit to delivering a feature on a certain schedule, which is not possible when using Kanban. Many development teams use Scrum to enable making commitments to the business that can make commitments to customers.
+
+A fast-paced start-up (or any other company) delivering software to production frequently should also use Kanban if it does not need effort estimates for anything. Spending time estimating is not worthwhile if the estimates are not used for anything.
+
+## Define the Done Principle
+
+> ***For user stories and features, define what "done" means.***
+
+In the most optimal situation, development teams have a shared understanding of what is needed to declare
+a *user story* or *feature* done. Consistent results and quality from each development team can be ensured when a common definition of done exists.
+
+When considering a user story, at least the following requirements for a done user story can be defined:
+
+- Source code is committed to a source code repository
+- Source code is reviewed
+- Static code analysis is performed (No blocker/critical/major issues)
+- Unit test coverage is at least X%
+- CI/CD pipeline is passing
+- No 3rd party software vulnerabilities
+- Technical documentation is updated if needed
+
+The product owner's (PO) role in a team is to accept user stories as done. Some of the above-mentioned
+requirements can be automatically checked. For example, the static code analysis should be part of every CI/CD
+pipeline and can also check the unit test coverage automatically. If static code analysis does not pass or
+the unit test coverage is unacceptable, the CI/CD pipeline should not pass.
+
+Some additional requirements for done-ness should be defined when considering a feature because features
+can be delivered to customers. Below is a non-exhaustive list of some requirements for a done feature:
+
+- Architectural design documentation is updated
+- Integration tests are added/updated
+- End-to-end tests are added/updated if needed
+- Non-functional testing is done
+- User documentation is updated and reviewed
+- Threat modeling is done, and threat countermeasures (security features) are implemented
+- Observability is updated if needed
+
+To complete all the needed done-ness requirements, development teams can use tooling that helps
+them remember what needs to be done. For example, when creating a new user story in a tool like Jira,
+an existing prototype story could be cloned (or a template used). The prototype or template story
+should contain tasks that must be completed before a user story can be approved.
+
+## You Write Code for Other People Principle
+
+> ***You write code for other people and your future self.***
+
+Situations where you work alone with a piece of software are relatively rare. You cannot predict what
+will happen in the future. There might be someone else responsible for the code you once wrote. There are cases
+when you work with some code for some time and then, after several years, need to return to that code. For
+these reasons, writing clean code that is easy to read and understand by others and
+yourself in the future is essential. Remember that code is not written for a computer only but also for people.
+People should be able to read and comprehend code easily. Remember that code is read more often than written. At best, the code reads like beautiful prose!
+
+## Avoid Technical Debt Principle
+
+{aside}
+Technical debt is the implied cost of future rework/refactoring required when choosing an easy but limited solution instead of a better approach that could take more time.
+{/aside}
+
+The most common practices for avoiding technical debt are the following:
+
+- The architecture team should design the high-level architecture (Each team should have a representative in the architecture team. Usually, it is the technical lead of the team)
+- Development teams should perform domain-driven design (DDD) and object-oriented design (OOD) first, and only after that proceed with implementation
+- Conduct DDD and OOD within the team with relevant senior and junior developers involved
+- Don't take the newest 3rd party software immediately into use. Instead, use mature 3rd party software that has an established position in the market
+- Design for easily replacing a 3rd party software component with another 3rd party component.
+- Design for scalability (for future load)
+- Design for extension: new functionality is placed in new classes instead of modifying existing classes (open-closed principle)
+- Utilize a plugin architecture (possibility to create plugins to add new functionality later)
+- Reserve time for refactoring
+- Use test-driven development (TDD)
+- Use behavioral-driven development (BDD)
+
+The top reasons for technical debt are the following (not in any particular order):
+
+- Using niche technologies or brand-new technologies that are immature
+- Not making software scalable for future processing needs
+- When it is not relatively easy to replace a 3rd party software component (E.g., using custom SQL syntax does not allow changing the database, not using the *adapter pattern* with 3rd party libraries)
+- Not reviewing the architecture
+- Not doing any domain-driven design and object-oriented design before starting coding
+- Not engaging senior enough developers in the DDD and OOD phase
+- Not understanding and using relevant design principles and patterns
+  - Not programming against interfaces
+  - Not easy to change a dependency (DI missing)
+  - No facades
+- Not reviewing code changes
+- Not reserving time for refactoring
+- Too small work effort estimates
+- Time pressure from management
+- Management does not understand the value of refactoring
+- Postponing refactoring to a time point that never comes
+- Forgetting to refactor (at least store the needed refactoring work items in a TODO.MD file in the source code repository)
+- No unit tests, harder to refactor
+- Not practicing TDD
+- Duplicate code
+- Not conducting the boy scout rule
+- Laziness (using what comes first in mind or constantly trying to find the easiest and quickest way to do things)
+
+## Software Component Documentation Principle
+
+> ***Each software component needs to be documented. The main idea behind documenting is quickly onboarding new people to development work.***
+
+It is crucial that setting up a development environment for a software component is well-documented and as easy as possible.
+Another important thing is to let people easily understand the problem domain the software component
+tries to solve. Also, the object-oriented design of the software component should be documented.
+
+Software component documentation should reside in the same source code repository where the source code is.
+The recommended way is to use a README.MD file in the root directory of the source code repository for documentation
+in [Markdown format](https://www.markdownguide.org/basic-syntax/). You should split the documentation into multiple files and store additional files in the *docs* directory of the source code repository.
+This way, it is less likely to face a merge conflict if multiple persons edit the documentation simultaneously.
+
+JetBrains offers a new tool called [Writerside](https://www.jetbrains.com/writerside/) to author software documentation
+in Markdown format. This tool will generate a table of contents for you automatically. It allows you to produce diagrams
+using declarative code (with [Mermaid.js](https://mermaid.js.org/intro/)) instead of drawing them by hand. It offers tools to
+generate a documentation website for [GitHub Pages](https://pages.github.com/) or [GitLab Pages](https://docs.gitlab.com/ee/user/project/pages/) as part of the software component's CI/CD pipeline.
+
+Below is an example table of contents that can be used when documenting a software component:
+
+- Short description of the software component and its purpose
+- Feature list
+  - You can provide a link to Gherkin feature files here, and then you don't have to store the same information in two places.
+- Architecture (how the software component relates to other software components)
+- Data flow diagram
+- OOD diagrams describing different subdomains and interfaces/classes in each subdomain with their relationships and main public methods.
+  - Explanation of the design (if needed)
+  - Don't create or generate a single class diagram for the whole microservice, but create or generate multiple
+    class diagrams for various subdomains
+- API documentation (for libraries, this should be auto-generated from the source code)
+- Implementation-related documentation
+  - Error handling mechanism
+  - Special algorithms used
+  - Performance considerations
+  - Major security features
+- Instructions for setting up a development environment
+  - The easiest way to set up a development environment is to use a development container,
+    a concept supported by the Visual Studio Code editor. The benefit of using a [development container](https://containers.dev/) is that
+    you don't have to install development tools locally, and there is no risk of using the wrong versions of the development
+    tools
+- Instructions for building the software locally
+- Instructions for running unit tests locally
+- Instructions for running integration tests locally
+- Instructions for deploying to a test environment
+- Configuration
+  - Environment variables
+  - Configuration files
+  - Secrets
+- Observability
+    - Logging (levels, log format, error codes including their meaning and possible resolution instructions)
+    - Metrics/SLIs
+    - SLOs
+    - Alarms
+
+## Code Review Principle
+
+> ***In a code review, focus on issues a machine cannot find for you.***
+
+Before reviewing code, a static code analysis should be performed to find any issues a machine can find.
+The actual code review should focus on issues that static code analyzers cannot find. You should not need to review
+code formatting because every team member should use the same code format, which should be ensured by an automatic formatting tool.
+You cannot review your own code. At least one of the reviewers should be in a senior or lead role. Things to focus on in a code review are presented
+in the subsequent sections.
+
+An essential part of code review is to ensure that code is readable and understandable because code is read more often than written.
+You can write code once (assuming perfect code), which can be read by tens or even hundreds of developers during tens of years.
+When reviewing (reading) code, every misunderstanding, doubt, and WTF? moment reveals that there is room for improvement in the code readability.
+In a code review, finding bugs can be a secondary target because bugs can be found by a machine (static code analyzers) and with an extensive set of automated tests that should always exist.
+
+### Focus on Object-Oriented Design
+
+Before starting coding, it is recommended to design the software: define subdomains, needed interfaces, and classes.
+The product of this initial design phase should be committed to the source code repository and reviewed before
+starting coding. This way, correcting design flaws early and avoiding technical debt is easier. Fixing design flaws in a later phase might
+require significant effort or even a rewrite of the existing code. At least one senior developer should participate in the design.
+
+If a design flaw or flaws are encountered in a review, and there is no time for an immediate fix, a refactoring
+user story or stories should be added to the team's backlog.
+
+### Focus on Removal of Duplicate Information (DRY principle)
+
+The review material might contain duplicate information, e.g., code, that the author is unaware of. It might be a question
+about a library that can perform the same operations the author has implemented himself.
+
+### Focus on Spreading Knowledge
+
+If you are a senior or a lead developer, remember to lead by example. You can use a review of your code as a way to teach clean code principles and practices
+to your teammates in a very practical manner.
+
+### Focus on Function Specification by Unit Tests
+
+To review each public function, the reviewer should start with the unit tests and see if they cover all the functionality. Is there a unit test missing for an error scenario, a security scenario, or an
+edge/corner case?
+
+### Focus on Proper and Uniform Naming
+
+One thing that static code analysis tools can only partially do is ensure proper and uniform naming of things,
+like classes, functions, and variables. Correct naming is where the focus should be put in a code review. Renaming
+things is a very straightforward and fast refactoring task that can be performed automatically by modern IDEs.
+
+### Don't Focus on Premature Optimization
+
+Do not focus on optimization in regular code reviews. Optimization is usually performed on a need basis
+after the code is ready and the performance is first measured. Focus on optimization-related issues only
+when the commit you are reviewing is dedicated to optimizing something.
+
+### Detect Possible Malicious Code
+
+Code reviewers must ensure that the committed code does not contain malicious code.
+
+## Uniform Code Formatting Principle
+
+> ***In a software development team, you must decide on common rules for formatting source code.***
+
+Consistent source code formatting is vital because if team members have different source code formatting rules, one team member's small change
+to a file can reformat the whole file using their formatting rules, which can cause another developer to face a major merge conflict that
+slows down the development process. Always agree on common source code formatting rules and preferably use a tool like
+*Black* or *Blue* to enforce the formatting rules.
+
+## Highly Concurrent Development Principle
+
+> ***Each team member can work with some piece of code. No one should be waiting long for someone else's work to finish.***
+
+Concurrent development is enabled when different people modify different source code files. When
+several people need to alter the same files, it can cause merge conflicts. These merge conflicts cause extra work because they often must be resolved
+manually. This manual work can be slow, and it is error-prone. The best thing is to avoid merge conflicts as much as possible.
+This can be achieved in the ways described in the following sections.
+
+### Dedicated Microservices and Microlibraries
+
+Microservices are small by nature, and it is possible to assign the responsibility of a microservice to a
+single team member. This team member can proceed with the microservice with full velocity, and rest
+assured that no one else is modifying the codebase. The same goes for libraries. You should
+create small microlibraries (= libraries with a single responsibility) and assign the responsibility of developing
+a microlibrary to a single person.
+
+### Dedicated Domains
+
+Sometimes, assigning a single microservice or library to a single developer is impossible. It could be
+because the microservice or library is relatively large and it is not feasible
+to split it into multiple microservices or libraries.
+The microservice or library should be divided into several
+subdomains in those cases. Each source code directory reflects a different subdomain. It is then possible to assign
+the responsibility of a single subdomain to a single person. The assignment of subdomains need not be fixed
+but can and should change as time passes. To distribute the knowledge of different domains in the team,
+it is advisable to rotate the responsibilities amongst the team members. Let's say you have a team of three
+developers developing a data exporter microservice consisting of input, transform, and output subdomains.
+The team can implement the microservice by assigning the responsibility of a single domain to a single developer.
+Then, all developers can proceed highly independently and concurrently with the implementation. In the early phase,
+they must collaborate to define interfacing between the different subdomains.
+
+In the future, when
+new features are developed, team members can take responsibility for other domains to spread knowledge about the
+microservice in the team.
+
+### Follow Open-Closed Principle
+
+Sometimes, you might face a situation where a single subdomain is so large that you need multiple developers. This, of course,
+should be a relatively rare case. When several developers modify source code files belonging to the same subdomain (i.e., in the same directory), merge conflicts may arise. This is the
+case, especially when existing source code files are modified. But when developers follow the *single responsibility principle* and *open-closed principle*, they should not change existing classes (source code files) but rather implement new functionality in
+new classes (source code files). Using the *open-closed principle* enables developers
+to develop more concurrently because they primarily work with different source code files, making merge
+conflicts rare or at least less frequent.
+
+## Pair Programming Principle
+
+> ***Pair programming helps produce better quality software with better design, less technical debt, better tests, and fewer bugs.***
+
+Pair programming is something some developers like and other developers hate. It is not a one-fits-all solution.
+It is not take it or leave it, either. You can have a team where some developers program in pairs and others don't.
+Also, people's opinions about pair programming can be prejudiced. Perhaps they have never done pair programming, so how
+do they know if they like it or not? It is also true that choosing the right partner to pair with can mean a lot.
+Some pairs have better chemistry than other pairs.
+
+Does pair programming just increase development costs? What benefits does pair programming bring?
+
+I see pair programming as valuable, especially in situations where a junior developer pairs with a more senior developer, and
+in this way, the junior developer is onboarded much faster. He can "learn from the best". Pair programming can improve
+software design because there is always at least two persons' view of the design. Bugs can be found more easily and
+usually in an earlier phase (four eyes compared to two eyes only). So, even if pair programming can
+add some cost, it usually results in software with better quality: better design, less technical debt, better tests, and fewer bugs.
+
+## Mob Programming Principle
+
+> ***Mob programming is a collaborative approach to software development in which the whole team or a group of developers work together in real-time on one task.***
+
+Mob programming is an extension of pair programming where the whole team or a part of it works together using a single computer and screen
+to produce software. Mob programming brings the same benefits as pair programming, like a shared understanding of the domain and code, better design, less technical debt, and fewer bugs.
+Mob programming is also an excellent way to teach junior developers software development principles and practices in a very practical manner.
+Mob programming also completely removes the need for a code review.
+
+## Ask and Offer Help Principle
+
+> ***Ask for help as soon as possible to speed yourself up. Offer help to your teammates in a proactive manner.***
+
+If a developer faces a problem that is hard to solve, there are typically two schools of people: The ones that
+ask for help and the others that try to solve the problem themselves, no matter how long it takes. I advise every developer to ask for help when they realize they cannot quickly solve a problem by themselves. It is possible that someone else has pondered the same issue and has the right answer for you immediately available. This will save you from headaches, stress, and possibly a lot of time.
+
+If you are a senior developer, you typically have much more knowledge than the junior developers. Thus, you should make yourself
+available to the junior developers proactively. If you know someone who probably does not know something, offer your
+help immediately. Don't wait until help is asked, but try to be as proactive as possible. You can do it simply by asking: Do you
+want some help with that thing *X*?
+
+## Well-Defined Development Team Roles Principle
+
+> ***A software development team should have a well-defined role for each team member.***
+
+A software development team does not function optimally if everyone is doing everything or if it is expected that
+anyone can do anything. No one is a jack of all trades. A team achieves
+the best results with specialists targeted for different types of tasks. Team members need to have focus areas they like
+to work with and where they can excel. When you are a specialist in some area, you can complete tasks belonging to that area faster and
+with better quality.
+
+Below is a list of needed roles for a development team:
+
+- Product owner (PO)
+- Scrum master (SM)
+- Software developer (junior/senior/lead)
+- Test automation developer
+- DevOps engineer
+- UI designer (if the team develops UI software components)
+
+Let's discuss each role's responsibilities in detail in the following sections.
+
+### Product Owner
+
+The product owner (PO) acts as an interface between the development team and the business, which usually means product management (PM).
+The PO gathers requirements (non-functional and functional) from PM via discussions.
+The PO is responsible for prioritizing the team backlog according to the guidance from the PM and defining user stories with the team. The PO role is not usually full-time so that a single PO can serve two small teams.
+When the PO gathers requirements (non-functional and functional) from the PM, the PM does not usually list all the requirements,
+but the PO must determine all the requirements by asking the right questions and discussing them with the PM.
+The PO should be a technical person and should be able to create, e.g., Gherkin feature file(s) as the acceptance criteria for a backlog feature.
+
+### Scrum Master
+
+A scrum master (SM) is a servant leader and a coach for the development team. The scrum master ensures that relevant agile practices and
+the agile process are followed. They educate the team in agile practices. If the team has a line manager, the line
+manager can serve as the scrum master, but any team member can be the scrum master. Being a scrum master is a part-time job. The role of the
+scrum master can also be rotated between the team members.
+
+### Software Developer
+
+A software developer is responsible for designing, implementing, and testing software (including unit and, in many cases, integration testing). A software developer is usually focused on one or two
+programming languages and a couple of technical frameworks. Typically, software developers are divided into the following
+categories:
+
+- Backend developers
+- Frontend developers
+- Full-stack developers
+- Mobile developers
+- Embedded developers
+
+A backend developer develops microservices, like APIs, running in the backend. A frontend developer develops
+web clients. Typically, a frontend developer uses JavaScript or TypeScript, React/Angular/Vue, HTML, and CSS.
+A full-stack developer is a combination of a backend and frontend developer capable of developing backend microservices and frontend
+clients. A mobile developer develops software for mobile devices, like phones and tablets.
+
+A team should have software developers at various seniority levels. Each team should have a lead developer (or staff developer/engineer)
+with the best experience in the used technologies and the domain. The lead developer has the technical leadership in the team and typically belongs to the
+virtual architecture team led by the system architect. The lead developer also works closely with the PO to prepare work for the team.
+
+There is no point in having a team with just junior or senior developers. The idea is to transfer skills and knowledge
+from senior to junior developers. This also works the other way around. Junior developers can have knowledge of some new technologies and practices that senior developers lack. So overall, the best team consists of a good mix of junior, medior, and senior developers.
+
+### Test Automation Developer
+
+A test automation developer is responsible for developing different kinds of automated tests. Typically, test automation
+developers develop integration, E2E, and automated non-functional tests. A test automation developer must be proficient
+in at least one programming language, like Python, used to develop automated tests. Test automation
+developers must have a good command of BDD and ATDD and some common testing frameworks, like Behave or Robot Framework. Knowledge
+of some non-functional testing tools, like Apache JMeter, is appreciated. Test automation developers can also develop internal testing tools,
+like interface simulators and data generators.
+Test automation developers should form a virtual team to facilitate the development of E2E and automated non-functional tests.
+
+### DevOps Engineer
+
+A DevOps engineer acts as an interface between the software development team and the software operations. A DevOps engineer
+usually creates CI/CD pipelines for microservices and crafts infrastructure and deployment-related code. DevOps engineers also
+define alerting rules and metrics visualization dashboards that can be used when monitoring the software in production.
+DevOps engineers help operations personnel monitor software in production. They can help
+troubleshoot problems that the technical support organization cannot solve. DevOps engineer knows the environment
+(=infrastructure and platform) where the software is deployed, meaning that basic knowledge of at least one cloud provider
+(AWS/Azure/Google Cloud, etc.) and perhaps Kubernetes is required.
+DevOps engineers should form a virtual team to facilitate specifying DevOps-related practices and guidelines.
+
+### UI Designer
+
+A UI designer is responsible for designing the final UIs based on higher-level UX/UI designs/wireframes. The UI designer
+will also conduct usability testing of the software.
+
+## Competence Transfer Principle
+
+An extreme case of competence transfer happens when a person leaving a company must hand off the responsibility of a
+software component to another person. Many times, this other person is not familiar with the software component at all
+or has only little knowledge about it. To ensure a smooth transfer of competence, at least the following must be performed
+as part of the competence transfer:
+
+- Demonstration of the software component features
+- Explaining the architecture of the software component (how it interacts with other software components in the system)
+- Explaining the (object-oriented) design of the software component
+    - How the software component is split into subdomains
+    - Major interfaces/classes
+- Explaining the major implementation decisions for the software component:
+    - Special algorithms used
+    - Concurrency
+    - Error handling mechanism
+    - Major security features
+    - Performance considerations
+- Explaining the configuration of the software component
+- Setting up the development environment according to the instructions in the README.MD to ensure that the
+  instructions are correct and up-to-date.
+- Building the software, executing unit tests, and executing the integration tests
+- Deploying the software component to a test environment
+- Explaining the CI/CD pipeline (if it differs from CI/CD pipelines of other software components)
+- Explaining other possible automated functional and non-functional tests, like E2E tests, performance and stability tests
+- Explaining the observability of the software component, i.e., logging, audit logging, metrics, dashboards, and alerts

@@ -1,0 +1,1905 @@
+# Architectural Principles and Patterns
+
+This chapter describes architectural principles and patterns for designing clean, modern, [cloud-native](https://en.wikipedia.org/wiki/Cloud-native_computing) software systems and applications.
+Architectural design means designing a software system consisting of multiple software components. This chapter
+focuses on modern cloud-native microservices, but some principles can be used with a [monolithic software architecture](https://en.wikipedia.org/wiki/Monolithic_application).
+This book does not cover monolithic software architecture design. Still, if you design a monolithic software system, you
+should consider implementing a so-called [modular monolith](https://www.kamilgrzybek.com/blog/posts/modular-monolith-primer), which is a monolith with modularity: Different functionalities are
+separated inside the monolith. This modular architecture makes it easier to dismantle the monolith to
+microservices or extract part(s) of the monolith into microservice(s) if needed later.
+
+Cloud-native software is built of loosely coupled scalable, resilient, and observable services that can run
+in public, private, or hybrid clouds. Cloud-native software utilizes technologies like containers (e.g., Docker),
+microservices, serverless functions, and container orchestration (e.g., Kubernetes), and it can be automatically
+deployed using declarative code. Examples in this chapter assume microservices deployed in a Kubernetes environment.
+Kubernetes is a cloud provider agnostic way of running containerized microservices and has gained massive popularity in
+recent years. If you are new to Kubernetes, you can familiarize yourself with the most relevant [Kubernetes concepts](https://kubernetes.io/docs/concepts/).
+
+This chapter discusses the following architectural principles and patterns:
+
+- Single responsibility principle
+- Uniform naming principle
+- Encapsulation principle
+- Service aggregation principle
+- High cohesion, low coupling principle
+- Library composition principle
+- Avoid duplication principle
+- Externalized service configuration principle
+- Service substitution principle
+- Autopilot microservices principle
+  - Stateless microservices principle
+  - Resilient microservices principle
+  - Horizontally autoscaling microservices principle
+  - Highly-available microservices principle
+  - Observable services principle
+- Individually deployable microservices principle
+- Inter-service communication patterns
+- Strategic domain-driven design principle
+- Software versioning principles
+- Git version control principle
+- Architectural patterns
+- Preferred technology stacks principle
+
+## Software Hierarchy
+
+A *software system* consists of multiple computer programs and anything related to those programs
+to make them operable, including but not limited to configuration, deployment code, and documentation. A software system
+is divided into two parts: *the backend* and *the frontend*. Backend software runs on servers, and frontend software runs on client
+devices like PCs, tablets, and phones. Backend software consists of *services*. Frontend software consists of *clients* that use backend services
+and *standalone applications* that do not use any backend services. An example of a standalone application is a calculator or a simple text editor.
+A service is something that provides a specific functionality and is running continuously.
+
+There are a couple of other types of programs in the backend. Programs that run once or on-demand are called [Jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job/), and programs that run on a schedule are called [CronJobs](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/).
+Jobs and CronJobs are typically related to services and perform administrative tasks related to a specific service. According to the *single responsibility
+principle*, the service itself should not perform administrative tasks but should be dedicated to providing a particular service only, like *order-service*
+provides operations on orders. For example, after the *order-service*  installation, an *order-db-init-job* could be triggered to initialize the *order-service*'s database.
+An *order-db-cleanup-cronjob* could be triggered on a schedule to perform cleanup actions on the *order-service*'s database.
+
+A separate service can be created to control a service's deployment and lifecycle. In a Kubernetes environment, that service is called an [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/).
+
+A command line interface (CLI) program is an additional program type. CLI programs are typically used for administrative tasks.
+For example, an *admin-cli* could be created to install and upgrade the software system.
+
+The term *application* is often used to describe a single program designated for a specific purpose. In general,
+a software application is some software applied to solve a specific problem. From an end user's point of view, all clients are applications. But from a developer's
+point of view, an application needs both a client and backend service(s) to be functional unless the application is a *standalone application*.
+In this book, I will use the term application to designate a logical grouping of program(s) and related artifacts, like configuration, to form a functional piece of the
+software system dedicated to a specific purpose. In my definition, a non-standalone application consists of one or more services and
+possibly a client or clients to fulfill an end user's need.
+
+Let's say we have a software system for mobile telecom network analytics. That system provides data
+visualization functionality. We can call the data visualization part of the software system a data visualization application.
+That application consists of, for example, a web client and two services, one for fetching data and one for configuration.
+Suppose we also have a generic data ingester microservice in the same software system. That generic data ingester is not an
+application without some configuration that makes it a specific service that we can call an application.
+For example, the generic data ingester can have a configuration to ingest raw data from the radio network part of the mobile network. The generic data ingester and
+the configuration together form an application: a radio network data ingester. Then, there could be another configuration for ingesting raw data
+from the core network part of the mobile network. That configuration and the generic data ingester make another application: a core network data ingester.
+
+![Software Hierarchy](resources/chapter1/images/software-hierarchy.png)
+
+Computer programs and *libraries* are *software components*. A *software component* is something that can be individually
+packaged, tested, and delivered. It consists of one or more classes, and a class consists of one or more functions (class methods).
+(There are no traditional classes in purely functional languages, but software components consist only of functions.)
+A computer program can also be composed of one or more libraries, and a library can be composed of other libraries.
+
+![Software Components](resources/chapter1/images/software-components.png)
+
+## Single Responsibility Principle
+
+> ***A software entity should have only a single responsibility at its abstraction level.***
+
+A software system at the highest level in the hierarchy should have a single dedicated purpose.
+For example, there can be an e-commerce or payroll software system. However, there
+should not be a software system that handles both e-commerce and payroll-related activities. If you were a
+software vendor and had made an e-commerce software system, selling that to clients
+wanting an e-commerce solution would be easy. But if you had made a software system encompassing
+both e-commerce and payroll functionality, it would be hard to sell that to customers wanting only an e-commerce solution
+because they might already have a payroll software system and, of course, don't want another one.
+
+Let's consider the application level in the software hierarchy. Suppose we have designed a software
+system for telecom network analytics. This software system is divided into four different applications:
+Radio network data ingestion, core network data ingestion, data aggregation, and data visualization. Each of these applications
+has a single dedicated purpose. Suppose we had coupled the data aggregation and visualization applications into a single
+application. In that case, replacing the data visualization part with a 3rd party application could be difficult.
+But when they are separate applications with a well-defined interface, replacing the data
+visualization application with a 3rd party application would be much easier, if needed.
+
+A software component should also have a single dedicated purpose. A service
+type of software component with a single responsibility is called a *microservice*. For example, in an e-commerce software system,
+one microservice could be responsible for handling orders and another for handling sales items. Both of those microservices are responsible for one thing only.
+By default, we should not have a microservice responsible for orders and sales items. That would be against the single responsibility
+principle because order and sales item handling are different functionalities at the same level of abstraction. Combining two or more functionalities into a single microservice sometimes makes sense. The reason could be that the functionalities firmly belong together, and putting
+functionalities in a single microservice would diminish the drawbacks of microservices, like needing to use distributed transactions.
+Thus, the size of a microservice can vary and depends on the abstraction level of the microservice. Some microservices can be small, and others can
+be larger if they are at a higher level of abstraction. A microservice is always smaller than a monolith and larger than a single function.
+The higher the level of abstraction the microservice is, the fewer microservice benefits you get.
+Depending on the software system size and its design, the number of microservices in it can vary from a handful to tens or even hundreds of microservices.
+
+Let's have an example of an e-commerce software system that consists of the following functionality:
+
+- sales items
+- shopping cart
+- orders
+
+Let's design how to split the above-described functionality into microservices. When deciding which functionality is put
+in the same microservice, we should ensure that the requirement of a single responsibility is met and that high functional and non-functional cohesion is achieved. High functional cohesion means that two functionalities depend on
+each other and tend to change together. Examples of low functional cohesion would be email sending and shopping cart
+functionality. Those two functionalities don't depend on each other, and they don't change together. Thus, we should implement
+email sending and shopping cart functionalities as separate microservices. Non-functional cohesion is related to all non-functional
+aspects like architecture, technology stack, deployment, scalability, resiliency, availability, observability, etc. We discuss cohesion and coupling more in a later section of this chapter.
+
+We should not put all the e-commerce software system functionality
+in a single microservice because there is not high non-functional cohesion between sales items-related functionality and the other functionality.
+The functionality related to sales items should be put into its own microservice that can scale separately because
+the sales item microservice receives much more traffic than the shopping cart and order services. Also, we should be able to
+choose appropriate database technology for the sales item microservice. The database engine should be optimized for
+a high number of reads and a low number of writes. Later, we might realize that the pictures of the sales items should not be
+stored in the same database as other sales item-related information. We could then introduce a new microservice
+dedicated to storing/retrieving images of sales items.
+
+Instead of implementing shopping cart and order-related functionality as two separate microservices, we could implement them
+as a single microservice. This is because shopping cart and order functionalities have high functional cohesion. For example, whenever
+a new order is placed, the items from the shopping cart should be read and removed. Also, the non-functional cohesion is high. Both
+services can use the same technology stack and scale together. We eliminate distributed transactions by putting the two functionalities in a single microservice and can use standard database transactions. That simplifies the codebase and testing of the microservice.
+We should not name the microservice as *shopping-cart-and-order-service*, because that name does not denote a single responsibility.
+We should name the microservice using a term on a higher level of abstraction. For example, we could name it *purchase-service* because the microservice is responsible for functionality related to a customer purchasing item(s) from the e-commerce store.
+In the future, if we notice that the requirement of high functional and non-functional cohesion is no longer met,
+it is possible to split the *purchase-service* into two separate microservices: *shopping-cart-service* and *order-service*.
+When you first implement the *purchase-service*, you should put the code related to different subdomains in separate
+domain-specific source code directories: *shoppingcart* and *order*. It will be easier later to extract those two functionalities into separate microservices.
+
+The initial division of a software system into microservices should not be engraved in stone. You can make changes to that in the future
+if seen as appropriate. You might realize that a particular microservice should be divided into two separate microservices due to different
+scaling needs, for example. Or you might realize that it is better to couple two or more microservices into a single microservice to
+avoid complex distributed transactions, for instance.
+
+There are many advantages to microservices:
+
+- Improved productivity
+  - You can choose the best-suited programming language and technology stack
+  - Microservices are easy to develop in parallel because there will be fewer merge conflicts
+  - Developing a monolith can result in more frequent merge conflicts
+- Improved resiliency and fault isolation
+  - A fault in a single microservice does not bring other microservices down
+  - A bug in a monolith can bring the whole monolith down
+- Better scalability
+  - Stateless microservices can automatically scale horizontally
+  - Horizontal scaling of a monolith is complicated or impossible
+- Better data security and compliance
+  - Each microservice encapsulates its data, which can be accessed via a public API only
+- Faster and easier upgrades
+  - Upgrading only the changed microservice(s) is enough. There is no need to update the whole monolith every time
+- Faster release cycle
+  - Build the changed microservice only. There is no need to build the whole monolith when something changes
+- Fewer dependencies
+  - Lower probability for dependency conflicts
+- Enables "open-closed architecture", meaning architecture that is more open for extension and more closed for modification
+  - New functionality not related to any existing microservice can be put into a new microservice instead of modifying the current codebase.
+
+The main drawback of microservices is the complexity that a distributed architecture brings. Implementing transactions between microservices
+requires implementing distributed transactions, which are more complex than standard database transactions. Distributed transactions require more
+code and testing. You can avoid distributed transactions by placing closely related services in a single microservice whenever possible.
+Operating and monitoring a microservice-based software system is complicated. Also, testing a distributed system is more
+challenging than testing a monolith. Development teams should focus on these "problematic" areas by hiring DevOps and test automation specialists.
+
+The *single responsibility principle* is also one of the [IDEALS](https://www.infoq.com/articles/microservices-design-ideals/) microservice principles.
+
+A library-type software component should also have a single responsibility. Like calling single-responsibility services microservices, we can
+call a single-responsibility library a *microlibrary*. For example, there could be a library for
+handling YAML-format content and another for handling XML-format content. We shouldn't try to bundle
+the handling of both formats into a single library. If we did and needed only the YAML-related functionality, we would also always get the XML-related functionality. Our code
+would always ship with the XML-related code, even if never used. This can introduce unnecessary code bloat. We would
+also have to take any security patch for the library into use, even if the patch was only for the XML-related functionality we don't use.
+
+## Uniform Naming Principle
+
+> ***Use a specific postfix to name different types of software components.***
+
+When developing software, you should establish a naming convention for different kinds of software components:
+Microservices, clients, jobs, operators, command line interfaces (CLIs), and libraries. Next, I present my suggested way of
+naming different software components.
+
+The preferred naming convention for microservices is *&lt;service's purpose&gt;-service* or *&lt;service's purpose&gt;-svc*. For example:
+*data-aggregation-service* or *email-sending-svc*. Use the microservice name systematically in different places.
+For example, use it as the Kubernetes Deployment name and the source code repository name (or directory name in case of a monorepo).
+It is enough to name your microservices with the *service* postfix instead of a *microservice*  postfix because each service
+should be a microservice by default. So, there would not be any real benefit in naming microservices with the *microservice* postfix.
+That would make the microservice name longer without any added value.
+
+If you want to be more specific in naming microservices, you can name API microservices with an *api* postfix instead of the more generic
+*service* postfix, for example, *sales-item-api*. In this book, I am not using the *api* postfix but always use
+the *service* postfix only.
+
+The preferred naming convention for clients is *&lt;client's purpose&gt;-&lt;client type&gt;-client*, *&lt;client's purpose&gt;-&lt;ui type&gt;-ui*
+or *&lt;client's purpose&gt;-&lt;app type&gt;-app*. For example:
+*data-visualization-web-ui*, *data-visualization-mobile-client*, *data-visualization-android-app* or *data-visualization-ios-app*. In this book,
+I mostly use the *client* postfix because it is the most generic term.
+
+The preferred naming convention for jobs is *&lt;job's purpose&gt;-job*. For example, a job that initializes the database for orders
+could be named *order-db-init-job*.
+
+The preferred naming convention for cron jobs is *&lt;cron job's purpose&gt;-cronjob*. For example, a cron job that performs order database backup regularly
+could be named *order-db-backup-cronjob*.
+
+The preferred naming convention for operators is *&lt;operated service&gt;-operator*. For example, an operator for *order-service*
+could be named *order-service-operator*.
+
+The preferred naming convention for a CLI is *&lt;CLI's purpose&gt;-cli*. For example, a CLI that is used to administer the
+software system could be named *admin-cli*.
+
+The preferred naming convention for libraries is either *&lt;library's purpose&gt;-lib* or *&lt;library's purpose&gt;-library*.
+For example: *common-utils-lib* or *common-ui-components-library*.
+
+When using these naming conventions, a clear distinction between a microservice, client, (cron) job, operator, CLI, and
+library-type software component can be made only by looking at the name. Also, it is easy to recognize if a source code
+repository contains a microservice, client, (cron) job, operator, CLI, or library.
+
+## Encapsulation Principle
+
+> ***Microservice must encapsulate its internal state behind a public API. Anything behind the public API***
+> ***is considered private to the microservice and cannot be accessed directly by other microservices.***
+
+Microservices should define a public API that other microservices use for interfacing. Anything behind the public API is
+private and inaccessible from other microservices.
+
+While microservices should be made stateless (the *stateless services principle* is discussed later in this chapter),
+a stateless microservice needs a place to store its state outside the microservice. Typically, the state is stored
+in a database or a cache. The database is the microservice's internal dependency and should be made private to
+the microservice, meaning that no other microservice can directly access the database. Access to the
+database happens indirectly using the microservice's public API.
+
+It is discouraged to allow multiple microservices to share a single database because then there is no control over how
+each microservice will use the database and what requirements each microservice has for the database. (The architecture where multiple
+services use a shared database is usually called *service-based architecture* and is different from a microservice architecture.)
+
+It can be possible to share a *physical* database with several microservices if each
+uses its own *logical* database. This requires that a specific database user is created for each microservice. Each database user can access only
+one logical database dedicated to a particular microservice. In this way, no microservice can directly access
+another microservice's data. However, this approach can still pose some problems because the dimensioning requirements
+of all microservices for the shared physical database must be considered. Also, the deployment responsibility
+of the shared database must be decided. The shared database could be deployed as a platform or common service as part of the platform
+or common services deployment, for example.
+
+If a database is shared between microservices, it is called *service-based architecture*, not microservice architecture
+per se. A service-based architecture's benefit is avoiding complex distributed transactions that the actual microservice architecture would entail.
+When having a service-based architecture, distributed transactions can be replaced with database transactions. The main problem with this architectural style
+is that each service is no longer necessarily single-responsibility, which can sometimes be an acceptable trade-off. (e.g. *shopping-cart-service*
+and *order-service* with a shared database, and creating an order with *order-service* will also read and empty the shopping cart in a single database transaction.
+Now, the *order-service* is no longer a single-responsibility service because it is doing some work that should be in the *shopping-cart service* in the case of a microservice architecture.
+
+## Service Aggregation Principle
+
+> ***Service on a higher level of abstraction aggregates services on a lower level of abstraction.***
+
+Service aggregation happens when one service on a higher level of abstraction aggregates services on a lower level
+of abstraction.
+
+![Architecture Without and With Service Aggregation](resources/chapter1/images/service-aggregation.png)
+
+Let's have a service aggregation example with a second-hand e-commerce software system that allows people to sell their products
+online.
+
+The problem domain of the e-commerce service consists of the following subdomains:
+
+- User account domain
+  - Create, modify, and delete a user account
+  - View user account with sales items and orders
+- Sales item domain
+  - Add new sales items, modify, view, and delete sales items
+- Shopping cart domain
+  - Add/remove sales items to/from a shopping cart, empty a shopping cart
+  - View the shopping cart with sales item details
+- Order domain
+  - Placing orders
+    - Ensure payment
+    - Create order
+    - Remove ordered items from the shopping cart
+    - Mark ordered sales items sold
+    - Send order confirmation by email
+  - View orders with sales item details
+  - Update and delete orders
+
+We should not implement all the subdomains in a single *ecommerce-service* because that would be too monolithic.
+We want to create microservices with a single responsibility. We can use service aggregation. We create a separate lower-level microservice
+for each subdomain. Then, we create a higher-level *ecommerce-service* microservice that aggregates those lower-level microservices.
+
+We define that our *ecommerce-service* aggregates the following lower-level microservices:
+
+- *user-account-service*
+  - Create/Read/Update/Delete user accounts
+- *sales-item-service*
+  - Create/Read/Update/Delete sales items
+- *shopping-cart-service*
+  - View a shopping cart, add/remove sales items from a shopping cart, or empty a shopping cart
+- *order-service*
+  - Create/Read/Update/Delete orders
+- *email-notification-service*
+  - Send email notifications
+
+![Service Aggregation in E-Commerce Software System](resources/chapter1/images/service-aggr-ecommerce.png)
+
+Most of the microservices described above can be implemented as REST APIs because they mainly contain
+basic CRUD (create, read, update, and delete) operations for which a REST API is a good match. We will handle
+API design in more detail in a later chapter dedicated to API design. Let's implement the *sales-item-service* as a REST API
+using [Django](https://www.djangoproject.com/) and [Django REST framework](https://www.django-rest-framework.org/).
+
+First, Create a directory for the Django project, and in that directory, we create a virtual environment:
+
+```bash
+python -m venv venv
+```
+
+Activate the virtual environment in Windows:
+
+```
+venv\Scripts\activate
+```
+
+Or activate the virtual environment in MacOS/Linux:
+
+```bash
+source venv/bin/activate
+```
+
+Install dependencies:
+
+```bash
+pip install django djangorestframework
+```
+
+Create new Django project and app:
+
+```bash
+django-admin startproject salesitemservice .
+python manage.py startapp salesitems
+```
+
+We will first implement the `SalesItem` model class, which contains properties like `name` and `price`.
+
+{format: python}
+![models.py](resources/chapter1/code/models.py)
+
+Next, we will implement a serializer for the `SalesItem` model. In the serializer class, we list the wanted model fields
+to be serialized by their names. This is good from a security point of view. We should not use the `fields = '__all__'`, because
+if we added some internal or confidential fields to the model, they would be automatically serialized and sent to clients, exposing internal
+information to clients. It is safer to list the serialized fields explicitly.
+
+{format: python}
+![serializers.py](resources/chapter1/code/serializers.py)
+
+Finally, we implement the `SalesItemViewSet` class, which defines API endpoints for creating, getting, updating, and deleting sales items.
+In the below *views.py* module, we need to implement only the `list` method. Other methods come from the `viewsets.ModelViewSet` base class.
+
+{format: python}
+![views.py](resources/chapter1/code/views.py)
+
+We also need to update the *urls.py* file in the Django project to contain the following:
+
+{format: python}
+![urls.py](resources/chapter1/code/urls.py)
+
+Before running the microservice, the database needs to be set up:
+
+```bash
+python manage.py makemigrations
+python manage.py migrate
+```
+
+You can run the *sales-item-service* with the following command:
+
+```bash
+python manage.py runserver
+```
+
+The REST API will be accessible at *http://127.0.0.1:8000/*
+
+{aside}
+In the above examples, I used idiomatic Django by defining models in *models.py* file, serializers in *serializers.py*
+file and views in *views.py* file. Instead, you could define each class in its own file and name the file according to the class
+name. That is the best approach to ensure a single responsibility for each module. For module names containing a class definition,
+I use *CapWords* (or *PascalCase*). This is against the [PEP 8 style guide](https://peps.python.org/pep-0008/), but it is the only deviation from PEP 8 I am making
+in this book. You can, of course, follow the PEP 8, but there are two reasons for the approach I am using:
+
+- The module name becomes more insightful and tells you that it contains a single public class definition, and the module name tells the name of the class.
+  For example, if you have a module named `OrderService.py`, you can expect that a class named `OrderService` can be imported from it. And that there is nothing else public in that module.
+- If you export an instance of the class from a module, that module should be named in the snake case. For example,
+  If you have a module with a private `__OrderService` class and export of an `order_service` variable (singleton) that is an instance of the `__OrderService` class,
+  you should name the module as *order_service.py*. Now the *order_service.py* module name tells everyone that a variable named
+  `order_service` could be imported from that module. And that should be the only public thing exportable from the module.
+
+If you want to name modules according to PEP 8, name modules containing a single class definition with the class name but converted to
+snake_case. For example, an *order_service.py* module contains an `OrderService` class definition.
+
+Let's get back to the Django example. If you have several models and put them all into the *models.py* file, the file size
+will grow, and finding the wanted class is no longer easy. A better option is to create a *models* directory (a package)
+and put individual model classes into separate modules in that directory. Finding the wanted model would be easy because the models are
+automatically listed in alphabetical order in the file browser of your IDE. You don't get automatic alphabetical ordering of multiple class definitions if they are defined in a single file.
+
+The same approach applies to modules that contain multiple functions. Suppose we have a  *utils.py* module containing various
+utility functions. Once again, a better option is to create a directory named *utils* and put individual functions into their own files.
+You can then quickly locate the wanted utility function by looking at the *utils* directory contents. You can even create
+subdirectories to make the structure hierarchical, like a *string* directory under the *utils* directory for utility functions
+related to strings. A single file should contain a single public function, but it can additionally contain multiple private functions that the public function
+utilizes. The next chapter will discuss more about the *single responsibility principle*.
+{/aside}
+
+Below is defined how the higher-level *ecommerce-service* will orchestrate the use of the aggregated lower-level microservices:
+
+- User account domain
+  - Delegates CRUD operations to *user-account-service*
+  - Delegates to *sales-item-service* to fetch information about user's sales items
+  - Delegates to *order-service* to fetch information about user's orders
+- Sales item domain
+  - Delegates CRUD operations to *sales-item-service*
+- Shopping cart domain
+  - Delegates read/add/remove/empty operations to *shopping-cart-service*
+  - Delegates to *sales-item-service* to fetch information about the sales items in the shopping cart
+- Order domain
+  - Ensures that the payment gateway confirms payment
+  - Delegates CRUD operations to *order-service*
+  - Delegates to *shopping-cart-service* to remove bought items from the shopping cart
+  - Delegates to *sales-item-service* for marking sales items bought
+  - Delegates to *email-notification-service* for sending order confirmation email
+  - Delegates to *sales-item-service* to fetch information about order's sales items
+
+The *ecommerce-service* is meant to be used by frontend clients, like a web clients. [Backend for Frontend](https://learn.microsoft.com/en-us/azure/architecture/patterns/backends-for-frontends) (BFF) term describes a microservice designed to provide an API for frontend clients. Service aggregation is a generic term compared to the BFF term, and
+there need not be a frontend involved. You can use service aggregation to create an aggregated microservice used by another microservice or microservices.
+There can even be multiple levels of service aggregation if you have a large and complex software system.
+Service aggregation can be used to create segregated interfaces for specific clients. Using service aggregation, you can construct an API where clients depend only on what they need.
+This is called the *interface segregation principle* and is one of the principles of [IDEALS](https://www.infoq.com/articles/microservices-design-ideals/) microservices.
+
+Clients can have different needs regarding what information they want from an API. For example,
+a mobile client might be limited to exposing only a subset of all information available from the API. In contrast, a web client
+can fetch all information.
+
+All of the above requirements are something that a GraphQL-based API can fulfill. Therefore, it is wise to implement
+the *ecommerce-service* using GraphQL. I have chosen the [Ariadne](https://ariadnegraphql.org/) library to implement
+a single GraphQL query in the *ecommerce-service*.
+Below is the implementation of the `user` query, which fetches data from three microservices. It fetches the user account
+information from the *user-account-service*, the user's sales items from the *sales-item-service*, and finally,
+the user's orders from the *order-service*.
+
+Let's create a new Python project and install the following dependencies:
+
+```bash
+pip install ariadne httpx hypercorn
+```
+
+Next, we create the GraphQL server supporting a single `user` query:
+
+{format: python}
+![app.py](resources/chapter1/code/app.py)
+
+To start the GraphQL server, we need an ASGI web server (e.g., hypercorn).
+You can run the GraphQL server:
+
+```bash
+export SALES_ITEM_SERVICE_URL=http://127.0.0.1:8000
+export USER_ACCOUNT_SERVICE_URL=...
+export ORDER_SERVICE_URL=...
+hypercorn app:app -b 127.0.0.1:5000
+```
+
+You can access the *GraphiQL* UI at *http://127.0.0.1:5000/graphql*
+On the left-hand side pane, you can specify a GraphQL query. For example, to query the user identified with an id 2:
+
+```graphql
+{
+  user(id: 2) {
+    userAccount {
+      id
+      userName
+    }
+    salesItems {
+      id
+      name
+    }
+    orders {
+      id
+      userId
+    }
+  }
+}
+```
+
+Because we have only implemented the *sales-item-service* lower-level microservice and not all the lower-level microservices,
+let's modify the *app.py* to return dummy static results instead of accessing the non-existent lower-level microservices:
+
+{format: python}
+![app.py](resources/chapter1/code/app2.py)
+
+We should see the result below if we now execute the previously specified query. We assume that
+*sales-item-service* returns a single sales item with id 1.
+
+```json
+{
+  "data": {
+    "user": {
+      "userAccount": {
+        "id": "2",
+        "userName": "Petri"
+      },
+      "salesItems": [
+        {
+          "id": "1",
+          "name": "Sales item 1"
+        }
+      ],
+      "orders": [
+        {
+          "id": "1",
+          "userId": "2"
+        }
+      ]
+    }
+  }
+}
+```
+
+We can simulate a failure by modifying the *app.py* to start the app with the wrong URL for the *sales-item-service* (port 8000 is changed to 8001):
+
+```bash
+export SALES_ITEM_SERVICE_URL=http://127.0.0.1:8001
+hypercorn app:app -b 127.0.0.1:5000
+```
+
+Now, if we execute the query again, we will get the below error response because the GraphQL server cannot connect to
+a service at `localhost:8001` because no service runs at that address.
+
+```json
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "All connection attempts failed",
+      "locations": [
+        {
+          "line": 2,
+          "column": 3
+        }
+      ],
+      "path": [
+        "user"
+      ],
+      "extensions": {
+        "exception": {
+          "stacktrace": [ ...
+          ],
+          "context": {
+            "mapped_exc": "<class 'httpx.ConnectError'>",
+            "from_exc": "<class 'httpc...rotocolError'>",
+            "to_exc": "<class 'httpx...rotocolError'>",
+            "message": "'All connecti...tempts failed'"
+          }
+        }
+      }
+    }
+  ]
+}
+```
+
+You can also query a user and specify the query to return only a subset of fields.
+The query below does not return identifiers and orders. The server-side GraphQL library automatically
+includes only requested fields in the response. You, as a developer, do not have to do anything. You can optimize
+your microservice to fetch only the requested fields from the database if you desire.
+
+```graphql
+{
+  user(id: 2) {
+    userAccount {
+      userName
+    }
+    salesItems {
+      name
+    }
+  }
+}
+```
+
+The result for the above query will be the following:
+
+```json
+{
+  "data": {
+    "user": {
+      "userAccount": {
+        "userName": "pksilen"
+      },
+      "salesItems": [
+        {
+          "name": "sales item 1"
+        }
+      ]
+    }
+  }
+}
+```
+
+The above example lacks some features like authorization that is needed for production. Authorization
+should ensure users can only execute the `user` query to fetch their resources. The authorization should fail if
+a user tries to execute the `user` query using someone else's `id`. Security will be discussed more in the coming
+*Security principles* chapter.
+
+The `user` query in the previous example spanned over multiple lower-level microservices:
+*user-account-service*, *sales-item-service*, and *order-service*. Because the query is not mutating anything, it can be
+executed without a distributed transaction. A distributed transaction is similar to a regular (database) transaction,
+with the difference that it spans multiple remote services.
+
+The API endpoint for placing an order in the *ecommerce-service* needs to create a new order using the *order-service*,
+mark purchased sales items as bought using the *sales-item-service*, empty the shopping cart using the *shopping-cart-service*,
+and finally send order confirmation email using the *email-notification-service*. These actions need to be wrapped
+inside a distributed transaction because we want to be able to roll back the transaction if any of these operations fail.
+Guidance on how to implement a distributed transaction is given later in this chapter.
+
+Service aggregation utilizes the [facade pattern](https://en.wikipedia.org/wiki/Facade_pattern).
+The facade pattern allows for hiding individual lower-level microservices behind a facade (the higher-level microservice).
+The clients of the software system access the system through the facade. They don't directly contact the individual lower-level
+microservices behind the facade because it breaks the encapsulation of the lower-level microservices inside the higher-level microservice. A client accessing the lower-level microservices directly creates unwanted coupling between the client
+and the lower-level microservices, which makes changing the lower-level microservices hard without affecting the client.
+
+Think about a post office counter as an example of a real-world facade. It serves as a facade for the post office and
+when you need to receive a package, you communicate with that facade (the post office clerk at the counter).
+You have a simple interface that just requires telling the package code, and the clerk will find the package from the correct shelf
+and bring it to you. If you hadn't that facade, it would mean that you would have to do lower-level work
+by yourself. Instead of just telling the package code, you must walk to the shelves and try to find the proper
+shelf where your package is located, make sure that you pick the correct package, and then carry the package by yourself.
+In addition to requiring more work, this approach is more error-prone. You can accidentally pick someone else's package
+if you are not pedantic enough. And think about the case when you go to the post office next time and find out that
+all the shelves have been rearranged. This wouldn't be a problem if you used the facade.
+
+Service aggregation, where a higher-level microservice delegates to lower-level microservices, also implements the [bridge pattern](https://en.wikipedia.org/wiki/Bridge_pattern).
+A higher-level microservice provides only some high-level control and relies on the lower-level microservices to do the actual work.
+
+Service aggregation allows using more [design patterns](https://en.wikipedia.org/wiki/Software_design_pattern) from the object-oriented design world. The most useful design
+patterns in the context of service aggregation are:
+
+- [Decorator pattern](https://en.wikipedia.org/wiki/Decorator_pattern)
+- [Proxy pattern](https://en.wikipedia.org/wiki/Proxy_pattern)
+- [Adapter pattern](https://en.wikipedia.org/wiki/Adapter_pattern)
+
+We will discuss design patterns in the next chapter, but I want to give you some examples of the above three design patterns
+used in conjunction with the *ecommerce-service*.
+
+*Decorator pattern* can be used to add functionality in a higher-level microservice for lower-level
+microservices. One example is adding audit logging in a higher-level microservice. For example,
+you can add audit logging for requests in the *ecommerce-service*. You don't need to implement
+the audit logging separately in all the lower-level microservices.
+
+*Proxy pattern* can be used to control the access from a higher-level microservice to lower-level microservices. Typical examples of the proxy pattern are authorization and caching. For example, you can add authorization and
+caching for requests in the *ecommerce-service*. Only after successful authorization
+will the requests be delivered to the lower-level microservices. If a request's response is not
+found in the cache, the request will be forwarded to the appropriate lower-level microservice. You don't
+need to implement authorization and caching separately in all the lower-level microservices.
+
+*Adapter pattern* allows a higher-level microservice to adapt to different versions of the lower-level
+microservices while maintaining the API towards clients unchanged.
+
+## High Cohesion, Low Coupling Principle
+
+> ***A software system should consist of services with high cohesion and low coupling.***
+
+Cohesion refers to the degree to which classes inside a service belong together. Coupling refers to how many other services a service is interacting with.
+When following the *single responsibility principle*, it is possible to implement services as microservices with
+high cohesion. Service aggregation adds low coupling. Microservices and service aggregation together enable
+high cohesion and low coupling, which is the target
+of good architecture. If there were no service aggregation, lower-level microservices would need to communicate
+with each other, creating high coupling in the architecture. Also, clients would be coupled with the lower-level microservices.
+For example, in the e-commerce example, the *order-service* would be coupled with
+almost all the other microservices. And if the *sales-item-service* API changed, in the worst case, a change would be needed
+in three other microservices. When using service aggregation, lower-level microservices are coupled only to the higher-level microservice.
+
+![E-Commerce Software System With High Coupling](resources/chapter1/images/high-coupling.png)
+
+Low coupling means that the development of services can be highly parallelized.
+In the e-commerce example, the five lower-level microservices don't have coupling with
+each other. The development of each of those microservices can be isolated and assigned to a single team member or a group of
+team members. The development of the lower-level microservices can proceed in parallel,
+and the development of the higher-level microservice can start when the API specifications of the lower-level microservices
+become stable enough. The target should be to design the lower-level microservices APIs early on to enable
+the development of the higher-level microservice.
+
+This principle is the same as the *loose-coupling principle* in the IDEALS microservice principles.
+
+## Library Composition Principle
+
+> ***Higher-level libraries should be composed of lower-level libraries.***
+
+Suppose you need a library for parsing configuration files (in particular syntax) in YAML or JSON format. In that case,
+you can first create the needed YAML and JSON parsing libraries (or use existing ones). Then, you can create
+the configuration file parsing library, which is composed of the YAML and JSON parsing libraries. You would then have
+three different libraries: one higher-level library and two lower-level libraries. Each library has a single
+responsibility: one for parsing JSON, one for parsing YAML, and one for parsing configuration files with a specific syntax, either in JSON or YAML.
+Software components can now use the higher-level library for parsing configuration files, and they need not be aware of
+the JSON/YAML parsing libraries at all.
+
+## Avoid Duplication Principle
+
+> ***Avoid software duplication at the software system and service level.***
+
+Duplication at the software system level happens when two or more software systems use the same services.
+For example, two different software systems can both have a message broker,
+API gateway, identity and access management (IAM) application, and log and metrics collection services. You could
+continue this list even further. The goal of duplication-free architecture is to have only one deployment of these
+services. Public cloud providers offer these services for your use. If you have a Kubernetes cluster, an alternative solution
+is to deploy your software systems in different [Kubernetes Namespaces](https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/) and deploy the common services to a shared Kubernetes namespace,
+which can be called the *platform* or *common-services*, for example.
+
+Duplication at the service level happens when two or more services have common functionality that could
+be extracted to a separate new microservice. For example, consider a case where both *user-account-service* and *order-service* have the functionality to send notification messages by email to a user.
+This email-sending functionality is duplicated in both microservices.
+Duplication can be avoided by extracting the email-sending functionality to a separate new microservice.
+The single responsibility of the microservices becomes more evident when the email-sending functionality is
+extracted to its own microservice. Another alternative is extracting the common functionality to
+a library. This is not the best solution because microservices become dependent on the library. When
+changes to the library are needed (e.g., security updates), you must change the library version in all the
+microservices using the library and then test all the affected microservices.
+
+When a company develops multiple software systems in several departments, the software development
+typically happens in silos. The departments are not necessarily aware of what the other departments are doing. For example,
+it might be possible that two departments have both developed a microservice for sending emails. There is now
+software duplication that no one is aware of. This is not an optimal situation. A software development company
+should do something to enable collaboration between the departments and break the silos. One good way to share software is to
+establish shared folders or organizations in the source code repository hosting service that the company uses.
+For example, in GitHub, you could create an organization for sharing source code repositories for common libraries
+and another for sharing common services. Each software development department has access to
+those common organizations and can still develop its software inside its own GitHub organization. In this way,
+the company can enforce proper access control for the source code of different departments, if needed. When a team
+needs to develop something new, it can first consult the common source code repositories to find out if something is
+already available that can be reused as such or extended.
+
+## Externalized Service Configuration Principle
+
+> ***The configuration of a service should be externalized. It should be stored in the environment where the service is running,***
+> ***not in the source code. The externalized configuration makes the service adaptable to different environments and needs.***
+
+Service configuration means any data that varies between service deployments (different environments,
+different customers, etc.). The following are typical places where externalized configuration can be stored when software is running in a Kubernetes cluster:
+
+- [Environment variables](https://en.wikipedia.org/wiki/Environment_variable)
+- [Kubernetes ConfigMaps](https://kubernetes.io/docs/concepts/configuration/configmap/)
+- [Kubernetes Secrets](https://kubernetes.io/docs/concepts/configuration/secret/)
+- External store
+
+![Configuration Storage Options](resources/chapter1/images/config-storage-options.png)
+
+We will discuss these three configuration storage options in the following sections.
+
+### Environment Variables
+
+Environment variables can be used to store configuration as simple key-value pairs. They are typically used to store
+information like connection information (how to connect to dependent services, like a database or message broker) or a microservice's logging level.
+Environment variables are available for the running process of the microservice, which can access the environment variable values
+by their names (keys).
+
+You should not hardcode the default values of environment variables in the source code. This is because the default values are
+typically not for a production but for a development environment. Suppose you deploy a service to a production environment
+and forget to set all the needed environment variables. In that case, your service will have some environment variables with default values
+unsuitable for a production environment.
+
+You can supply environment variables for a microservice in environment-specific *.env* files. For example, you can have a *.env.dev*
+file for storing environment variable values for a development environment and a *.env.ci* file for storing environment
+variable values used in the microservice's *continuous integration* (CI) pipeline. The syntax of *.env* files is straightforward. There is
+one environment variable defined per line:
+
+{format: bash, type: code}
+![.env.dev](resources/chapter1/code/env.dev)
+
+{format: bash, type: code}
+![.env.ci](resources/chapter1/code/env.ci)
+
+When a software component is deployed to a Kubernetes cluster using the Kubernetes package manager [Helm](https://helm.sh/),
+environment variable values should be defined in the Helm chart's *values.yaml* file:
+
+{format: yaml, type: code}
+![values.yaml](resources/chapter1/code/values.yaml)
+
+The values in the above *values.yaml* file can be used to define environment variables in a [Kubernetes Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) using
+the following Helm chart template:
+
+{format: yaml, type: code}
+![deployment.yaml](resources/chapter1/code/deployment.yaml)
+
+When Kubernetes starts a microservice [Pod](https://kubernetes.io/docs/concepts/workloads/pods/), the following environment variables will be made available for the running container:
+
+```bash
+NODE_ENV=production
+HTTP_SERVER_PORT=8080
+MONGODB_HOST=my-service-mongodb
+MONGODB_PORT=27017
+```
+
+### Kubernetes ConfigMaps
+
+A Kubernetes ConfigMap can store a configuration file or files in various formats, like JSON or YAML.
+These files can be mounted to the filesystem of a microservice's running container. The container can then
+read the configuration files from the mounted directory in its filesystem.
+
+For example, you can have a ConfigMap for defining the logging level of a *my-service* microservice:
+
+{format: yaml, type: code}
+![configmap.yaml](resources/chapter1/code/configmap.yaml)
+
+The below Kubernetes Deployment manifest defines that the content of the *my-service* ConfigMap's key `LOG_LEVEL` will
+be stored in a volume named `config-volume`, and the value of the `LOG_LEVEL` key will be stored
+in a file named `LOG_LEVEL.` After mounting the `config-volume` to the `/etc/config` directory in a *my-service* container,
+it is possible to read the contents of the `/etc/config/LOG_LEVEL` file, which contains the text: INFO.
+
+{format: yaml, type: code}
+![deployment.yaml](resources/chapter1/code/deployment2.yaml)
+
+In Kubernetes, editing of a ConfigMap is reflected in the respective mounted file. This means you can listen to changes
+in the */etc/config/LOG_LEVEL* file. Below is shown how to do it using the [watchdog](https://python-watchdog.readthedocs.io/en/stable/) library:
+
+```python
+from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
+
+from update_log_level import update_log_level
+
+
+class UpdateLogLevelFsEventHandler(FileSystemEventHandler):
+    def on_modified(self, event):
+        try:
+            with open('/etc/config/LOG_LEVEL', 'r') as file:
+                new_log_level = file.read()
+                # Check here that 'new_log_level'
+                # contains a valid log level
+                update_log_level(new_log_level)
+        except:
+            # Handler errors
+
+
+update_log_level_fs_event_handler = UpdateLogLevelFsEventHandler()
+observer = Observer()
+
+observer.schedule(
+    update_log_level_fs_event_handler,
+    path='/etc/config/LOG_LEVEL',
+    recursive=False
+)
+
+observer.start()
+
+# ...
+
+# observer.stop()
+# observer.join()
+```
+
+### Kubernetes Secrets
+
+Kubernetes Secrets are similar to ConfigMaps except that they are used to store sensitive information, like
+passwords and encryption keys.
+
+Below is an example of a *values.yaml* file and a Helm chart template for creating a Kubernetes Secret. The Secret will
+contain two key-value pairs: the database username and password. The Secret's
+data needs to be Base64-encoded. In the below example, the Base64 encoding is done using the Helm template function
+`b64enc`.
+
+{format: yaml, type: code}
+![values.yaml](resources/chapter1/code/values2.yaml)
+
+{format: yaml, type: code}
+![secret.yaml](resources/chapter1/code/secret.yaml)
+
+After being created, secrets can be mapped to environment variables in a Deployment manifest for a microservice.
+In the below example, we map the value of the secret key `mongoDbUser` from the `my-service` secret to an environment variable
+named `MONGODB_USER` and the value of the secret key `mongoDbPassword` to an environment variable named `MONGODB_PASSWORD`.
+
+{format: yaml, type: code}
+![deployment.yaml](resources/chapter1/code/deployment3.yaml)
+
+When a *my-service* pod is started, the following environment variables are made available for the running container:
+
+```bash
+MONGODB_USER=my-service-user
+MONGODB_PASSWORD=Ak9(lKt41uF==%lLO&21mA#gL0!"Dps2
+```
+
+### External Store
+
+When using an external store, configuration information is removed from the application deployment package (e.g., Helm chart) and put in a centralized location.
+The external store can be implemented with a configuration API and a persistent data store, like a database.
+The external store provides opportunities for easier management and control of configuration data and for sharing configuration data across microservices. Configuration management can be made easier for administrators by building user interfaces.
+
+## Service Substitution Principle
+
+> ***Make substituting a service's dependency for another service easy by making the dependencies transparent. A transparent service is exposed to other services by defining a host and port. Use *externalized service configuration principle* (e.g., environment variables) in your microservice to define the host and port (and possibly other needed parameters like a  database username/password) for a dependent service.***
+
+Let's have an example where a microservice depends on a MongoDB service. The MongoDB service should expose
+itself by defining a host and port combination. For the microservice, you can specify the following environment variables for
+connecting to a *localhost* MongoDB service:
+
+```bash
+MONGODB_HOST=localhost
+MONGODB_PORT=27017
+```
+
+Suppose that in a Kubernetes-based production environment, you have a MongoDB service in the cluster accessible via a [Kubernetes Service](https://kubernetes.io/docs/concepts/services-networking/service/)
+named *my-service-mongodb*. In that case, you should have the environment variables for the MongoDB service
+defined as follows:
+
+```bash
+MONGODB_HOST=my-service-mongodb.default.svc.cluster.local
+MONGODB_PORT=8080
+```
+
+Alternatively, a MongoDB service can run in the MongoDB Atlas cloud. In that case, the MongoDB service
+could be connected to using the following kind of environment variable values:
+
+```bash
+MONGODB_HOST=my-service.tjdze.mongodb.net
+MONGODB_PORT=27017
+```
+
+As shown with the above examples, you can easily substitute a different MongoDB service depending on
+your microservice's environment. If you want to use a different MongoDB service, you don't need
+to modify the microservice's source code but only change the *externalized configuration*.
+
+## Inter-Service Communication Methods
+
+Services communicate with each other using the following communication methods: synchronous, asynchronous, and shared data.
+
+### Synchronous Communication Method
+
+A synchronous communication method should be used when a service communicates with another service and wants an immediate response.
+Synchronous communication can be implemented using protocols like HTTP or gRPC (which uses HTTP under the hood).
+
+![Synchronous Communication Method](resources/chapter1/images/02-11.png)
+
+In case of a failure when processing a request, the request processing microservice sends an error response to the requestor
+microservice. The requestor microservice can cascade the error up in the synchronous request stack until
+the initial request maker is reached. That initial request maker is often a client, like a web UI or mobile app. The initial request maker can then decide what to do. Usually, it will attempt to send
+the request again after a while (we are assuming here that the error is a transient server error, not a client error,
+like a bad request, for example)
+
+### Asynchronous Communication Method
+
+When a service wants to deliver a request to another service but does not expect a response or at least not an
+immediate response, an asynchronous communication method should be used. Some communication between services
+is asynchronous by nature. For example, a service might want to instruct an email notification service to email an end-user
+or to send an audit log entry to an audit logging service. Both examples can be implemented
+using an asynchronous communication method because no response for the operations is expected.
+
+![Request-Only Asynchronous Communication Method](resources/chapter1/images/async-comm.png)
+
+![Request-Response Asynchronous Communication Method / Event Driven Architecture](resources/chapter1/images/event-driven-arch.png)
+
+Asynchronous communication can be implemented using a message broker. Services can produce messages to the message broker
+and consume messages from it. Several message broker implementations are available, like Apache Kafka, RabbitMQ, Apache ActiveMQ, and Redis. When a microservice produces a request to a message
+broker's topic, the producing microservice must wait for an acknowledgment from the message broker indicating
+that the request was successfully stored to multiple, or preferably all, replicas of the topic. Otherwise, there
+is no 100% guarantee that the request was successfully delivered in some message broker failure scenarios.
+
+When an asynchronous request is of type fire-and-forget (i.e., no response is expected), the request processing
+microservice must ensure that the request will eventually get processed. If the request processing fails, the request
+processing microservice must reattempt the processing after a while. If a process termination signal is received,
+the request processing microservice instance must produce the request back to the message broker and allow some other
+microservice instance to fulfill the request. The rare possibility exists that the production of the request
+back to the message broker fails. Then, you could try to save the request to a persistent volume, for instance, but
+also that can fail. However, the likelihood of such a situation is very low.
+
+The *API design principles* chapter describes designing APIs for inter-service communication in more detail.
+
+Event-driven architecture (EDA) may offer benefits over traditional synchronous point-to-point architecture. This is because, in EDA, the microservice can be loosely coupled so that they are not necessarily aware of each other but communicate via
+a message broker using a set of events. Microservices in EDA can also process events in parallel. The *event-driven principle* is one of the IDEALS microservice principles.
+
+### Shared Data Communication Method
+
+Service communication can also happen via shared data (e.g., a shared database). This method is
+useful with data-oriented services when storing the same data twice is not meaningful. Typically, one or more
+microservices produce the shared data, and other microservice(s) consume that data. The interface between these microservices
+is defined by the schema of the shared data, i.e., by the schemas of database tables. To secure the shared data,
+only the producing microservice(s) should have write access to the shared data, and the consuming microservice(s)
+should only have read access to the shared data.
+
+![Shared Data Communication Method](resources/chapter1/images/shared-data.png)
+
+## Strategic Domain-Driven Design Principle
+
+> ***Design software system architecture by conducting domain-driven design (DDD) starting from the top of the software hierarchy (software system) and ending at the microservice (bounded context) level.***
+
+I often compare software system architectural design to the architectural design of a house. The house represents a software
+system. The entrances in the house's facade represent the software system's external interfaces. The rooms in the house are the microservices
+of the software system. Like a microservice, a single room usually has a dedicated purpose. The architectural design of a software system
+encompasses the definition of external interfaces, microservices, and their interfaces to other services.
+
+The architectural design phase results in a ground plan for the software system. After the architectural design,
+you have the facade designed, and all the rooms are specified: the purpose of each room and how rooms interface with other rooms.
+
+Designing an individual microservice is no longer architectural design, but it can be compared to the interior design of a single room.
+The microservice design is handled using object-oriented design principles, presented in the next chapter.
+
+[Domain-driven design](https://en.wikipedia.org/wiki/Domain-driven_design) (DDD) is a software design approach where software is modeled to match a problem/business domain
+according to input from the domain experts. Usually, these experts come from the business and specifically from product management.
+The idea of DDD is to transfer the domain knowledge from the domain experts to individual software developers so that
+everyone participating in software development can share a common language that describes the domain. The idea of the common language
+is that people can understand each other, and no multiple terms are used to describe a single thing. If you have a banking related domain with an *account* entity, everyone should speak about *accounts*, not *money repositories*.
+This common language is also called the *ubiquitous language*.
+
+The domain knowledge is transferred from product managers and architects to lead developers and product owners (POs)
+in development teams. The team's lead developer and PO share the domain knowledge with the rest of the team. This
+usually happens when the team processes backlog epics and features and splits them into user stories in planning sessions.
+A software development team can also have a dedicated domain expert or experts.
+
+Strategical DDD starts from the top business/problem domain. The top domain is split into multiple *subdomains*, each on a lower abstraction level than the top domain. A domain should be divided into subdomains so there
+is minimal overlap between subdomains. Subdomains will be interfacing with other subdomains when needed using well-defined interfaces. Subdomains can be grouped into *bounded contexts*. The ideal mapping is one subdomain per bounded context, but a bounded context can also encompass multiple subdomains. A bounded context is a boundary created to define a shared vocabulary, i.e., a ubiquitous language. The implementation of a bounded context is one or more microservices. If a bounded context consists of multiple subdomains, those subdomains are manifested as software code placed in separate source code directories—more about that in the following chapters. For example, a *purchase-service* bounded context (a part of an e-commerce software system) can have a subdomain for managing shopping carts and another subdomain that handles orders.
+
+Subdomains can be divided into three types of subdomains: a core subdomain, a supporting subdomain, and a generic subdomain.
+A core subdomain is core to your business. If you have an e-commerce business, things related to e-commerce are core subdomains.
+In core subdomains, you must excel and try to beat the competition. The core subdomains are the company's focus areas, and the best talent should be targeted to implement those subdomains. An example of a generic domain is the identity and access management (IAM) subdomain.
+It is an area where you don't have to excel, but you should use a 3rd party solution because IAM is some other company's core domain, and they know how to do it best!
+
+For example, a banking software system can have a bounded context for loan applications and another for making payments. The ubiquitous languages in bounded contexts can differ. For example, consider an airline software system with the following bounded contexts: customers, ticketing, cargo, and airplane maintenance. The four bounded contexts can use the term *flight*, but the flights in the different bounded contexts differ. They are entities with the same name but with different attributes. Those bounded contexts can interface with each other by referencing each other's representation of a flight using a flight id that is a common attribute in all the bounded contexts.
+
+Various strategies exist on how bounded contexts interface with each other. The interface between them can be jointly designed by two teams (a partnership) or one bounded context
+defines the interface. The interface provider can be sovereign (other bounded contexts must conform to the interface), or the interface provider can listen to the interface consumer needs. Perhaps the most modern and useful way to create an interface between two (or more) bounded contexts is for the interface provider to create an *open host service* with a *published language* that can serve all interface consumers. Basically, this means creating a microservice API using a specific API technology like REST. The bounded context acting as an interface provider does not have to expose its model (entities and ubiquitous language) as such to other bounded contexts. It can use DTOs to map entities to clients' expected format and map the client format back to entities. Using DTOs enables smoother interfacing between different ubiquitous languages. A bounded context can create a so-called *anticorruption layer* for talking to another bounded context to translate the other bounded context's ubiquitous language into its own ubiquitous language. This is a good example of using the *adapter pattern*.
+
+Strategical DDD fits well together with the microservice architecture. In both, something big is split into smaller, more manageable parts.
+DDD says that a single team should own a bounded context, and each bounded context should have its own source code repository or repositories (this will be automatically
+true if a bounded context consists of one or more microservices). A bounded context or a microservice can become hard to manage and change if the responsibility is shared between multiple teams.
+
+When the splitting of a software system into subdomains and bounded context is not straightforward, you can use *event storming*
+process to help you identify your software system's subdomains and bounded context. Event storming is particularly useful when the software system is extensive and its requirements are unclear.
+The basic idea of the event-storming process is to model your software system's domain events on a timeline and then group a set of domain events to form
+a subdomain or a bounded context. Below is an example of an event storming process result where *domain events* are listed as solid-line boxes along the time axis.
+After listing all the domain events, they are grouped into subdomains/bounded contexts shown with dotted lines. You can continue the event-storming process for each bounded context to figure out additional DDD concepts related to the domain events.
+The event-storming process is better described in the next chapter.
+
+![Event storming](resources/chapter1/images/event_storming.png)
+
+### Strategical DDD Example 1: Mobile Telecom Network Analytics Software System
+
+Suppose an architecture team is assigned to design a mobile telecom network analytics software system.
+The team starts by defining the problem domain of the software system in more detail. When thinking about
+the system in more detail, they end up figuring out at least the following domain events:
+
+1) Radio network raw data is ingested
+2) Core network raw data is ingested
+3) Ingested raw data transformed into meaningful insights
+4) Insights are presented to software system users
+
+Each of the high-level domain events can be considered
+own subdomain. Let's pick up some keywords from the above definitions and formulate short names for the subdomains:
+
+1) Radio network data ingester
+2) Core network data ingester
+3) Data aggregator
+4) Insights visualizer
+
+The above four subdomains will also be our bounded contexts (a different team is responsible for developing each).
+The four bounded contexts have different vocabularies, i.e., ubiquitous languages. The first bounded context speaks
+in radio network terms, the second speaks in core network terms, the third speaks about counters and KPIs, and the last
+bounded context speaks about data visualization like dashboards and charts.
+
+![Bounded Contexts](resources/chapter1/images/applications.png)
+
+Next, we continue architectural design by splitting each subdomain into one or more software components.
+(microservices, clients, and libraries). When defining the software components, we must remember to follow the
+*single responsibility principle*, *avoid duplication principle* and *externalized service configuration principle*.
+
+When considering the *Radio network data ingester* and *Core network data ingester* applications,
+we can notice that we can implement them both using a single microservice, *data-ingester-service*, with
+different configurations for the radio and core network. This is because the data ingesting protocol
+is the same for radio and core networks. The two networks differ in the schema of the ingested data. If we have a
+single configurable microservice, we can avoid code duplication. The microservice and the two sets of configurations are our bounded contexts for the *Ingesting raw data* subdomain.
+
+The *Data aggregator* application can be implemented using a single *data-aggregator-service* microservice that will be one more bounded context.
+We can use externalized configuration to define what counters and KPIs the microservice should aggregate and calculate from the raw data.
+
+The *Insights visualizer* application consists of three different software components:
+
+- A web client
+- A service for fetching aggregated and calculated data (counters and KPIs)
+- A service for storing the dynamic configuration of the web client
+
+The dynamic configuration service stores information about what insights to visualize and how in the web client.
+
+Microservices in the *Insights visualizer* application are:
+
+- insights-visualizer-web-client
+- insights-visualizer-data-service
+- insights-visualizer-configuration-service
+
+Now, we are ready with the microservice-level architectural design for the
+software system.
+
+![Microservices](resources/chapter1/images/02-05.png)
+
+The last part of architectural design is to define the inter-service communication methods.
+The *data-ingester-service* needs to send raw data to *data-aggregator-service*. Data is sent using
+asynchronous fire-and-forget requests and is implemented using a message broker. The communication
+between the *data-aggregator-service* and the *insights-visualizer-data-service* should use the
+*shared data* communication method because the *data-aggregator-service* generates aggregated data that the
+*insights-visualizer-data-service* uses. The communication between the *insights-visualizer-web-client* in the
+frontend and the *insights-visualizer-data-service* and *insights-visualizer-configuration-service* in the backend
+is synchronous communication that can be implemented using an HTTP-based JSON-RPC, REST, or GraphQL API.
+
+![Inter-Microservice Communication](resources/chapter1/images/02-06.png)
+
+Next, design continues in development teams.
+Teams will specify the APIs between the microservices and conduct *tactical domain-driven design* and object-oriented design for the microservices.
+API design is covered in a later chapter, and object-oriented design, including tactical domain-driven design, is covered in the next chapter.
+
+### Strategical DDD Example 2: Banking Software System
+
+Let's design a partial banking software system. The banking software system should be able to handle customers'
+loan applications and payments. The banking system problem domain can be divided into two subdomains:
+
+1) Loan applications
+2) Making payments
+
+In the loan applications domain, a customer can submit a loan application. The eligibility for the loan will be assessed,
+and the bank can either accept the loan application and pay the loan or reject the loan application. In the making payments domain, a customer can make
+payments. Making a payment will withdraw money from the customer's account. It is also a transaction that should be recorded.
+
+![Banking Software System Bounded Contexts](resources/chapter1/images/bounded-contexts-1.png)
+
+Let's add a feature that a payment can be made to a recipient in another bank:
+
+![Banking Software System Bounded Contexts](resources/chapter1/images/bounded-contexts-2.png)
+
+Let's add another feature: money can be transferred from external banks to a customer's account.
+
+![Banking Software System Bounded Contexts](resources/chapter1/images/bounded-contexts-3.png)
+
+As can be noticed from the above pictures, the architecture of the banking software system evolved when
+new features were introduced. For example, two new bounded contexts were created: money transfer and external money transfer.
+There was not so much change in the microservices themselves, but how they are grouped logically to bounded contexts was altered.
+
+## Autopilot Microservices Principle
+
+> ***Microservices should be architected to run on autopilot in their deployment environment.***
+
+An autopilot microservice means a microservice that runs in a deployment environment without human interaction, except in abnormal situations when the microservice should generate an alert to indicate that human intervention is required.
+
+Autopilot microservices principle requires that the following sub-principles are followed:
+
+- Stateless microservices principle
+- Resilient microservices principle
+- Horizontally autoscaling microservices principle
+- Highly-available microservices principle
+- Observable microservices principle
+
+These principles are discussed in more detail next. This principle is basically the same as the *deployability principle* in the IDEALS microservice principles.
+
+### Stateless Microservices Principle
+
+> ***Microservices should be stateless to enable resiliency, horizontal scalability, and high availability.***
+
+A microservice can be made stateless by storing its state outside itself.
+The state can be stored in a data store that microservice instances share. Typically, the data store is a database or
+an in-memory cache (like Redis, for example).
+
+### Resilient Microservices Principle
+
+> ***Microservices should be resilient, i.e., quickly recover from failures automatically.***
+
+In a Kubernetes cluster, the resiliency of a microservice is handled by the Kubernetes control plane.
+If the computing node where a microservice instance is located needs to be decommissioned, Kubernetes will create
+a new instance of the microservice on another computing node and then evict the microservice from the node to be
+decommissioned.
+
+What needs to be done in the microservice is to make it listen to Linux process termination [signals](https://en.wikipedia.org/wiki/Signal_(IPC)), especially the *SIGTERM* signal,
+which is sent to a microservice instance to indicate that it should terminate. Upon receiving a *SIGTERM* signal,
+the microservice instance should initiate a graceful shutdown. If the microservice instance does not shut down gracefully, Kubernetes
+will eventually issue a *SIGKILL* signal to terminate the microservice instance forcefully. The *SIGKILL* signal is sent
+after a termination grace period has elapsed. This period is, by default, 30 seconds, but it is configurable.
+
+There are other reasons a microservice instance might be evicted from a computing node. One such reason is
+that Kubernetes must assign (for some reason which can be related to CPU/memory requests, for instance) another microservice
+to be run on that particular computing node, and your microservice won't fit there anymore and must be moved to
+another computing node.
+
+If a microservice pod crashes, Kubernetes will notice that and start a new pod so that there is always the desired
+number of microservice replicas (pods/instances) running. The replica count can be defined in the Kubernetes Deployment manifest for the microservice.
+
+But what if a microservice pod enters a deadlock and cannot serve requests? This situation can be remediated with the help of a
+[liveness probe](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/). You should always specify a liveness probe for each microservice Deployment. Below is an example of a microservice
+Deployment where an HTTP GET type liveness probe is defined:
+
+{format: yaml, type: code}
+![deployment.yaml](resources/chapter1/code/deployment4.yaml)
+
+Kubernetes will poll the `/isAlive` HTTP endpoints of the microservice instances every
+three seconds (after the initial delay of 30 seconds reserved for the microservice instance startup). The HTTP endpoint
+should return the HTTP status code 200 *OK*. Suppose requests to that endpoint fail (e.g., due to a deadlock) three times
+in a row (defined by the `failureThreshold` property) for a particular microservice instance. In that case, the microservice instance
+is considered dead, and Kubernetes will terminate the pod and launch a new pod automatically.
+
+The Kubernetes Deployment manifest should be modified when upgrading a microservice to a newer version. A new container image
+tag should be specified in the `image` property of the Deployment. This change will trigger an update procedure
+for the Deployment. By default, Kubernetes performs a [rolling update](https://kubernetes.io/docs/tutorials/kubernetes-basics/update/update-intro/), which means your microservice can serve
+requests during the update procedure with zero downtime.
+
+Suppose you had defined one replica in the microservice Deployment manifest (as shown above with the `replicas: 1` property) and
+performed a Deployment upgrade (change the image to a newer version). In that case, Kubernetes would create a new pod using
+the new image tag, and only after the new pod is ready to serve requests will Kubernetes delete the pod running
+the old version. So, there is zero downtime, and the microservice can serve requests during the upgrade procedure.
+
+If your microservice deployment had more replicas, e.g., 10, by default, Kubernetes would terminate a maximum of 25% of
+the running pods and start a maximum of 25% of the replica count new pods. The *rolling update* means updating pods
+in chunks, 25% of the pods at a time. The percentage value is configurable.
+
+### Horizontally Autoscaling Microservices Principle
+
+> ***Microservices should automatically scale horizontally to be able to serve more requests.***
+
+Horizontal scaling means adding new instances or removing instances of a microservice. Horizontal scaling of a microservice
+requires statelessness. Stateful services are usually implemented using sticky sessions so
+that requests from a particular client go to the same service instance. The horizontal scaling of stateful services is
+complicated because a client's state is stored on a single service instance. In the cloud-native world, we want to ensure even
+load distribution between microservice instances and target a request to any available microservice instance for processing.
+
+Initially, a microservice can have one instance only. When the microservice gets more load, one instance cannot
+necessarily handle all the work. In that case, the microservice must be scaled horizontally (scaled out) by adding one
+or more new instances. When several microservice instances are running, the state cannot be stored inside the instances anymore
+because different client requests can be directed to different microservice instances. A stateless microservice must
+store its state outside the microservice in an in-memory cache or a database shared by all the microservice instances.
+
+Microservices can be scaled manually, but that is rarely desired. Manual scaling requires someone to constantly monitor
+the software system and manually perform the needed scaling actions. Microservices should scale horizontally
+automatically. There are two requirements for a microservice to be horizontally auto-scalable:
+
+- Microservice must be stateless
+- There must be one or more metrics that define the scaling behavior
+
+Typical metrics for horizontal autoscaling are CPU utilization and memory consumption. In many cases,
+using the CPU utilization metric alone can be enough. It is also possible to use a custom or external metric. For example, the Kafka
+consumer lag metric can indicate if the consumer lag is increasing and if a new microservice instance should be spawned to reduce the consumer lag.
+
+In Kubernetes, you can specify horizontal autoscaling using the [HorizontalPodAutoscaler](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) (HPA):
+
+{format: yaml, type: code}
+![hpa.yaml](resources/chapter1/code/hpa.yaml)
+
+In the above example, the *my-service* microservice is horizontally auto-scaled so that there is always at least
+one instance of the microservice running. There can be a maximum of 99 instances of the microservice running. The microservice is
+scaled out if CPU or memory utilization is over 75%, and it is scaled in (the number of microservice instances is reduced)
+when both CPU and memory utilization falls below 75%.
+
+### Highly-Available Microservices Principle
+
+> ***Business-critical microservices must be highly available.***
+
+If only one microservice instance runs in an environment, it does not make the microservice highly available. If something
+happens to that one instance, the microservice becomes temporarily unavailable until a
+new instance has been started and is ready to serve requests. For this reason, you should run at least two or more instances
+for all business-critical microservices. You should also ensure
+these two instances don't run on the same computing node. The instances should run
+in different availability zones of the cloud provider. Then, a catastrophe in availability zone 1 won't necessarily affect
+microservices running in availability zone 2.
+
+You can ensure that no two microservice instances run on the same computing node by defining an anti-affinity rule in the
+microservice's Deployment manifest:
+
+{format: yaml, type: code}
+![deployment.yaml](resources/chapter1/code/deployment5.yaml)
+
+For a business-critical microservice, we need to modify the horizontal autoscaling example from the previous section:
+The `minReplicas` property should be increased to 2:
+
+{format: yaml, type: code}
+![hpa.yaml](resources/chapter1/code/hpa2.yaml)
+
+### Observable Microservices Principle
+
+> ***It should be possible to detect any abnormal behavior in deployed microservices immediately.***
+> ***Abnormal behavior should trigger an alert. The deployment environment should offer aids for troubleshooting abnormal behavior.***
+
+A modern cloud-native software system consists of multiple microservices running simultaneously. No one can manually check
+the logs of tens or even hundreds of microservice instances. The key to monitoring microservices is automation. Everything starts
+with collecting relevant metrics from microservices and their execution environment. These metrics are used to
+define rules for automatic alerts that trigger when an abnormal condition occurs. Metrics are also used to create monitoring and troubleshooting dashboards,
+which can be used to analyze the state of the software system and its microservices after an alert is triggered.
+
+In addition to metrics, to enable drill-down to a problem's root cause, distributed tracing should be implemented
+to log the communication between various microservices to troubleshoot inter-service communication
+problems. Each microservice must also log at least all errors and warnings. These logs should be fed to
+a centralized log collection system where querying the logs is made quick and easy.
+
+## Individually Deployable Microservices Principle
+
+> ***Microservices should be individually deployable.***
+
+In a software system that consists of possibly hundreds of microservices, you should be able to deploy each of those
+microservices individually. This means that if you have made a correction to a single microservice, that correction
+can be deployed individually without affecting any other microservice running in the environment. When you deploy the
+correction, only that microservice instances must be restarted. In a Kubernetes environment, you can achieve
+individual deployment easily by creating a Helm chart for each microservice. The Helm chart should contain everything
+the microservice needs, e.g., the related configuration and services (like a database), including a Kubernetes Deployment manifest.
+
+When you craft a microservice, don't assume that its dependent services are always and immediately available. For example, if your
+microservice uses Kafka, the microservice must start and run even if Kafka is deployed only after your microservice is deployed.
+
+## Software Versioning Principles
+
+In this section, the following principles related to software versioning will be presented:
+
+- Use semantic versioning
+- Avoid using 0.x versions
+- Don't increase major versions
+- Implement security patches and bug corrections to all major versions
+- Avoid using *non*-LTS (Long Term Support) versions in production
+
+### Use Semantic Versioning Principle
+
+> ***Use semantic versioning for software components.***
+
+[Semantic versioning](https://semver.org/) means that given a version number in the format: `<MAJOR>.<MINOR>.<PATCH>`, increment the:
+
+- *MAJOR* value when you make incompatible API changes
+- *MINOR* value when you add functionality in a backward-compatible manner
+- *PATCH* value when you make backward-compatible bug fixes or security patches
+
+### Avoid Using 0.x Versions Principle
+
+> ***If you are using 3rd party components, avoid or at least be thoughtful of using 0.x versioned components.***
+
+In semantic versioning, major version zero (0.x.y) is for initial development. Anything can change at any time.
+The public API should not be considered stable. Typically, software components with a zero major version are still in a proof of concept
+phase, and anything can change. When you want or need to take a newer version into use, you must be prepared for changes,
+and sometimes, these changes can be considerable, resulting in a lot of refactoring.
+
+### Don't Increase Major Version Principle
+
+In semantic versioning, you need to increase the major version when making backward-incompatible public API changes.
+But if possible and feasible, I advise not to make backward-incompatible changes, thus no major version increases.
+
+If you need to make a backward-incompatible public API change, you should create a totally new software component with
+a different name. For example, suppose you have a *common-ui-lib* and must make backward-incompatible changes.
+In that case, I recommend adding the new major version number to the library name and
+publishing a new library with the name *common-ui-lib-2*. This protects developers from accidentally
+using a more recent non-compatible version when changing the used library version number.
+Library users don't necessarily know if a library uses semantic versioning properly or not.
+This information is not usually told in the library documentation, but it is a good practice to
+communicate it in the library documentation.
+
+If a software component uses the *common-ui-lib*, the latest version of the library can always be safely taken into use because it won't contain
+any breaking changes, only new features, bug fixes, and security patches.
+
+This would be always safe:
+
+```bash
+pip install --upgrade common-ui-lib
+```
+
+When you are ready to migrate to the new major version of the library, you can uninstall the old version and install the new major version in the following way:
+
+```bash
+pip uninstall common-ui-lib
+pip install common-ui-lib-2
+```
+
+Consider when to create a new major version of a library. When you created the first library
+version, you probably did not get everything right in the public API. That is normal. It is challenging
+to create a perfect API the first time. Before releasing the second major version of the library, I suggest reviewing
+the new API with a team, collecting user feedback, and waiting long enough to get the API "close to perfect" the second time.
+No one wants to use a library with frequent backward-incompatible major version changes.
+
+### Implement Security Patches and Bug Corrections to All Major Versions Principle
+
+If you have authored a library for others to use, do not force the users to take a new major version of
+the library into use just because it contains some bug corrections or security patches that are not available
+for the older major version(s). You should have a comprehensive set of automated tests to ensure that a bug fix or security
+patch doesn't break anything. Thus, making a security patch or bug fix in multiple branches or source code repositories should be straightforward.
+
+Requiring library users to upgrade to a new major version to get some security patch or a bug correction can create
+a maintenance hell where the library users must refactor all software components using the library just
+to get a security patch or bug correction.
+
+### Avoid Using Non-LTS Versions in Production Principle
+
+Some software is available as [Long Term Support](https://en.wikipedia.org/wiki/Long-term_support) (LTS) and non-LTS versions. Always use only an LTS
+version in production. You are guaranteed long-term support through bug corrections
+and security patches. You can use a non-LTS version for [proof of concept](https://en.wikipedia.org/wiki/Proof_of_concept) (PoC) projects where you want to use some
+new features unavailable in an LTS version. But you must remember that if the PoC
+succeeds, you can't just throw it into production. You need to productize it first, i.e., replace the non-LTS software with LTS software.
+
+## Git Version Control Principle
+
+> ***Use trunk(= main branch) based development and develop software in feature branches merged into the main branch. Use feature toggles (or flags) when needed.***
+
+[Trunk-based development](https://trunkbaseddevelopment.com/) is suitable for modern software, which has an extensive set of automated functional and non-functional tests and can use feature toggles.
+There is also an older/legacy branching model called [GitFlow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow), which can be used instead of trunk-based development to get better control of releasing software.
+
+When you need to develop a new feature, it can be done using either of the following ways:
+
+1) Using a feature branch
+2) Using multiple feature branches and a feature toggle (or flag)
+
+### Feature Branch
+
+The feature branch approach is enough for simple features encompassing a single program increment, team, and microservice.
+A new feature is developed in a feature branch created from the main branch, and when the feature is ready, the feature branch
+is merged back into the main branch, and the feature branch can be deleted if wanted. The feature branch should be merged using
+a merge or pull request that triggers a CI pipeline run that must succeed before the merge/pull request can be completed. The merge or pull
+request should also take care of the code review. There should also be a manual way to trigger a CI/CD pipeline run for the feature
+branch so developers can test an unfinished feature in a test environment during the development phase. The artifacts produced by a CI/CD pipeline run from a feature branch can be called
+*in-progress* artifacts, and they should be regularly cleaned (e.g., after 48 hours) from the artifact repository.
+
+Below a sample workflow of creating and using a feature branch is depicted:
+
+```bash
+git clone <repository-url>
+git checkout main
+git pull --rebase --ff-only
+
+# Create and checkout a feature branch for a feature with id <feature-id>
+# The feature id can be a JIRA id, for example
+git checkout -b feature/<feature-id>
+
+# Make your changes to code
+
+# First commit
+git commit -a -m "Commit message here..."
+
+# Possibly more code changes and commits...
+
+# Fetch the latest commits from remote main branch and
+# fast forward your local main branch to match origin/main
+git fetch origin main
+git update-ref refs/heads/main refs/remotes/origin/main
+
+# Rebase your feature branch on top of main
+git rebase origin/main --autostash
+
+# Push the feature branch to remote
+# After successful push, in response to the below git command,
+# you should receive a link to create a merge/pull request.
+# Create a MR/PR, wait for the CI build to complete and
+# perform the merge
+git push -u origin feature/<feature-id>
+
+# Other developers can now also use the feature branch
+# because it is pushed to origin
+
+# After successfully merging
+git checkout main
+git pull --rebase
+
+# Now you are ready to create a new feature branch...
+```
+
+When the feature is ready, you can create a pull or merge request from the feature branch to the main branch.
+You can create the pull/merge request in your Git hosting service's web page or use the link in the output of the
+`git push` command. After creating the pull/merge request, a build pipeline should be started, and colleagues can
+review the code. The build started after creating the pull/merge request builds *candidate* artifacts, which are stored
+in the artifact repository but deleted after a certain period. If you need to change the code after
+making the pull/merge request, just modify the code, then use *git add*, *git commit --amend*, and *git push* commands to push the changes to the merge request.
+The merge can be completed after the code is reviewed and
+the build pipeline succeeds. After the merge, a build pipeline from the main branch should be run.
+This pipeline run should push the final *release* artifacts to the artifact repository.
+
+### Feature Toggle
+
+A feature toggle works in a similar way to a feature license. In the case of a feature license, the feature is available only when a user
+has the respective license activated in their environment. A toggleable feature is available only when the feature toggle is
+switched on. Feature toggles should be used for complex features spanning multiple program increments, microservices, or teams.
+Feature toggles are part of the configuration of an environment. For example, feature toggles can be stored in a Kubernetes
+ConfigMap that any microservice can access. When using a feature toggle, the toggle is initially switched off.
+Development of the feature happens in multiple feature branches in different teams. Teams merge their part of the feature
+to the main branch. When all feature branches are merged into the main branch, the feature toggle can be switched on
+to activate the feature.
+
+People who haven't used feature toggles may have some prejudice and misconceptions:
+
+- Code becomes cluttered with feature toggles
+    - Not all features need a toggle. Only those should have a toggle that need it. For example, if a feature is implemented but not yet 100% tested,
+      a feature toggle is needed to keep the feature disabled until it is thoroughly tested
+- Code becomes unreadable and cluttered with if-else statements
+    - This can be true if the codebase is poorly designed and contains technical debt. (= When you need to apply *shotgun surgery* to *spaghetti code*)
+    - Usually, implementing a feature toggle in well-designed code does not need changes in many places but just a single or few places
+- Feature toggle causes performance degradation
+    -  Feature toggles can almost always be implemented with negligible performance degradation, e.g., using one or a few if-statements
+- Dismantling feature toggles is extra effort and can cause bugs
+    - First of all, do you need to remove them? Many times, feature toggles can be left in the codebase if they
+      don't degenerate the readability or performance of the code
+    - When the codebase has the correct design (e.g., *open-closed principle* is used), removing a feature toggle is a lot easier compared to
+       situation where *shotgun surgery* needs to be applied to *spaghetti code*.
+    - Comprehensive automated testing should make it relatively safe to remove feature toggles
+
+## Architectural Patterns
+
+### Multi-Container Design Patterns
+
+#### Sidecar Pattern
+
+> ***Sidecar means an extra container in your Kubernetes pod to enhance or extend the functionality of the main container.***
+
+This is the same as the *decorator pattern* from the OOP world. An example of the sidecar pattern is Istio.
+
+#### Ambassador Pattern
+
+> ***Ambassador means an extra container that proxies the network connection to the main container.***
+
+For example, you can use [ambassador as a proxy to a Redis caching cluster](https://www.weave.works/blog/kubernetes-patterns-the-ambassador-pattern).
+This is the same as the *proxy pattern* from the OOP world.
+
+#### Adapter Pattern
+
+> ***An adapter is an extra container that transforms the output of the main container.***
+
+### Circuit Breaker Pattern
+
+> ***A circuit breaker will handle faults that might take a variable amount of time to recover from when connecting to a remote service.***
+
+Applying a circuit breaker improves the stability and resiliency of a microservice. For a Kubernetes microservice, you can
+add circuit breaking functionality to a pod by [configuring circuit breaker in Istio](https://istio.io/latest/docs/tasks/traffic-management/circuit-breaking/).
+
+### Competing Consumers Pattern
+
+> ***Multiple consumers read messages from the same message queue topic in parallel, competing with each other.***
+
+New consumers can be added or removed. With Kafka, you define competing consumers by making multiple microservice instances subscribing to
+the same topic(s) using the same [consumer group](https://docs.confluent.io/platform/current/clients/consumer.html).
+
+### API Gateway Offloading Pattern
+
+> ***Offload shared microservice functionality to an API gateway.***
+
+Examples of functionality you can offload to the API Gateway are TLS termination, compression, request logging, standard HTTP response headers, and
+rate limiting. Using the API gateway for these purposes saves you from implementing them separately in each microservice.
+
+### Retry Pattern
+
+> ***Enable a microservice to handle transient failures when it tries to connect to a service by transparently retrying a failed operation.***
+
+For a Kubernetes pod, you can configure Istio to perform automatic transparent retries (and timeouts). When using this pattern
+you don't have to implement the retry logic in each microservice separately.
+
+### Static Content Hosting Pattern
+
+> ***Deploy static content to a cloud object storage that can deliver them directly to clients.***
+
+You don't need to spin up compute instances to serve static content to clients.
+Using this pattern can reduce the need for potentially expensive compute instances.
+
+### Event Sourcing Pattern
+
+> ***Use event sourcing to capture state changes as a sequence of events.***
+
+Event sourcing ensures that all changes to the state of a service are stored as an ordered sequence of events.
+Event sourcing makes it possible to query state changes. Also, the state change events act as an audit log. It is possible
+to reconstruct past states and rewind the current state to some earlier state. Unlike CRUD actions on resources,
+event sourcing is simpler and utilizes only CR (create and read) actions. It is only possible to create new events and read events.
+It is not possible to update an existing event or delete an event.
+
+Let's have an example of using event sourcing to store orders in an e-commerce software system.
+The *order-service* should be able to store the following events:
+
+- AbstractOrderEvent
+  - Abstract base event for other concrete events containing timestamp and order id properties
+- OrderCreatedEvent
+  - Contains basic information about the order
+- OrderPaymentEvent
+  - Contains information about the order payment
+- OrderModificationEvent
+  - Contains information about modifications made by the customer to the order before packaging
+- OrderPackagedEvent
+  - Contains information about who collected and packaged the order
+- OrderCanceledEvent
+  - Describes that the customer has canceled the order and the order should not be shipped
+- OrderShippedEvent
+  - Contains information about the logistics partner and the tracking id of the order shipment
+- OrderDeliveredEvent
+  - Contains information about the pick-up point of the delivered order
+- OrderShipmentReceivedEvent
+  - Informs that the customer has received the shipment
+- OrderReturnedEvent
+  - Contains information about the returned order or order item(s)
+- OrderReturnShippedEvent
+  - Contains information about the logistics partner and the tracking id of the return shipment
+- OrderReturnReceivedEvent
+  - Contains information about who handled the order return and the status of returned items
+- OrderReimbursedEvent
+  - Contains information about the reimbursement for the returned order item(s) to the customer
+
+### Command Query Responsibility Segregation (CQRS) Pattern
+
+> ***Use the CQRS pattern if you want to use a different model for create/update (= command) operations compared to***
+> ***the model you want to use to query information.***
+
+Let's consider the previous *order-service* example that used event sourcing. In the *order-service*, all the commands
+are events. However, we want users to be able to query orders efficiently. We should have an additional
+representation of an order in addition to events because it is inefficient to always generate the current
+state of an order by replaying all the related events. For this reason, our architecture should utilize
+the CQRS pattern and divide the *order-service* into two different services: *order-command-service* and *order-query-service*.
+
+![Order Services using CQRS](resources/chapter1/images/cqrs.png)
+
+The *order-command-service* is the same as the original *order-service* that uses event sourcing, and the *order-query-service* is
+a new service. The *order-query-service* has a database where it holds a materialized view of orders. The two
+services are connected with a message broker. The *order-command-service* sends events to a
+topic in the message broker. The *order-query-service* reads events from the topic and applies
+changes to the materialized view. The materialized view is optimized to contain basic information about each order,
+including its current state, to be consumed by the e-commerce company staff and customers. Because customers query orders,
+the materialized view should be indexed by the customer's `id` column to enable fast retrieval. Suppose that, in some particular case, a customer
+needs more details about an order available in the materialized view. In that case, the *order-command-service* can
+be used to query the events of the order for additional information.
+
+Using event sourcing and CQRS offers availability over consistency, which the system end-users usually prefer, i.e., the end users usually prefer to get information fast, even if it is not current but will eventually be up-to-date.
+*Availability over consistency principle* is one of the IDEALS microservice principles.
+
+### Distributed Transaction Patterns
+
+A [distributed transaction](https://en.wikipedia.org/wiki/Distributed_transaction) is a transaction that spans multiple microservices. A distributed transaction
+consists of one or more remote requests. Distributed transactions can be implemented using the *saga pattern*.
+In the saga pattern, each request in a distributed transaction should have a respective compensating action defined.
+If one request in the distributed transaction fails, compensating requests should be executed
+for the already executed requests. The idea of executing the compensating
+requests is to bring the system back to the state where it was before the distributed transaction was started. So,
+the rollback of a distributed transaction is done via executing the compensating actions.
+
+A failed request in a distributed transaction must be conditionally compensated if we cannot be sure
+whether the server successfully executed the request. This can happen when a request timeouts and
+we don't receive a response to indicate the request status.
+
+Also, executing a compensating request can fail. For this reason, a microservice must
+persist compensating requests so they can be retried later until they all succeed. Persistence is needed
+because the microservice instance can be terminated before it has completed all the compensating requests
+successfully. Another microservice instance can continue the work left by the terminated microservice instance.
+
+Some requests in a distributed transaction can be such that they cannot be compensated. One typical example
+is sending an email. You can't get it unsent once it has been sent. There are at least two approaches to dealing with
+requests that cannot be compensated. The first one is to delay the execution of the request so that it can be made
+compensable. For example, instead of immediately sending an email, the email-sending microservice can store the email
+in a queue for later sending. The email-sending microservice can now accept a compensating request to remove the email
+from the sending queue.
+
+Another approach is to execute non-compensable requests in the latest possible phase of the distributed transaction.
+You can, for example, issue the email-sending request as the last request of
+the distributed transaction. Then, the likelihood of needing to compensate for the email sending is lower
+than if the email was sent as the first request in the distributed transaction. You can also combine these
+two approaches. Sometimes, a request can be compensable even if you first think it is not. You should think creatively.
+Sending an email could be compensated by sending another email where you state that the email you sent earlier should be disregarded (for a specific reason).
+
+#### Saga Orchestration Pattern
+
+> ***Orchestrator or controller microservice orchestrates the execution of a distributed transaction.***
+
+Let's have an example of a distributed transaction using the saga orchestration pattern with an online banking
+system where users can transfer money from their accounts. We have a higher-level microservice called
+*account-money-transfer-service*, which is used to make money transfers. The banking system also has two lower-level microservices
+called *account-balance-service* and *account-transaction-service*. The *account-balance-service* holds accounts'
+balance information while the *account-transaction-service* keeps track of all account transactions.
+The *account-money-transfer-service* acts as a saga orchestrator and utilizes both of the lower-level microservices to make
+a money transfer to happen.
+
+Let's consider a distributed transaction executed by the *account-money-transfer-service* when a user makes a withdrawal
+of $25.10:
+
+1) The *account-money-transfer-service* tries to withdraw the amount from the user's account by sending the following request to
+   the *account-balance-service*:
+
+```http
+POST /account-balance-service/accounts/123456789012/withdraw HTTP/1.1
+Content-Type: application/json
+
+{
+  "sagaUuid": "e8ab60b5-3053-46e7-b8da-87b1f46edf34",
+  "amountInCents": 2510
+}
+```
+
+The `sagaUuid` is a [universally unique identifier](https://en.wikipedia.org/wiki/Universally_unique_identifier) (UUID) generated by the saga orchestrator before the saga
+begins. If there are not enough funds to withdraw the given amount, the request fails with the HTTP status code
+400 *Bad Request*. If the request is successfully executed, the *account-balance-service* should store the saga
+UUID to a database table temporarily. This table stores information about successful sagas and should be cleaned regularly by deleting old enough saga UUIDs.
+
+2) The *account-money-transfer-service* will create a new account transaction for the user's account by sending the following request to the *account-transaction-service*:
+
+```http
+POST /account-transaction-service/accounts/123456789012/transactions HTTP/1.1
+Content-Type: application/json
+
+{
+  "sagaUuid": "e8ab60b5-3053-46e7-b8da-87b1f46edf34",
+  // Additional transaction information here...
+}
+```
+
+The above-described distributed transaction has two requests, each of which can fail. Let's consider
+the scenario where the first request to the *account-balance-service* fails. If the first request fails due to
+a request timeout, we don't know if the recipient microservice successfully processed the request.
+We don't know because we did not get the response and status code.
+For that reason, we need to perform a conditional compensating action by issuing the following compensating request:
+
+```http
+POST /account-balance-service/accounts/123456789012/undo-withdraw HTTP/1.1
+Content-Type: application/json
+
+{
+  "sagaUuid": "e8ab60b5-3053-46e7-b8da-87b1f46edf34",
+  "amountInCents": 2510
+}
+```
+
+The *account-balance-service* will perform the `undo-withdraw` action only if a withdrawal with the given UUID was made earlier and that withdrawal has not been undone yet. Upon successful undoing, the *account-balance-service*
+will delete the row for the given saga UUID from the database table where the saga UUID was earlier temporarily stored.
+Further `undo-withdraw` requests with the same saga UUID will be no-op actions, making the `undo-withdraw` action idempotent.
+
+Next, let's consider the scenario where the first request succeeds and the second request fails due to timeout. Now we have to
+compensate for both requests. First, we compensate for the first request as described earlier. Then, we will compensate
+for the second request by deleting the account transaction identified with the `sagaUuid`:
+
+```http
+DELETE /account-transaction-service/accounts/123456789012/transactions?sagaUuid=e8ab60b5-3053-46e7-b8da-87b1f46edf34 HTTP/1.1
+```
+
+If a compensating request fails, it must be repeated until it succeeds. Notice that the above
+compensating requests are both idempotent, i.e., they can be executed multiple times with the same result. Idempotency is a requirement
+for a compensating request because a compensating request may fail after the compensation has already been performed. That compensation request failure will cause the compensating request to be attempted again. The distributed transaction manager
+in the *account-money-transfer-service* should ensure that a distributed transaction is successfully completed or roll-backed
+by the instances of the *account-money-transfer-service*. You should implement a single distributed transaction manager library
+per programming language or technology stack and use that in all microservices that need to orchestrate distributed transactions.
+Alternatively, use a 3rd party library.
+
+Let's have another short example with the *ecommerce-service* presented earlier in this chapter. The order-placing endpoint of the *ecommerce-service* should
+make the following requests in a distributed transaction:
+
+1) Ensure payment
+2) Create an order
+3) Remove the ordered sales items from the shopping cart
+4) Mark the ordered sales items sold
+5) Enqueue an order confirmation email for sending
+
+The respective compensating requests are the following:
+
+1) Reimburse the payment
+2) Delete the order using the saga UUID
+3) Add the ordered sales items back to the shopping cart. (The shopping cart service must ensure that a sales item can be added only once to a shopping cart)
+4) Mark the ordered sales items for sale
+5) Dequeue the order confirmation email
+
+#### Saga Choreography Pattern
+
+> ***Microservices perform a distributed transaction in a choreography where one microservice initiates the distributed transaction, and the last microservice involved completes the distributed transaction by sending a completion message to the microservice that started the transaction.***
+
+The saga choreography pattern utilizes asynchronous communication between microservices. Involved microservices send
+messages to each other in a choreography to achieve saga completion.
+
+The saga choreography pattern has a couple of drawbacks:
+
+- The execution of a distributed transaction is not centralized like in the saga orchestration pattern,
+  and it can be hard to figure out how a distributed transaction is actually performed.
+- It creates coupling between microservices, while microservices should be as loosely coupled as possible.
+
+The saga choreography pattern works best in cases where the number of participating microservices is low. Then
+the coupling between services is low, and it is easier to reason how a distributed transaction is performed.
+
+Let's have the same money transfer example as earlier, but now using the saga choreography pattern
+instead of the saga orchestration pattern.
+
+1) The *account-money-transfer-service* initiates the saga by sending the following event to the message broker's *account-balance-service* topic:
+
+```json
+{
+  "event": "Withdraw",
+  "data": {
+    "sagaUuid": "e8ab60b5-3053-46e7-b8da-87b1f46edf34",
+    "amountInCents": 2510
+  }
+}
+```
+
+2) The *account-balance-service* will consume the `Withdraw` event from the message broker, perform a withdrawal, and if successful, send the same event to the message broker's *account-transaction-service* topic.
+
+3) The *account-transaction-service* will consume the `Withdraw` event from the message broker, persist an account transaction, and if successful, send the following event to the message broker's *account-money-transfer-service* topic:
+
+```json
+{
+  "event": "Withdraw",
+  "status": "Complete"
+  "data": {
+    "sagaUuid": "e8ab60b5-3053-46e7-b8da-87b1f46edf34"
+  }
+}
+```
+
+If either step 2) or 3) fails, the *account-balance-service* or *account-transaction-service* will send the following event to message broker's
+*account-money-transfer-service* topic:
+
+```json
+{
+  "event": "Withdraw",
+  "status": "Failure"
+  "data": {
+    "sagaUuid": "e8ab60b5-3053-46e7-b8da-87b1f46edf34"
+  }
+}
+```
+
+If the *account-money-transfer-service* receives a `Withdraw` event with `Failure` status or does not receive a `Withdraw` event with `Complete` status during some
+timeout period, the *account-money-transfer-service* will initiate a distributed transaction rollback sequence by sending
+the following event to the message broker's *account-balance-service* topic:
+
+```json
+{
+  "event": "WithdrawRollback",
+  "data": {
+    "sagaUuid": "e8ab60b5-3053-46e7-b8da-87b1f46edf34",
+    "amountInCents": 2510,
+    // Additional transaction information here...
+  }
+}
+```
+
+Once the rollback in the *account-balance-service* is done, the rollback event will be produced to the *account-transaction-service*
+topic in the message broker. After the *account-transaction-service* successfully performs the rollback,
+it sends a `WithdrawRollback` event with a `Complete` status to the *account-money-transfer-service* topic.
+The withdrawal event is successfully rolled back once the *account-money-transfer-service* consumes that message.
+Suppose the *account-money-transfer-service* does not receive the `WithdrawRollback` event with a `Complete` status during some timeout period. In that case,
+it will restart the rollback choreography by resending the `WithdrawRollback` event to the  *account-balance-service*.
+
+## Preferred Technology Stacks Principle
+
+> ***Define preferred technology stacks for different purposes.***
+
+The microservice architecture enables the use of the most suitable technology stack to develop each microservice. For example,
+some microservices require high performance and controlled memory allocation, and other microservices don't need such things.
+You can choose the used technology stack based on the needs of a microservice. For a real-time data processing microservice,
+you might pick C++ or Rust, and for a simple REST API, you might choose Node.js and Express, Java and Spring Boot, or Python and Django.
+
+Even if the microservice architecture allows different teams and developers to decide what programming languages
+and technologies to use when implementing a microservice, defining preferred technology
+stacks for different purposes is still a good practice. Otherwise, you might find yourself in a situation where numerous
+programming languages and technologies are used in a software system. Some programming languages and technologies
+like Clojure, Scala, or Haskell can be relatively niche. When software developers in the organization come and go,
+you might end up in situations where you don't have anyone who knows about some specific niche programming language
+or technology. In the worst case, a microservice needs to be reimplemented from scratch using
+some more mainstream technologies. For this reason, you should specify technology stacks that
+teams should use. These technology stacks should mainly contain mainstream programming languages and technologies.
+
+For example, an architecture team might decide the following:
+
+- Web clients should be developed using TypeScript, React, and Redux
+- Non-API backend services should be developed by default in Go or C++ for performance reasons
+- APIs should be developed with TypeScript, Node.js, and Nest.js or with Java and Spring Boot
+- Integration tests should be implemented with Cucumber using the same language as is used for the implementation or, alternatively,
+  with Python and Behave
+- E2E tests should be implemented with Python and Behave
+- Scripts should be implemented using Bash for small scripts and Python for larger scripts
+
+The above technology stacks are pretty mainstream. Recruiting talent
+with needed knowledge and competencies should be effortless.
+
+After you have defined the preferred technology stacks, you should create a utility or utilities that
+can be used to kick-start a new project using a particular technology stack quickly. This utility or utilities should
+generate the initial source code repository content for a new microservice, client, or library. The initial source code
+repository should contain at least the following items for a new microservice:
+
+- Source code folder
+- Unit test folder (if separate from source code folder)
+- Integration test folder
+- Build tools, like Gradle Wrapper for Java, for example
+- Initial build definition file(s), like build.gradle for Java, CMakeLists.txt for C++ or package.json for Node.js
+  - Initial dependencies defined in the build definition file
+- .env file(s) to store environment variables for different environments (dev, CI)
+- .gitignore
+- Markdown documentation template file(s) (README.MD)
+- Linting rules (e.g., .eslintrc.json)
+- Code formatting rules (e.g., .prettier.rc)
+- Initial code for integration tests, e.g., docker-compose.yml file for spinning up an integration testing environment
+- Infrastructure code for the chosen cloud provider, e.g., code to deploy a managed SQL database in the cloud
+- Code (e.g., Dockerfile) for building the microservice container image
+- Deployment code (e.g., a Helm chart)
+- CI/CD pipeline definition code
+
+The utility should ask the following questions from the developer before creating the initial source code
+repository content for new microservice:
+
+- What is the name of the microservice?
+- To what cloud environment will microservice be deployed? (AWS, Azure, Google Cloud, etc.)
+- What are the inter-service communication methods used? Based on the answer, the utility can add dependencies, e.g., a Kafka client library dependency
+- Should microservice have a database, and what database?
+- What are the other dependent microservices?
+
+Of course, decisions about the preferred technology stacks are not engraved in stone. They are not static.
+As time passes, new technologies arise, and new programming languages gain popularity. At some point, a decision
+could be made that a new technology stack should replace an existing preferred technology stack. Then, new projects should use the new stack and old software components will be gradually migrated to use the new technology stack or eventually retired.
+
+Many developers are keen on learning new things on a regular basis. They should be encouraged to work on hobby projects
+with technologies of their choice, and they should be able to utilize new programming languages and frameworks in selected
+new projects.

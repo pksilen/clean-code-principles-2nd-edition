@@ -1,0 +1,6 @@
+database:
+  mongoDb:
+    host: my-service-mongodb
+    port: 27017
+    user: my-service-user
+    password: Ak9(lKt41uF==%lLO&21mA#gL0!"Dps2

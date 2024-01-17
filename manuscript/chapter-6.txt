@@ -1,0 +1,2321 @@
+# API Design Principles
+
+This chapter presents design principles for both frontend-facing and inter-microservice APIs. First, frontend-facing API design
+is discussed, and then inter-microservice API design is covered.
+
+## Frontend Facing API Design Principles
+
+Most frontend-facing APIs should be HTTP-based JSON-based RPC, REST, or GraphQL APIs. Use GraphQL especially
+when the API handles heavily nested resources or clients want to decide what fields queries should return.
+For subscription-based APIs, use Server-Sent Events (SSE) or GraphQL subscriptions, and for real-time bidirectional
+communication, use WebSocket. If you transfer a lot of data or binary data between the frontend and backend, consider implementing the API using gRPC and [gRPC Web](https://github.com/grpc/grpc-web).
+gRPC Web is not covered in this book. gRPC uses Protocol Buffers to binary encode data and is thus more efficient than JSON encoding.
+
+In the coming examples, we use *camelCase* for JSON property names as it is a de-facto standard in APIs. Additional
+benefit of using camelCase instead of *snake_case* is that the implementation programming language (Python) is not immediately revealed to clients.
+It is always good to keep implementation details as hidden as possible.
+
+### JSON-based RPC API Design Principle
+
+> ***Design a JSON-based RPC API to perform a single action (procedure) for an API endpoint.***
+
+As the name suggests, JSON-RPC APIs are for executing remote procedure calls using JSON-encoded payloads. The remote procedure argument is a JSON object in the HTTP request body. The remote procedure return value is a JSON object in the HTTP response body.
+A client calls a remote procedure by issuing an HTTP POST request where it specifies the procedure's name in the URL path and gives the argument for the remote procedure call in the request body in JSON.
+
+Below is an example request for a translation service's *translate* procedure:
+
+```http
+POST /translation-service/translate HTTP/1.1
+Content-Type: application/json
+
+{
+  "text": "Ich liebe dich"
+  "fromLanguage": "German",
+  "toLanguage": "English"
+}
+```
+
+The API server shall respond with an HTTP status code and include the procedure's response in the HTTP
+response body in JSON.
+
+For the above request, you get the following response:
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "translatedText": "I love you"
+}
+```
+
+{aside}
+A [JSON-RPC specification](https://www.jsonrpc.org/specification) exists that defines one way to create JSON-based RPC APIs.
+I do not follow that specification in the examples below because one can create a JSON-based RPC API in many ways.
+But as an example, the above example rewritten using the *JSON-RPC specification* would look like the following:
+
+```http
+POST /translation-service HTTP/1.1
+Content-Type: application/json
+
+{
+  "jsonrpc": "2.0",
+  "method": "translate",
+  "params": {
+    "text": "Ich liebe dich"
+    "fromLanguage": "German",
+    "toLanguage": "English"
+  }
+  "id": 1
+}
+```
+
+And the response would look like as follows:
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "jsonrpc": "2.0",
+  "result": "I love you",
+  "id": 1
+}
+```
+{/aside}
+
+Let's have another example with a *web-page-search-service*:
+
+```http
+POST /web-page-search-service/search-web-pages HTTP/1.1
+Content-Type: application/json
+
+{
+  "containingText": "Software design patterns"
+}
+```
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+[
+  {
+    "url": "https://...",
+    "title": "...",
+    "date": "...",
+    "contentExcerpt": "..."
+  },
+  More results here ...
+]
+```
+
+You can create a complete service using JSON-based RPC instead of REST or GraphQL. Below are five remote procedures
+defined for a *sales-item-service*. The procedures are for basic CRUD operations.
+The benefit of using JSON-based RPC instead of REST, GraphQL, or gRPC is that you don't have to learn or use conventions of any specific technology.
+
+```http
+POST /sales-item-service/create-sales-item HTTP/1.1
+Content-Type: application/json
+
+{
+  "name": "Sample sales item",
+  "price": 20
+}
+```
+
+```http
+POST /sales-item-service/get-sales-items HTTP/1.1
+```
+
+```http
+POST /sales-item-service/get-sales-item-by-id HTTP/1.1
+Content-Type: application/json
+
+{
+  "id": 1
+}
+```
+
+```http
+POST /sales-item-service/update-sales-item HTTP/1.1
+Content-Type: application/json
+
+{
+  "id": 1,
+  "name": "Sample sales item name modified",
+  "price": 30
+}
+```
+
+```http
+POST /sales-item-service/delete-sales-item-by-id HTTP/1.1
+Content-Type: application/json
+
+{
+  "id": 1
+}
+```
+
+```http
+POST /sales-item-service/delete-sales-items HTTP/1.1
+```
+
+You can easily create API endpoints for the above service. Below, they are implemented with FastAPI.
+
+```python
+from typing import Any
+
+from fastapi import FastAPI
+from pydantic import BaseModel
+
+app = FastAPI()
+
+# In production code, add additional validations
+# to DTO attributes, like maximum length for the 'name'
+class InputSalesItem(BaseModel):
+    name: str
+    price: int
+
+
+class OutputSalesItem(BaseModel):
+    id: int
+    name: str
+    price: int
+
+
+class SalesItemUpdate(InputSalesItem):
+    id: int
+
+
+class Id(BaseModel):
+    id: int
+
+
+@app.post("/sales-item-service/create-sales-item", response_model=OutputSalesItem)
+async def create_sales_items(sales_item: InputSalesItem) -> Any:
+    # ...
+
+@app.post("/sales-item-service/get-sales-items", response_model=list[OutputSalesItem])
+async def get_sales_items() -> Any:
+    # ...
+
+@app.post("/sales-item-service/get-sales-item-by-id", response_model=OutputSalesItem)
+async def get_sales_item_by_id(id: Id) -> Any:
+    # ...
+
+@app.post("/sales-item-service/update-sales-item", response_model=OutputSalesItem)
+async def update_sales_item(sales_item_update: SalesItemUpdate) -> Any:
+    # ...
+
+@app.post("/sales-item-service/delete-sales-item-by-id")
+async def delete_sales_item_by_id(id: Id) -> None:
+    # ...
+```
+
+You can version your API by adding a version number to the URL. In the below example, the
+new API version 2 allows a new procedure argument `someNewParam` to be supplied for the `search-web-pages` procedure.
+
+```http
+POST /web-page-search-service/v2/search-web-pages HTTP/1.1
+Content-Type: application/json
+
+{
+  "containingText": "Software design patterns"
+  "someNewParam": "..."
+}
+```
+
+### REST API Design Principle
+
+> ***Design a REST API for interaction with a resource (or resources) using CRUD (create, read, update, delete)***
+> ***operations.***
+
+Many APIs fall into the category of performing CRUD operations on resources. Let's create an example REST API called *sales-item-service*
+for performing CRUD operations on sales items. You can also define non-CRUD endpoints for a REST API. For example, you can define some JSON-based RPC endpoints
+if needed.
+
+You can also remodel an RPC-style API to support CRUD operations. Suppose you need to create an API for starting and stopping some processes.
+Instead of creating a JSON-based RPC API with `start-process` and `stop-process` procedures, you can create a CRUD-based REST API where you create a resource to start a process and delete a resource to
+stop a process, i.e., a process is a resource you can perform CRUD operations on.
+
+#### Creating a Resource
+
+Creating a new resource using a REST API is done by sending an HTTP POST request to the API's resource endpoint.
+The API's resource endpoint should be named according to the resources it handles. The resource endpoint name should be a noun
+and always given in the plural form, for example, for the *sales-item-service* handling sales items,
+the resource endpoint should be *sales-items*, and for an *order-service* handling orders, the resource endpoint should be called *orders*.
+
+You give the resource to be created in the HTTP request body in JSON. To create a new sales item, you can issue the following request:
+
+```http
+POST /sales-item-service/sales-items HTTP/1.1
+Content-Type: application/json
+
+{
+  "name": "Sample sales item",
+  "price": 20
+}
+```
+
+The server will respond with the HTTP status code 201 *Created*. The server can add properties to the resource upon
+creation. Typically, the server will add an `id` property to the created resource but can also add other
+properties. The server will respond with the created resource in the HTTP response body in JSON. Below is a
+response to the sales item creation request. You can notice that the server added the `id` property to the resource.
+Other properties that are usually added are the creation timestamp and the version of the resource (the version
+of a newly created resource should be one).
+
+```http
+HTTP/1.1 201 Created
+Content-Type: application/json
+
+{
+  "id": 1,
+  "name": "Sample sales item",
+  "price": 20
+}
+```
+
+If the supplied resource to be created is somehow invalid, the server should respond with the HTTP status code 400 *Bad Request*
+and explain the error in the response body. The response body should be in JSON format containing information about the
+error, like the error code and message.
+
+To make API error responses consistent, use the same error response format throughout all the APIs in a software
+system. Below is an example of an error response:
+
+```json
+{
+  "statusCode": 500,
+  "statusText": "Internal Server Error",
+  "errorCode": "IAMError",
+  "errorMessage": "Unable to connect to the Identity and Access Management service"
+  "errorDescription": "Describe the error in more detail here, if relevant/needed..."
+  "stackTrace": "Call stack trace here..."
+}
+```
+
+**NOTE!** In the above example, the `stackTrace` property should NOT be included in the production environment by default because
+it can reveal internal implementation details to possible attackers. Use it only in development and other internal
+environments, and if needed, enable it in the production environment only for a short time to conduct debugging.
+The `errorCode` property is useful for updating error counter metric(s). Use it as a label for the error counter(s). There will be more
+discussion about metrics in the coming *DevSecOps principles* chapter.
+
+If the created resource is huge, there is no need to return the resource to the caller and waste network
+bandwidth. You can return the added properties only. For example, if the server only adds the `id` property, it is
+possible to return only the `id` in the response body as follows:
+
+```http
+HTTP/1.1 201 Created
+Content-Type: application/json
+
+{
+  "id": 1
+}
+```
+
+The request sender can construct the created resource by merging the sent resource object with the received
+resource object.
+
+> ***Ensure that no duplicate resources are created.***
+
+When a client tries to create a new resource, the resource creation request may fail so that the
+resource was created successfully on the server, but the client did not receive a response on time, and the request failed due to
+timeout. From the server's point of view, the request was successful, but from the client's point of view, the request's status was indeterminate.
+The client, of course, needs to re-issue the time-outed request, and if it succeeds,
+the same resource is created twice on the server side (with two distinct IDs), which is probably unwanted in most cases.
+
+Suppose a resource contains a unique property, like a user's email. In that case, it is impossible
+to create a duplicate resource if the server is correctly implemented (= the unique property is marked as a unique column
+in the database table definition). In many cases, such a unique field does not exist in the resource.
+In those cases, the client can supply a universally unique identifier (UUID), like`creationUuid`.
+The role of the server is to check if a resource with the same `creationUuid` was already created and to fail the creation
+of a duplicate resource. As an alternative to the UUID approach, the server can ask for
+verification from the client if the creation of two identical resources is intended in case the server
+receives two identical resources from the same client in a short period of time.
+
+#### Reading Resources
+
+Reading resources with a REST API is done by sending an HTTP GET request to the API's resource endpoint.
+To read all sales items, you can issue the following request:
+
+```http
+GET /sales-item-service/sales-items HTTP/1.1
+```
+
+The server will respond with the HTTP status code 200 *OK* and a JSON array of resources
+in the response body or an empty array if none is found. Below is an example response to a request to get the sales items:
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+[
+  {
+    "id": 1,
+    "name": "Sample sales item",
+    "price": 20
+  }
+]
+```
+
+To read a single resource by its id, add the resource's id to the request URL as follows:
+
+```http
+GET /sales-item-service/sales-items/<id> HTTP/1.1
+```
+
+The following request can be issued to read the sales item identified with id 1:
+
+```http
+GET /sales-item-service/sales-items/1 HTTP/1.1
+```
+
+The response to the above request will contain a single resource:
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "id": 1,
+  "name": "Sample sales item",
+  "price": 20
+}
+```
+
+The server responds with the HTTP status code 404 *Not Found* if the requested resource is not found.
+
+You can define parameters in the URL [query string](https://en.wikipedia.org/wiki/Query_string) to filter what resources to read.
+A query string is the last part of the URL and is separated from the URL path by a question mark (?) character.
+A query string can contain one or more parameters separated by ampersand (&) characters.
+Each query string parameter has the following format: `<query-parameter-name>=<query-parameter-value>`.
+Below is an example request with two query parameters: *name-contains* and *price-greater-than*.
+
+```http
+GET /sales-item-service/sales-items?name-contains=Sample&price-greater-than=10 HTTP/1.1
+```
+
+The above request gets sales items whose name contains the string *Sample* and whose price is greater
+than 10.
+
+To define a filter, you can specify a query parameter in the following format: `<fieldName>[-<condition>]=<value>`, for example:
+
+- `price=10`
+- `price-not-equal=10`
+- `price-less-than=10`
+- `price-less-than-equal=10`
+- `price-greater-than=10`
+- `price-greater-than-equal=10`
+- `name-starts-with=Sample`
+- `name-ends-with=item`
+- `name-contains=Sample`
+- `createdAtTimestamp-before=2022-08-02T05:18:00Z`
+- `createdAtTimestamp-after=2022-08-02T05:18:00Z`
+- `images.url-starts-with=https`
+
+Remember that when implementing the server side and adding the above-given parameters to an SQL query,
+you must use a parameterized SQL query to prevent SQL injection attacks because an attacker can
+send malicious data in the query parameters.
+
+Other actions like projection, sorting, and pagination for the queried resources can also be defined with
+query parameters in the URL:
+
+```http
+GET /sales-item-service/sales-items?fields=id,name&sort-by=price:asc&offset=0&limit=100 HTTP/1.1
+```
+
+The above request gets sales items sorted by price (ascending). The number of fetched sales items
+is limited to 100. Sales items are fetched starting from the offset 0, and the response contains only fields *id* and *name* for each sales item.
+
+The *fields* parameter defines what resource fields (properties) are returned in the response. The wanted fields
+are defined as a comma-separated list of field names. If you want to define sub-resource fields, those can be defined with
+the dot notation, for example:
+
+```
+fields=id,name,images.url
+```
+
+The *sort-by* query parameter defines sorting using the following format:
+
+```sort-by=<fieldName>:asc|desc,[<fieldName>:asc|desc]```
+
+For example:
+
+```
+sort-by=price:asc,images.rank:asc
+```
+
+In the above example, the resources are returned sorted first by ascending price and secondarily by image's rank.
+
+The *limit* and *offset* parameters are used for pagination. The *limit* query parameter defines the maximum
+number of resources that can be returned. The *offset* query parameter specifies the offset from which resources are returned.
+You can also paginate sub-resources by giving the *offset* and *limit* in the form
+of `<sub-resource>:<number>`. Below is an example of using pagination query parameters:
+
+```
+offset=0&limit=50,images:5
+```
+
+The above query parameters define that the first page of 50 sales items is fetched, and each sales item contains
+the first five images of the sales item. Instead of *offset* and *limit* parameters, you can use *page* and *page-size* parameters.
+The *page* parameter defines the page number, and the *page-size* defines how many resources a page should contain.
+
+Remember to validate user-supplied data to prevent SQL injection attacks when implementing the server side and adding data
+from URL query parameters to an SQL query. For example, field names in
+the *fields* query parameter should only contain characters allowed in an SQL column name. Similarly, the value of
+the *sort-by* parameter should only contain characters allowed in an SQL column name and words *asc* and *desc*.
+And finally, the values of the *offset* and *limit*  (or *page* and *page-size*) parameters must be integers.
+You should also validate the *limit/page-size* parameter against the maximum allowed value because you should not allow clients
+to fetch too many resources at a time.
+
+Some HTTP servers log the URL of an HTTP GET request. For this reason, it is not recommended to put sensitive information in the URL.
+Sensitive information should be put into the request body. Also, browsers can have a limit for
+the maximum length of a URL. If you have a query string that is thousands of characters
+long, you should give parameters in the request body instead. You should not put a request body to an HTTP GET request.
+What you should do is issue the request using the HTTP POST method instead, for example:
+
+```http
+POST /sales-item-service/sales-items HTTP/1.1
+Content-Type: application/json
+X-HTTP-Method-Override: GET
+
+{
+  "fields": ["name"],
+  "sortBy": "price:asc",
+  "limit": 100
+}
+```
+
+The server can confuse the above request with a sales item creation request because the URL and the HTTP
+method are identical to a resource creation request. For this reason, a custom HTTP request header
+*X-HTTP-Method-Override* has been added to the request. The server should read the custom header and treat the above
+request as a GET request. The *X-HTTP-Method-Override* header tells the server to override the request method
+with the method supplied in the header.
+
+#### Updating Resources
+
+A resource is updated with a REST API by sending an HTTP PUT or PATCH request to the API's resource endpoint.
+To update the sales item identified with id 1, you can issue the following request:
+
+```http
+PUT /sales-item-service/sales-items/1 HTTP/1.1
+Content-Type: application/json
+
+{
+  "name": "Sample sales item name modified",
+  "price": 30
+}
+```
+
+The server will respond without content:
+
+```http
+HTTP/1.1 204 No Content
+```
+
+Instead of sending no content, the server can return the updated resource in the response. This is needed if the server modifies the resource during the update process.
+The server will respond with the HTTP status code 404 *Not Found* if the requested resource is not found.
+
+If the supplied resource in the request
+is invalid, the server should respond with the HTTP status code 400 *Bad Request*. The response body should contain an error object
+in JSON.
+
+HTTP PUT request will replace the existing resource with the supplied resource.
+You can also modify an existing resource partially using the HTTP PATCH method:
+
+```http
+PATCH /sales-item-service/sales-items/1 HTTP/1.1
+Content-Type: application/json
+
+{
+  "price": 30
+}
+```
+
+The above request only modifies the price property of the sales item identified with id 1. Other properties remain intact.
+You can do bulk updates by specifying a filter in the URL, for example:
+
+```http
+PATCH /sales-item-service/sales-items?price-less-than=10 HTTP/1.1
+Content-Type: application/json
+
+{
+  "price": 10
+}
+```
+
+The above example will update the price property of each resource where the price is currently less than ten.
+On the server side, the API endpoint could use the following parameterized SQL statement to implement
+the update functionality:
+
+```sql
+UPDATE salesitems SET price = %s WHERE price < %s
+```
+
+The above SQL statement will only modify the price column; other columns remain intact.
+
+> ***Use resource versioning when needed.***
+
+When you get a resource from the server and try to update it, someone else may have updated it after you got it but before trying to update it. This can be okay if you don't care about other clients' updates. But sometimes, you want to ensure no one else has updated
+the resource before you update it. In that case, you should use resource versioning. In the resource versioning,
+there is a version field in the resource, which is incremented by one during each update. If you get a resource
+with version *x* and then try to update the resource, giving back the same version *x* to the server, but someone
+else has updated the resource to version *x + 1*, your update will fail because of the version mismatch (*x* != *x + 1*).
+The server should respond with the HTTP status code 409 *Conflict*. After receiving the conflict response,
+you can fetch the latest version of the resource from the server and, based on the resource's new state, decide
+whether your update is still relevant or not, and retry the update.
+
+The server should assign the resource version value to the HTTP response header [ETag](https://en.wikipedia.org/wiki/HTTP_ETag). A client can use the received ETag
+value in a conditional HTTP GET request by assigning the received ETag value to the request header [If-None-Match](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-None-Match). The server
+will return the requested resource only if it has a newer version. Otherwise, the server returns nothing with the HTTP status code 304 *Not Modified*. This brings the advantage of not re-transferring an unmodified resource from the
+server to the client, which can be especially beneficial when the resource is large, or the connection between the server and the client is slow.
+
+#### Deleting Resources
+
+Deleting a resource with a REST API is done by sending an HTTP DELETE request to the API's resource endpoint.
+To delete the sales item identified with id 1, you can issue the following request:
+
+```http
+DELETE /sales-item-service/sales-items/1 HTTP/1.1
+```
+
+The server will respond without content:
+
+```http
+HTTP/1.1 204 No Content
+```
+
+If the requested resource has already been deleted, the API should still
+respond with the HTTP status code 204 *No Content*, meaning a successful operation. It should not respond with the HTTP status code 404 *Not Found*.
+
+To delete all sales items, you can issue the following request:
+
+```http
+DELETE /sales-item-service/sales-items HTTP/1.1
+```
+
+To delete sales items using a filter, you can issue the following kind of request:
+
+```http
+DELETE /sales-item-service/sales-items?price-less-than=10 HTTP/1.1
+```
+
+On the server side, the API endpoint handler can use the following parameterized SQL query to implement the deleting functionality:
+
+```sql
+DELETE FROM salesitems WHERE price < %s
+```
+
+#### Executing Non-CRUD Actions on Resources
+
+Sometimes, you need to perform non-CRUD actions on resources. In those cases, you can issue an HTTP POST request
+and put the name of the action (a verb) after the resource name in the URL. The below example will perform a *deposit*
+action on an account resource:
+
+```http
+POST /account-balance-service/accounts/12345678912/deposit HTTP/1.1
+Content-Type: application/json
+
+{
+  "amountInCents": 2510
+}
+```
+
+Similarly, you can perform a withdrawal action:
+
+```http
+POST /account-balance-service/accounts/12345678912/withdraw HTTP/1.1
+Content-Type: application/json
+
+{
+  "amountInCents": 2510
+}
+```
+
+#### Resource Composition
+
+A resource can be composed of other resources. There are two ways to implement resource composition:
+Nesting resources or linking resources. Let's have an example of nesting resources first. A sales item resource can contain one or more image resources. We don't want to return all images when a client requests a sales item because images can be large and are not necessarily used by the client. What we could return is a set of small thumbnail images.
+For a client to get the full images of a sales item, we could implement an API endpoint for image resources. The following API call can be issued to get images for a specific sales item:
+
+```http
+GET /sales-item-service/sales-items/<id>/images HTTP/1.1
+```
+
+You can also add a new image for a sales item:
+
+```http
+POST /sales-item-service/sales-items/<id>/images HTTP/1.1
+```
+
+Also, other CRUD operations could be made available:
+
+```http
+PUT /sales-item-service/sales-items/<salesItemId>/images/<imageId> HTTP/1.1
+```
+
+```http
+DELETE /sales-item-service/sales-items/<salesItemId>/images/<imageId> HTTP/1.1
+```
+
+The problem with this approach is that the *sales-item-service* will grow in size, and if you need to add more
+nested resources in the future, the size will grow even more, making the microservice too complex and being
+possibly responsible for too many things.
+
+A better alternative might be to create a separate microservice for the nested resources. This will enable the utilization of the best-suited technologies to implement the microservice. Regarding the sales item images,
+the *sales-item-image-service* could employ a cloud object storage to store images, and the *sales-item-service*
+could utilize a standard relational database for storing sales items.
+
+When having a separate microservice for sales item images, you can get the images for a sales item by issuing
+the following request:
+
+```http
+GET /sales-item-image-service/sales-item-images?salesItemId=<salesItemId> HTTP/1.1
+```
+
+You can notice that the *sales-item_service* and *sales-item-image-service* are now linked by the *salesItemId*.
+
+Note that the *sales-item-image-service* should be a service aggregated by the *sales-item-service*. The higher-level *sales-item-service* calls the lower-level *sales-item-image-service* because a sales item is a root aggregate, and sales item images are child entities that should not
+be accessed directly but only via the root aggregate, according to DDD. This helps with enforcing business rules. For example, let's hypothesize that
+a particular type of sales item should have at least *x* images. This kind of business rule should be enforced by the *sales-item-service*.
+The *sales-item-image-service* cannot do it because it does not have (and should not have) detailed information about the sales item itself.
+It only has the sales item's id.
+
+#### HTTP Status Codes
+
+Use the following HTTP status codes:
+
+| HTTP Status Code       | When to Use                                                                                                                                                  |
+|------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 200 OK                 | Successful API operations with the GET method                                                                                                                |
+ | 201 Created            | Successful API operations with the POST method                                                                                                               |
+ | 202 Accepted           | The request has been accepted for processing. This can be used as the response status code for an asynchronous operation request ([Asynchronous request-reply](https://learn.microsoft.com/en-us/azure/architecture/patterns/async-request-reply)). For example, a POST request can get a response with this status code, an empty body, and a link to the resource that will eventually be created. The link is usually provided in the `Location` response header. That link will return 404 *Not Found* until the asynchronous creation is complete.
+ | 204 No Content         | Successful API operations with the PUT, PATCH, or DELETE method                                                                                              |
+ | 400 Bad Request        | Client error in API operations, e.g., invalid data supplied by the client                                                                                    |
+ | 401 Unauthorized       | Client does not provide an authorization header in the request                                                                                               |
+| 403 Forbidden          | Client provides an authorization header in the request, but the user is not authorized to perform the API operation                                          |
+| 404 Not Found          | When requesting a non-existent resource with the GET, PUT, or PATCH method                                                                                   |
+ | 405 Method Not Allowed | When a client tries to use the wrong method for an API endpoint                                                                                              |
+ | 406 Not Acceptable     | When a client requests a response in a format that the server cannot produce, e.g., requests XML, but the server provides only JSON                          |
+| 409 Conflict           | When a client is trying to update a resource that has been updated after the client got the resource                                                         |
+ | 413 Payload Too Large  | When a client tries to supply a too large payload in a request. To prevent DoS attacks, do not accept arbitrarily large payloads from clients                |
+ | 429 Too Many Requests  | Configure rate limiting in your API gateway to send this status code when the request rate is exceeded                                                       |
+| 500 Internal Server Error | When a server error occurs, for example, an exception is thrown                                                                                              |
+| 503 Service Unavailable | Server's connections to dependent services fail. This indicates that clients should retry the request after a while because this issue is usually temporary. |
+
+#### HATEOAS and HAL
+
+[Hypermedia as the Engine of Application State](https://en.wikipedia.org/wiki/HATEOAS) (HATEOAS) can be used to add hypermedia/metadata to a requested resource.
+[Hypertext Application Language](https://en.wikipedia.org/wiki/Hypertext_Application_Language) (HAL) is a convention for defining hypermedia (metadata), such as links to external resources.
+Below is an example response to a request that fetches the sales item with id 1234. The sales item is owned by the user with id 5678.
+The response provides a link to the fetched resource itself and another link to fetch the user (account) that owns the sales item:
+
+```json
+{
+  "_links": {
+    "self": {
+      "href": "https://.../sales-item-service/sales-items/1234"
+    },
+    "userAccount": {
+      "href": "https://.../user-account-service/user-accounts/5678"
+    }
+  },
+  "id": 1234,
+  "name": "Sales item xyz"
+  "userAccountId": 5678
+}
+```
+
+When fetching a collection of sales items for page 3 using HAL, we can get the following kind of response:
+
+```json
+{
+  "_links": {
+    "self": {
+      "href": "https://.../sales-items?page=3"
+    },
+    "first": {
+      "href": "https://...sales-items"
+    },
+    "prev": {
+      "href": "https://.../sales-items?page=2"
+    },
+    "next": {
+      "href": "https://.../sales-items?page=4"
+    },
+  },
+  "count": 25,
+  "total": 1500,
+  "_embedded": {
+    "salesItems": [
+      {
+        "_links": {
+           "self": {
+             "href": "https://.../sales-items/123"
+           }
+        },
+        "id": 123,
+        "name": "Sales item 123"
+      },
+      {
+        "_links": {
+           "self": {
+             "href": "https://.../sales-items/124"
+           }
+        },
+        "id": 124,
+        "name": "Sales item 124"
+      },
+      .
+      .
+      .
+    ]
+  }
+}
+```
+
+The above response contains links to fetch the first, current, previous, and last page of sales items. It
+also contains information that there are 1500 sales items, and a page lists 25. The `_embedded` property contains a `salesItems` property containing the 25 sales items with links to themselves and the
+sales item data.
+
+#### API Versioning
+
+You can introduce a new version of an API using a versioning URL path segment. Below are example endpoints for API version 2:
+
+```http
+GET /sales-item-service/v2/sales-items HTTP/1.1
+...
+```
+
+#### Documentation
+
+If you need to document or provide interactive online documentation for a REST API, there are two ways:
+
+1) Spec-first: create a specification for the API and then generate code from the specification
+2) Code-first: implement the API and then generate the API specification from the code
+
+Tools like [Swagger](https://swagger.io/) and Postman can generate both static and interactive documentation for your API based on the
+API specification. You should specify APIs using the [OpenAPI specification](https://swagger.io/specification/).
+
+When using the first alternative, you can specify your API using the OpenAPI specification language.
+You can use tools like [SwaggerHub](https://swagger.io/tools/swaggerhub/) or Postman to write the API specification. [Swagger Codegen](https://swagger.io/tools/swagger-codegen/) offers code-generation tools
+for multiple languages. Code generators generate code based on the OpenAPI specification. They can generate
+client-side code in addition to the server-side code.
+
+When using the second alternative, you can use a web framework-specific way to generate the API specification from the API
+implementation. For example, with FastAPI, you get automatic API specification generation. By default, the OpenAPI schema
+is served in JSON format at the following endpoint: `/openapi.json`. This URL is configurable. FastAPI also provides Swagger
+UI interactive docs and client at the following URL: `/docs`. This URL is also customizable. [ReDoc](https://redocly.com/redoc/)
+interactive docs are available at `/redoc,` which is also configurable. For example, setting OpenAPI schema to be served
+at `/my-service/v1/openapi.json` and setting Swagger UI to be served at `/my-service/v1/docs` and disabling ReDoc can be achieved in the following way:
+
+```python
+from fastapi import FastAPI
+
+app = FastAPI(
+    openapi_url='/my-service/v1/openapi.json',
+    docs_url='/my-service/v1/docs',
+    redoc_url=None
+)
+```
+
+I prefer to use the second approach of writing the code first. I like it better when I don't have to work with both
+auto-generated and handwritten code. Many web frameworks offer automatic generation of the OpenAPI schema and
+interactive documentation from the source code.
+
+#### Implementation Example
+
+Let's implement *sales-item-service* API endpoints for CRUD operations on sales items using FastAPI. We use the
+*clean microservice design principle* introduced earlier and write the API endpoints inside a controller class:
+
+{format: python}
+![controllers/RestSalesItemController.py](resources/chapter6/code/salesitemservice/controllers/RestSalesItemController.py)
+
+The above controller is not production quality. The following must be added:
+
+- Audit logging
+- Observability, e.g., updating metric(s)
+- Authorization
+
+All of the above could be and probably should be implemented using decorators, for example:
+
+```python
+@allow_for_user_roles(['admin'], authorizer)
+@audit_log
+@increment_counter(Counters.request_attempts)
+def create_sales_item(
+    self,
+    input_sales_item: InputSalesItem,
+    request: Request
+) -> OutputSalesItem:
+    return self.__sales_item_service.create_sales_item(
+        input_sales_item
+    )
+```
+
+The authorization decorator `@allow_for_user_roles(['admin'], authorizer)` is the same as discussed
+in the previous chapter. The `@audit_log` decorator can be implemented in the following way:
+
+```python
+from functools import wraps
+
+
+def audit_log(handle_request):
+    @wraps(handle_request)
+    def wrapped_handle_request(*args, **kwargs):
+        method = kwargs['request'].method
+        url = kwargs['request'].url
+        client_host = kwargs['request'].client.host
+        # The below printed text should be written to audit log
+        print(f'API endpoint: {method} {url} accessed from: {client_host}')
+        return handle_request(*args, **kwargs)
+
+    return wrapped_handle_request
+```
+
+The `@increment_counter` decorator can be implemented in the following way:
+
+```python
+from functools import wraps
+
+
+def increment_counter(counter):
+    def decorate(handle_request):
+        @wraps(handle_request)
+        def wrapped_handle_request(*args, **kwargs):
+            method = kwargs['request'].method
+            url = kwargs['request'].url
+            # Increment counter by one with 'api_endpoint' label
+            counter.increment(1, {'api_endpoint': f'{method} {url}'})
+            return handle_request(*args, **kwargs)
+
+        return wrapped_handle_request
+
+    return decorate
+```
+
+Notice how the above decorators are general purpose and not specific to this *sales-item-service* API. Instead of
+adding the decorators to the controller class methods, you might be better off creating decorators that can be added to the service class
+methods. In that case, you need to supply the needed information from the controller methods to the service methods, like the client's host
+for the audit logging decorator and the JWT for the authorization decorators. You can group these two into a `ClientInfo` object passed
+from the controller to the service class. The service class decorators then operate with that object.
+
+The DTOs (objects that specify what data is transferred (input or output) between clients and the server)
+are defined using [pydantic](https://docs.pydantic.dev/latest/) validation library:
+
+{format: python}
+![dtos/SalesItemImage.py](resources/chapter6/code/salesitemservice/dtos/SalesItemImage.py)
+
+{format: python}
+![dtos/InputSalesItem.py](resources/chapter6/code/salesitemservice/dtos/InputSalesItem.py)
+
+{format: python}
+![dtos/OutputSalesItem.py](resources/chapter6/code/salesitemservice/dtos/OutputSalesItem.py)
+
+Notice that we have specified validation for each attribute in all three DTO classes. This is important because of security.
+For example, string and list attributes should have maximum length validators to prevent possible denial of
+service attacks. Output DTOs should have validation as well. This is important because of security.
+Output validation can protect against injection attacks that try to return data that has an invalid shape.
+In FastAPI, output DTOs are also used in the automatic documentation of the API schema and when
+automatically generating client code.
+
+The `SalesItemService` protocol looks like the following:
+
+{format: python}
+![service/SalesItemService.py](resources/chapter6/code/salesitemservice/service/SalesItemService.py)
+
+Next, we can implement the above protocol:
+
+{format: python}
+![service/SalesItemServiceImpl.py](resources/chapter6/code/salesitemservice/service/SalesItemServiceImpl.py)
+
+Below is the definition of the `SalesItemRepository` protocol:
+
+{format: python}
+![repositories/SalesItemRepository.py](resources/chapter6/code/salesitemservice/repositories/SalesItemRepository.py)
+
+Various implementations for the `SalesItemRepository` are presented in the next chapter, where we focus on database
+principles. The next chapter provides three different implementations for the repository: Object-Relational
+Mapping (ORM), parameterized SQL queries, and MongoDB.
+
+For error handling, we depend on the `except` block provided by the FastAPI web framework. We could raise
+errors of the FastAPI's `HTTPException` type in our business logic, but then we would be coupling our web framework
+with business logic, which is not desired. Remember how in the *clean microservice design principle*, the dependency goes only
+from the web framework (controller) towards business logic, not vice versa. If we used web framework-specific
+error classes in our business and logic, and we would like to migrate the microservice to a different web framework, we would
+have to refactor the whole business logic concerning raised errors.
+
+What we should do is introduce a base error class for our microservice and provide a custom error handler for
+FastAPI. The custom error handler translates our business logic-specific errors into HTTP responses. The possible errors
+the microservice can raise should all derive from the base error class. The `ApiError` class below is a general-purpose base error class
+for any API.
+
+{format: python}
+![errors/ApiError.py](resources/chapter6/code/salesitemservice/errors/ApiError.py)
+
+The `code` property could also be named `type`. The idea behind that property is to tell what kind
+of an error is in question. This property can be used on the server side as a label for failure metrics, and on the
+client side, special handling for particular error codes can be implemented.
+If you want, you can even add one more property to the above class, namely `recovery_action`. This optional property contains information about recovery steps for an actionable error. For example, a database connection error might have a `recovery_action` property value: *Please retry after a while. If the problem persists,
+contact the technical support at <email address>*.
+
+Below is the base error class for the *sales-item-service*:
+
+{format: python}
+![errors/SalesItemServiceError.py](resources/chapter6/code/salesitemservice/errors/SalesItemServiceError.py)
+
+Let's then define one error class that is used by the API:
+
+{format: python}
+![errors/EntityNotFoundError.py](resources/chapter6/code/salesitemservice/errors/EntityNotFoundError.py)
+
+Let's implement a custom error handler for our API. Notice how the handler is general purpose and
+can be used with any API having its errors derived from the `ApiError`.
+
+```python
+# Imports ...
+
+app = FastAPI()
+
+@app.exception_handler(SalesItemServiceError)
+def handle_sales_item_service_error(
+    request: Request, error: ApiError
+):
+    # Log error.cause
+
+    # Increment 'request_failures' counter by one
+    # with three labels:
+    # api_endpoint=f'{request.method} {request.url}'
+    # status_code=error.status_code
+    # error_code=error.code
+
+    return JSONResponse(
+        status_code=error.status_code,
+        content={
+            'statusCode': error.status_code,
+            'statusText': error.status_text,
+            'errorCode': error.code,
+            'errorMessage': error.message,
+            'errorDescription': error.description,
+            # get_stack_trace returns stack trace only
+            # when environment is not production
+            # otherwise it returns None
+            'stackTrace': get_stack_trace(error.cause),
+        },
+    )
+```
+
+Now, if the business logic raises the following error:
+
+```python
+raise EntityNotFoundError('Sales item', '10')
+```
+
+The following API response should be expected in a production environment (Notice how the `stackTrace` is null when the service is running in the production environment):
+
+```http
+HTTP/1.1 404 Not Found
+Content-Type: application/json
+
+{
+  "statusCode": 404,
+  "statusText": "Not Found",
+  "errorCode": "EntityNotFound",
+  "errorMessage": "Sales item with id 10 not found",
+  "errorDescription": null,
+  "stackTrace": null
+}
+```
+
+You should also add specific error handlers for DTO validation errors and other possible errors:
+
+```python
+@app.exception_handler(RequestValidationError)
+def handle_request_validation_error(
+    request: Request, error: RequestValidationError
+):
+    # Audit log
+
+    # Increment 'request_failures' counter by one
+    # with three labels:
+    # api_endpoint=f'{request.method} {request.url}'
+    # status_code=400
+    # error_code='RequestValidationError'
+
+    return JSONResponse(
+        status_code=400,
+        content={
+            'statusCode': 400,
+            'statusText': 'Bad Request',
+            'errorCode': 'RequestValidationError',
+            'errorMessage': 'Request validation failed',
+            'errorDescription': str(error),
+            'stackTrace': None,
+        },
+    )
+
+
+@app.exception_handler(Exception)
+def handle_unspecified_error(request: Request, error: Exception):
+    # Increment 'request_failures' counter by one
+    # with labels:
+    # api_endpoint=f'{request.method} {request.url}'
+    # status_code=500
+    # error_code='UnspecifiedError'
+
+    return JSONResponse(
+        status_code=500,
+        content={
+            'statusCode': 500,
+            'statusText': 'Internal Server Error',
+            'errorCode': 'UnspecifiedError',
+            'errorMessage': 'Unspecified internal error',
+            'errorDescription': str(error),
+            'stackTrace': get_stack_trace(error),
+        },
+    )
+```
+
+The rest of the API service source code files look like the following:
+
+{format: python}
+![DiContainer.py](resources/chapter6/code/salesitemservice/DiContainer.py)
+
+{format: python}
+![utils.py](resources/chapter6/code/salesitemservice/utils.py)
+
+{format: python}
+![app.py](resources/chapter6/code/salesitemservice/app.py)
+
+### GraphQL API Design
+
+> ***Divide API endpoints into queries and mutations. Compared to REST, REST GET requests are GraphQL queries,***
+> ***and REST POST/PUT/PATCH/DELETE requests are GraphQL mutations. With GraphQL, you can name your queries and mutations with descriptive names.***
+
+Let's create a [GraphQL schema](https://graphql.org/learn/schema/) that defines needed types and API endpoints for the *sales-item-service*.
+After the example, we will discuss the details of the schema below and the schema language in general.
+
+```graphql
+type Image {
+  id: Int!
+  rank: Int!
+  url: String!
+}
+
+type SalesItem {
+  id: ID!
+  createdAtTimestampInMs: String!
+  name: String!
+  priceInCents: Int!
+  images(
+    sortByField: String = "rank",
+    sortDirection: SortDirection = ASC,
+    offset: Int = 0,
+    limit: Int = 5
+  ): [Image!]!
+}
+
+input InputImage {
+  id: Int!
+  rank: Int!
+  url: String!
+}
+
+input InputSalesItem {
+  name: String!
+  priceInCents: Int!
+  images: [InputImage!]!
+}
+
+enum SortDirection {
+  ASC
+  DESC
+}
+
+type IdResponse {
+  id: ID!
+}
+
+type Query {
+  salesItems(
+    sortByField: String = "createdAtTimestamp",
+    sortDirection: SortDirection = DESC,
+    offset: Int = 0,
+    limit: Int = 50
+  ): [SalesItem!]!
+
+  salesItem(id: ID!): SalesItem!
+
+  salesItemsByFilters(
+    nameContains: String,
+    priceGreaterThan: Float
+  ): [SalesItem!]!
+}
+
+type Mutation {
+  createSalesItem(salesItem: InputSalesItem!): SalesItem!
+
+  updateSalesItem(
+    id: ID!,
+    salesItem: InputSalesItem
+  ): IdResponse!
+
+  deleteSalesItem(id: ID!): IdResponse!
+}
+```
+
+The above GraphQL schema defines several types used in API requests and responses. A GraphQL `type` specifies an object type:
+Its properties and the types of those properties. A type specified with the `input` keyword is an input-only type (input DTO type).
+GraphQL defines the primitive (scalar) types: `Int` (32-bit), `Float`, `String`, `Boolean`, and `ID`.
+You can define an array type with the notation: `[<Type>]`. By default, types are nullable.
+If you want a non-nullable type, add an exclamation mark (!) after the type name. You can define an enumerated type
+with the `enum` keyword. The `Query` and `Mutation` types are special GraphQL types used to define queries and mutations.
+The above example defines three queries and four mutations that clients can execute. You can add
+parameters for a type property. We have added parameters for all the queries (queries are properties of the `Query` type),
+mutations (mutations are properties of the `Mutation` type), and the `images` property of the `SalesItem` type.
+
+In the above example, I have named all the queries with names that describe the values they return, i.e., there are no
+verbs in the query names. It is possible to name queries starting with a verb (like the mutations).
+For example, you can add *get* to the beginning of the names of the above-defined queries if you prefer.
+
+There are two ways to implement a GraphQL API:
+
+- Schema first
+- Code first (schema is generated from the code)
+
+Let's first focus on the schema-first approach and implement the above-specified API using the [Ariadne](https://ariadnegraphql.org/) library.
+Initially, we define fake implementations (returning static objects) for some of the API endpoints (queries/mutations):
+
+```python
+import time
+
+from ariadne import MutationType, QueryType, gql, make_executable_schema
+from ariadne.asgi import GraphQL
+
+schema = gql(
+    """
+type Image {
+  id: Int!
+  rank: Int!
+  url: String!
+}
+
+type SalesItem {
+  id: ID!
+  createdAtTimestampInMs: String!
+  name: String!
+  priceInCents: Int!
+  images(
+    sortByField: String = "rank",
+    sortDirection: SortDirection = ASC,
+    offset: Int = 0,
+    limit: Int = 5
+  ): [Image!]!
+}
+
+input InputImage {
+  id: Int!
+  rank: Int!
+  url: String!
+}
+
+input InputSalesItem {
+  name: String!
+  priceInCents: Int!
+  images: [InputImage!]!
+}
+
+enum SortDirection {
+  ASC
+  DESC
+}
+
+type IdResponse {
+  id: ID!
+}
+
+type Query {
+  salesItems(
+    sortByField: String = "createdAtTimestampInMs",
+    sortDirection: SortDirection = DESC,
+    offset: Int = 0,
+    limit: Int = 50
+  ): [SalesItem!]!
+
+  salesItem(id: ID!): SalesItem!
+
+  salesItemsByFilters(
+    nameContains: String,
+    priceGreaterThan: Float
+  ): [SalesItem!]!
+}
+
+type Mutation {
+  createSalesItem(inputSalesItem: InputSalesItem!): SalesItem!
+
+  updateSalesItem(
+    id: ID!,
+    inputSalesItem: InputSalesItem
+  ): IdResponse!
+
+  deleteSalesItem(id: ID!): IdResponse!
+}
+"""
+)
+
+query = QueryType()
+
+
+@query.field('salesItems')
+def resolve_sales_items(*, **kwargs):
+    if kwargs['offset'] == 0:
+        return [
+            {
+                'id': 1,
+                'createdAtTimestampInMs': '12345678999877',
+                'name': 'sales item',
+                'priceInCents': 1095,
+                'images': [{'id': 1, 'rank': 2, 'url': 'url'}],
+            }
+        ]
+    return []
+
+
+@query.field('salesItem')
+def resolve_sales_item(*, id):
+    return {
+        'id': id,
+        'createdAtTimestampInMs': '12345678999877',
+        'name': 'sales item',
+        'priceInCents': 1095,
+        'images': [{'id': 1, 'rank': 2, 'url': 'url'}],
+    }
+
+
+mutation = MutationType()
+
+
+@mutation.field('createSalesItem')
+def resolve_create_sales_item(*, **kwargs):
+    return {
+        'id': 100,
+        'createdAtTimestampInMs': str(round(time.time() * 1000)),
+        **kwargs['inputSalesItem'],
+    }
+
+
+@mutation.field('deleteSalesItem')
+def resolve_delete_sales_item(*, id):
+    return {'id': id}
+
+
+executable_schema = make_executable_schema(schema, [query, mutation])
+
+app = GraphQL(executable_schema)
+```
+
+In the above example, the `gql` function validates the schema and raises a descriptive `GraphQLSyntaxError` if there is an issue or returns
+the original string if it is correct. We created a resolver function for the first two queries in the schema and resolvers for creating and deleting a sales item. You can start the GraphQL server with the following command
+(You should have [uvicorn](https://www.uvicorn.org/) already installed using *pip*):
+
+```bash
+uvicorn app:app
+```
+
+After running the server, browse to the URL: *http://127.0.0.1:8000/*.
+You will see the GraphiQL UI, where you can execute queries and mutations. Enter the following query to the
+left pane in the UI.
+
+```graphql
+query salesItems {
+  salesItems(offset: 0) {
+    id
+    createdAtTimestampInMs
+    name
+    priceInCents,
+    images {
+      url
+    }
+  }
+}
+```
+
+You should get the following response on the right side pane:
+
+```json
+{
+  "data": {
+    "salesItems": [
+      {
+        "id": "1",
+        "createdAtTimestampInMillis": "12345678999877",
+        "name": "sales item",
+        "priceInCents": 1095,
+        "images": [
+          {
+            "url": "url"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+You can also try to create a new sales item:
+
+```graphql
+mutation create {
+  createSalesItem(inputSalesItem: {
+    priceInCents: 4095
+    name: "test sales item"
+    images: []
+  }) {
+    id,
+    createdAtTimestampInMs,
+    name,
+    priceInCents,
+    images {
+      id
+    },
+  }
+}
+```
+
+Below is the response you would get, except for the timestamp being the current time:
+
+```json
+{
+  "data": {
+    "createSalesItem": {
+      "id": "100",
+      "createdAtTimestampInMillis": "1694798999418",
+      "name": "test sales item",
+      "priceInCents": 4095,
+      "images": []
+    }
+  }
+}
+```
+
+To delete a sales item, you can issue:
+
+```graphql
+mutation delete {
+  deleteSalesItem(id: 1) {
+   id
+  }
+}
+```
+
+```json
+{
+  "data": {
+    "deleteSalesItem": {
+      "id": "1"
+    }
+  }
+}
+```
+
+Let's replace the dummy static implementations in our Ariadne GraphQL controller with actual calls to the sales item service:
+
+{format: python}
+![controllers/AriadneGraphQlSalesItemController.py](resources/chapter6/code/salesitemservice/controllers/AriadneGraphQlSalesItemController.py)
+
+Notice in the above code that we must remember to validate the input for the two mutations. We can do that
+by converting the input dict to a Pydantic model using the `parse_obj` method.
+We should add authorization, audit logging, and metric updates to make the example more production-like. This can be done by creating decorators in a similar way we created earlier in the REST API example. The decorators can get the request object from the `info.context` dict:
+`info.context['request']`.
+
+GraphQL error handling differs from REST API error handling. A GraphQL API responses do not provide different HTTP response status codes.
+A GraphQL API response is always sent with the status code *200 OK*.
+When an error occurs while processing a GraphQL API request, the response body object includes an `errors` array. You should raise an error in your GraphQL type resolvers when a query or mutation fails. You can use the same `ApiError` base error class used in the earlier REST API example.
+As shown below, we need to add an error formatter to handle the custom API errors. The error objects should always have a `message` field.
+Additional information about the error can be supplied in an `extensions` object, which can contain any properties.
+
+Suppose a `salesItem` query results in an `EntityNotFoundError`. Then the API response would have a `null` for the `data` property and `errors` property present, as shown below:
+
+```json
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "Sales item not found with id 1",
+      "extensions": {
+        "statusCode": 404,
+        "statusText": "Not Found",
+        "errorCode": "EntityNotFound",
+        "errorDescription": null
+        "stackTrace": null
+      }
+    }
+  ]
+}
+```
+
+Below is the code for the *app_graphql.py* module:
+
+{format: python}
+![app_graphql.py](resources/chapter6/code/salesitemservice/app_graphql.py)
+
+I apologize for the above code containing *a chain of instanceof checks* code smell. What we should do is to
+move the `format_custom_error` code to a factory whose `create` method we give the `error` as a parameter.
+
+The Ariadne GraphQl version of the *sales-item-service* can be run with the below command. (We assume
+the service source code is placed in a package *salesitemservice*, and we are currently located in the parent directory of that).
+
+```bash
+uvicorn salesitemservice.app_graphql:app
+```
+
+As an alternative to the described error handling mechanism, it is also possible to return an error as a query/mutation return value. This can be done, e.g., by returning a union type
+from a query or mutation. This approach requires a more complex GraphQL schema and more complex resolvers on the server side.
+Here is an example:
+
+```graphql
+# ...
+
+type Error {
+    message: String!
+    # Other possible properties
+}
+
+union SalesItemOrError = SalesItem | Error
+
+type Mutation {
+  createSalesItem(inputSalesItem: InputSalesItem!): SalesItemOrError!
+}
+```
+
+In the `createSalesItem` query resolver, you must add a try-except block to handle an error situation and respond with an `Error` object in case of an error.
+
+You can also specify multiple errors:
+
+```graphql
+# ...
+
+type ErrorType1 {
+    # ...
+}
+
+type ErrorType2 {
+    # ...
+}
+
+type ErrorType3 {
+    # ...
+}
+
+union SalesItemOrError = SalesItem | ErrorType1 | ErrorType2 | ErrorType3
+
+type Mutation {
+  createSalesItem(inputSalesItem: InputSalesItem!): SalesItemOrError!
+}
+```
+
+The above example would require making the `createSalesItem` resolvers to catch multiple different errors and responding
+with an appropriate error object as a result.
+
+Also, the client-side code will be more complex because of the need to handle the different types of responses for a single operation (query/mutation).
+For example:
+
+```graphql
+mutation {
+  createSalesItem(inputSalesItem: {
+    price: 200
+    name: "test sales item"
+    images: []
+  }) {
+    __typename
+    ...on SalesItem {
+      id,
+      createdAtTimestampInMillis
+    }
+    ...on ErrorType1 {
+      # Specify fields here
+    }
+    ...on ErrorType2 {
+      # Specify fields here
+    }
+    ...on ErrorType3 {
+      # Specify fields here
+    }
+}
+```
+
+This approach has a downside: the client must still be able to handle possible errors reported in the response's `errors` array.
+
+In a GraphQL schema, you can add parameters for a primitive (scalar) property. That is useful for implementing conversions.
+For example, we could define the `SalesItem` type with a parameterized `priceInCents` property:
+
+```graphql
+enum Currency {
+  USD,
+  GBP,
+  EUR,
+  JPY
+}
+
+type SalesItem {
+  id: ID!
+  createdAtTimestampInMillis: String!
+  name: String!
+  priceInCents(currency: Currency = USD): Int!
+  images(
+    sortByField: String = "rank",
+    sortDirection: SortDirection = ASC,
+    offset: Int = 0,
+    limit: Int = 5
+  ): [Image!]!
+}
+```
+
+Now, clients can supply a currency parameter for the `price` property in their queries to get the price in different currencies.
+The default currency is *USD* if no currency parameter is supplied.
+
+Below are two example queries that a client could perform against the earlier defined GraphQL schema:
+
+```graphql
+{
+  # gets the name, price in euros and the first 5 images
+  # for the sales item with id "1"
+  salesItem(id: "1") {
+    name
+    price(currency: EUR)
+    images
+  }
+
+  # gets the next 5 images for the sales item 1
+  salesItem(id: "1") {
+    images(offset: 5)
+  }
+}
+```
+
+In real life, consider limiting the fetching of resources only to the previous or the next page (or the next page only
+if you are implementing infinite scrolling on the client side). Then, clients cannot fetch random pages. This prevents
+attacks where a malicious user tries to fetch a page with a huge page number (like 10,000, for example), which can
+cause extra load for the server or, at the extreme, a denial of service.
+
+Below is an example where clients can only query the first, next, or previous page. When a client requests the first page,
+the page cursor can be empty, but when the client requests the previous or the next page, it must give the current page cursor
+as a query parameter.
+
+```
+type PageOfSalesItems {
+  # Contains the page number encrypted and
+  # encoded as a Base64 value.
+  pageCursor: String!
+
+  salesItems: [SalesItem!]!
+}
+
+enum Page {
+  FIRST,
+  NEXT,
+  PREVIOUS
+}
+
+type Query {
+  pageOfSalesItems(
+    page: Page = FIRST,
+    pageCursor: String = ""
+  ): PageOfSalesItems!
+}
+```
+
+Let's have another example with GraphQL and use the code-first approach, this time with the [Strawberry](https://strawberry.rocks/) library.
+When implementing production code, we should follow the *clean microservice design principle*. We should be able to share the services, repositories, DTOs, errors, and entities with the earlier *sales-item-service* REST API example and
+only define a separate controller for the GraphQL API as we did with the Ariadne library. The example below implements only two API endpoints (getting and creating a sales item) to keep the example shorter.
+
+{format: python}
+![controllers/StrawberryGraphQlSalesItemController.py](resources/chapter6/code/salesitemservice/controllers/StrawberryGraphQlSalesItemController.py)
+
+We must add authorization, audit logging, and metrics updates to make our controller more production-like. We can
+implement decorators similar to those in the earlier REST API example. When the decorators need to access the request, it
+can be done via the *info* parameter: `info.context['request']`
+
+In addition to the above controller, we must define strawberry types, which can be based on existing *pydantic*
+classes. Here are the strawberry types:
+
+{format: python}
+![graphqltypes/InputSalesItem.py](resources/chapter6/code/salesitemservice/graphqltypes/InputSalesItem.py)
+
+{format: python}
+![graphqltypes/InputSalesItemImage.py](resources/chapter6/code/salesitemservice/graphqltypes/InputSalesItemImage.py)
+
+{format: python}
+![graphqltypes/OutputSalesItem.py](resources/chapter6/code/salesitemservice/graphqltypes/OutputSalesItem.py)
+
+{format: python}
+![graphqltypes/OutputSalesItemImage.py](resources/chapter6/code/salesitemservice/graphqltypes/OutputSalesItemImage.py)
+
+### Subscription-Based API Design
+
+> ***Design a subscription-based API when you want clients to be able to subscribe to small, incremental changes to large objects***
+> ***or when clients want to receive low-latency real-time updates.***
+
+#### Server-Sent Events (SSE)
+
+[Server-Sent Events](https://en.wikipedia.org/wiki/Server-sent_events) (SSE) is a uni-directional push technology enabling a client to receive updates from a server via an
+HTTP connection.
+
+Let's showcase the SSE capabilities with a real-life example. The below example defines a *subscribe-to-loan-app-summaries* API endpoint
+for clients to subscribe to loan application summaries. A client will show loan application summaries in a list view in its UI.
+Whenever a new summary for a loan application is available, the server will send a loan application summary event
+to clients that will update their UIs by adding a new loan application summary. The below example uses FastAPI and the [sse-starlette](https://github.com/sysid/sse-starlette) library.
+
+```python
+import json
+
+from fastapi import FastAPI, Request
+from sse_starlette.sse import EventSourceResponse
+
+loan_app_summaries = []
+
+app = FastAPI()
+
+def get_loan_app_summary():
+    if len(loan_app_summaries) > 0:
+        return loan_app_summaries.pop(0)
+    return None
+
+@app.get('/subscribe-to-loan-app-summaries')
+async def subscribe_to_loan_app_summaries(request: Request):
+    async def generate_loan_app_summary_events():
+        while True:
+            if await request.is_disconnected():
+                break
+
+            loan_app_summary = get_loan_app_summary()
+            if loan_app_summary:
+                yield json.dumps(loan_app_summary)
+
+    return EventSourceResponse(
+        generate_loan_app_summary_events()
+    )
+
+@app.post('/loan-app-summaries')
+async def create_loan_app_summary(
+    request: Request
+) -> None:
+    loan_app_summary = await request.json()
+    loan_app_summaries.append(loan_app_summary)
+```
+
+Next, we can implement the web client in JavaScript and define the following React functional component:
+
+{format: jsx, type: code}
+```
+import React, { useEffect, useState } from 'react';
+
+export default function LoanAppSummaries() {
+  const [ loanAppSummaries, setLoanAppSummaries ] = useState([]);
+
+  // Define an effect to be executed on component mount
+  useEffect(() => {
+    // Create new event source
+    // Hardcoded dev environment URL is used here for demonstration
+    // purposes
+    const eventSource =
+      new EventSource('http://localhost:8000/subscribe-to-loan-app-summaries');
+
+    // Listen to server sent events and add a new
+    // loan application summary to the head of
+    // loanAppSummaries array
+    eventSource.addEventListener('message', (messageEvent) => {
+      try {
+        const loanAppSummary = JSON.parse(messageEvent.data);
+
+        if (loanAppSummary) {
+          setLoanAppSummaries([loanAppSummary, ...loanAppSummaries]);
+        }
+      } catch {
+        // Handle error
+      }
+    });
+
+
+    eventSource.addEventListener('error', (errorEvent) => {
+      // Handle error
+    });
+
+    // Close the event source on component unmount
+    return function cleanup() { eventSource.close(); }
+  }, [loanAppSummaries]);
+
+  // Render loan application summary list items
+  const loanAppSummaryListItems =
+    loanAppSummaries.map(({ ... }) =>
+       (<li key={key here...}>render here...</li>));
+
+  return (
+    <ul>{loanAppSummaryListItems}</ul>
+  );
+}
+```
+
+#### GraphQL Subscriptions
+
+Let's have an example of a GraphQL subscription. The below GraphQL schema defines one
+subscription for a post's comments. It is not relevant what a post is. It can be a blog post or
+social media post, for example. We want a client to be able to subscribe to a post's comments.
+
+```graphql
+type PostComment {
+  id: ID!,
+  text: String!
+}
+
+type Subscription {
+  postComment(postId: ID!): PostComment
+}
+```
+
+On the client side, we can have the below JavaScript code to define a subscription named `postCommentText` that subscribes to
+a post's comments and returns the text property of comments:
+
+```js
+import { gql } from '@apollo/client';
+
+const POST_COMMENT_SUBSCRIPTION = gql`
+  subscription postCommentText($postId: ID!) {
+    postComment(postID: $postId) {
+      text
+    }
+  }
+`;
+```
+
+If a client executes the above query for a particular post (defined with the `postId` parameter), the following kind
+of response can be expected:
+
+```json
+{
+  "data": {
+    "postComment": {
+      "text": "Nice post!"
+    }
+  }
+}
+```
+
+To be able to use GraphQL subscriptions, you must implement support for them both on the server and client side. In practice, this means
+setting up WebSocket communication because GraphQL uses it to implement subscriptions. For the server side,
+you can find instructions for the *Ariadne* library here: [https://ariadnegraphql.org/docs/subscriptions](https://ariadnegraphql.org/docs/subscriptions).
+And for the client side, you can find instructions for the *Apollo client* here: [https://www.apollographql.com/docs/react/data/subscriptions/#setting-up-the-transport](https://www.apollographql.com/docs/react/data/subscriptions/#setting-up-the-transport)
+
+After the server and client-side support for subscriptions are implemented, you can use the subscription in your React component:
+
+```jsx
+import { useState } from 'react';
+import { gql, useSubscription } from '@apollo/client';
+
+const POST_COMMENT_SUBSCRIPTION = gql`
+  subscription subscribeToPostComment($postId: ID!) {
+    postComment(postID: $postId) {
+      id
+      text
+    }
+  }
+`;
+
+export default function SubscribedPostCommentsView({ postId }) {
+  const [ postComments, setPostComments ] = useState([]);
+
+  const { data } = useSubscription(POST_COMMENT_SUBSCRIPTION,
+                                   { variables: { postId } });
+
+  if (data?.postComment) {
+    setPostComments([...postComments, data.postComment]);
+  }
+
+  const postCommentListItems =
+    postComments.map(( { id, text }) =>
+      (<li key={id}>{text}</li>));
+
+  return <ul>{postCommentListItems}</ul>;
+}
+```
+
+### WebSocket Example
+
+Below is a chat messaging application consisting of a WebSocket server implemented with FastAPI and a WebSocket client implemented with React. The server uses Kafka and Redis.
+There can be multiple instances of the server running. These instances are stateless except for storing WebSocket connections for
+locally connected clients. First, we list the source code files for the server side.
+
+A new Redis client is created using the [redis-py](https://redis-py.readthedocs.io/en/stable/) library:
+
+{format: python}
+![redis_client.py](resources/chapter6/code/websocket/redis_client.py)
+
+The below `KafkaMsgBrokerAdminClient` class is used to create topics in Kafka:
+
+{format: python}
+![ChatMsgBrokerAdminClient.py](resources/chapter6/code/websocket/ChatMsgBrokerAdminClient.py)
+
+{format: python}
+![KafkaChatMsgBrokerAdminClient.py](resources/chapter6/code/websocket/KafkaChatMsgBrokerAdminClient.py)
+
+Users of the chat messaging application are identified with phone numbers. On the server side, we store the WebSocket
+connection for each user in the `phone_nbr_to_conn_map`:
+
+{format: python}
+![phone_nbr_to_conn_map.py](resources/chapter6/code/websocket/phone_nbr_to_conn_map.py)
+
+{format: python}
+![Connection.py](resources/chapter6/code/websocket/Connection.py)
+
+{format: python}
+![WebSocketConnection.py](resources/chapter6/code/websocket/WebSocketConnection.py)
+
+The below module is the WebSocket server. The server accepts connections from clients.
+When it receives a chat message from a client, it will first parse and validate it. Then, it will store the message in persistent storage (using a separate *chat-message-service* REST API, not implemented here). The server gets the recipient's server information from a Redis cache. It sends the chat message to the recipient's WebSocket connection or produces the chat message to a Kafka topic where
+another microservice instance can consume the chat message and send it to the recipient's WebSocket connection. The Redis cache stores
+a hash map where the users' phone numbers are mapped to the server instance they are currently connected. A UUID identifies a microservice instance.
+
+{format: python}
+![ChatMsgServer.py](resources/chapter6/code/websocket/ChatMsgServer.py)
+
+{format: python}
+![WebSocketChatMsgServer.py](resources/chapter6/code/websocket/WebSocketChatMsgServer.py)
+
+{format: python}
+![PhoneNbrToInstanceUuidCache.py](resources/chapter6/code/websocket/PhoneNbrToInstanceUuidCache.py)
+
+{format: python}
+![RedisPhoneNbrToInstanceUuidCache.py](resources/chapter6/code/websocket/RedisPhoneNbrToInstanceUuidCache.py)
+
+{format: python}
+![ChatMsgBrokerProducer.py](resources/chapter6/code/websocket/ChatMsgBrokerProducer.py)
+
+{format: python}
+![KafkaChatMsgBrokerProducer.py](resources/chapter6/code/websocket/KafkaChatMsgBrokerProducer.py)
+
+The `KafkaChatMsgBrokerConsumer` class defines a Kafka consumer that consumes chat messages from
+a particular Kafka topic and sends them to the recipient's WebSocket connection:
+
+{format: python}
+![ChatMsgBrokerConsumer.py](resources/chapter6/code/websocket/ChatMsgBrokerConsumer.py)
+
+{format: python}
+![KafkaChatMsgBrokerProducer.py](resources/chapter6/code/websocket/KafkaChatMsgBrokerConsumer.py)
+
+{format: python}
+![app.py](resources/chapter6/code/websocket/app.py)
+
+For the web client, we have the below code. An instance of the `ChatMessagingService` class connects to
+a chat messaging server via WebSocket. It listens to messages received from the server and dispatches an action upon
+receiving a chat message. The class also offers a method for sending a chat message to the server.
+
+{format: js}
+![ChatMessagingService.js](resources/chapter6/code/websocket_client/ChatMessagingService.js)
+
+{format: jsx, type: code}
+![index.jsx](resources/chapter6/code/websocket_client/index.jsx)
+
+The chat application `ChatApp` parses the user's and contact's phone numbers from the URL and then
+renders a chat view between the user and the contact:
+
+{format: jsx, type: code}
+![ChatApp.jsx](resources/chapter6/code/websocket_client/ChatApp.jsx)
+
+The `ContactChatView` component renders chat messages between a user and a contact:
+
+{format: jsx, type: code}
+![ContactChatView.jsx](resources/chapter6/code/websocket_client/ContactChatView.jsx)
+
+{format: js}
+![store.js](resources/chapter6/code/websocket_client/store.js)
+
+{format: css}
+![index.css](resources/chapter6/code/websocket_client/index.css)
+
+![Chat Messaging Application Views for Two Users](resources/chapter6/images/Capture1.PNG)
+
+![Chat Messaging Application Views for Two Users](resources/chapter6/images/Capture2.PNG)
+
+## Inter-Microservice API Design Principles
+
+Inter-microservice APIs can be divided into two categories based on the type of communication: synchronous and asynchronous.
+Synchronous communication should be used when an immediate response to an issued request is expected. Asynchronous
+communication can be used when no response to a request is expected, or the response is not immediately required.
+
+### Synchronous API Design Principle
+
+> ***Use HTTP-based RPC or REST APIs with JSON data encoding, preferably with HTTP/2 or HTTP/3 transport, when requests and responses are not very large and do not contain much binary data. Suppose you have large requests or responses or a lot of binary data. In that case, you are better off encoding the data in *Avro* binary format  (Content-Type: avro/binary) instead of JSON or using a gRPC-based API. gRPC always encodes data in a binary format (Protocol Buffers).***
+
+#### gRPC-Based API Design Example
+
+Let's have an example of a gRPC-based API. First, we must define the needed Protocol Buffers types.
+They are defined in a file named with the extension *.proto*. The syntax of *proto* files is pretty simple. We define
+the service by listing the remote procedures. A remote procedure is defined with the following syntax:
+`rpc <procedure-name> (<argument-type>) returns (<return-type>) {}`. A remote procedure always accepts exactly one argument and returns one value. A message type is defined with the below syntax:
+
+```
+message <type-name> {
+  [optional] [repeated] <field-type> <field-name> [= <field-index>];
+  ...
+}
+```
+
+Below are the Protocol Buffers definitions for the *sales-item-service*:
+
+{title: "sales_item_service.proto"}
+```proto
+syntax = "proto3";
+
+option objc_class_prefix = "SIS";
+
+package salesitemservice;
+
+service SalesItemService {
+  rpc createSalesItem (InputSalesItem) returns (OutputSalesItem) {}
+  rpc getSalesItems (GetSalesItemsOptions) returns (OutputSalesItems) {}
+  rpc getSalesItem (Id) returns (OutputSalesItem) {}
+  rpc updateSalesItem (SalesItemUpdate) returns (Nothing) {}
+  rpc deleteSalesItem (Id) returns (Nothing) {}
+}
+
+message GetSalesItemsOptions {
+  optional string sortByField = 1;
+  optional string sortDirection = 2;
+  optional uint64 offset = 3;
+  optional uint64 limit = 4;
+}
+
+message Nothing {}
+
+message Image {
+  uint64 id = 1;
+  uint64 rank = 2;
+  string url = 3;
+}
+
+message InputSalesItem {
+  string name = 1;
+  float price = 2;
+  repeated Image images = 3;
+}
+
+message SalesItemUpdate {
+  uint64 id = 1;
+  string name = 2;
+  float price = 3;
+  repeated Image images = 4;
+}
+
+message OutputSalesItem {
+  uint64 id = 1;
+  uint64 createdAtTimestampInMillis = 2;
+  string name = 3;
+  float price = 4;
+  repeated Image images = 5;
+}
+
+message Id {
+  uint64 id = 1;
+}
+
+message OutputSalesItems {
+  repeated OutputSalesItem salesItems = 1;
+}
+
+message ErrorDetails {
+    optional string code = 1;
+    optional string description = 2;
+}
+```
+
+In the above example, the `getSalesItems` procedure returns an object that contains an array of sales items. gRPC
+offers the possibility to stream data in both directions. For example, we could make the `getSalesItems` procedure a streaming
+method, and then we did not need the properties `offset` and `limit` in the `GetSalesItemsArg`. We could define a streaming `getSalesItems` procedure as follows:
+
+```proto
+// ...
+
+service SalesItemService {
+  // ...
+  rpc getSalesItems (GetSalesItemsArg) returns (stream OutputSalesItem) {}
+  // ...
+}
+
+// ...
+```
+
+After completing the *proto* file, we must generate code for the gRPC server. Let's install the *grpcio-tools* library:
+
+```bash
+pip install grpcio-tools
+```
+
+Then, we can generate code with the following command:
+
+```bash
+python -m grpc_tools.protoc -I. --python_out=. --pyi_out=. --grpc_python_out=. sales_item_service.proto
+```
+
+After executing the above command, three files should be generated in the directory. Creating the actual server code requires the following two steps:
+
+- Implementing the generated *servicer* interface with functions that perform the actual “work” of the service.
+- Run a gRPC server that listens for client requests and transmits responses.
+
+We need to install the following libraries:
+
+```bash
+pip install grpcio grpcio-status
+```
+
+Let's implement the gRPC controller for the *sales-item-service*:
+
+{format: python}
+![controllers/GrpcSalesItemSController.py](resources/chapter6/code/salesitemservice/controllers/GrpcSalesItemController.py)
+
+For production, you must add audit logging and metrics updating to each gRPC procedure implementation.
+As shown in earlier examples, you can create and use decorators for those purposes. If your service is located in
+the backend and used by trusted backend clients only, you might not need authorization, but if you need it, you can
+plug in your own authorization mechanism, e.g., token-based.
+
+Below is the gRPC server code:
+
+{format: python}
+![controllers/app_grpc.py](resources/chapter6/code/salesitemservice/app_grpc.py)
+
+You can run the server with the following command from a directory above the *salesitemservice* directory:
+
+```bash
+python -m salesitemservice.app_grpc
+```
+
+Below is an example of a gRPC client that performs operations using the above server:
+
+{format: python}
+![grpc_client.py](resources/chapter6/code/salesitemservice/grpc_client.py)
+
+You can run the client with the following command from a directory above the *salesitemservice* directory:
+
+```bash
+python -m salesitemservice.grpc_client
+```
+
+### Asynchronous API Design Principle
+
+> ***Use asynchronous APIs when requests are request-only (fire-and-forget, i.e., no response is expected) or when the response***
+> ***is not immediately expected.***
+
+#### Request-Only Asynchronous API Design
+
+In request-only asynchronous APIs, the request sender does not expect a response. Such APIs are typically
+implemented using a message broker. The request sender will send a JSON or other format request to a topic in the message broker,
+where the request recipient consumes the request asynchronously.
+
+Different API endpoints can be specified in a request using a `procedure` property, for example.
+You can name the `procedure` property as you wish, e.g., `action`, `method`, `operation`, `apiEndpoint`, etc.
+Parameters for the procedure can be supplied in a `parameters` property.
+Below is an example request in JSON:
+
+```json
+{
+  "procedure": "<procedure name>",
+  "parameters": {
+    "<parameterName1>": "parameter value 1",
+    "<parameterName2>": "parameter value 2",
+    // ...
+  }
+}
+```
+
+Let's have an example with an email-sending microservice that implements a request-only asynchronous API
+and handles the sending of emails. We start by defining a message broker topic for the microservice. The topic should
+be named after the microservice, for example, *email-sending-service*.
+
+In the *email-sending-service*, we define the following request schema for an API endpoint that
+sends an email:
+
+```json
+{
+  "procedure": "sendEmailMessage",
+  "parameters": {
+    "fromEmailAddress": "...",
+    "toEmailAddresses": ["...", "...", ...],
+    "subject": "...",
+    "message": "..."
+  }
+}
+```
+
+Below is an example request that some other microservice can produce to the *email-sending-service* topic in the message broker to be handled by the *email-sending-service*:
+
+```json
+{
+  "procedure": "sendEmailMessage",
+  "parameters": {
+    "fromEmailAddress": "sender@domain.com",
+    "toEmailAddresses": ["receiver@domain.com"],
+    "subject": "Status update",
+    "message": "Hi, Here is my status update ..."
+  }
+}
+```
+
+#### Request-Response Asynchronous API Design
+
+A request-response asynchronous API microservice receives requests from other microservices and then produces
+responses asynchronously. Request-response asynchronous APIs are typically implemented
+using a message broker. The request sender will send a request to a topic where the request recipient consumes the request
+asynchronously and then produces a response or responses to a message broker topic or topics.
+Each participating microservice should have a topic named after the microservice in the message broker.
+
+The request format is the same as defined earlier, but
+the response has a `response` or `result` property instead of the `parameters` property, meaning that responses have the following format:
+
+```json
+{
+   "procedure": "<procedure name>",
+   "response": {
+     "propertyName1": "property value 1",
+     "propertyName2": "property value 2",
+     // ...
+   }
+}
+```
+
+Below is an example where a *loan-application-service* requests a *loan-eligibility-assessment-service*
+to assess a loan eligibility. The *loan-application-service* sends the following JSON-format request to
+the message broker's *loan-eligibility-assessment-service* topic:
+
+```json
+{
+  "procedure": "assessLoanEligibility",
+  "parameters": {
+    "userId": 123456789012,
+    "loanApplicationId": 5888482223,
+    // Other parameters...
+  }
+}
+```
+
+The *loan-eligibility-assessment-service* responds to the above request by sending the following JSON-format response to
+the message broker's *loan-application-service* topic:
+
+```json
+{
+  "procedure": "assessLoanEligibility",
+  "response": {
+     "loanApplicationId": 5888482223,
+     "isEligible": true,
+     "amountInDollars": 10000,
+     "interestRate": 9.75,
+     "termInMonths": 120
+  }
+}
+```
+
+Below is an example response when the loan application is rejected:
+
+```json
+{
+  "procedure": "assessLoanEligibility",
+  "response": {
+    "loanApplicationId": 5888482223,
+    "isEligible": false
+  }
+}
+```
+
+Alternatively, request and response messages can be treated as events with some data. When we send events between
+microservices, we call it an [event-driven architecture](https://en.wikipedia.org/wiki/Event-driven_architecture). For event-driven architecture, we must decide if we have a single or multiple topics
+for the software system in the message broker. If all the microservices share a single topic in the software system,
+then each microservice will consume each message from the message broker and decide if they should act on it. This approach is suitable except when large events are produced to the message broker. When large events are produced, each microservice must consume those large events even if they don't need to react to them. This will unnecessarily consume a lot of network bandwidth if the number of microservices is also high. The other
+extreme is to create a topic for each microservice in the message broker. This approach causes extra network bandwidth consumption if a large event must be produced to multiple topics to be handled by multiple microservices. You can also create a hybrid model with a broadcast topic or topics and individual topics for specific microservices.
+
+To solve the problems described above, you can use the [claim check pattern](https://learn.microsoft.com/enus/azure/architecture/patterns/claim-check). In that pattern, you split a large message into a claim check and the actual payload of the message. You only send the claim check to a message queue and store the payload elsewhere. This protects other microservices from needing to read large messages from the message queue that they don't have to react to.
+
+Below are the earlier request and response messages written as events:
+
+```json
+{
+  "event": "AssessLoanEligibility",
+  "data": {
+    "userId": 123456789012,
+    "loanApplicationId": 5888482223,
+    // ...
+  }
+}
+```
+
+```json
+{
+  "event": "LoanApproved",
+  "data": {
+     "loanApplicationId": 5888482223,
+     "isEligible": true,
+     "amountInDollars": 10000,
+     "interestRate": 9.75,
+     "termInMonths": 120
+  }
+}
+```
+
+```json
+{
+  "procedure": "LoanRejected",
+  "response": {
+    "loanApplicationId": 5888482223,
+    "isEligible": false
+  }
+}
+```
+
+#### Asynchronous API Documentation
+
+[AsyncAPI](https://www.asyncapi.com/) provides tools for building and documenting event-driven architectures.
+Below is an example where two events are defined for the *sales-service*:
+
+```yaml
+asyncapi: 3.0.0
+info:
+  title: Sales Item Service
+  version: 1.0.0
+channels:
+  salesItemService:
+    address: sales-item-service
+    messages:
+      createSalesItem:
+        description: Creates a sales item.
+        payload:
+          type: object
+          properties:
+            name:
+              type: string
+            price:
+              type: integer
+  notifications:
+      address: notifications
+      messages:
+        salesItemCreated:
+          description: A Sales item was created.
+          payload:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              price:
+                type: integer
+operations:
+  createSalesItem:
+    action: receive
+    channel:
+      $ref: '#/channels/salesItemService'
+  salesItemCreated:
+      action: send
+      channel:
+        $ref: '#/channels/notifications'
+```
+
+The service receives `createSalesItem` events on channel `salesItemService` and sends `salesItemCreated` events
+on the `notifications` channel. The `createSalesItem` event contains the following properties: `name` and `price`. And
+the `salesItemCreated` event contains an additional `id` property.

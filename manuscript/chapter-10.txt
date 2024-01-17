@@ -1,0 +1,834 @@
+# DevSecOps
+
+DevOps describes practices that integrate software development (Dev) and software operations (Ops).
+It aims to shorten the software development lifecycle through development parallelization and automation and provides
+continuous delivery of high-quality software. DevSecOps enhances DevOps by adding security aspects to the software
+lifecycle.
+
+![DevSecOps Diagram](resources/chapter10/images/devsecops.png)
+
+A software development organization is responsible for planning, designing, and implementing software deliverables.
+Software operations deploy software to IT infrastructure and platforms. They monitor the deployed software to ensure
+it runs without problems. Software operations also provide feedback to the
+software development organization through support requests, bug reports, and enhancement ideas.
+
+## SecOps Lifecycle
+
+The SecOps lifecycle is divided into the following phases:
+
+- Threat modeling
+    - To find out what kind of security features and tests are needed
+    - Implementation of threat countermeasures and mitigation. This aspect was covered in the earlier *security principles* chapter
+- Scan
+    - Static security analysis (also known as SAST = Static Application Security Testing)
+    - Security testing (also known as DAST = Dynamic Application Security Testing)
+    - Container vulnerability scanning
+- Analyze
+    - Analyze the results of the scanning phase, detect and remove false positives, and prioritize corrections of vulnerabilities
+- Remediate
+    - Fix the found vulnerabilities according to prioritization
+- Monitor
+    - Define SecOps-related metrics and monitor them
+
+## DevOps Lifecycle
+
+The DevOps lifecycle is divided into the following phases:
+
+- Plan
+- Code
+- Build
+- Test
+- Release
+- Deploy
+- Operate
+- Monitor
+
+Subsequent sections describe each of the phases in more detail.
+
+### Plan
+
+*Plan* is the first phase in the DevOps lifecycle. In this phase, software features are planned, and
+high-level architecture and user experience (UX) are designed. This phase involves business (product
+management) and software development organizations.
+
+### Code
+
+*Code* is the software implementation phase. It consists of designing and implementing software components and writing various automated tests, including unit tests,
+integration tests, and E2E tests. This phase also includes all other coding needed to make the software deployable.
+Most of the work is done in this phase, so it should be streamlined as much as possible.
+
+The key to shortening this phase is to parallelize everything to the maximum possible extent.
+In the *Plan* phase, the software was architecturally split into smaller pieces (microservices) that
+different teams could develop in parallel. Regarding developing a single microservice, there should also be
+as much parallelization as possible. This means that if a microservice can be split into multiple subdomains, the development
+of these subdomains can be done very much in parallel. If we think about the data exporter microservice, we identified
+several subdomains: input, decoding, transformations, and output.
+If you can parallelize the development of these four subdomains instead of developing them one after another, you can significantly shorten the time needed to complete
+the implementation of the microservice.
+
+To shorten this phase even more, a team should have dedicated test automation developer(s) who can start developing
+automated tests in an early phase parallel to the implementation.
+
+Providing high-quality software requires high-quality design, implementation with little technical debt,
+and comprehensive functional and non-functional testing. All of these aspects were handled in the earlier chapters.
+
+### Build and Test
+
+The *Build and Test* phase should be automated and run as [continuous integration](https://en.wikipedia.org/wiki/Continuous_integration) (CI) pipelines. Each software component
+in a software system should have its own CI pipeline. A CI pipeline is run by a CI tool like [Jenkins](https://www.jenkins.io/) or [GitHub Actions](https://docs.github.com/en/actions).
+A CI pipeline is defined using (declarative) code stored in the software component's source code repository. Every time a commit is made
+to the main branch in the source code repository, it should trigger a CI pipeline run.
+
+The CI pipeline for a software component should perform at least the following tasks:
+
+- Checkout the latest source code from the source code repository
+- Build the software
+- Perform static code analysis. A tool like [SonarQube](https://www.sonarsource.com/products/sonarqube/) or [SonarCloud](https://www.sonarsource.com/products/sonarcloud/) can be used
+    - Perform [static application security testing](https://en.wikipedia.org/wiki/Static_application_security_testing) (SAST).
+- Execute unit tests
+- Execute integration tests
+- Perform [dynamic application security testing](https://en.wikipedia.org/wiki/Dynamic_application_security_testing) (DAST). A tool like [ZAP](https://www.zaproxy.org/) can be used
+- Verify 3rd party license compliance and provide a [software bill of materials](https://en.wikipedia.org/wiki/Software_supply_chain) (SBOM). A tool like [Fossa](https://fossa.com/) can be used
+
+### Release
+
+In the *Release* phase, built and tested software is released automatically. After a software component's CI pipeline
+is successfully executed, the software component can be automatically released. This is called [continuous delivery](https://en.wikipedia.org/wiki/Continuous_delivery) (CD).
+Continuous delivery is often combined with the CI pipeline to create a CI/CD pipeline for a software component. Continuous delivery
+means that the software component's artifacts are delivered to artifact repositories, like [Artifactory](https://jfrog.com/artifactory/), [Docker Hub](https://hub.docker.com/), or a [Helm chart repository](https://helm.sh/docs/topics/chart_repository/).
+
+A CD pipeline should perform the following tasks:
+
+- Perform static code analysis for the code that builds a container image (e.g., [Dockerfile](https://docs.docker.com/engine/reference/builder/)). A tool like [Hadolint](https://github.com/hadolint/hadolint) can be used for *Dockerfiles*.
+- Build a container image for the software component
+- Publish the container image to a container registry (e.g., Docker Hub, Artifactory, or a registry provided by your cloud provider)
+- Perform a container image vulnerability scan
+    - Remember to enable container vulnerability scanning at regular intervals in your container registry, also
+- Perform static code analysis for deployment code. Tools like Helm's *lint* command, [Kubesec](https://kubesec.io/) and [Checkov](https://www.checkov.io/) can be used
+- Package and publish the deployment code (for example, package a Helm chart and publish it to a Helm chart repository)
+
+#### Example Dockerfile
+
+Below is an example *Dockerfile* for an API microservice written using the FastAPI library.
+The Dockerfile uses [Docker's multi-stage feature](https://docs.docker.com/build/building/multi-stage/). First (at the install_deps stage), it installs dependencies and copies source code files to the image.
+The last stage (final) copies files
+from the install-deps stage to a distroless Python base image. You should use a distroless base image to make the image size and the attack surface smaller.
+A distroless image does not contain any Linux distribution inside it. Unfortunately, the below advertised *gcr.io/distroless/python* images are considered experimental at the time of writing this book and are not recommended for production.
+
+```dockerfile
+FROM python:3.11 as install-deps
+
+WORKDIR /microservice
+COPY ./requirements.txt /microservice/requirements.txt
+RUN pip install --no-cache-dir --upgrade -r /microservice/requirements.txt
+COPY ./app /microservice/app
+
+FROM gcr.io/distroless/python3.11 as final
+COPY --from=install-deps /microservice /microservice
+WORKDIR /microservice
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80"]
+```
+
+#### Example Kubernetes Deployment
+
+Below is an example Helm chart template *deployment.yaml* for a Kubernetes Deployment. The template code is given in double braces.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "microservice.fullname" . }}
+  labels:
+    {{- include "microservice.labels" . | nindent 4 }}
+spec:
+  {{- if ne .Values.env "production" }}
+  replicas: 1
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "microservice.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.deployment.pod.annotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "microservice.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.deployment.pod.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "microservice.serviceAccountName" . }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.imageRegistry }}/{{ .Values.imageRepository }}:{{ .Values.imageTag }}"
+          imagePullPolicy: {{ .Values.deployment.pod.container.imagePullPolicy }}
+          securityContext:
+            {{- toYaml .Values.deployment.pod.container.securityContext | nindent 12 }}
+          {{- if .Values.httpServer.port }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.httpServer.port }}
+              protocol: TCP
+          {{- end }}
+          env:
+            - name: ENV
+              value: {{ .Values.env }}
+            - name: ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "microservice.fullname" . }}
+                  key: encryptionKey
+            - name: MICROSERVICE_NAME
+              value: {{ include "microservice.fullname" . }}
+            - name: MICROSERVICE_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: MICROSERVICE_INSTANCE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: MYSQL_HOST
+              value: {{ .Values.database.mySql.host }}
+            - name: MYSQL_PORT
+              value: "{{ .Values.database.mySql.port }}"
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "microservice.fullname" . }}
+                  key: mySqlUser
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "microservice.fullname" . }}
+                  key: mySqlPassword
+          livenessProbe:
+            httpGet:
+              path: /isAlive
+              port: http
+            failureThreshold: 3
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /isReady
+              port: http
+            failureThreshold: 3
+            periodSeconds: 5
+          startupProbe:
+            httpGet:
+              path: /isStarted
+              port: http
+            failureThreshold: {{ .Values.deployment.pod.container.startupProbe.failureThreshold }}
+            periodSeconds: 10
+          resources:
+            {{- if eq .Values.env "development" }}
+            {{- toYaml .Values.deployment.pod.container.resources.development | nindent 12 }}
+            {{- else if eq .Values.env "integration"  }}
+            {{- toYaml .Values.deployment.pod.container.resources.integration | nindent 12 }}
+            {{- else }}
+            {{- toYaml .Values.deployment.pod.container.resources.production | nindent 12 }}
+            {{- end}}
+      {{- with .Values.deployment.pod.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.deployment.pod.affinity }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: {{ include "microservice.name" . }}
+              topologyKey: "kubernetes.io/hostname"
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.deployment.pod.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+```
+
+The values (indicated by `.Values.<something>`) in the above template come from a *values.yaml* file.
+Below is an example *values.yaml* file to be used with the above Helm chart template.
+
+```yaml
+imageRegistry: docker.io
+imageRepository: pksilen2/backk-example-microservice
+imageTag:
+env: production
+auth:
+  # Authorization Server Issuer URL
+  # For example
+  # http://keycloak.platform.svc.cluster.local:8080/auth/realms/<my-realm>
+  issuerUrl:
+
+  # JWT path where for user's roles,
+  # for example 'realm_access.roles'
+  jwtRolesClaimPath:
+secrets:
+  encryptionKey:
+database:
+  mySql:
+    # For example:
+    # my-microservice-mysql.default.svc.cluster.local or
+    # cloud database host
+    host:
+    port: 3306
+    user:
+    password: &mySqlPassword ""
+mysql:
+  auth:
+    rootPassword: *mySqlPassword
+deployment:
+  pod:
+    annotations: {}
+    imagePullSecrets: []
+    container:
+      imagePullPolicy: Always
+      securityContext:
+        privileged: false
+        capabilities:
+          drop:
+            - ALL
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        allowPrivilegeEscalation: false
+      env:
+      startupProbe:
+        failureThreshold: 30
+      resources:
+        development:
+          limits:
+            cpu: '1'
+            memory: 768Mi
+          requests:
+            cpu: '1'
+            memory: 384Mi
+        integration:
+          limits:
+            cpu: '1'
+            memory: 768Mi
+          requests:
+            cpu: '1'
+            memory: 384Mi
+        production:
+          limits:
+            cpu: 1
+            memory: 768Mi
+          requests:
+            cpu: 1
+            memory: 384Mi
+    nodeSelector: {}
+    tolerations: []
+    affinity: {}
+```
+
+Notice the `deployment.pod.container.securityContext` object in the above file.
+It is used to define the security context for a microservice container.
+
+By default, the security context should be the following:
+
+- Container should not be privileged
+- All capabilities are dropped
+- Container filesystem is read-only
+- Only a non-root user is allowed to run inside the container
+- Define the non-root user and group under which the container should run
+- Disallow privilege escalation
+
+You can remove things from the above list only if required for a microservice.
+For example, if the microservice must write to the filesystem for some valid reason,
+then the filesystem cannot be defined as read-only.
+
+#### Example CI/CD Pipeline
+
+Below is a GitHub Actions CI/CD workflow for a Python microservice. The declarative workflow is written
+in YAML. The workflow file should be in the microservice's source code repository in the *.github/workflows* directory.
+Steps in the workflow are described in more detail after the example.
+
+```yaml
+name: CI/CD workflow
+on:
+  workflow_dispatch: {}
+  push:
+    branches:
+      - main
+    tags-ignore:
+      - '**'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build with Python 3.11
+    steps:
+      - name: Checkout Git repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Lint source code
+        run: pylint src
+
+      - name: Run unit tests
+        run: python -m coverage run -m unittest
+
+      - name: Report unit test coverage
+        run: python -m coverage xml
+
+      - name: Setup integration testing environment
+        run: docker-compose --env-file .env.ci up --build -d
+
+      - name: Run integration tests
+        run: scripts/run-integration-tests-in-ci.sh
+
+      - name: OWASP ZAP API scan
+        uses: zaproxy/action-api-scan@v0.5.0
+        with:
+          target: http://localhost:8080/openapi.json
+          fail_action: true
+          cmd_options: -I -z "-config replacer.full_list(0).description=auth1
+                              -config replacer.full_list(0).enabled=true
+                              -config replacer.full_list(0).matchtype=REQ_HEADER
+                              -config replacer.full_list(0).matchstr=Authorization
+                              -config replacer.full_list(0).regex=false
+                              -config 'replacer.full_list(0).replacement=Bearer ZXlK...aGJHZ='"
+
+      - name: Tear down integration testing environment
+        run: docker-compose --env-file .env.ci down -v
+
+      - name: Static code analysis with SonarCloud scan
+        uses: sonarsource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: 3rd party software license compliance analysis with FOSSA
+        uses: fossas/fossa-action@main
+        with:
+          api-key: ${{ secrets.FOSSA_API_KEY }}
+          run-tests: false
+
+      - name: Lint Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+
+      - name: Log in to Docker registry
+        uses: docker/login-action@v3
+        with:
+          registry: docker.io
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Extract latest Git tag
+        uses: actions-ecosystem/action-get-latest-tag@v1
+        id: extractLatestGitTag
+
+      - name: Set up Docker Buildx
+        id: setupBuildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Extract metadata for building and pushing Docker image
+        id: dockerImageMetadata
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.DOCKER_REGISTRY_USERNAME }}/example-microservice
+          tags: |
+            type=semver,pattern={{version}},value=${{ steps.extractLatestGitTag.outputs.value }}
+
+      - name: Build and push Docker image
+        id: dockerImageBuildAndPush
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          builder: ${{ steps.setupBuildx.outputs.name }}
+          push: true
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache
+          tags: ${{ steps.dockerImageMetadata.outputs.tags }}
+          labels: ${{ steps.dockerImageMetadata.outputs.labels }}
+
+      - name: Docker image vulnerability scan with Anchore
+        id: anchoreScan
+        uses: anchore/scan-action@v3
+        with:
+          image: ${{ secrets.DOCKER_REGISTRY_USERNAME }}/example-microservice:latest
+          fail-build: false
+          severity-cutoff: high
+
+      - name: Upload Anchore scan SARIF report
+        uses: github/codeql-action/upload-sarif@v1
+        with:
+          sarif_file: ${{ steps.anchoreScan.outputs.sarif }}
+
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: v3.13.0
+
+      - name: Extract microservice version from Git tag
+        id: extractMicroserviceVersionFromGitTag
+        run: |
+          value="${{ steps.extractLatestGitTag.outputs.value }}"
+          value=${value:1}
+          echo "::set-output name=value::$value"
+
+      - name: Update Helm chart versions in Chart.yaml
+        run: |
+          sed -i "s/^version:.*/version: ${{ steps.extractMicroserviceVersionFromGitTag.outputs.value }}/g" helm/example-microservice/Chart.yaml
+          sed -i "s/^appVersion:.*/appVersion: ${{ steps.extractMicroserviceVersionFromGitTag.outputs.value }}/g" helm/example-microservice/Chart.yaml
+
+      - name: Update Docker image tag in values.yaml
+        run: |
+          sed -i "s/^imageTag:.*/imageTag: {{ steps.extractMicroserviceVersionFromGitTag.outputs.value }}@${{ steps.dockerImageBuildAndPush.outputs.digest }}/g" helm/example-microservice/values.yaml
+
+      - name: Lint Helm chart
+        run: helm lint -f helm/values/values-minikube.yaml helm/example-microservice
+
+      - name: Static code analysis for Helm chart with Checkov
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: helm/example-microservice
+          quiet: false
+          framework: helm
+          soft_fail: false
+
+      - name: Upload Checkov SARIF report
+        uses: github/codeql-action/upload-sarif@v1
+        with:
+          sarif_file: results.sarif
+          category: checkov-iac-sca
+
+      - name: Configure Git user
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Package and publish Helm chart
+        uses: helm/chart-releaser-action@v1.5.0
+        with:
+          charts_dir: helm
+        env:
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+```
+
+1) Checkout the microservice's Git repository
+2) Setup Python 3.11
+3) Install dependencies
+4) Lint source code
+5) Execute unit tests (needs [coverage](https://coverage.readthedocs.io/) library in requirements.txt)
+6) Report coverage
+7) Set up an integration testing environment using Docker's `docker-compose up` command. After executing the command,
+   the microservice is built, and all the dependencies in separate containers are started. These dependencies can include
+   other microservices and, for example, a database and a message broker, like Apache Kafka
+8) Execute integration tests. This script will first wait until all dependencies are up and ready. This waiting is done running a container using the [dokku/wait](https://hub.docker.com/r/dokku/wait) image.
+9) Perform DAST with [ZAP API scan](https://www.zaproxy.org/docs/docker/api-scan/). For the scan, we define the URL to the OpenAPI 3.0 specification against
+   which the scan will be made. We also give command options to set a valid Authorization header for the HTTP requests made by the scan
+10) Tear down the integration testing environment
+11) Perform static code analysis using SonarCloud.
+    You need to have the following file in the root of the source code repository:
+    ```
+    sonar.projectKey=<sonar-project-key>
+    sonar.organization=<sonar-organization>
+
+    sonar.python.coverage.reportPaths=coverage.xml
+    ```
+12) Check 3rd party software license compliance using FOSSA
+13) Lint Dockerfile
+14) Log in to Docker Hub
+15) Extract the latest Git tag for further use
+16) Setup Docker Buildx and cache Docker layers
+17) Extract metadata, like the tag and labels for building and pushing a Docker image
+18) Build and push a Docker image
+19) Perform a Docker image vulnerability scan with [Anchore](https://github.com/anchore/scan-action)
+20) Upload the Anchore scan report to the GitHub repository
+21) Install Helm
+22) Extract the microservice version from the Git tag (remove the 'v' letter before the version number)
+23) Replace Helm chart versions in the Helm chart's *Chart.yaml* file using the Linux *sed* command
+24) Update the Docker image tag in the *values.yaml* file
+25) Lint the Helm chart and perform static code analysis for it
+26) Upload the static code analysis report to the GitHub repository and perform git user configuration for the next step
+27) Package the Helm chart and publish it to GitHub Pages
+
+Some of the above steps are parallelizable, but a GitHub Actions workflow does not currently support parallel steps in
+a job. In *Jenkins*, you can easily parallelize stages using a *parallel* block.
+
+You could also execute the unit tests and linting when building a Docker image by using the following kind of *Dockerfile*:
+
+```dockerfile
+FROM python:3.11 as builder
+
+WORKDIR /microservice
+COPY ./requirements.txt /microservice/requirements.txt
+RUN pip install --no-cache-dir --upgrade -r /microservice/requirements.txt
+COPY ./app /microservice/app
+RUN pylint src
+RUN python -m coverage run -m unittest
+RUN python -m coverage xml
+# You must implement sending unit test coverage report
+# to SonarQube/SonarCloud here
+
+FROM gcr.io/distroless/python3.11 as final
+COPY --from=builder /microservice /microservice
+WORKDIR /microservice
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80"]
+```
+
+The problem with the above solution is that you don't get a clear indication of what failed in a build. You must examine the output of the
+Docker build command to see if linting or unit tests failed. Also, you cannot use the SonarCloud GitHub Action anymore. You must implement
+SonarCloud reporting in the *builder* stage of the *Dockerfile* (after completing the unit testing to report the unit test coverage to
+SonarCloud).
+
+### Deploy
+
+In the *Deploy* phase, released software is deployed to an execution environment automatically. A software component can be automatically deployed after a successful CI/CD pipeline run. This is
+called [continuous deployment](https://en.wikipedia.org/wiki/Continuous_deployment) (CD). Notice that both *continuous delivery* and *continuous deployment* are
+abbreviated as CD. This can cause unfortunate misunderstandings. Continuous delivery is about releasing
+software automatically, and continuous deployment is about automatically deploying released software to one or more environments.
+These environments include, for example, a CI/CD environment, staging environment(s)
+and finally, production environment(s). There are different ways to automate software deployment. One modern
+and popular way is [GitOps](https://about.gitlab.com/topics/gitops/), which uses a Git repository or repositories to define automatic
+deployments to different environments using a declarative approach. GitOps can be configured to update an environment
+automatically when new software is released. This is typically done for the CI/CD environment,
+which should always be kept up-to-date and contain the latest software component versions. Notable GitOps solutions are, for example, [Flux](https://fluxcd.io/) and [Argo CD](https://argo-cd.readthedocs.io/en/stable/).
+
+GitOps can also be configured to deploy automatically and regularly to a staging environment. A staging environment
+replicates a production environment. It is an environment where end-to-end functional and non-functional tests are
+executed before the software is deployed to production. You can use multiple staging environments to speed up
+the continuous deployment to production. It is vital that all needed testing is completed
+before deploying to production. Testing can take a couple of days to validate the stability of the software.
+If testing in a staging environment requires three days and you set up three staging environments, you can deploy to production every day.
+On the other hand, if testing in a staging environment takes one week and you have only one staging environment,
+you can deploy to production only once a week. (Assuming that all tests execute successfully)
+Deployment to a production environment can also be automated. Or it can be triggered manually after completing
+all testing in a staging environment.
+
+### Operate
+
+*Operate* is the phase when the software runs in production. In this phase, it needs to be ensured that software updates (like security patches) are deployed timely. Also, the production
+environment's infrastructure and platform should be kept up-to-date and secure.
+
+### Monitor
+
+*Monitor* is the phase when a deployed software system is monitored to detect any possible problems. Monitoring
+should be automated as much as possible. It can be automated by defining rules for alerts triggered when the
+software system operation requires human intervention. These alerts are typically based on various metrics collected
+from the microservices, infrastructure, and platform. [Prometheus](https://prometheus.io/) is a popular system for
+collecting metrics and triggering alerts.
+
+The basic monitoring workflow follows the path below:
+
+1) Monitor alerts
+2) If an alert is triggered, investigate metrics in the relevant dashboard(s)
+3) Check logs for errors in relevant services
+4) Distributed tracing can help to visualize if and how requests
+   between different microservices are failing
+
+The following needs to be implemented to make monitoring possible and easy:
+
+- Logging to standard input
+- Distributed tracing
+- Metrics collection
+- Metrics visualization
+- Alerting
+
+#### Logging to Standard Input
+
+Each service must log to the standard output. If your microservice is using a 3rd party library that logs to the standard output,
+choose a library that allows you to configure the log format or request the log format configurability as an enhancement to the library.
+Choose a standardized log format and use it in all microservices, e.g., use  [Syslog](https://datatracker.ietf.org/doc/html/rfc5424) format or OpenTelemetry Log Data Model (defined in a later section).
+Collect logs from each microservice to a centralized location, like an ElasticSearch database, where they are easily queriable.
+
+#### Distributed Tracing
+
+Integrate microservices with a distributed tracing tool, like [Jaeger](https://www.jaegertracing.io/). A distributed tracing tool collects information
+about network requests microservices make.
+
+#### Metrics Collection
+
+Define what metrics need to be collected from each microservice. Typically, metrics are either *counters*
+(e.g., number of requests handled or request errors) or *gauges* (e.g., current CPU/memory usage).
+Collect metrics to calculate the [service level indicators](https://sre.google/sre-book/service-level-objectives/) (SLIs). Below are listed the five
+categories of SLIs and a few examples of SLIs in each category.
+
+- Availability
+    - Is the service down?
+    - Is a dependent service down?
+- Error rate
+    - How many times a service has been restarted due to a crash or unresponsiveness
+    - Message processing errors
+    - Request errors
+    - Other errors
+    - Different errors can be monitored by setting a metric label. For example, if you have a *request_errors* counter and a request produces an internal server error, you can increment the *request_errors* counter with the label *internal_server_error* by one.
+- Latency
+    - Message or request processing duration
+- Throughput
+    - Number of messages/requests handled
+- Saturation
+    - Resource usage, e.g., CPU/memory/disk usage vs. requested amount
+
+Instrument your microservice with the necessary code to collect the metrics. This can be done using a metrics collection
+library, like Prometheus.
+
+#### Metrics Visualization
+
+Create a main dashboard for each microservice to present the SLIs. Additionally, you should present *service level objectives* (SLOs) as dashboard charts.
+An example of an SLO is "service error rate must be less than x percent".
+When all SLOs are met, the dashboard should show SLO charts in green, and if an SLO is not met, the corresponding chart
+should be shown in red. You can also use yellow and orange colors to indicate that an SLO is still met, but the SLI value
+is no longer optimal. Use a visualization tool that integrates with the metrics collection tool, like [Grafana](https://grafana.com/) with Prometheus.
+You can usually deploy metric dashboards as part of the microservice deployment.
+
+#### Alerting
+
+To define alerting rules, first define the service level objectives (SLOs) and base the alerting rules on them. If an SLO cannot be met, an alert should be triggered, and when the SLO is met again, the alert should automatically cancel.
+If you are using Kubernetes and Prometheus, you can define alerts using the [Prometheus Operator](https://github.com/prometheus-operator/prometheus-operator) and [PrometheusRule CRs](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/user-guides/alerting.md).
+
+### Software System Alerts Dashboard Example
+
+Below is an example of a Grafana dashboard to visualize active alerts in a software system.
+
+![DevSecOps Diagram](resources/chapter10/images/alert_dashboard.png)
+
+### Microservice Grafana Dashboard Example
+
+Below is an example of a Grafana dashboard to visualize SLOs and SLIs for a single microservice. SLOs are presented as charts in the topmost section of the dashboard, and below them are five accordions, the first
+being opened to reveal the charts inside it. When opened, each accordion reveals charts for a particular SLI category. Each chart presents a specific SLI. In the figure below, the SLO 2 is shown in red background, and it could
+indicate that the number of errors in the last hour is too high, for example.
+
+![DevSecOps Diagram](resources/chapter10/images/microservice_monitoring_dashboard.png)
+
+Software operations staff connects back to the software development side of the DevOps lifecycle in the following
+ways:
+
+- Ask for technical support
+- File a bug report
+- File an improvement idea
+
+The first one will result in a solved case or bug report. The latter two will reach the *Plan* phase of the
+DevOps lifecycle. Bug reports usually enter the *Code* phase immediately, depending on the fault severity.
+
+#### Logging
+
+Implement logging in software components using the following logging severities:
+
+- (CRITICAL/FATAL)
+- ERROR
+- WARNING
+- INFO
+- DEBUG
+- TRACE
+
+I don't usually use the CRITICAL/FATAL severity at all. It might better to report all errors with the ERROR severity because
+then it is easy to query logs for errors using a single keyword only, for example:
+
+```bash
+kubectl logs <pod-name> | grep ERROR
+```
+
+You can add information about the criticality/fatality of an error to the log message itself. When you log an error for which there is
+a solution available, you should inform the user about the solution in the log message, e.g., provide a link to a troubleshooting guide
+or give an error code that can be used to search the troubleshooting guide.
+
+Do not log too much information using the INFO severity because the logs become hard to read when there is too much
+noise. Consider carefully what should be logged with the INFO severity and what can be logged with the DEBUG severity instead.
+The default logging level of a microservice should preferably be WARNING (or INFO).
+
+Use the TRACE severity to log only tracing information, e.g., detailed information about processing a single request, event, or message.
+
+If you are implementing a 3rd party library, the library should allow customizing the logging if the library logs something. There
+should be a way to set the logging level and allow the code that is using the library to customize the format in which log entries are written.
+Otherwise, 3rd party library log entries appear in the log in a different format than the log entries from the microservice itself, making the logs harder to read.
+
+#### OpenTelemetry Log Data Model
+
+This section describes the essence of the OpenTelemetry log data model version 1.12.0 (Please check
+[OpenTelemetry Specification](https://github.com/open-telemetry/opentelemetry-specification) for possible updates).
+
+A log entry is a JSON object containing the following properties:
+
+| Field Name | Description                                                                                                            |
+|------------|------------------------------------------------------------------------------------------------------------------------|
+| Timestamp  | Time when the event occurred. Nanoseconds since Unix epoch                                                             |
+ | TraceId | Request trace id                                                                                                       |
+| SpanId | Request span id                                                                                                        |
+ | SeverityText | The severity text (also known as log level)                                                                            |
+| SeverityNumber | Numerical value of the severity                                                                                        |
+ | Body | The body of the log entry. You can include ISO 8601 timestamp and the severity/log level before the actual log message |
+ | Resource | A JSON object that describes the source of the log entry                                                                                  |
+| Attributes | Additional information about the log event. This is a JSON object where custom attributes can be given                 |
+
+Below is an example log entry according to the above log data model.
+
+```json
+{
+  "Timestamp": "1586960586000000000",
+  "TraceId": "f4dbb3edd765f620",
+  "SpanId": "43222c2d51a7abe3",
+  "SeverityText": "ERROR",
+  "SeverityNumber": 9,
+  "Body": "20200415T072306-0700 ERROR Error message comes here",
+  "Resource": {
+    "service.namespace": "default",
+    "service.name": "my-microservice",
+    "service.version": "1.1.1",
+    "service.instance.id": "my-microservice-34fggd-56faae"
+  },
+  "Attributes": {
+    "http.status_code": 500,
+    "http.url": "http://example.com",
+    "myCustomAttributeKey": "myCustomAttributeValue"
+  }
+}
+```
+
+The above JSON-format log entries might be hard to read as plain text on the console, for example, when viewing a pod's
+logs with the `kubectl logs` command in a Kubernetes cluster. You can create a small script that extracts only the `Body`
+property value from each log entry.
+
+#### PrometheusRule Example
+
+*PrometheusRule* custom resources (CRs) can be used to define rules for triggering alerts. In the below example, an
+*example-microservice-high-request-latency* alert will be triggered with a major severity
+when the median request latency in seconds is greater than one (request_latencies_in_seconds{quantile="0.5"} > 1).
+
+```yaml
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: example-microservice-rules
+spec:
+  groups:
+  - name: example-microservice-rules
+    rules:
+    - alert: example-microservice-high-request-latency
+      expr: request_latencies_in_seconds{quantile="0.5"} > 1
+      for: 10m
+      labels:
+        application: example-microservice
+        severity: major
+        class: latency
+      annotations:
+        summary: "High request latency on {{ $labels.instance }}"
+        description: "{{ $labels.instance }} has a median request latency above 1s (current value: {{ $value }}s)"
+```

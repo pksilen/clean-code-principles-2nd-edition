@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-service
+spec:
+  template:
+    spec:
+      containers:
+        - name: my-service
+          volumeMounts:
+            - name: config-volume
+              mountPath: "/etc/config"
+              readOnly: true
+      volumes:
+        - name: config-volume
+          configMap:
+            name: my-service
+            items:
+              - key: "LOG_LEVEL"
+                path: "LOG_LEVEL"

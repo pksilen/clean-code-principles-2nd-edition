@@ -1,0 +1,17 @@
+# About the Author
+
+**Petri Silén** is a seasoned software developer working at Nokia Networks in Finland with industry experience of almost 30 years.
+He has done both frontend and backend development with a solid competence in multiple programming languages, including C++,
+Java, Python and JavaScript/TypeScript. He started his career at Nokia Telecommunications in 1995. During his first years,
+he developed a real-time mobile networks analytics product called "Traffica" in C++ for major telecom customers worldwide, including
+companies like T-Mobile, Orange, Vodafone, and Claro. The initial product was for monitoring a 2G circuit-switched core
+network and GPRS packet-switched core network. Later, functionality to Traffica was added to cover new network technologies, like 3G circuit-switched and packet core networks, 3G radio networks, and 4G/LTE. He later developed new functionality
+for Traffica using Java and web technologies, including jQuery and React. During the last few years, he has developed
+cloud-native containerized microservices with Java and C++ for the next-generation Customer and
+Networks Insights (CNI) product used by major communications service providers like Verizon, AT&T, USCC, and KDDI.
+The main application areas he has contributed during the last years include KPI-based real-time alerting, anomaly detection for KPIs, and configurable real-time data exporting.
+
+During his free time, he has developed a data visualization application using React, Redux, TypeScript, and Jakarta EE.
+He has also developed a security-first cloud-native microservice framework for Node.js in TypeScript.
+He likes to take care of his Kaapo cat, take walks, play tennis and badminton, ski in the winter, and watch soccer
+and ice hockey on TV.

@@ -1,0 +1,14 @@
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: my-service
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: my-service
+  minReplicas: 2
+  maxReplicas: 99
+.
+.
+.

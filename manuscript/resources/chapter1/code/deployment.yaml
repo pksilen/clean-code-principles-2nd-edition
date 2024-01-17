@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-service
+spec:
+  template:
+    spec:
+      containers:
+        - name: my-service
+          env:
+            - name: NODE_ENV
+              value: {{ .Values.nodeEnv }}
+            - name: HTTP_SERVER_PORT
+              value: "{{ .Values.httpServer.port }}"
+            - name: MONGODB_HOST
+              value: {{ .Values.database.mongoDb.host }}
+            - name: MONGODB_PORT
+              value: {{ .Values.database.mongoDb.port }}
