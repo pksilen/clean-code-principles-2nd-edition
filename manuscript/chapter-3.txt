@@ -2454,7 +2454,7 @@ to analyze Helm chart files, and [Hadolint](https://github.com/hadolint/hadolint
 | Issue                                                                                        | Description/Solution                                                                                                                                                                                                                                |
 |----------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Chain of instance of checks                                                                  | This issue indicates a chain of conditionals in favor of object-oriented design. Use the *replace conditionals with polymorphism* refactoring technique to solve this issue.                                                                        |
-| Feature envy                                                                                 | Use the *don't ask, tell principle* from the previous chapter to solve this issue.                                                                                                                                                                  |
+| Feature envy                                                                                 | Use the *tell, don't ask principle* from the previous chapter to solve this issue.                                                                                                                                                                  |
 | Use of concrete classes                                                                      | Use the *program against interfaces* principle from the previous chapter to solve this issue.                                                                                                                                                       |
 | Assignment to a function argument                                                            | Don't modify function arguments but introduce a new variable.                                                                                                         |
 | Commented-out code                                                                           | Remove the commented-out code. If you need that piece of code in the future, it is available in the version control system forever.                                                                                                                 |
@@ -3693,7 +3693,8 @@ When choosing the right 3rd party component, you should take the following into 
 
 - It provides the needed functionality
 - If you are looking for an open-source component, check that the license is appropriate, e.g., without a viral effect (GPL)
-- Prefer a well-established component over a brand new component because the new component may have bugs, and there is a smaller community that can offer you support
+- Prefer a well-established component over a brand new component because the new component may have bugs, and there is a smaller community that can offer you support.
+  You shouldn't determine a well-established component by the number of GitHub stars only. Check the component download statistics from the package manager.
 - Prefer a component that has a higher number of contributors because you can have your reported bugs corrected faster and also new features
   implemented faster.
 - Ensure that dependencies are up-to-date. It is a red flag if the component has its dependencies updated like several years ago
@@ -3799,7 +3800,7 @@ You can implement a priority queue using the `PriorityQueue` class from the `que
 
 ### Synchronized Queues (LIFO/FIFO)
 
-> * Use a synchronized queue for implementing thread-safe multi-consumer, multi-producer queues.*
+> *Use a synchronized queue for implementing thread-safe multi-consumer, multi-producer queues.*
 
 Python provides two thread-safe queue implementations in the `queue` module: `Queue` and `LifoQueue`.
 

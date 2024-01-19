@@ -139,7 +139,7 @@ The benefits of TDD are many:
 - Less need for debugging
 
 TDD aims to maximize the external and internal quality of the software. External quality is the quality the users see, e.g., a minimal number of bugs and correct features.
-Internal quality is what the developers see. If internal quality is low, it is less likely that a developer can introduce bugs (i.e., cause low external quality) to
+Internal quality is what the developers see. If internal quality is low, it is more likely that a developer can introduce bugs (i.e., cause low external quality) to
 the software. High internal quality can be achieved with TDD. You have a comprehensive set of tests and a good design with low technical debt. It will be easy for a developer to maintain and develop such software further.
 
 I have been in the industry for almost 30 years, and when I began coding, there were no automated tests or
@@ -181,7 +181,7 @@ class StackTests(unittest.TestCase):
         # ...
 
         # WHEN + THEN
-        # self.assertRaises(...)
+        self.assertRaises(...)
 
     # You can also use method name prefixed with 'it':
     # it_should_raise_error_when_popping_item_from_empty_stack
@@ -189,7 +189,7 @@ class StackTests(unittest.TestCase):
         # ...
 
         # WHEN + THEN
-        # self.assertRaises(...)
+        self.assertRaises(...)
 ```
 
 Here is another example:
@@ -198,44 +198,44 @@ Here is another example:
 class CarTests(unittest.TestCase):
     def test_accelerate(self):
         # GIVEN
-        # initial_speed = ...
-        # car = Car(initial_speed)
+        initial_speed = ...
+        car = Car(initial_speed)
 
         # WHEN
-        # car.accelerate()
+        car.accelerate()
 
         # THEN
         self.assertGreater(car.speed, initial_speed)
 
     def test_decelerate(self):
         # GIVEN
-        # initial_speed = ...
-        # car = Car(initial_speed)
+        initial_speed = ...
+        car = Car(initial_speed)
 
         # WHEN
-        # car.accelerate()
+        car.accelerate()
 
         # THEN
         self.assertLess(car.speed, initial_speed)
 
     def should_increase_speed_when_accelerates(self):
         # GIVEN
-        # initial_speed = ...
-        # car = Car(initial_speed)
+        initial_speed = ...
+        car = Car(initial_speed)
 
         # WHEN
-        # car.accelerate()
+        car.accelerate()
 
         # THEN
         self.assertGreater(car.speed, initial_speed)
 
     def should_decrease_speed_when_decelerates(self):
         # GIVEN
-        # initial_speed = ...
-        # car = Car(initial_speed)
+        initial_speed = ...
+        car = Car(initial_speed)
 
         # WHEN
-        # car.accelerate()
+        car.accelerate()
 
         # THEN
         self.assertLess(car.speed, initial_speed)
@@ -250,14 +250,14 @@ class CarTests(unittest.TestCase):
 
     def test_accelerate(self):
         # WHEN
-        # self.__car.accelerate()
+        self.__car.accelerate()
 
         # THEN
         self.__assert_speed_is_increased()
 
     def __assert_speed_is_increased(self):
         self.assertGreater(self.__car.speed, self.__initial_speed)
-``
+```
 
 You can use the feature-based naming instead of the method-based naming convention if you want. I use the method-based naming convention in all unit tests in this book.
 
@@ -452,7 +452,7 @@ do the following:
 There are several scenarios we might want to test to make sure that the function works correctly in every
 case:
 
-- Edge cases
+* Edge cases
     1) Strings are equal
     2) Both strings are empty
     3) Argument string is empty
@@ -461,7 +461,7 @@ case:
     6) Argument string is found at the end of the other string
     7) Argument string is longer than the other string
 
-- Happy paths
+* Happy paths
     8) Argument string is found in the middle of the other string
     9) Argument string is not found in the other string
 
@@ -1715,10 +1715,10 @@ class ApplicationTests(TestCase):
             )
 ```
 
-#### Web UI Component Unit Testing
+#### Web UI Component Testing
 
-UI component unit testing differs from regular unit testing because you cannot necessarily test the functions of a
-UI component in isolation if you have, for example, a React functional component. You must conduct UI component unit testing
+UI component testing differs from regular unit testing because you cannot necessarily test the functions of a
+UI component in isolation if you have, for example, a React functional component. You must conduct UI component testing
 by mounting the component to the DOM and then perform tests by triggering events, for example. This way, you can test
 the event handler functions of a UI component. The rendering part should also be tested. It can be tested by producing a snapshot of
 the rendered component and storing that in version control. Further rendering tests should compare the rendered result to the snapshot stored in the version control.
@@ -1817,7 +1817,12 @@ error that can occur.
 
 One widely used way to write behavioral specifications is the [Gherkin](https://cucumber.io/docs/gherkin/) language. However, it is not the only way. So, we cannot say that BDD equals Gherkin.
 You can even write integration tests using a unit testing framework if you prefer. An example of that approach is available in *Steve Freeman*'s and *Nat Pryce*'s book *Growing Object-Oriented Software, Guided by Tests*.
-The problem with using a unit testing framework for writing integration tests is how to test the external dependencies, like a database. Finally, there is a clean and easy solution available to this problem called [testcontainers](https://testcontainers-python.readthedocs.io/). They allow you to programmatically start and stop containerized external dependencies, like a database in your test cases with only one or two lines of code.
+The problem with using a unit testing framework for writing integration tests has been how to test the external dependencies, like a database. Finally, a clean and easy solution to this problem is available. It is called [testcontainers](https://testcontainers-python.readthedocs.io/).
+They allow you to programmatically start and stop containerized external dependencies, like a database in test cases with only one or two lines of code.
+
+You can also write integration tests in two parts: component tests and external integration tests, where the component tests test internal integration (of unit-tested modules with faked external dependencies) and the external integration tests
+test integration to external services. The component tests could be written using a unit test framework, and external integration tests could be written by a test automation developer using tools like Behave and Docker Compose.
+I have also worked with the approach of creating just a handful of fast-executing component tests to act as smoke tests (focusing on the most essential part of business logic), and all integration tests are written using Behave and Docker Compose. I can execute those smoke tests together with unit tests to quickly see if something is broken. The Behave + Docker Compose integration tests take longer to start and run, so they are not executed as often. Remember that if you want to be able to execute component tests with fake external dependencies, you need to follow the *clean microservice design principle (architecture)*  so that you can create fake input/output interface adapter classes used in the tests.
 
 When using the Gherkin language, the behavior of a software component is described as features. There should be a separate
 file for each feature. These files have the *.feature* extension. Each feature file
@@ -1899,6 +1904,7 @@ Feature: Create chart
 
     Then I should get the chart given above
          with status code 201 "Created"
+
 
   Scenario: Chart creation fails due to missing mandatory parameter
     When I create a new chart
@@ -2373,6 +2379,7 @@ Feature: Gossiping bus drivers
     When bus drivers have completed driving
     Then all rumors are successfully shared
 
+
   Scenario: Bus drivers fails to share all rumors due to driving maximum number of stops
     Given maximum number of bus stops driven is 5
     Given bus drivers with the following routes and rumors
@@ -2383,6 +2390,7 @@ Feature: Gossiping bus drivers
 
       When bus drivers have completed driving
       Then all rumors are not shared
+
 
   Scenario: Bus drivers fail to share all rumors because bus routes never cross
      Given maximum number of bus stops driven is 100
@@ -3730,38 +3738,38 @@ Feature: Create sales item
       | Sales item 3 | 30    | 3  |
 
 
-   Scenario: Try to create a sales item with invalid data
-      When the following sales items are created as admin user
-        | name         | price |
-        | Sales item 1 | aa    |
+  Scenario: Try to create a sales item with invalid data
+    When the following sales items are created as admin user
+      | name         | price |
+      | Sales item 1 | aa    |
 
-      Then a response with status code 400 is received
-
-
-    Scenario: Try to create new sales when database is unavailable
-      Given database is unavailable
-
-      When the following sales items are created as admin user
-        | name         | price |
-        | Sales item 1 | 10    |
-
-      Then a response with status code 503 is received
+    Then a response with status code 400 is received
 
 
-    Scenario: Try to create a sales item as normal user
-      When the following sales items are created as normal user
-        | name         | price |
-        | Sales item 1 | 10    |
+  Scenario: Try to create new sales when database is unavailable
+    Given database is unavailable
 
-      Then a response with status code 403 is received
+    When the following sales items are created as admin user
+      | name         | price |
+      | Sales item 1 | 10    |
+
+    Then a response with status code 503 is received
 
 
-    Scenario: Try to create a sales item unauthenticated
-      When the following sales items are created unauthenticated
-        | aame         | price |
-        | Sales item 1 | aa    |
+  Scenario: Try to create a sales item as normal user
+    When the following sales items are created as normal user
+      | name         | price |
+      | Sales item 1 | 10    |
 
-      Then a response with status code 401 is received
+    Then a response with status code 403 is received
+
+
+  Scenario: Try to create a sales item unauthenticated
+    When the following sales items are created unauthenticated
+      | aame         | price |
+      | Sales item 1 | aa    |
+
+    Then a response with status code 401 is received
 ```
 
 User story 2:
@@ -4090,11 +4098,13 @@ Resource        database_setup.resource
 Resource        create_sales_item.resource
 Test Setup      Database is available and a clean table exists
 
+
 *** Test Cases ***
 Successfully create sales item as admin user
     When a sales item is created as admin user              salesitem1  ${10}
     Then a response with status code is received            ${201}
     And the following sales item is received as response    salesitem1  ${10}
+
 
 Try to create a sales item with invalid data
     When a sales item is created as admin user              salesitem   aa
@@ -4106,6 +4116,7 @@ Try to create a sales item with invalid data
 *** Settings ***
 Documentation
 Library         ./DatabaseSetup.py
+
 
 *** Keywords ***
 Database is available and a clean table exists
@@ -4120,19 +4131,23 @@ Database is available and a clean table exists
 Documentation
 Library         ./CreateSalesItem.py
 
+
 *** Keywords ***
 Database is available and a clean table exists
     Start database if needed
     Clear table
     Reset auto increment
 
+
 A sales item is created as admin user
     [Arguments]    ${name}    ${price}
     Create sales item as admin user     ${name}     ${price}
 
+
 A response with status code is received
     [Arguments]    ${status_code}
     Verify response     ${status code}
+
 
 The following sales item is received as response
     [Arguments]    ${name}    ${price}

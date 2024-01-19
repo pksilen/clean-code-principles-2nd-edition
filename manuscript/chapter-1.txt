@@ -34,7 +34,7 @@ This chapter discusses the following architectural principles and patterns:
   - Observable services principle
 - Individually deployable microservices principle
 - Inter-service communication patterns
-- Strategic domain-driven design principle
+- Strategical domain-driven design principle
 - Software versioning principles
 - Git version control principle
 - Architectural patterns
@@ -149,7 +149,7 @@ it is possible to split the *purchase-service* into two separate microservices: 
 When you first implement the *purchase-service*, you should put the code related to different subdomains in separate
 domain-specific source code directories: *shoppingcart* and *order*. It will be easier later to extract those two functionalities into separate microservices.
 
-The initial division of a software system into microservices should not be engraved in stone. You can make changes to that in the future
+Right-sizing microservices is not always straightforward, and for this reason, the initial division of a software system into microservices should not be engraved in stone. You can make changes to that in the future
 if seen as appropriate. You might realize that a particular microservice should be divided into two separate microservices due to different
 scaling needs, for example. Or you might realize that it is better to couple two or more microservices into a single microservice to
 avoid complex distributed transactions, for instance.
@@ -996,7 +996,7 @@ should only have read access to the shared data.
 
 ![Shared Data Communication Method](resources/chapter1/images/shared-data.png)
 
-## Strategic Domain-Driven Design Principle
+## Strategical Domain-Driven Design Principle
 
 > ***Design software system architecture by conducting domain-driven design (DDD) starting from the top of the software hierarchy (software system) and ending at the microservice (bounded context) level.***
 
@@ -1467,7 +1467,7 @@ You can create the pull/merge request in your Git hosting service's web page or 
 `git push` command. After creating the pull/merge request, a build pipeline should be started, and colleagues can
 review the code. The build started after creating the pull/merge request builds *candidate* artifacts, which are stored
 in the artifact repository but deleted after a certain period. If you need to change the code after
-making the pull/merge request, just modify the code, then use *git add*, *git commit --amend*, and *git push* commands to push the changes to the merge request.
+making the pull/merge request, just modify the code, then use `git add`, `git commit --amend`, and `git push` commands to push the changes to the merge request.
 The merge can be completed after the code is reviewed and
 the build pipeline succeeds. After the merge, a build pipeline from the main branch should be run.
 This pipeline run should push the final *release* artifacts to the artifact repository.

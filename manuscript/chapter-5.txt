@@ -39,8 +39,11 @@ and how they are used. This step can be performed after the application architec
 
 ### Determine and Rank Threats
 
-A threat categorization methodology should be used to determine possible threats. The *STRIDE* method categorizes
-threats to the following categories:
+A threat categorization methodology should be used to determine possible threats.
+
+#### STRIDE method
+
+The *STRIDE* method categorizes threats to the following categories:
 
 | Category | Description                                                                             |
 |----------|-----------------------------------------------------------------------------------------|
@@ -77,6 +80,8 @@ threats to the following categories:
      An attacker who does not have a user account can access the service because of missing authentication/authorization
      - The attacker can act as an administrator because the service does not check that the user has a proper role
      - The attacker can access the operating system with root rights because the process runs with root user rights.
+
+#### Application Security Frame (ASF) method
 
 The *Application Security Frame* (ASF) categorizes application security features into the following categories:
 

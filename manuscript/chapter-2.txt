@@ -9,13 +9,13 @@ This chapter describes principles related to object-oriented design. The followi
 - Clean microservice design (architecture) principle
 - Vertical slice design (architecture) principle
 - Class organization principle
-- Package, class and function size principle
+- Package, class and function sizing principle
 - Uniform naming principle
 - Encapsulation principle
 - Prefer composition over inheritance principle
 - Tactical domain-driven design principle
 - Use the design patterns principle
-- Don't ask, tell principle
+- Tell, don't ask principle
 - Law of Demeter
 - Avoid primitive type obsession principle
 - Dependency injection principle
@@ -2173,7 +2173,7 @@ without affecting the business logic (use case and entities layers).
 Put entity-related business rules into entity classes. A `BankAccount` entity class should have
 a method for withdrawing money from the account. That method should enforce a business rule: Withdrawal is possible only if the account has enough funds.
 Don't put the withdrawal functionality into a service class and use `BankAccount`'s `get_balance` and `set_balance` accessors to perform the withdrawal
-procedure in the service class. That would be against the *don't ask, tell principle* discussed later in this chapter. Also, don't allow service classes to access sub-entities (and their methods) a `BankAccount` possibly contains. That would be against DDD principles and the *law of demeter* (discussed later in this chapter). DDD states that you should access an aggregate (`BankAccount`)  by its root only, not directly accessing any sub-entities.
+procedure in the service class. That would be against the *tell, don't ask principle* discussed later in this chapter. Also, don't allow service classes to access sub-entities (and their methods) a `BankAccount` possibly contains. That would be against DDD principles and the *law of demeter* (discussed later in this chapter). DDD states that you should access an aggregate (`BankAccount`)  by its root only, not directly accessing any sub-entities.
 
 Services orchestrate operations on one or more entities, e.g., a `BacklogItemService` can
 have a `setSprint` method that will fetch a `Sprint` entity and pass it to the `BacklogItem` entity's `setSprint` method, which verifies
@@ -2464,9 +2464,9 @@ class Circle:
         self.__fill_color = fill_color
 ```
 
-## Package, Class and Function Size Principle
+## Package, Class and Function Sizing Principle
 
-> *** Use the maximum number of items (5-9) that can be stored in the short-term memory as the maximum size for a package, class, or function. ***
+> ***Use the maximum number of items (5-9) that can be stored in the short-term memory as the maximum size for a package, class, or function.***
 
 A package (or directory) should have a maximum of 5-9 modules. This allows you to find a specific module in the package quickly.
 If you have a package with many modules, it can be hard to find a specific module because they are listed in alphabetical order, and
@@ -2524,11 +2524,15 @@ class User:
 
 If you have too many methods, use the *extract class* refactoring technique explained
 in the next chapter. As a rule of thumb, consider refactoring the class smaller if your class has more than 100-150 lines of code (not counting the import statements).
+Here is an example. If you have a software component with 10,000 lines of code, you should have a new class for at least every approx. 200 lines of code, meaning that the total number of classes in the software component should be at least 50, in practice, even more.
 
 A function should have a maximum of 5-9 statements. If you have a longer function, extract a function or functions that the original function calls.
 If you have a public method that calls several private methods, keep the number of those private methods small, preferably only one or two.
 This is because if you write a unit test for the public method, testing becomes more complex the more private methods also need to be tested indirectly.
 More about this topic also in the coming *testing principles* chapter.
+
+A function should have a maximum of 5-9 parameters. You should prefer limiting the maximum number of parameters closer to 5 instead of 9.
+You can reduce the number of parameters by using the *introduce parameter object* refactoring technique explained in the next chapter.
 
 ## Uniform Naming Principle
 
@@ -3104,8 +3108,8 @@ send(message, from: sender, to: recipient);
 ```
 
 Always make the function call expression such that it has maximum readability: e.g., `copy(source, target)` not `copy(target, source)`
-or `write(line, file)` not `write(file, line)` or `decode(input_message, internal_message)` and `encode(internal_field, output)`. The examples contain implicit articles and prepositions. You can
-easily imagine the missing articles and prepositions, e.g., *copy from a source to a target*, *write a line to a file* or *encode an internal field to output*.
+or `write(line, file)` not `write(file, line)` or `decode(input_message, internal_message)` and `encode(internal_field, output_message)`. The examples contain implicit articles and prepositions. You can
+easily imagine the missing articles and prepositions, e.g., *copy from a source to a target*, *write a line to a file* or *encode an internal field to an output message*.
 
 ## Encapsulation Principle
 
@@ -3125,7 +3129,7 @@ Only create those accessor methods if needed, like when the class represents a m
 the encapsulation of a class if the getter returns modifiable internal state, like a list.
 Only generate setter methods for attributes that need to be modified outside the class. If you have a class with many getters,
 you might be guilty of *feature envy* code smell, where other objects query your object for its internal state and perform operations
-based on that state. You should follow the *don't ask, tell principle* (discussed later in this chapter) by removing the getters from your class and implementing the operation in your class.
+based on that state. You should follow the *tell, don't ask principle* (discussed later in this chapter) by removing the getters from your class and implementing the operation in your class.
 
 ### Immutable Objects
 
@@ -3661,7 +3665,7 @@ to two separate microservices: *account-service* for account CRUD operations (ex
 *account-balance-service* and *account-transaction-service*. In the previous chapter, we had an example of the latter case when
 we discussed distributed transactions.
 
-### Actors
+#### Actors
 
 Actors perform commands. End-users are actors, but also services can be actors.
 For example, in a data exporter microservice, there can be an input message consumer service that has a command
@@ -3679,7 +3683,7 @@ Typically, there is one repository for each aggregate root, e.g., an *order repo
 
 #### Services
 
-Services can be divided into domain and application services. Application services are used to implement business use cases. External clients connect to the application services via input interface adapters.
+Services can be divided into *domain* and *application* services. Application services are used to implement business use cases. External clients connect to the application services via input interface adapters.
 Domain services contain functionality that is not directly part of any specific object. A domain service is a class that does not represent a
 concept in the problem domain. It is also called *pure fabrication* according to [GRASP](https://en.wikipedia.org/wiki/GRASP_(object-oriented_design)) principles.
 Services orchestrate operations on aggregate roots. For example, an `OrderService` orchestrates operations on order entities.
@@ -3707,7 +3711,7 @@ steps:
 In event storming, the different DDD concepts like events, commands, actors, and entities are represented with sticky notes in different colors. These sticky notes are put on a wall, and related sticky notes are grouped together, like actor(s), command(s), and entity/entities for a specific
 domain event. If you are interested in details of the event storming process, there is a book named *Introducing EventStorming* by *Alberto Brandolini*.
 
-### Domain-Driven Design Example: Data Exporter Microservice
+### Tactical DDD Example 1: Data Exporter Microservice
 
 Let's have a DDD example with a microservice for exporting data. Data exporting will be our top-level
 domain. The development team should participate in the DDD and
@@ -3973,7 +3977,7 @@ class MessageTransformer:
         return transformed_message
 ```
 
-### Domain-Driven Design Example 2: Anomaly Detection Microservice
+### Tactical DDD Example 2: Anomaly Detection Microservice
 
 Let's have another DDD example with an anomaly detection microservice. The purpose of the microservice is to detect anomalies
 in measurement data. This concise description of the microservice's purpose reveals the two subdomains of the microservice:
@@ -4628,6 +4632,7 @@ from dataclasses import dataclass
 
 from Optional import Optional
 from PrivateConstructor import PrivateConstructor
+
 
 @dataclass
 class UrlParams:
@@ -6591,19 +6596,19 @@ an AST ready for evaluation. The parser implementation is not part of this desig
 
 First, we will list the things we need to test.
 
-- Parse a literal, e.g. 5
-- Parse another literal, e.g. 7
-- Parse an invalid literal, e.g. XX
+- Parse a literal, e.g., 5
+- Parse another literal, e.g., 7
+- Parse an invalid literal, e.g., XX
 - Parse empty sentence
-- Parse single addition, e.g. 2+5
-- Parse single addition with white space, e.g. ' 2  +   5 '
-- Parse invalid operator, e.g. 2 * 5
-- Parse invalid left literal, e.g., XX + 5
-- Parse invalid right literal, e.g., 2 + YY
-- Parse two additions, e.g. 1 + 2 + 3
-- Parse two additions with invalid operator, e.g., 1 + 2 // 3
-- Parse two additions with invalid literal, e.g. 1 + 2 + XX
-- Parse three additions, e.g. 1 + 2 + 3 + 4
+- Parse single addition, e.g,. 2+5
+- Parse single addition with white space, e.g., ' 2  +   5 '
+- Parse invalid operator, e.g., 2 * 5
+- Parse addition with invalid left literal, e.g., XX + 5
+- Parse addition with invalid right literal, e.g., 2 + YY
+- Parse two additions, e.g., 1 + 2 + 3
+- Parse two additions with invalid operator, e.g., 1 + 2 ++ 3
+- Parse two additions with invalid literal, e.g., 1 + 2 + XX
+- Parse three additions, e.g., 1 + 2 + 3 + 4
 - Parse nine additions, e.g., '1+  2 +3 +  4 +5+ 6 +7 +8 +9+10 '
 - We can stop adding tests because we have generalized the implementation enough to support any number of additions.
 
@@ -6613,7 +6618,7 @@ Let's start with the first test:
 class ParserTests(unittest.TestCase):
     __parser = Parser()
 
-    def test_parse__with_literal_5(self):
+    def test_parse__with_literal(self):
         # WHEN
         ast = self.__parser.parse('5')
 
@@ -6634,14 +6639,14 @@ Let's add a test:
 
 ```python
 class ParserTests(unittest.TestCase):
-    # ...
-
-    def test_parse__with_literal_7(self):
+    def test_parse__with_literal(self):
         # WHEN
-        ast = self.__parser.parse('7')
+        ast = self.__parser.parse('5')
+        ast2 = self.__parser.parse('7')
 
         # THEN
-        self.assertEqual(ast.evaluate(), 7)
+        self.assertEqual(ast.evaluate(), 5)
+        self.assertEqual(ast2.evaluate(), 7)
 ```
 
 Let's generalize the implementation:
@@ -6659,9 +6664,9 @@ Let's add a test:
 class ParserTests(unittest.TestCase):
     # ...
 
-    def test_parse__with_invalid_literal(self):
+    def test_try_parse__with_invalid_literal(self):
         # WHEN + THEN
-        self.assertRaises(Parser.ParseError, self.__parser.parse, 'XX')
+        self.assertRaises(Parser.ParseError, self.__parser.try_parse, 'XX')
 ```
 
 Let's modify the implementation to make the above test pass:
@@ -6671,7 +6676,7 @@ class Parser:
     class ParseError(Exception):
         pass
 
-    def parse(self, sentence: str) -> Expression:
+    def try_parse(self, sentence: str) -> Expression:
         try:
             literal = int(sentence)
         except ValueError:
@@ -6686,9 +6691,10 @@ Let's add a test:
 class ParserTests(unittest.TestCase):
     # ...
 
-    def test_parse__with_empty_sentence(self):
+    def test_try_parse__with_empty_sentence(self):
         # WHEN + THEN
-        self.assertRaises(Parser.ParseError, self.__parser.parse, '')
+        self.assertRaises(Parser.ParseError, self.__parser.try_parse, 'XX')
+        self.assertRaises(Parser.ParseError, self.__parser.try_parse, '')
 ```
 
 The above test passes without code modification. Let's add a test:
@@ -6697,9 +6703,9 @@ The above test passes without code modification. Let's add a test:
 class ParserTests(unittest.TestCase):
     # ...
 
-    def test_parse__with_single_addition_of_2_and_5(self):
+    def test_try_parse__with_addition(self):
         # WHEN
-        ast = self.__parser.parse('2+5')
+        ast = self.__parser.try_parse('2+5')
 
         # THEN
         self.assertEqual(ast.evaluate(), 7)
@@ -6713,7 +6719,7 @@ class Parser:
     class ParseError(Exception):
         pass
 
-    def parse(self, sentence: str) -> Expression:
+    def try_parse(self, sentence: str) -> Expression:
         [left, *right] = sentence.split('+')
         left_literal = self.__parse_literal(left.strip())
 
@@ -6738,12 +6744,14 @@ Let's add a test:
 class ParserTests(unittest.TestCase):
     # ...
 
-    def test_parse__with_single_addition_with_white_space(self):
+    def test_try_parse__with_addition(self):
         # WHEN
-        ast = self.__parser.parse(' 2  +   5 ')
+        ast = self.__parser.try_parse('2+5')
+        ast2 = self.__parser.try_parse(' 2  +   5 ')
 
         # THEN
         self.assertEqual(ast.evaluate(), 7)
+        self.assertEqual(ast2.evaluate(), 7)
 ```
 
 We notice that the above test passes. Let's add another test, then:
@@ -6752,9 +6760,9 @@ We notice that the above test passes. Let's add another test, then:
 class ParserTests(unittest.TestCase):
     # ...
 
-    def test_parse__with_invalid_operator(self):
+    def test_try_parse__with_invalid_addition(self):
         # WHEN + THEN
-        self.assertRaises(Parser.ParseError, self.__parser.parse, '2 * 5')
+        self.assertRaises(Parser.ParseError, self.__parser.try_parse, '2 * 5')
 ```
 
 Let's modify the implementation:
@@ -6763,7 +6771,7 @@ Let's modify the implementation:
 class Parser:
     # ...
 
-    def parse(self, sentence: str) -> Expression:
+    def try_parse(self, sentence: str) -> Expression:
         [first_token, *rest_of_tokens] = sentence.split('+')
         left_literal = self.__parse_literal(first_token.strip())
 
@@ -6782,9 +6790,10 @@ Let's add a test:
 class ParserTests(unittest.TestCase):
     # ...
 
-    def test_parse__with_invalid_left_literal(self):
+    def test_try_parse__with_invalid_addition(self):
         # WHEN + THEN
-        self.assertRaises(Parser.ParseError, self.__parser.parse, 'XX + 5')
+        self.assertRaises(Parser.ParseError, self.__parser.try_parse, '2 * 5')
+        self.assertRaises(Parser.ParseError, self.__parser.try_parse, 'XX + 5')
 ```
 
 This test passes. Let's add another test that also passes:
@@ -6793,9 +6802,11 @@ This test passes. Let's add another test that also passes:
 class ParserTests(unittest.TestCase):
     # ...
 
-    def test_parse__with_invalid_right_literal(self):
+    def test_try_parse__with_invalid_addition(self):
         # WHEN + THEN
-        self.assertRaises(Parser.ParseError, self.__parser.parse, '2 + YY')
+        self.assertRaises(Parser.ParseError, self.__parser.try_parse, '2 * 5')
+        self.assertRaises(Parser.ParseError, self.__parser.try_parse, 'XX + 5')
+        self.assertRaises(Parser.ParseError, self.__parser.try_parse, '2 + YY')
 ```
 
 Let's add a test:
@@ -6804,12 +6815,16 @@ Let's add a test:
 class ParserTests(unittest.TestCase):
     # ...
 
-    def test_parse__with_two_additions(self):
+    def test_try_parse__with_addition(self):
         # WHEN
-        ast = self.__parser.parse('1 + 2 + 3')
+        ast = self.__parser.try_parse('2+5')
+        ast2 = self.__parser.try_parse(' 2  +   5 ')
+        ast3 = self.__parser.try_parse('1 + 2 + 3')
 
         # THEN
-        self.assertEqual(ast.evaluate(), 6)
+        self.assertEqual(ast.evaluate(), 7)
+        self.assertEqual(ast2.evaluate(), 7)
+        self.assertEqual(ast3.evaluate(), 6)
 ```
 
 Let's make the test pass:
@@ -6818,7 +6833,7 @@ Let's make the test pass:
 class Parser:
     # ...
 
-    def parse(self, sentence: str) -> Expression:
+    def try_parse(self, sentence: str) -> Expression:
         [first_token, *rest_of_tokens] = sentence.split('+')
         left_literal = self.__parse_literal(first_token.strip())
 
@@ -6829,7 +6844,7 @@ class Parser:
             return AddExpression(left_literal, right_literal)
         else:
             return AddExpression(
-                left_literal, self.parse('+'.join(rest_of_tokens))
+                left_literal, self.try_parse('+'.join(rest_of_tokens))
             )
 
     # ...
@@ -6841,46 +6856,46 @@ The final four tests also pass:
 class ParserTests(unittest.TestCase):
     # ...
 
-    def test_parse__with_two_addition_and_invalid_operator(self):
+    def test_try_parse__with_invalid_addition(self):
         # WHEN + THEN
-        self.assertRaises(Parser.ParseError, self.__parser.parse, '1 + 2 // 3')
+        self.assertRaises(Parser.ParseError, self.__parser.try_parse, '2 * 5')
+        self.assertRaises(Parser.ParseError, self.__parser.try_parse, 'XX + 5')
+        self.assertRaises(Parser.ParseError, self.__parser.try_parse, '2 + YY')
+
+        # Added tests
+        self.assertRaises(
+            Parser.ParseError, self.__parser.try_parse, '1 + 2 ++ 3'
+        )
+
+        self.assertRaises(
+            Parser.ParseError, self.__parser.try_parse, '1 + 2 + XX'
+        )
 ```
 
 ```python
 class ParserTests(unittest.TestCase):
     # ...
 
-    def test_parse__with_two_addition_and_invalid_literal(self):
-        # WHEN + THEN
-        self.assertRaises(Parser.ParseError, self.__parser.parse, '1 + 2 + XX')
-```
-
-```python
-class ParserTests(unittest.TestCase):
-    # ...
-
-    def test_parse__with_three_additions(self):
+    def test_try_parse__with_addition(self):
         # WHEN
-        ast = self.__parser.parse('1 + 2 + 3 + 4')
+        ast = self.__parser.try_parse('2+5')
+        ast2 = self.__parser.try_parse(' 2  +   5 ')
+        ast3 = self.__parser.try_parse('1 + 2 + 3')
+        ast4 = self.__parser.try_parse('1 + 2 + 3 + 4')
+        ast5 = self.__parser.try_parse('1+  2 +3 +  4 +5+ 6 +7 +8 +9+10 ')
 
         # THEN
-        self.assertEqual(ast.evaluate(), 10)
+        self.assertEqual(ast.evaluate(), 7)
+        self.assertEqual(ast2.evaluate(), 7)
+        self.assertEqual(ast3.evaluate(), 6)
+
+        # Added tests
+        self.assertEqual(ast4.evaluate(), 10)
+        self.assertEqual(ast5.evaluate(), 55)
 ```
 
-```python
-class ParserTests(unittest.TestCase):
-    # ...
-
-    def test_parse__with_nine_additions(self):
-        # WHEN
-        ast = self.__parser.parse('1+  2 +3 +  4 +5+ 6 +7 +8 +9+10 ')
-
-        # THEN
-        self.assertEqual(ast.evaluate(), 55)
-```
-
-Note that we did not use the *try*-prefix naming convention in the above example. For production code,
-you should name the `Parser` class's `parse` method `try_parse` because it can raise an error. More about this principle in the next chapter.
+In the above example, I added new tests to existing methods. You can also put each test into a separate test method.
+I didn't do that because most test methods would have been only 1-2 statements long.
 
 {aside}
 If you are interested in creating a parser, read about [Recursive descent parser](https://en.wikipedia.org/wiki/Recursive_descent_parser).
@@ -7926,9 +7941,9 @@ class NullShape(Shape):
 
 A *null* shape does not draw anything. We can use an instance of the `NullShape` class everywhere where a concrete implementation of the `Shape` protocol is wanted.
 
-## Don't Ask, Tell Principle
+## Tell, Don't Ask Principle
 
-> ***Don't ask, tell principle states that you should *tell* another object what to do, and not ask about the other object's state and then do the work by yourself in your object.***
+> ***Tell, don't ask principle states that you should *tell* another object what to do, and not ask about the other object's state and then do the work by yourself in your object.***
 
 If your object asks many things from another object using, e.g., multiple getters, you might be guilty of the *feature envy* design smell.
 Your object is envious of a feature that the other object should have.
@@ -7981,10 +7996,10 @@ class CubeUtils:
 ```
 
 In the `calculate_total_volume` method, we ask about a cube object's state three times. This is
-against the *don't ask, tell principle*. Our method is envious of the volume calculation feature
+against the *tell, don't ask principle*. Our method is envious of the volume calculation feature
 and wants to do it by itself rather than telling a `Cube3DShape` object to calculate its volume.
 
-Let's correct the above code so that it follows the *don't ask, tell principle*:
+Let's correct the above code so that it follows the *tell, don't ask principle*:
 
 ```python
 from typing import Final, Protocol, final
@@ -8051,10 +8066,10 @@ class AnomalyDetectionEngine:
             time.sleep(1)
 ```
 
-Following the *don't ask, tell principle* is a great way to reduce coupling in your software component. In the above example,
+Following the *tell, don't ask principle* is a great way to reduce coupling in your software component. In the above example,
 we reduced the number of methods the `calculate_total_volume` method is dependent on from three to one. Following the principle
 also contributed to higher cohesion in the software component because operations related to a cube are now inside the
-`Cube` class and not scattered around in the code base. The *don't ask, tell principle* is the same as the *information
+`Cube` class and not scattered around in the code base. The *tell, don't ask principle* is the same as the *information
 expert* from the GRASP principles. The information expert principle says to put behavior in a class with the most information required
 to implement the behavior. In the above example, the `Cube` class clearly has the most information needed (width, height, and depth) to calculate a cube's area.
 
