@@ -320,109 +320,314 @@ We define that our *ecommerce-service* aggregates the following lower-level micr
 ![Service Aggregation in E-Commerce Software System](resources/chapter1/images/service-aggr-ecommerce.png)
 
 Most of the microservices described above can be implemented as REST APIs because they mainly contain
-basic CRUD (create, read, update, and delete) operations for which a REST API is a good match. We will handle
-API design in more detail in a later chapter dedicated to API design. Let's implement the *sales-item-service* as a REST API
-using [Django](https://www.djangoproject.com/) and [Django REST framework](https://www.django-rest-framework.org/).
+basic CRUD (create, read, update and delete) operations for which a REST API is a good match. We will handle
+API design in more detail in a later chapter. Let's implement the _sales-item-service_ as a REST API
+using Java and [Spring Boot}(https://spring.io/projects/spring-boot). We will implement the `SalesItemController` class first. It
+defines API endpoints for creating, getting, updating, and deleting sales items:
 
-First, Create a directory for the Django project, and in that directory, we create a virtual environment:
+{title: SalesItemController.java}
+```java
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 
-```bash
-python -m venv venv
+@RestController
+@RequestMapping(SalesItemController.API_ENDPOINT)
+@Tag(
+  name = "Sales item API",
+  description = "Manages sales items"
+)
+public class SalesItemController {
+  public static final String API_ENDPOINT = "/sales-items";
+
+  @Autowired
+  private SalesItemService salesItemService;
+
+  @PostMapping
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(summary = "Creates new sales item")
+  public final SalesItem createSalesItem(
+    @RequestBody final SalesItemArg salesItemArg
+  ) {
+    return salesItemService.createSalesItem(salesItemArg);
+  }
+
+  @GetMapping
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(summary = "Gets sales items")
+  public final Iterable<SalesItem> getSalesItems() {
+    return salesItemService.getSalesItems();
+  }
+
+  @GetMapping("/{id}")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(summary = "Gets sales item by id")
+  public final SalesItem getSalesItemById(
+    @PathVariable("id") final Long id
+  ) {
+    return salesItemService.getSalesItemById(id);
+  }
+
+  @GetMapping(params = "userAccountId")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(summary = "Gets sales items by user account id")
+  public final Iterable<SalesItem> getSalesItemsByUserAccountId(
+    @RequestParam("userAccountId") final Long userAccountId
+  ) {
+    return salesItemService
+             .getSalesItemsByUserAccountId(userAccountId);
+  }
+
+  @PutMapping("/{id}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(summary = "Updates a sales item")
+  public final void updateSalesItem(
+    @PathVariable final Long id,
+    @RequestBody final SalesItemArg salesItemArg
+  ) {
+    salesItemService.updateSalesItem(id, salesItemArg);
+  }
+
+  @DeleteMapping("/{id}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(summary = "Deletes a sales item by id")
+  public final void deleteSalesItemById(
+    @PathVariable final Long id
+  ) {
+    salesItemService.deleteSalesItemById(id);
+  }
+
+  @DeleteMapping
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(summary = "Deletes all sales items")
+  public final void deleteSalesItems() {
+    salesItemService.deleteSalesItems();
+  }
+}
 ```
 
-Activate the virtual environment in Windows:
+As we can notice from the above code, the `SalesItemController` class delegates the actual work to an instance of a class that implements the
+`SalesItemService` interface. This is an example of using the _bridge pattern_ which is
+discussed, along with other design patterns, in the next chapter. In the bridge pattern, the controller is just an abstraction
+of the service, and a class implementing the `SalesItemService` interface provides a concrete implementation. We can change the service implementation
+without changing the controller or introduce a different controller, e.g., a GraphQL controller, using the same `SalesItemService` interface. Only by changing the used controller class could we change the API from a REST API to a GraphQL API. Below is the definition of the `SalesItemService` interface:
 
-```
-venv\Scripts\activate
-```
+{title: "SalesItemService.java"}
+```java
+public interface SalesItemService {
+  SalesItem createSalesItem(SalesItemArg salesItemArg);
+  SalesItem getSalesItemById(Long id);
 
-Or activate the virtual environment in MacOS/Linux:
+  Iterable<SalesItem> getSalesItemsByUserAccountId(
+   Long userAccountId
+  );
 
-```bash
-source venv/bin/activate
-```
-
-Install dependencies:
-
-```bash
-pip install django djangorestframework
-```
-
-Create new Django project and app:
-
-```bash
-django-admin startproject salesitemservice .
-python manage.py startapp salesitems
+  Iterable<SalesItem> getSalesItems();
+  void updateSalesItem(Long id, SalesItemArg salesItemArg);
+  void deleteSalesItemById(Long id);
+  void deleteSalesItems();
+}
 ```
 
-We will first implement the `SalesItem` model class, which contains properties like `name` and `price`.
+The below `SalesItemServiceImpl` class implements the `SalesItemService` interface.
+It will interact with a sales item repository to persist, fetch and delete data to/from a database.
 
-{format: python}
-![models.py](resources/chapter1/code/models.py)
+{title: "SalesItemServiceImpl.java"}
+```java
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
-Next, we will implement a serializer for the `SalesItem` model. In the serializer class, we list the wanted model fields
-to be serialized by their names. This is good from a security point of view. We should not use the `fields = '__all__'`, because
-if we added some internal or confidential fields to the model, they would be automatically serialized and sent to clients, exposing internal
-information to clients. It is safer to list the serialized fields explicitly.
+@Service
+public class SalesItemServiceImpl implements SalesItemService {
+  private static final String SALES_ITEM = "Sales item";
 
-{format: python}
-![serializers.py](resources/chapter1/code/serializers.py)
+  @Autowired
+  private SalesItemRepository salesItemRepository;
 
-Finally, we implement the `SalesItemViewSet` class, which defines API endpoints for creating, getting, updating, and deleting sales items.
-In the below *views.py* module, we need to implement only the `list` method. Other methods come from the `viewsets.ModelViewSet` base class.
+  @Override
+  public final SalesItem createSalesItem(
+    final SalesItemArg salesItemArg
+  ) {
+    final var salesItem = SalesItem.from(salesItemArg);
+    return salesItemRepository.save(salesItem);
+  }
 
-{format: python}
-![views.py](resources/chapter1/code/views.py)
+  @Override
+  public final SalesItem getSalesItemById(final Long id) {
+    return salesItemRepository.findById(id)
+             .orElseThrow(() ->
+               new EntityNotFoundError(SALES_ITEM, id));
+  }
 
-We also need to update the *urls.py* file in the Django project to contain the following:
+  @Override
+  public final Iterable<SalesItem> getSalesItemsByUserAccountId(
+    final Long userAccountId
+  ) {
+    return salesItemRepository
+             .findByUserAccountId(userAccountId);
+  }
 
-{format: python}
-![urls.py](resources/chapter1/code/urls.py)
+  @Override
+  public final Iterable<SalesItem> getSalesItems() {
+    return salesItemRepository.findAll();
+  }
 
-Before running the microservice, the database needs to be set up:
+  @Override
+  public final void updateSalesItem(
+    final Long id,
+    final SalesItemArg salesItemArg
+  ) {
+    if (salesItemRepository.existsById(id)) {
+      final var salesItem =
+        SalesItem.from(salesItemArg, id);
 
-```bash
-python manage.py makemigrations
-python manage.py migrate
+      salesItemRepository.save(salesItem);
+    } else {
+      throw new EntityNotFoundError(SALES_ITEM, id);
+    }
+  }
+
+  @Override
+  public final void deleteSalesItemById(final Long id) {
+    if (salesItemRepository.existsById(id)) {
+      salesItemRepository.deleteById(id);
+    }
+  }
+
+  @Override
+  public final void deleteSalesItems() {
+    salesItemRepository.deleteAll();
+  }
+}
 ```
 
-You can run the *sales-item-service* with the following command:
+{title: "EntityNotFoundError.java"}
+```java
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
-```bash
-python manage.py runserver
+@ResponseStatus(HttpStatus.NOT_FOUND)
+public class EntityNotFoundError extends RuntimeException {
+  EntityNotFoundError(final String entityType, final long id) {
+    super(entityType +
+         " entity not found with id " +
+         String.valueOf(id));
+  }
+}
 ```
 
-The REST API will be accessible at *http://127.0.0.1:8000/*
+The `SalesItemRepository` interface is defined below. Spring will create an instance of a class implementing that interface and
+inject it into an instance of the `SalesItemServiceImpl` class. The `SalesItemRepository` interface extends
+Spring's `CrudRepository` interface, which provides many database access methods by default. It provides the following
+and more methods: `findAll`, `findById`, `save`, `existsById`, `deleteAll`, and `deleteById`. We need to add only one
+method to the `SalesItemRepository` interface: `findByUserAccountId`.
+Spring will automatically generate an implementation for the `findByUserAccountId` method because the method name follows certain conventions
+of the [Spring Data](https://docs.spring.io/spring-data/jpa/docs/current/reference/html) framework. We just need to add
+the method to the interface, and that's it. We don't have to provide an implementation for the method because Spring will do it for us.
 
-{aside}
-In the above examples, I used idiomatic Django by defining models in *models.py* file, serializers in *serializers.py*
-file and views in *views.py* file. Instead, you could define each class in its own file and name the file according to the class
-name. That is the best approach to ensure a single responsibility for each module. For module names containing a class definition,
-I use *CapWords* (or *PascalCase*). This is against the [PEP 8 style guide](https://peps.python.org/pep-0008/), but it is the only deviation from PEP 8 I am making
-in this book. You can, of course, follow the PEP 8, but there are two reasons for the approach I am using:
+{title: "SalesItemRepository.java"}
+```java
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.stereotype.Repository;
 
-- The module name becomes more insightful and tells you that it contains a single public class definition, and the module name tells the name of the class.
-  For example, if you have a module named `OrderService.py`, you can expect that a class named `OrderService` can be imported from it. And that there is nothing else public in that module.
-- If you export an instance of the class from a module, that module should be named in the snake case. For example,
-  If you have a module with a private `__OrderService` class and export of an `order_service` variable (singleton) that is an instance of the `__OrderService` class,
-  you should name the module as *order_service.py*. Now the *order_service.py* module name tells everyone that a variable named
-  `order_service` could be imported from that module. And that should be the only public thing exportable from the module.
+@Repository
+public interface SalesItemRepository extends
+                    CrudRepository<SalesItem, Long>
+{
+  Iterable<SalesItem> findByUserAccountId(Long userAccountId);
+}
+```
 
-If you want to name modules according to PEP 8, name modules containing a single class definition with the class name but converted to
-snake_case. For example, an *order_service.py* module contains an `OrderService` class definition.
+Next, we define the `SalesItem` entity class, which contains properties like `name` and `price`. It also includes two methods to convert an instance of the `SalesItemArg` Data Transfer Object (DTO) class
+to an instance of the `SalesItem` class. A DTO is an object that transfers data between a server and a client. I have used the
+class name `SalesItemArg` instead of `SalesItemDto` to describe that a
+`SalesItemArg` DTO  is an argument for an API endpoint. If some API endpoint returned a special sales item DTO instead of a sales item entity, I would name that DTO class `SalesItemResponse` instead of `SalesItemDto`.
+The terms `Arg` and `Response` better describe the direction in which a DTO transfers data. You could also use the following DTO names: `InputSalesItem` and `OutputSalesItem` to describe an incoming and outgoing DTO (from the server's point of view).
 
-Let's get back to the Django example. If you have several models and put them all into the *models.py* file, the file size
-will grow, and finding the wanted class is no longer easy. A better option is to create a *models* directory (a package)
-and put individual model classes into separate modules in that directory. Finding the wanted model would be easy because the models are
-automatically listed in alphabetical order in the file browser of your IDE. You don't get automatic alphabetical ordering of multiple class definitions if they are defined in a single file.
+{title: "SalesItem.java"}
+```java
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.modelmapper.ModelMapper;
 
-The same approach applies to modules that contain multiple functions. Suppose we have a  *utils.py* module containing various
-utility functions. Once again, a better option is to create a directory named *utils* and put individual functions into their own files.
-You can then quickly locate the wanted utility function by looking at the *utils* directory contents. You can even create
-subdirectories to make the structure hierarchical, like a *string* directory under the *utils* directory for utility functions
-related to strings. A single file should contain a single public function, but it can additionally contain multiple private functions that the public function
-utilizes. The next chapter will discuss more about the *single responsibility principle*.
-{/aside}
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
+
+@Entity
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class SalesItem {
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
+
+  private Long userAccountId;
+
+  @NotNull
+  private String name;
+
+  @Min(value = 0, message = "Price must be greater than 0")
+  @Max(
+    value = Integer.MAX_VALUE,
+    message = "Price must be <= " + Integer.MAX_VALUE
+  )
+  private Integer price;
+
+  static SalesItem from(final SalesItemArg salesItemArg) {
+    return new ModelMapper()
+                 .map(salesItemArg, SalesItem.class);
+  }
+
+  static SalesItem from(
+    final SalesItemArg salesItemArg,
+    final Long id
+  ) {
+    final var salesItem =
+      new ModelMapper().map(salesItemArg, SalesItem.class);
+
+    salesItem.setId(id);
+    return salesItem;
+  }
+}
+```
+
+The below `SalesItemArg` class contains the same properties as the `SalesItem` entity class, except the `id` property.
+The `SalesItemArg` DTO class is used when creating a new sales item or updating an existing sales
+item. When creating a new sales item, the `id` property should not be given by the client because the microservice will automatically generate
+it (or the database will, actually, in this case).
+
+{title: "SalesItemArg.java"}
+```java
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class SalesItemArg {
+  private Long userAccountId;
+  private String name;
+  private Integer price;
+}
 
 Below is defined how the higher-level *ecommerce-service* will orchestrate the use of the aggregated lower-level microservices:
 
@@ -453,32 +658,91 @@ Clients can have different needs regarding what information they want from an AP
 a mobile client might be limited to exposing only a subset of all information available from the API. In contrast, a web client
 can fetch all information.
 
-All of the above requirements are something that a GraphQL-based API can fulfill. Therefore, it is wise to implement
-the *ecommerce-service* using GraphQL. I have chosen the [Ariadne](https://ariadnegraphql.org/) library to implement
-a single GraphQL query in the *ecommerce-service*.
-Below is the implementation of the `user` query, which fetches data from three microservices. It fetches the user account
+All of the above requirements are something that a GraphQL-based API can fulfill. For that reason, it would
+be wise to implement the *ecommerce-service* using GraphQL. I have chosen JavaScript, Node.js, and Express as
+technologies to implement a single GraphQL query in the *ecommerce-service*. Below is the implementation of a
+`user` query, which fetches data from three microservices. It fetches user account
 information from the *user-account-service*, the user's sales items from the *sales-item-service*, and finally,
 the user's orders from the *order-service*.
 
-Let's create a new Python project and install the following dependencies:
+{title: "server.js"}
+```js
+const express = require('express');
+const { graphqlHTTP } = require('express-graphql');
+const { buildSchema, GraphQLError } = require('graphql');
+const axios = require('axios').default;
 
-```bash
-pip install ariadne httpx hypercorn
-```
+const schema = buildSchema(`
+  type UserAccount {
+    id: ID!,
+    userName: String!
+    # Define additional properties...
+  }
 
-Next, we create the GraphQL server supporting a single `user` query:
+  type SalesItem {
+    id: ID!,
+    name: String!
+    # Define additional properties...
+  }
 
-{format: python}
-![app.py](resources/chapter1/code/app.py)
+  type Order {
+    id: ID!,
+    userId: ID!
+    # Define additional properties...
+  }
 
-To start the GraphQL server, we need an ASGI web server (e.g., hypercorn).
-You can run the GraphQL server:
+  type User {
+    userAccount: UserAccount!
+    salesItems: [SalesItem!]!
+    orders: [Order!]!
+  }
 
-```bash
-export SALES_ITEM_SERVICE_URL=http://127.0.0.1:8000
-export USER_ACCOUNT_SERVICE_URL=...
-export ORDER_SERVICE_URL=...
-hypercorn app:app -b 127.0.0.1:5000
+  type Query {
+    user(id: ID!): User!
+  }
+`);
+
+const {
+  ORDER_SERVICE_URL,
+  SALES_ITEM_SERVICE_URL,
+  USER_ACCOUNT_SERVICE_URL
+} = process.env;
+
+const rootValue = {
+  user: async ({ id }) => {
+    try {
+      const [
+        { data: userAccount },
+        { data: salesItems },
+        { data: orders }
+      ] = await Promise.all([
+        axios.get(`${USER_ACCOUNT_SERVICE_URL}/user-accounts/${id}`),
+        axios.get(
+          `${SALES_ITEM_SERVICE_URL}/sales-items?userAccountId=${id}`
+        ),
+        axios.get(`${ORDER_SERVICE_URL}/orders?userAccountId=${id}`)
+      ]);
+
+      return {
+        userAccount,
+        salesItems,
+        orders
+      };
+    } catch (error) {
+      throw new GraphQLError(error.message);
+    }
+  },
+};
+
+const app = express();
+
+app.use('/graphql', graphqlHTTP({
+  schema,
+  rootValue,
+  graphiql: true,
+}));
+
+app.listen(4000);
 ```
 
 You can access the *GraphiQL* UI at *http://127.0.0.1:5000/graphql*
