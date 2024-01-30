@@ -84,7 +84,7 @@ The CI pipeline for a software component should perform at least the following t
 - Checkout the latest source code from the source code repository
 - Build the software
 - Perform static code analysis. A tool like [SonarQube](https://www.sonarsource.com/products/sonarqube/) or [SonarCloud](https://www.sonarsource.com/products/sonarcloud/) can be used
-    - Perform [static application security testing](https://en.wikipedia.org/wiki/Static_application_security_testing) (SAST).
+- Perform [static application security testing](https://en.wikipedia.org/wiki/Static_application_security_testing) (SAST).
 - Execute unit tests
 - Execute integration tests
 - Perform [dynamic application security testing](https://en.wikipedia.org/wiki/Dynamic_application_security_testing) (DAST). A tool like [ZAP](https://www.zaproxy.org/) can be used
@@ -109,24 +109,35 @@ A CD pipeline should perform the following tasks:
 
 #### Example Dockerfile
 
-Below is an example *Dockerfile* for an API microservice written using the FastAPI library.
-The Dockerfile uses [Docker's multi-stage feature](https://docs.docker.com/build/building/multi-stage/). First (at the install_deps stage), it installs dependencies and copies source code files to the image.
-The last stage (final) copies files
-from the install-deps stage to a distroless Python base image. You should use a distroless base image to make the image size and the attack surface smaller.
-A distroless image does not contain any Linux distribution inside it. Unfortunately, the below advertised *gcr.io/distroless/python* images are considered experimental at the time of writing this book and are not recommended for production.
+Below is an example _Dockerfile_ for a microservice written in TypeScript for Node.js.
+The Dockerfile uses Docker's multi-stage feature. First (at the builder stage), it builds the source code, i.e., transpiles TypeScript
+source code files to JavaScript source code files. Then (at the intermediate stage), it creates an intermediate image that copies
+the built source code from the builder stage and installs only the production dependencies. The last stage (final) copies files
+from the intermediate stage to a distroless Node.js base image. You should use a distroless base image to make the image size and the attack surface smaller. A distroless image does not contain any
+Linux distribution inside it.
 
 ```dockerfile
-FROM python:3.11 as install-deps
+# syntax=docker/dockerfile:1
 
+FROM node:18 as builder
 WORKDIR /microservice
-COPY ./requirements.txt /microservice/requirements.txt
-RUN pip install --no-cache-dir --upgrade -r /microservice/requirements.txt
-COPY ./app /microservice/app
+COPY package*.json ./
+RUN  npm ci
+COPY tsconfig*.json ./
+COPY src ./src
+RUN npm run build
 
-FROM gcr.io/distroless/python3.11 as final
-COPY --from=install-deps /microservice /microservice
+FROM node:18 as intermediate
 WORKDIR /microservice
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80"]
+COPY package*.json ./
+RUN npm ci --only=production
+COPY --from=builder /microservice/build ./build
+
+FROM gcr.io/distroless/nodejs:18 as final
+WORKDIR /microservice
+USER nonroot:nonroot
+COPY --from=intermediate --chown=nonroot:nonroot /microservice ./
+CMD ["build/main"]
 ```
 
 #### Example Kubernetes Deployment
@@ -141,7 +152,7 @@ metadata:
   labels:
     {{- include "microservice.labels" . | nindent 4 }}
 spec:
-  {{- if ne .Values.env "production" }}
+  {{- if ne .Values.nodeEnv "production" }}
   replicas: 1
   {{- end }}
   selector:
@@ -174,8 +185,8 @@ spec:
               protocol: TCP
           {{- end }}
           env:
-            - name: ENV
-              value: {{ .Values.env }}
+            - name: NODE_ENV
+              value: {{ .Values.nodeEnv }}
             - name: ENCRYPTION_KEY
               valueFrom:
                 secretKeyRef:
@@ -211,26 +222,26 @@ spec:
                   key: mySqlPassword
           livenessProbe:
             httpGet:
-              path: /isAlive
+              path: /isMicroserviceAlive
               port: http
             failureThreshold: 3
             periodSeconds: 10
           readinessProbe:
             httpGet:
-              path: /isReady
+              path: /isMicroserviceReady
               port: http
             failureThreshold: 3
             periodSeconds: 5
           startupProbe:
             httpGet:
-              path: /isStarted
+              path: /isMicroserviceStarted
               port: http
             failureThreshold: {{ .Values.deployment.pod.container.startupProbe.failureThreshold }}
             periodSeconds: 10
           resources:
-            {{- if eq .Values.env "development" }}
+            {{- if eq .Values.nodeEnv "development" }}
             {{- toYaml .Values.deployment.pod.container.resources.development | nindent 12 }}
-            {{- else if eq .Values.env "integration"  }}
+            {{- else if eq .Values.nodeEnv "integration"  }}
             {{- toYaml .Values.deployment.pod.container.resources.integration | nindent 12 }}
             {{- else }}
             {{- toYaml .Values.deployment.pod.container.resources.production | nindent 12 }}
@@ -262,7 +273,7 @@ Below is an example *values.yaml* file to be used with the above Helm chart temp
 imageRegistry: docker.io
 imageRepository: pksilen2/backk-example-microservice
 imageTag:
-env: production
+nodeEnv: production
 auth:
   # Authorization Server Issuer URL
   # For example
@@ -350,8 +361,8 @@ then the filesystem cannot be defined as read-only.
 
 #### Example CI/CD Pipeline
 
-Below is a GitHub Actions CI/CD workflow for a Python microservice. The declarative workflow is written
-in YAML. The workflow file should be in the microservice's source code repository in the *.github/workflows* directory.
+Below is a GitHub Actions CI/CD workflow for a Node.js microservice. The declarative workflow is written
+in YAML. The workflow file should be located in the microservice's source code repository in the _.github/workflows_ directory.
 Steps in the workflow are described in more detail after the example.
 
 ```yaml
@@ -366,28 +377,25 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    name: Build with Python 3.11
+    name: Build with Node version 18
     steps:
       - name: Checkout Git repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v2
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
         with:
-          python-version: '3.11'
-          cache: 'pip'
+          node-version: '18'
+          cache: 'npm'
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+      - name: Install NPM dependencies
+        run: npm ci
 
       - name: Lint source code
-        run: pylint src
+        run: npm run lint
 
-      - name: Run unit tests
-        run: python -m coverage run -m unittest
-
-      - name: Report unit test coverage
-        run: python -m coverage xml
+      - name: Run unit tests with coverage
+        run: npm run test:coverage
 
       - name: Setup integration testing environment
         run: docker-compose --env-file .env.ci up --build -d
@@ -396,9 +404,9 @@ jobs:
         run: scripts/run-integration-tests-in-ci.sh
 
       - name: OWASP ZAP API scan
-        uses: zaproxy/action-api-scan@v0.5.0
+        uses: zaproxy/action-api-scan@v0.1.0
         with:
-          target: http://localhost:8080/openapi.json
+          target: generated/openapi/openApiPublicSpec.yaml
           fail_action: true
           cmd_options: -I -z "-config replacer.full_list(0).description=auth1
                               -config replacer.full_list(0).enabled=true
@@ -411,26 +419,26 @@ jobs:
         run: docker-compose --env-file .env.ci down -v
 
       - name: Static code analysis with SonarCloud scan
-        uses: sonarsource/sonarcloud-github-action@master
+        uses: sonarsource/sonarcloud-github-action@v1.6
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: 3rd party software license compliance analysis with FOSSA
-        uses: fossas/fossa-action@main
+        uses: fossas/fossa-action@v1
         with:
           api-key: ${{ secrets.FOSSA_API_KEY }}
           run-tests: false
 
       - name: Lint Dockerfile
-        uses: hadolint/hadolint-action@v3.1.0
+        uses: hadolint/hadolint-action@v1.6.0
 
       - name: Log in to Docker registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v1
         with:
           registry: docker.io
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+          username: ${{ secrets.DOCKER_REGISTRY_USERNAME }}
+          password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
 
       - name: Extract latest Git tag
         uses: actions-ecosystem/action-get-latest-tag@v1
@@ -438,10 +446,10 @@ jobs:
 
       - name: Set up Docker Buildx
         id: setupBuildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v1
 
       - name: Cache Docker layers
-        uses: actions/cache@v3
+        uses: actions/cache@v2
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ github.sha }}
@@ -450,7 +458,7 @@ jobs:
 
       - name: Extract metadata for building and pushing Docker image
         id: dockerImageMetadata
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v3
         with:
           images: ${{ secrets.DOCKER_REGISTRY_USERNAME }}/example-microservice
           tags: |
@@ -458,7 +466,7 @@ jobs:
 
       - name: Build and push Docker image
         id: dockerImageBuildAndPush
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v2
         with:
           context: .
           builder: ${{ steps.setupBuildx.outputs.name }}
@@ -482,9 +490,9 @@ jobs:
           sarif_file: ${{ steps.anchoreScan.outputs.sarif }}
 
       - name: Install Helm
-        uses: azure/setup-helm@v3
+        uses: azure/setup-helm@v1
         with:
-          version: v3.13.0
+          version: v3.7.2
 
       - name: Extract microservice version from Git tag
         id: extractMicroserviceVersionFromGitTag
@@ -525,7 +533,7 @@ jobs:
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
 
       - name: Package and publish Helm chart
-        uses: helm/chart-releaser-action@v1.5.0
+        uses: helm/chart-releaser-action@v1.2.1
         with:
           charts_dir: helm
         env:
@@ -533,10 +541,10 @@ jobs:
 ```
 
 1) Checkout the microservice's Git repository
-2) Setup Python 3.11
+2) Setup Node.js 18
 3) Install dependencies
-4) Lint source code
-5) Execute unit tests (needs [coverage](https://coverage.readthedocs.io/) library in requirements.txt)
+4) Lint source code using the `npm run lint` command, which uses ESLint
+5) Execute unit tests
 6) Report coverage
 7) Set up an integration testing environment using Docker's `docker-compose up` command. After executing the command,
    the microservice is built, and all the dependencies in separate containers are started. These dependencies can include
@@ -573,25 +581,12 @@ jobs:
 Some of the above steps are parallelizable, but a GitHub Actions workflow does not currently support parallel steps in
 a job. In *Jenkins*, you can easily parallelize stages using a *parallel* block.
 
-You could also execute the unit tests and linting when building a Docker image by using the following kind of *Dockerfile*:
+You could also execute the unit tests and linting when building a Docker image by adding the following steps to the *builder*
+stage in the *Dockerfile*:
 
 ```dockerfile
-FROM python:3.11 as builder
-
-WORKDIR /microservice
-COPY ./requirements.txt /microservice/requirements.txt
-RUN pip install --no-cache-dir --upgrade -r /microservice/requirements.txt
-COPY ./app /microservice/app
-RUN pylint src
-RUN python -m coverage run -m unittest
-RUN python -m coverage xml
-# You must implement sending unit test coverage report
-# to SonarQube/SonarCloud here
-
-FROM gcr.io/distroless/python3.11 as final
-COPY --from=builder /microservice /microservice
-WORKDIR /microservice
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80"]
+RUN npm run lint
+RUN npm run test:coverage
 ```
 
 The problem with the above solution is that you don't get a clear indication of what failed in a build. You must examine the output of the

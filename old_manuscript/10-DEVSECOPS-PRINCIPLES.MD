@@ -7,7 +7,8 @@ lifecycle.
 
 ![Fig 11.1 DevSecOps Diagram](images/devsecops.png)
 
-A software development organization is responsible for planning, designing, and implementing software deliverables. Software operations deploy software to IT infrastructure and platforms. They monitor the deployed software to ensure it runs without problems. Software operations also provide feedback to the
+A software development organization is responsible for planning, designing, and implementing software deliverables.
+Software operations deploy software to IT infrastructure and platforms. They monitor the deployed software to ensure it runs without problems. Software operations also provide feedback to the
 software development organization through bug reports and enhancement ideas.
 
 ## SecOps Lifecycle
