@@ -4,242 +4,420 @@ This chapter presents the following concurrent programming principles:
 
 - Threading principle
 - Thread safety principle
-- Publish/subscribe shared state change principle
 
 ## Threading Principle
 
 > ***Modern cloud-native microservices should primarily scale out by adding more processes, not scale up by adding more threads. Use threading only when it is needed or is a good optimization.***
 
 When developing modern cloud-native software, microservices should be stateless and automatically scale
-horizontally (scaling out and in via adding and removing processes). The role of threading in modern cloud-native microservices is not as prominent as earlier when software
+horizontally (scaling out and in via adding and removing processes). The role of threading in modern cloud-native microservices is not as prominent as it was earlier when software
 consisted of monoliths running on bare metal servers, mainly capable of scaling up or down. Nowadays, you should use threading if it is a good optimization or otherwise needed.
-Apart from microservices, if you have a library, standalone application, or a client software component, the situation is different, and you can use threading.
 
 Suppose we have a software system with an event-driven architecture. Multiple microservices communicate with each other using asynchronous messaging. Each microservice instance has only a single thread that
-consumes messages from a message broker and processes them. If the message broker's message queue for a microservice starts growing too long, the microservice should scale out by adding a new instance.
-When the load for the microservice diminishes, it can scale in by removing an instance. There is no need to use threading at all.
+consumes messages from a message broker and then processes them. If the message broker's message queue for a microservice starts growing too long, the microservice should scale out by adding a new instance. When the load for the microservice diminishes, it can scale in by removing an instance. There is no need to use threading at all.
 
-We could use threading in the data exporter microservice if the input consumer and the output producer were synchronous. The reason for using threads is optimization. If we had everything in a single thread and the microservice was performing network I/O (either input or output-related), the microservice would have
+We could use threading in the data exporter microservice if the input consumer and the output producer were synchronous. The reason for threading
+is optimization. If we had everything in a single thread and the microservice was performing network I/O (either input or output-related), the microservice would have
 nothing to execute because it is waiting for some network I/O to complete. Using threads, we can optimize the execution of the microservice so that it potentially has something
 to do when waiting for an I/O operation to complete.
 
-Many modern input consumers and output producers are available as asynchronous implementations. If we use an asynchronous consumer and producer in the data exporter microservice, we can eliminate threading because network I/O will not block the execution of the main thread anymore. As a rule of thumb, consider using asynchronous code first, and if it is not possible or feasible, only then consider threading. Many Python libraries exist that support asynchronous operations instead of synchronous ones. Good examples are FastAPI, [databases](https://github.com/encode/databases), and [aiofiles](https://github.com/Tinche/aiofiles/).
-
-{aside}
-Python uses the Linux-native asynchronous I/O facility (libaio) or POSIX asynchronous I/O (AIO) interface that allows applications to
-initiate I/O operations that are performed
-asynchronously (i.e., in the background). The application can
-choose how it is notified of the completion of the I/O operation: by delivery of a signal, by instantiation of a
-thread, or no notification at all.
-{/aside}
+Many modern input consumers and output producers are available as asynchronous implementations. If we use an asynchronous consumer and producer
+in the data exporter microservice, we can eliminate threading because network I/O will not block the execution of the main thread anymore. As a rule
+of thumb, consider using asynchronous code first, and if it is not possible or feasible, only then consider threading.
 
 You might need a microservice to execute housekeeping tasks on a specific schedule in the background. Instead of using threading and implementing the housekeeping functionality
 in the microservice, consider implementing it in a separate microservice to ensure that the *single responsibility principle* is followed.
-For example, you can configure the housekeeping microservice to run regularly using a Kubernetes CronJob.
+You can configure the housekeeping microservice to be run at regular intervals using a Kubernetes CronJob, for example.
 
-Threading also brings complexity to a microservice because the microservice must ensure thread safety. You will be in big trouble if you forget to implement thread safety.
-Threading and synchronization-related bugs are hard to find. Thread safety is a topic that is discussed later in this chapter.
-Threading also brings complexity when deploying a microservice because the number of vCPUs requested by the microservice depends on the number of threads used.
+Threading also brings complexity to a microservice because the microservice must ensure thread safety. You will be in big trouble if you forget to implement thread safety. Threading and synchronization-related bugs are hard to find.
+Thread safety is a topic that is discussed later in this chapter. Threading also brings complexity to deploying a microservice because the number of vCPUs requested by the microservice can depend on the thread count.
 
-### Parallel Executors
+### Parallel Algorithms
 
-Parallel executors simplify concurrency by hiding the creation of multiple sub-processes.
-In Python, you can create parallel executors by using multiple processes. Below is an example using a pool of 4 sub-processes:
+Parallel algorithms are similar to threading. With parallel algorithms, it is a question about implicit threading instead of explicit threading. Threads are created behind the scenes to enable an algorithm to execute
+in parallel on some data set. A parallel algorithm is usually something you don't necessarily need in a cloud-native microservice.
+You can often run algorithms without parallelization and instead scale out on demand.
 
-```python
-import multiprocessing
-import os
+Many languages offer parallel algorithms. In Java, you can perform parallel operations with a parallel stream created with the `parallelStream` method:
 
-
-def print_stdout(number: int) -> None:
-    print (f'{number} {os.getpid()}')
-
-
-if __name__ == '__main__':
-    numbers = [1, 2, 3, 4]
-    pool = multiprocessing.Pool(4)
-    pool.map(print_stdout, numbers)
+```java
+final var numbers = List.of(1, 2, 3, 4);
+numbers.parallelStream().forEach(number ->
+  System.out.println(number + " " +
+                     Thread.currentThread().getName())
+);
 ```
 
 The output of the above code could be, for example:
 
 ```
-1 97672
-2 97671
-4 97672
-3 97670
+3 ForkJoinPool.commonPool-worker-2
+2 ForkJoinPool.commonPool-worker-1
+1 ForkJoinPool.commonPool-worker-3
+4 main
+```
+
+The output will differ on each run. Usually, the parallel executor creates the same amount of threads as there are CPU cores available. This means
+that you can scale your microservice up by requesting more CPU cores.
+In many languages, you can control how many CPU cores the parallel algorithm should use. You can, for example, configure that
+a parallel algorithm should use the number of available CPU cores minus two if you have two threads dedicated to some other processing.
+In C++20, you cannot control the number of threads for a parallel algorithm, but an improvement is coming in a future C++ release.
+
+Below is the same example as above written in C++:
+
+```cpp
+#include <algorithm>
+#include <execution>
+#include <thread>
+#include <iostream>
+
+std::vector<int> numbers{1, 2, 4, 5};
+
+std::for_each(std::execution::par,
+              numbers.cbegin(),
+              numbers.cend(),
+              [](const auto number)
+              {
+                std::cout << number
+                          << " "
+                          << std::this_thread::get_id()
+                          << "\n";
+              });
 ```
 
 ## Thread Safety Principle
 
 > ***If you are using threads, you must ensure thread safety. Thread safety means that only one thread can access shared data simultaneously to avoid race conditions.***
 
-Do not assume thread safety if you use a ready-made data structure or library. You must consult the documentation to see whether thread safety is guaranteed.
-If thread safety is not mentioned in the documentation, it can't be assumed. The best way to communicate thread safety to developers is to name things so that
-thread safety is explicit. For example, you could create a thread-safe collection library and have a class named `ThreadSafeList` to indicate the class is thread-safe.
+Do not assume thread safety if you use a data structure or library. You must consult the documentation to see whether thread safety is guaranteed. If thread safety is not mentioned in the documentation, it can't be assumed. The best way to communicate thread safety to developers is to name things so that
+thread safety is explicit. For example, you could create a thread-safe collection library and have a class named `ThreadSafeLinkedList` to indicate the class
+is thread-safe. Another common word used to indicate thread safety is *concurrent*, e.g., the `ConcurrentHashMap` class in Java.
 
-The primary way in Python to ensure thread safety is to use a lock. Python does not have atomic variables.
+There are several ways to ensure thread safety:
 
-### Use Locking for Mutual Exclusion (Mutex)
+- Synchronization directive
+- Atomic variables
+- Concurrent collections
+- Mutexes
+- Spin locks
 
-Python has a `Lock` class in the `threading` module.
-The class implements primitive lock objects to achieve mutual exclusion. Once a thread has acquired a lock,
-subsequent attempts to acquire it block until it is released. Any thread can release it.
+The subsequent sections describe each of the above techniques in more detail.
 
-Let's implement a thread-safe counter using a lock object:
+### Synchronization Directive
 
-{title: "ThreadSafeCounter.py"}
-```python
-from threading import Lock
+In some languages, you can use a specific directive to indicate that a particular piece of code is synchronized, meaning that
+only one thread can execute that piece of code at a time.
 
-class ThreadSafeCounter:
-    def __init__(self):
-        self.__lock = Lock()
-        self.__counter = 0
+Java offers the `synchronized` keyword that can be used in the following ways:
 
-    def increment(self) -> None:
-        with self.__lock:
-            self.__counter += 1
+- Synchronized instance method
+- Synchronized static method
+- Synchronized code block
 
-    @property
-    def value(self) -> int:
-       with self.__lock:
-           return self.__counter
+```java
+public synchronized void doSomething() {
+  // Only one thread can execute this at the same time
+}
+
+public static synchronized void doSomething() {
+  // Only one thread can execute this at the same time
+}
+
+public void doSomething() {
+  // ...
+
+  synchronized (this) {
+    // Only one thread can execute this at the same time
+  }
+
+  // ...
+}
 ```
-
-Python also contains a `Lock` class in the `multiprocessing` module, and it can be used to synchronize multiple sub-processes
-in a similar fashion.
 
 ### Atomic Variables
 
-Python does not have atomic variables, but you can define your own atomic variable class using locking. Below is
-an example of an `AtomicInt` class that uses a lock.
+If you have some data shared between threads and that data is just a simple primitive variable, like a boolean or integer,
+you can use an atomic variable to guarantee thread safety and don't need to use any additional synchronization technique. Atomic variable reads and updates
+are guaranteed to be atomic, so there is no possibility for a race condition between two threads. Some atomic variable implementations use locks.
+Consult the language's documentation to see if a certain atomic type is guaranteed to be lock-free.
 
-```python
-from threading import Lock
+In C++, you can create a thread-safe counter using an atomic variable:
 
-class AtomicInt():
-    def __init__(self, value: int):
-        self.__value = value
-        self.__lock = Lock()
+{title: "ThreadSafeCounter.h"}
+```cpp
+#include <atomic>
 
-    def increment(self, amount: int) -> int:
-        with self.__lock:
-            self.__value += amount
-            return self.__value
+class ThreadSafeCounter
+{
+public:
+  ThreadSafeCounter() = default;
 
-    def decrement(self, amount: int) -> int:
-        with self.__lock:
-            self.__value -= amount
-            return self.__value
+  void increment()
+  {
+    ++m_counter;
+  }
 
-    @property
-    def value(self) -> int:
-        with self.__lock:
-            return self.__value
+  uint32_t getValue() const
+  {
+    return m_counter.load();
+  }
 
-    @value.setter
-    def value(self, new_value: int):
-        with self.__lock:
-            self.__value = new_value
+private:
+  std::atomic<uint64_t> m_counter{0U};
+}
 ```
 
-All the operations on `my_int` below can be done safely from different threads:
-
-```python
-my_int = AtomicInt(0)
-
-my_int.increment(1)
-my_int.decrement(2)
-print(my_int.value) # Prints -1
-```
+Multiple threads can increment a counter of the above type at the same time without a need for additional synchronization.
 
 ### Concurrent Collections
 
-Multiple threads can use concurrent collections without any additional synchronization.
-Below is a partial example of a thread-safe list:
+Concurrent collections can be used by multiple threads without any additional synchronization.
+Java offers several concurrent collections in the `java.util.concurrent` package.
 
-```python
-from threading import Lock
-from typing import Generic, TypeVar
+C++ does not offer concurrent collections in its standard library. You can create a concurrent, i.e., a
+thread-safe collection using the *decorator pattern* by adding needed synchronization (locking) to an existing collection class. Below is
+a partial example of a thread-safe vector created in C++:
 
-T = TypeVar('T')
+{title: "ThreadSafeVector.h"}
+```cpp
+#include <vector>
 
+template <typename T>
+class ThreadSafeVector
+{
+public:
+  explicit ThreadSafeVector(std::vector<T>&& vector):
+    m_vector{std::move(vector)}
+  {}
 
-class ThreadSafeList(Generic[T]):
-    def __init__(self):
-        self.__list: list[T] = []
-        self.__lock = Lock()
+  void pushBack(const T& value)
+  {
+    // Lock using a mutex or spin lock
 
-    def append(self, value: T) -> None:
-         with self.__lock:
-            self.__list.append(value)
+    m_vector.push_back(value);
 
-    def pop(self, index: int) -> T:
-        with self.__lock:
-            return self.__list.pop(index)
+    // Unlock
+  }
 
-    def get(self, index: int) -> T:
-        with self.__lock:
-            return self.__list[index]
+  // Implement other methods with locking...
 
-    # Implement rest of wanted methods
+private:
+  std::vector<T> m_vector;
+};
 ```
 
-## Publish/Subscribe Shared State Change Principle
+### Mutexes
 
-> ***Use condition objects to publish and wait for a change to a shared state.***
+A mutex is a synchronization primitive that can protect shared data from being simultaneously accessed by multiple threads.
+A mutex is usually implemented as a class with `lock` and `unlock` methods. The locking only succeeds by one thread at a time. Another
+thread can lock the mutex only after the previous thread has unlocked the mutex. The `lock` method waits until the mutex becomes
+available for locking.
 
-Condition objects are useful when you have a queue, and there is a producer and consumer for the queue in different
-threads. The producer thread can inform the consumer thread when a new item is placed in the queue, and the consumer
-thread waits for an item to be available in the queue. If you did not have a condition object, you would have to implement
-this using a lock and a sleep in the consumer. This is not optimal because you don't know the optimal sleep duration. You can sleep too long or too short. Below is an example of using a condition object.
+Let's implement the `pushBack` method using a mutex:
 
-```python
-from threading import Condition, Lock
-from typing import Final, Generic, TypeVar
+{title: "ThreadSafeVector.h"}
+```cpp
+#include <mutex>
+#include <vector>
 
-T = TypeVar('T')
+template <typename T>
+class ThreadSafeVector
+{
+public:
+  explicit ThreadSafeVector(std::vector<T>&& vector):
+    m_vector{std::move(vector)}
+  {}
 
+  void pushBack(const T& value)
+  {
+    m_mutex.lock();
+    m_vector.push_back(value);
+    m_mutex.unlock();
+  }
 
-class ThreadSafeQueue(Generic[T]):
-    def __init__(self):
-        self.__items: Final[list[T]] = []
-        self.__item_waiter: Final = Condition()
-        self.__lock: Final = Lock()
+  // Implement other methods ...
 
-    def append(self, item: T) -> None:
-        with self.__lock:
-            self.__items.append(item)
+private:
+  std::vector<T> m_vector;
+  std::mutex m_mutex;
+};
+```
 
-    def pop_front(self) -> T:
-        with self.__lock:
-            return self.__items.pop(0)
+Mutexes are not usually used directly because there exists the risk that a mutex is forgotten to be unlocked.
+Instead of using the plain `std::mutex` class, you can use a mutex with the `std::scoped_lock` class. The `std::scoped_lock`
+class wraps a mutex instance. It will lock the wrapped mutex on construction
+and unlock the mutex on destruction. In this way, you cannot forget to unlock a locked mutex. The mutex will be locked for
+the scope of the scoped lock variable. Below is the above example modified to use a scoped lock:
 
-    def has_item(self) -> bool:
-        return len(self.__items) > 0
+{title: "ThreadSafeVector.h"}
+```cpp
+#include <mutex>
+#include <vector>
 
-    @property
-    def item_waiter(self):
-        return self.__item_waiter
+template <typename T>
+class ThreadSafeVector
+{
+public:
+  explicit ThreadSafeVector(std::vector<T>&& vector):
+    m_vector{std::move(vector)}
+  {}
 
+  void pushBack(const T& value)
+  {
+    const std::scoped_lock scopedLock{m_mutex};
+    m_vector.push_back(value);
+  }
 
-class MsgQueueProducer(Generic[T]):
-    def __init__(self, queue: ThreadSafeQueue[T]):
-        self.__queue = queue
+  // Implement other methods ...
 
-    def produce(self, item: T) -> None:
-        with self.__queue.item_waiter:
-            self.__queue.append(item)
-            self.__queue.item_waiter.notify()
+private:
+  std::vector<T> m_vector;
+  std::mutex m_mutex;
+};
+```
 
+### Spinlocks
 
-class MsgQueueConsumer(Generic[T]):
-    def __init__(self, queue: ThreadSafeQueue[T]):
-        self.__queue = queue
+A spinlock is a lock that causes a thread trying to acquire it to simply wait in a loop (spinning the loop) while repeatedly checking whether the lock has become available.
+Since the thread remains active but is not performing a useful task, using a spinlock is busy waiting. You can avoid some of the overhead of thread context switches using a spinlock. Spinlocks are an effective way of locking if the locking periods are short.
 
-    def consume(self) -> T:
-        with self.__queue.item_waiter:
-            self.__queue.item_waiter.wait_for(self.__queue.has_item)
-            return self.__queue.pop_front()
+Let's implement a spinlock using C++:
+
+{title: Spinlock.h"}
+```cpp
+#include <atomic>
+#include <thread>
+
+#include <boost/core/noncopyable.hpp>
+
+class Spinlock : public boost::noncopyable
+{
+public:
+  void lock()
+  {
+    while (true) {
+      const bool wasLocked =
+        m_isLocked.test_and_set(std::memory_order_acquire);
+
+      if (!wasLocked) {
+        // Is now locked
+        return;
+      }
+
+      // Wait for the lock to be released
+      while (m_isLocked.test(std::memory_order_relaxed)) {
+        // Prioritize other threads
+        std::this_thread::yield();
+      }
+    }
+  }
+
+  void unlock()
+  {
+    m_isLocked.clear(std::memory_order_release);
+  }
+
+private:
+  std::atomic_flag m_isLocked = ATOMIC_FLAG_INIT;
+};
+```
+
+In the above implementation, we use the `std::atomic_flag` class because it guarantees a lock-free implementation across all C++ compilers.
+We also use a non-default memory ordering to allow the compiler to emit more efficient code.
+
+Now we can re-implement the `ThreadSafeVector` class using a spinlock instead of a mutex:
+
+{title: "ThreadSafeVector.h"}
+```cpp
+#include <vector>
+#include "Spinlock.h"
+
+template <typename T>
+class ThreadSafeVector
+{
+public:
+  explicit ThreadSafeVector(std::vector<T>&& vector):
+    m_vector{std::move(vector)}
+  {}
+
+  void pushBack(const T& value)
+  {
+    m_spinlock.lock();
+    m_vector.push_back(value);
+    m_spinlock.unlock();
+  }
+
+  // Implement other methods ...
+
+private:
+  std::vector<T> m_vector;
+  Spinlock m_spinlock;
+};
+```
+
+Similar to mutexes, we should not use raw spinlocks in our code but use a scoped lock.
+Below is an implementation of a generic `ScopedLock` class that handles the locking
+and unlocking of a lockable object:
+
+{title: "ScopedLock.h"}
+```cpp
+#include <concepts>
+
+#include <boost/core/noncopyable.hpp>
+
+template<typename T>
+concept Lockable = requires(T a)
+{
+    { a.lock() } -> std::convertible_to<void>;
+    { a.unlock() } -> std::convertible_to<void>;
+};
+
+template <Lockable L>
+class ScopedLock : public boost::noncopyable
+{
+public:
+  explicit ScopedLock(L& lockable):
+    m_lockable{lockable}
+  {
+    m_lockable.lock();
+  }
+
+  ~ScopedLock()
+  {
+    m_lockable.unlock();
+  }
+
+private:
+  L& m_lockable;
+};
+```
+
+Let's change the `ThreadSafeVector` class to use a scoped lock:
+
+{title: "ThreadSafeVector.h"}
+```cpp
+#include <vector>
+#include "ScopedLock.h"
+#include "Spinlock.h"
+
+template <typename T>
+class ThreadSafeVector
+{
+public:
+  explicit ThreadSafeVector(std::vector<T>&& vector):
+    m_vector{std::move(vector)}
+  {}
+
+  void pushBack(const T& value)
+  {
+    const ScopedLock scopedLock{m_spinlock};
+    m_vector.push_back(value);
+  }
+
+  // Implement other methods ...
+
+private:
+  std::vector<T> m_vector;
+  Spinlock m_spinlock;
+};
 ```
