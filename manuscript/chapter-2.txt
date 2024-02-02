@@ -108,17 +108,17 @@ public interface Clickable {
 }
 
 public class Window implement Drawable {
-    void draw() {
+    public void draw() {
         System.out.println("Window drawn");
     }
 }
 
 public class Button implements Drawable, Clickable {
-    void draw() {
+    public void draw() {
         System.out.println("Button drawn");
     }
 
-    void click() {
+    public void click() {
         System.out.println("Button clicked");
     }
 }
@@ -146,7 +146,7 @@ You want to add `setQueuedAtInstant` and `getQueuedAtInstant` methods to the int
 You can add the methods to the interface but must provide a default implementation, like raising an error
 indicating the method is not implemented.
 
-```python
+```java
 import java.time.Instant;
 
 
@@ -172,7 +172,7 @@ is easily implemented using an interface variable. You can assign any object tha
 When you call a method on the interface variable, that actual method to be called is decided based on
 what type of object is currently assigned to the interface variable. Below is an example of polymorphic behavior:
 
-```python
+```java
 Drawable drawable = new Button();
 drawable.draw();
 
@@ -182,7 +182,7 @@ drawable.draw();
 drawable = new Window();
 drawable.draw();
 
-//Output:
+// Output:
 // Window drawn
 ```
 
@@ -190,22 +190,24 @@ Polymorphic behavior is also exhibited when you have a variable of the parent cl
 to the variable, like in the below example:
 
 ```python
-class IconButton(Button):
-    def draw(self) -> None:
-        print("Button with icon drawn")
+public class IconButton extends Button {
+    public void draw() {
+        System.out.println("Button with icon drawn");
+    }
+}
 
 
-button: Button = Button()
-button.draw()
+var button = new Button();
+button.draw();
 
-# Output:
-# Button drawn
+// Output:
+// Button drawn
 
-button = IconButton()
-button.draw()
+button = IconButton();
+button.draw();
 
-# Output:
-# Button with icon drawn
+// Output:
+// Button with icon drawn
 ```
 
 ## Programming Paradigms
