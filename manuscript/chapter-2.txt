@@ -103,15 +103,18 @@ public interface Drawable {
   void draw();
 }
 
+
 public interface Clickable {
   void click();
 }
+
 
 public class Window implement Drawable {
   public void draw() {
     System.out.println("Window drawn");
   }
 }
+
 
 public class Button implements Drawable, Clickable {
   public void draw() {
@@ -195,6 +198,7 @@ public class IconButton extends Button {
     System.out.println("Button with icon drawn");
   }
 }
+
 
 var button = new Button();
 button.draw();
@@ -614,6 +618,7 @@ Let's have an example where this principle is *not* followed. We have the follow
 public interface Shape {
 }
 
+
 public class RectangleShape implements Shape {
   private int width;
   private int height;
@@ -732,12 +737,12 @@ Factories are discussed later in this chapter.
 
 Another case is adding a new enum constant. You typically need to modify existing code to handle the new enum constant.
 If you forget to add the handling of the new enum constant somewhere in the existing code, typically, a bug will arise. For this reason,
-You should always safeguard match-case statements with a `_` case that raises an exception and safeguard if/elif structures with an else branch that raises an exception.
-You can also enable your static code analysis tool to report an issue if a match statement's `_` case or
-an else branch is missing from an if/elif structure. Also, some static code analysis tools can report an issue if you miss handling
+You should always safeguard switch-case statements with a *default* case that throws an exception and safeguard if/else if structures with an else branch that throws an exception.
+You can also enable your static code analysis tool to report an issue if a switch statement's *default* case or
+an else branch is missing from an if/else if structure. Also, some static code analysis tools can report an issue if you miss handling
 an enum constant in a match-case statement.
 
-Here is an example of safeguarding an if/elif structure in Java:
+Here is an example of safeguarding an if/else if structure in Java:
 
 ```java
 public enum FilterType {
@@ -745,9 +750,11 @@ public enum FilterType {
   EXCLUDE
 }
 
+
 public interface Filter {
   boolean isFilteredOut(...);
 }
+
 
 public class FilterImpl implements Filter {
   private final FilterType filterType;
@@ -786,12 +793,12 @@ if (filterType === 'include') {
 ```
 
 In the future, if a new literal is added to the `FilterType` type and you forget to update the if-statement, you
-get an exception raised instead of silently passing through the if-statement without any action.
+get an exception thrown instead of silently passing through the if-statement without any action.
 
-We can notice from the above examples that if/elif structures could be avoided
+We can notice from the above examples that if/else if structures could be avoided
 with a better object-oriented design. For instance, we could create a `Filter` protocol and two separate classes,
 `IncludeFilter` and `ExcludeFilter`. The classes implement the `Filter` protocol. Using object-oriented design allows us
-to eliminate the `FilterType` enum and the if/elif structure.
+to eliminate the `FilterType` enum and the if/else if structure.
 This is known as the *replace conditionals with polymorphism* refactoring technique. Refactoring is discussed more
 in the next chapter. Below is the above example refactored to be more object-oriented:
 
@@ -799,6 +806,7 @@ in the next chapter. Below is the above example refactored to be more object-ori
 public interface Filter {
   boolean isFilteredOut(...);
 }
+
 
 public class IncludeFilter implements Filter {
 
@@ -808,6 +816,7 @@ public class IncludeFilter implements Filter {
     // ...
   }
 }
+
 
 public class ExcludeFilter implements Filter {
 
@@ -826,55 +835,62 @@ public class ExcludeFilter implements Filter {
 
 Following *Liskov's substitution principle* guarantees semantic interoperability of types in a type hierarchy.
 
-Let's have an example with a `RectangleShape` class and a derived `SquareShape` class:
+Let's have an example with a Java `RectangleShape` class and a derived `SquareShape` class:
 
-```python
-from typing import Protocol
-
-
-class Shape(Protocol):
-    def draw(self) -> None:
-        pass
+```java
+public interface Shape {
+  void draw();
+}
 
 
-class RectangleShape(Shape):
-    def __init__(self, width: int, height: int):
-        self.__width = width;
-        self.__height = height
+public class RectangleShape implements Shape {
+  private int width;
+  private int height;
 
-    def draw(self):
-        # ...
+  public RectangleShape(final int width, final int height) {
+    this.width = width;
+    this.height = height;
+  }
 
-    @property
-    def width(self) -> int:
-        return self.__width
+  public void draw() {
+    // ...
+  }
 
-    @property
-    def height(self) -> int:
-        return self.__height
+  public int getWidth() {
+    return this.width;
+  }
 
-    @width.setter
-    def width(self, width: int) -> None:
-         self.__width = width
+  public int getHeight() {
+    return this.height;
+  }
 
-    @height.setter
-    def height(self, height: int) -> None:
-         self.__height = height
+  public void setWidth(final int newWidth) {
+    width = newWidth;
+  }
+
+  public void setHeight(final int newHeight) {
+    height = newHeight;
+  }
+}
 
 
-class SquareShape(RectangleShape):
-    def __init__(self, side_length: int):
-        super().__init__(side_length, side_length)
+public class SquareShape extends RectangleShape {
+  public SquareShape(final int sideLength) {
+    super(sideLength, sideLength);
+  }
 
-    @RectangleShape.width.setter
-    def width(self, width: int) -> None:
-        RectangleShape.width.fset(self, width)
-        RectangleShape.height.fset(self, width)
+  public void setWidth(final int newWidth) {
+    super.setWidth(newWidth);
+    //noinspection SuspiciousNameCombination
+    super.setHeight(newWidth);
+  }
 
-    @RectangleShape.height.setter
-    def height(self, height: int) -> None:
-        RectangleShape.width.fset(self, height)
-        RectangleShape.height.fset(self, height)
+  public void setHeight(final int newHeight) {
+    //noinspection SuspiciousNameCombination
+    super.setWidth(newHeight);
+    super.setHeight(newHeight);
+  }
+}
 ```
 
 The above example does not follow Liskov's substitution principle because you cannot set a square's width and height separately.
@@ -884,55 +900,68 @@ a square cannot fully implement the API of the `RectangleShape` class.
 We cannot substitute a square object for a rectangle object. What we need to do is to implement the `SquareShape` class without
 deriving from the `RectangleShape` class:
 
-```python
-class SquareShape(Shape):
-    def __init__(self, side_length: int):
-        self.__side_length = side_length
+```java
+public class SquareShape implements Shape {
+  private int sideLength;
 
-    def draw(self):
-        # ...
+  public SquareShape(final int sideLength) {
+    this.sideLength = sideLength;
+  }
 
-    @property
-    def side_length(self) -> int:
-        return self.__side_length
+  public void draw() {
+    // ...
+  }
 
-    @side_length.setter
-    def side_length(self, side_length: int) -> None:
-        self.__side_length = side_length
+  public int getSideLength() {
+    return this.sideLength;
+  }
+
+  public void setSideLength(final int newSideLength) {
+    sideLength = newSideLength;
+  }
+}
 ```
 
 Let's have another example where we have the following two classes:
 
-```python
-class Dog:
-    def bark(self):
-        # ...
+```java
+public class Dog {
+  void bark() {
+    // ...
+  }
 
-    def walk(self):
-        # ...
+  void walk() {
+    // ...
+  }
 
-    def eat(self):
-        # ...
+  void eat() {
+    // ...
+  }
 
-    # ...
+  // ...
+}
 
 
-class RoboticDog(Dog):
-    def bark(self):
-        # Use super class method
-        # get_sound()
+public class RoboticDog extends Dog {
+  void bark() {
+    // Use super class method
+    // get_sound()
+  }
 
-    def walk(self):
-        # Use super class method
-        # get_speed()
+  void walk() {
+    // Use super class method
+    // get_speed()
+  }
 
-    def eat(self):
-        # Robotic dog cannot eat
-        raise NotImplementedError()
+  void eat() {
+    // Robotic dog cannot eat
+    throw new UnsupportedOperationException()
+  }
+}
 ```
 
 The above example does not follow *Liskov's substitution principle*, because a `RoboticDog` object cannot be used
-in place of a `Dog` object. The `RoboticDog` object raises an error if you call the `eat` method. There are two
+in place of a `Dog` object. The `RoboticDog` object throws an exception if you call the `eat` method. There are two
 solutions to the problem:
 
 1) Abstract away
