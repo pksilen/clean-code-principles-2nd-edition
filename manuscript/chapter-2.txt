@@ -1167,402 +1167,393 @@ is considered the most optimal when it has *low coupling* between classes and *h
 only depends on the three methods provided by the `ProtocolA1`, not all the five methods provided by the `ProtocolA`.
 
 Next, we will have examples of an extreme case of the *interface segregation principle*: Segregating larger interfaces to microinterfaces with a single capability/behavior and constructing larger interfaces by
-inheriting multiple microinterfaces. We will use the Python-specific term *protocol* instead of *interface* for the rest of this section.
-Let's have an example with several automobile classes:
+inheriting multiple microinterfaces. Let's have a Java example with several automobile classes:
 
-```python
-from typing import Protocol
-
-from Location import Location
-
-
-class Automobile(Protocol):
-    def drive(self, start: Location, destination: Location) -> None:
-        pass
-
-    def carry_cargo(
-        self,
-        volume_in_cubic_meters: float,
-        weight_in_kgs: float
-    ) -> None:
-        pass
+```java
+public interface Automobile {
+  void drive(final Location start, final Location destination);
+  void carryCargo(final double volumeInCubicMeters, final double weightInKgs);
+}
 
 
-class PassengerCar(Automobile):
-    # Implement drive and carry_cargo
+public class PassengerCar implements Automobile {
+  // Implement drive and carryCargo
+}
 
 
-class Van(Automobile):
-    # Implement drive and carry_cargo
+public class Van implements Automobile {
+  // Implement drive and carryCargo
+}
 
 
-class Truck(Automobile):
-    # Implement drive and carry_cargo
+public class Truck implements Automobile {
+  // Implement drive and carryCargo
+}
 
 
-class ExcavatingAutomobile(Automobile):
-    def excavate(self) -> None:
-        pass
+public interface ExcavatingAutomobile extends Automobile {
+  void excavate(...);
+}
 
 
-class Excavator(ExcavatingAutomobile):
-    # Implement drive, carry_cargo and excavate
+public class Excavator implements ExcavatingAutomobile {
+  // Implement drive, carryCargo and excavate
+}
 ```
 
-Notice how the `Automobile` protocol has two methods declared. This can limit our software if we
+Notice how the `Automobile` interface has two methods declared. This can limit our software if we
 later want to introduce other vehicles that could be just driven but unable to carry cargo. We should
-segregate two microprotocols from the `Automobile` protocol in an early phase. A microprotocol defines a single capability
-or behavior. After segregation, we will have the following two microprotocols:
+segregate two microinterfaces from the `Automobile` protocol in an early phase. A microinterface defines a single capability
+or behavior. After segregation, we will have the following two microinterfaces:
 
-```python
-from typing import Protocol
-
-from Location import Location
-
-
-class Drivable(Protocol):
-    def drive(self, start: Location, destination: Location) -> None:
-        pass
+```java
+public interface Drivable {
+  void drive(final Location start, final Location destination);
+}
 
 
-class CargoCarrying(Protocol):
-    def carry_cargo(
-        self,
-        volume_in_cubic_meters: float,
-        weight_in_kgs: float
-    ) -> None:
-        pass
+public interface CargoCarrying {
+  void carryCargo(final double volumeInCubicMeters, final double weightInKgs);
+}
 ```
 
-Now that we have two protocols, we can use these protocols separately in our codebase. For example, we can have
-a list of drivable objects or a list of objects that can carry cargo. We still want to have a protocol
-for automobiles, though. We can use *protocol multiple inheritance* to redefine the `Automobile` protocol to extend
-the two microprotocols:
+Now that we have two interfaces, we can use these protocols separately in our codebase. For example, we can have
+a list of drivable objects or a list of objects that can carry cargo. We still want to have an interface
+for automobiles, though. We can use *interface multiple inheritance* to redefine the `Automobile` protocol to extend
+the two microinterfaces:
 
-```python
-class Automobile(Drivable, CargoCarrying):
-    pass
+```java
+public interface Automobile extends Drivable, CargoCarrying {
+}
 ```
 
-If we look at the `ExcavatingAutomobile` protocol, we can notice that it extends the `Automobile` protocol and
+If we look at the `ExcavatingAutomobile` interface, we can notice that it extends the `Automobile` interface and
 adds excavating behavior. Once again, we have a problem if we want an excavating machine that is not
-auto-mobile. The excavating behavior should be segregated into its own microprotocol:
+auto-mobile. The excavating behavior should be segregated into its own microinterface:
 
-```python
-class Excavating(Protocol):
-    def excavate(self) -> None:
-        pass
+```java
+public interface Excavating {
+  void excavate(...);
+}
 ```
 
-We can once again use the protocol multiple inheritance to redefine the `ExcavatingAutomobile` protocol as follows:
+We can once again use the interface multiple inheritance to redefine the `ExcavatingAutomobile` protocol as follows:
 
-```python
-class ExcavatingAutomobile(Excavating, Automobile):
-    pass
+```java
+public interface ExcavatingAutomobile
+                   extends Excavating, Automobile {
+}
 ```
 
-The `ExcavatingAutomobile` protocol now extends three microprotocols: `Excavating`, `Drivable`,
+The `ExcavatingAutomobile` interface now extends three microinterfaces: `Excavating`, `Drivable`,
 and `CargoCarrying`. Where-ever you need an excavating, drivable, or cargo-carrying object in your codebase,
 you can use an instance of the `Excavator` class there.
 
-Let's have another example with a generic collection protocol. We should be able to
-traverse a collection and also be able to compare two collections for equality. First, we define a generic `Iterator` protocol for iterators. It has two methods, as described below:
+Let's have another example with a generic collection interface using TypeScript. We should be able to
+traverse a collection and also be able to compare two collections for equality. First, we define a generic `Iterator`
+interface for iterators. It has two methods, as described below:
 
-```python
-from typing import Protocol, TypeVar
-
-T = TypeVar('T')
-
-
-class Iterator(Protocol[T]):
-    def has_next_elem(self) -> bool:
-        pass
-
-    def get_next_elem(self) -> T:
-        pass
+```ts
+interface MyIterator<T> {
+  hasNextElement(): boolean;
+  getNextElement(): T;
+}
 ```
 
-Next, we can define the collection protocol:
+Next, we can define the collection interface:
 
-```python
-class Collection(Protocol[T]):
-    def create_iterator(self) -> Iterator[T]:
-        pass
-
-    def equals(self, another_collection: 'Collection[T]') -> bool:
-        pass
+```ts
+interface Collection<T> {
+  createIterator(): MyIterator<T>;
+  equals(anotherCollection: Collection<T>): boolean;
+}
 ```
 
-`Collection` is a protocol with two unrelated methods. Let's segregate those methods
-into two microprotocols: `Iterable` and `Equatable`. The `Iterable` protocol is for objects that you can iterate over.
-It has one method for creating new iterators. The `Equatable` protocol's `equals` method is more generic than
-the `equals` method in the above `Collection` protocol. You can equate an `Equatable[T]` object with
+`Collection` is an interface with two unrelated methods. Let's segregate those methods
+into two microinterfaces: `Iterable` and `Equatable`. The `Iterable` interface is for objects that you can iterate over.
+It has one method for creating new iterators. The `Equatable` interface's `equals` method is more generic than
+the `equals` method in the above `Collection` interface. You can equate an `Equatable[T]` object with
 another object of type `T`:
 
-```python
-class Iterable(Protocol[T]):
-    def create_iterator(self) -> Iterator[T]:
-        pass
+```ts
+interface MyIterable<T> {
+  createIterator(): MyIterator<T>;
+}
 
 
-class Equatable(Protocol[T]):
-    def equals(self, another_object: T) -> bool:
-        pass
+interface Equatable<T> {
+  equals(anotherObject: T): boolean;
+}
 ```
 
-We can use protocol multiple inheritance to redefine the `Collection` protocol as follows:
+We can use interface multiple inheritance to redefine the `Collection` interface as follows:
 
-```python
-class Collection(Iterable[T], Equatable['Collection[T]']):
-    pass
+```ts
+interface Collection<T> extends MyIterable<T>,
+                                Equatable<Collection<T>> {
+}
 ```
 
 We can implement the `equals` method by iterating elements in two collections and checking if the elements are equal:
 
-```python
-from abc import abstractmethod
+```ts
+abstract class AbstractCollection<T> implements Collection<T> {
+  abstract createIterator(): MyIterator<T>;
 
+  equals(anotherCollection: Collection<T>): boolean {
+    const iterator = this.createIterator();
+    const anotherIterator = anotherCollection.createIterator();
+    let collectionsAreEqual =
+      this.areEqual(iterator, anotherIterator);
 
-class AbstractCollection(Collection[T]):
-    @abstractmethod
-    def create_iterator(self) -> Iterator[T]:
-        pass
+    if (anotherIterator.hasNextElement()) {
+      collectionsAreEqual = false;
+    }
 
-    def equals(self, another_collection: Collection[T]):
-        iterator = self.create_iterator()
-        another_iterator = another_collection.create_iterator()
+    return collectionsAreEqual;
+  }
 
-        collections_are_equal = self.__are_equal(
-            iterator, another_iterator
-        )
+  private areEqual(
+    iterator: MyIterator<T>,
+    anotherIterator: MyIterator<T>
+  ): boolean {
+    while (iterator.hasNextElement()) {
+      if (anotherIterator.hasNextElement()) {
+        if (iterator.getNextElement() !==
+            anotherIterator.getNextElement()) {
+         return false;
+        }
+      } else {
+        return false;
+      }
+    }
 
-        return (
-            False
-            if another_iterator.has_next_elem()
-            else collections_are_equal
-        )
-
-    @staticmethod
-    def __are_equal(iterator: Iterator[T], another_iterator: Iterator[T]):
-        while iterator.has_next_elem():
-            if another_iterator.has_next_elem():
-                if (
-                    iterator.get_next_elem()
-                    != another_iterator.get_next_elem()
-                ):
-                    return False
-            else:
-                return False
-        return True
+    return true;
+  }
+}
 ```
 
-Collections can also be compared. Let's introduce support for such collections. First, we define a generic `Comparable` protocol for comparing an object with another object:
+Collections can also be compared. Let's introduce support for such collections. First, we define a generic `Comparable` interface for comparing an object with another object:
 
-```python
-from typing import Protocol, Literal
+```ts
+type ComparisonResult = 'isLessThan' | 'areEqual' | 'isGreaterThan' | 'unspecified';
 
-ComparisonResult = Literal['isLessThan', 'areEqual', 'isGreaterThan', 'unspecified']
-
-
-class Comparable(Protocol[T]):
-    def compare(self, another_object: T) -> ComparisonResult:
-        pass
+interface Comparable<T> {
+  compareTo(anotherObject: T): ComparisonResult;
+}
 ```
 
 Now, we can introduce a comparable collection protocol that allows comparing two collections
 of the same type:
 
-```python
-class ComparableCollection(Comparable[Collection[T]], Collection[T]):
-    pass
+```ts
+interface ComparableCollection<T>
+            extends Comparable<Collection<T>>, Collection<T> {
+}
 ```
 
 Let's define a generic sorting algorithm for collections whose elements are comparable:
 
-```python
-U = TypeVar('U', bound=ComparableCollection)
-
-def sort(collection: U) -> U:
-    # ...
+```ts
+function sort<T, U extends Comparable<T>, V extends Collection<U>>(
+  collection: V
+): V {
+  // ...
+}
 ```
 
-Let's create two protocols, `Inserting` and `InsertingIterable` for classes whose instances elements can be inserted into:
+Let's create two interfaces, `Inserting` and `InsertingIterable` for classes whose instances elements can be inserted into:
 
-```python
-class Inserting(Protocol[T]):
-    def insert(self, element: T) -> None:
-        pass
+```ts
+interface Inserting<T> {
+  insert(element: T): void;
+}
 
 
-class InsertingIterable(Inserting[T], Iterable[T]):
-    pass
+interface InsertingIterable<T> extends Inserting<T>,
+                                       MyIterable<T> {
+}
 ```
 
-Let's redefine the `Collection` protocol to extend the `InsertingIterable` protocol because a collection is iterable,
+Let's redefine the `Collection` interface to extend the `InsertingIterable` interface because a collection is iterable,
 and you can insert elements into a collection.
 
-```python
-class Collection(InsertingIterable[T]):
-    pass
+```ts
+interface Collection<T> extends InsertingIterable<T> {
+}
 ```
 
 Next, we introduce two generic algorithms for collections: `map` and `filter`. We can realize that those algorithms work
-with more abstract objects than collections. We benefit from protocol segregation because instead of
-the `Collection` protocol, we can use the `Iterable` and
-`InsertingIterable` protocols to create generic `map` and `filter` algorithms. Later, it is possible to introduce
-additional non-collection iterable objects that can utilize the algorithms. Below are the implementations of the
-`map` and `filter` functions:
+with more abstract objects than collections. We benefit from interface segregation because instead of
+the `Collection<T>` interface, we can use the `MyIterable<T>` and
+`InsertingIterable<T>` interfaces to create generic `map` and `filter` algorithms. Later it is possible to introduce some additional non-collection iterable
+objects that can utilize the algorithms as well. Below is the implementation of the `map` and `filter` functions:
 
-```python
-from collections.abc import Callable
-from typing import TypeVar
+```ts
+function map<T, U>(
+  source: MyIterable<T>,
+  mapped: (sourceElement: T) => U,
+  destination: InsertingIterable<U>
+): InsertingIterable<U> {
+  const sourceIterator = source.createIterator();
 
-T = TypeVar('T')
-U = TypeVar('U')
+  while(sourceIterator.hasNextElement()) {
+    const sourceElement = sourceIterator.getNextElement();
+    destination.insert(mapped(sourceElement));
+  }
 
-
-def map(
-    source: Iterable[T],
-    mapped: Callable[[T], U],
-    destination: InsertingIterable[U],
-) -> InsertingIterable[U]:
-    source_iterator = source.create_iterator()
-    while source_iterator.has_next_elem():
-        source_element = source_iterator.get_next_elem()
-        destination.insert(mapped(source_element))
-    return destination
+  return destination;
+}
 
 
-def filter(
-    source: Iterable[T],
-    is_included: Callable[[T], bool],
-    destination: InsertingIterable[T],
-) -> InsertingIterable[T]:
-    source_iterator = source.create_iterator()
-    while source_iterator.has_next_elem():
-        source_element = source_iterator.get_next_elem()
-        if is_included(source_element):
-            destination.insert(source_element)
-    return destination
+function filter<T>(
+  source: MyIterable<T>,
+  isIncluded: (sourceElement: T) => boolean,
+  destination: InsertingIterable<T>
+): InsertingIterable<T> {
+  const sourceIterator = source.createIterator();
+
+  while (sourceIterator.hasNextElement()) {
+    const sourceElement = sourceIterator.getNextElement();
+
+    if (isIncluded(sourceElement)) {
+      destination.insert(sourceElement);
+    }
+  }
+
+  return destination;
+}
 ```
 
 Let's define the following concrete collection classes:
 
-```python
-class List(Collection[T]):
-    def __init__(self, *args: T):
-        # ...
+```ts
+class List<T> implements Collection<T> {
+  constructor(...args: T[]) {
+    // ...
+  }
 
-    # ...
+  // ...
+}
 
+class Stack<T> implements Collection<T> {
+  // ...
+}
 
-class Stack(Collection[T]):
-    # ...
-
-
-class Set(Collection[T]):
-    # ...
+class MySet<T> implements Collection<T> {
+  // ...
+}
 ```
 
 Now, we can use the `map` and `filter` algorithms with the above-defined collection classes:
 
-```python
-numbers = List(1, 2, 3, 3, 3, 50, 60)
-is_less_than_10 = lambda number: number < 10
-unique_less_than_10_numbers = filter(numbers, is_less_than_10, Set())
+```ts
+const numbers = new List<number>(1, 2, 3, 3, 3, 50, 60);
+const isLessThan10 = (nbr: number) => nbr < 10;
 
-doubled = lambda number: 2 * number
-stack_of_doubled_numbers = map(numbers, doubled, Stack())
+const uniqueLessThan10Numbers =
+  filter(numbers, isLessThan10, new MySet());
+
+const doubled = (nbr: number) => 2 * nbr;
+const stackOfDoubledNumbers = map(numbers, doubled, new Stack());
 ```
 
 Let's create an asynchronous version of the `map` algorithm:
 
 ```python
-from collections.abc import Callable
-from typing import Protocol, TypeVar
-
-T = TypeVar('T')
-U = TypeVar('U')
+interface MaybeCloseable {
+  tryClose(): Promise<void>;
+}
 
 
-class Closeable(Protocol):
-    def close(self) -> None:
-        pass
+interface MaybeInserting<T> {
+  tryInsert(value: T): Promise<void>;
+}
 
 
-class MaybeInserting(Protocol[T]):
-    class InsertError(Exception):
-        pass
-
-    async def try_insert(self, value: T) -> None:
-        pass
+interface MaybeCloseableInserting<T>
+            extends MaybeCloseable, MaybeInserting<T> {
+}
 
 
-class CloseableMaybeInserting(Closeable, MaybeInserting[T]):
-    pass
+class MapError extends Error {
+  // ...
+}
 
 
-class MapError(Exception):
-    pass
+async function tryMap<T, U>(
+  source: MyIterable<T>,
+  mapped: (sourceElement: T) => U,
+  destination: MaybeCloseableInserting<U>
+): Promise<void> {
+  const sourceIterator = source.createIterator();
 
+  try {
+    while (sourceIterator.hasNextElement()) {
+      const sourceElement = sourceIterator.getNextElement();
+      await destination.tryInsert(mapped(sourceElement));
+    }
 
-async def try_map(
-    source: Iterable[T],
-    mapped: Callable[[T], U],
-    destination: CloseableMaybeInserting[U],
-) -> None:
-    source_iterator = source.create_iterator()
-    try:
-        while source_iterator.has_next_elem():
-            source_element = source_iterator.get_next_elem()
-            await destination.try_insert(mapped(source_element))
-    except destination.InsertError as error:
-        raise MapError(error)
-    finally:
-        destination.close()
+    await destination.tryClose();
+  } catch (error: any) {
+    throw new MapError(error.message);
+  }
+}
 ```
 
-Let's create a `FileLineInserter` class that implements the `CloseableMaybeInserting` protocol using the [aiofiles](https://github.com/Tinche/aiofiles) library:
+Let's create a `FileLineInserter` class that implements the `MaybeCloseableInserting` interface:
 
 ```python
-from typing import Final
+const fs = require('fs');
 
-from aiofiles import open
+class FileLineInserter<T extends { toString(): string }>
+        implements MaybeCloseableInserting<T> {
+  private writeStream: FS.WriteStream;
 
+  constructor(private readonly filePathName: string) {
+    this.writeStream =
+      fs.createWriteStream(this.filePathName, { flags: 'a' });
+  }
 
-class FileLineInserter(CloseableMaybeInserting[T]):
-    def __init__(self, file_path_name: str):
-        self.__file = None
-        self.__file_path_name: Final = file_path_name
+  async tryInsert(value: T): Promise<void> {
+    try {
+      const writePromise = new Promise((resolve, reject) => {
+        const line = value.toString() + '\n';
 
-    async def try_insert(self, value: T):
-        if self.__file is None:
-            self.__file = await open(self.__file_path_name, mode='w')
-        line = str(value) + '\n'
-        await self.__file.write(line)
+        this.writeStream.write(line, (error: any) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve(undefined);
+          }
+        });
+      });
 
-    def close(self):
-        self.__file.close()
+      await writePromise;
+    } catch (error: any) {
+      throw new Error(error.message);
+    }
+  }
+
+  tryClose(): Promise<void> {
+    this.writeStream.close();
+    return Promise.resolve();
+  }
+}
 ```
 
 Let's use the above-defined `try_map` algorithm and the `FileLineInserter` class to write doubled numbers (one number per line) to
 a file named *file.txt*:
 
-```python
-from asyncio import run
+```ts
+const numbers = new List<number>(1, 2, 3, 2, 1, 50, 60);
+const doubled = (nbr: number) => 2 * nbr;
 
-numbers = [1, 2, 3, 2, 1, 50, 60]
-doubled = lambda number: 2 * number
-
-
-async def my_func():
-    try:
-        await try_map(numbers, doubled, FileLineInserter('file.txt'))
-    except MapError as error:
-        print(str(error))
-
-
-run(my_func())
+try {
+  await tryMap(numbers, doubled, new FileLineInserter('file.txt'));
+} catch(error: any) { // error will be always MapError type.
+  console.log(error.message);
+}
 ```
 
 Python's standard library utilizes interface segregation and multiple interface inheritance in an exemplary
