@@ -973,7 +973,8 @@ microservices. One example is adding audit logging in a higher-level microservic
 you can add audit logging for requests in the *ecommerce-service*. You don't need to implement
 the audit logging separately in all the lower-level microservices.
 
-*Proxy pattern* can be used to control the access from a higher-level microservice to lower-level microservices. Typical examples of the proxy pattern are authorization and caching. For example, you can add authorization and
+*Proxy pattern* can be used to control the access from a higher-level microservice to lower-level microservices.
+Typical examples of the proxy pattern are authorization and caching. For example, you can add authorization and
 caching for requests in the *ecommerce-service*. Only after successful authorization
 will the requests be delivered to the lower-level microservices. If a request's response is not
 found in the cache, the request will be forwarded to the appropriate lower-level microservice. You don't
@@ -1029,11 +1030,12 @@ For example, two different software systems can both have a message broker,
 API gateway, identity and access management (IAM) application, and log and metrics collection services. You could
 continue this list even further. The goal of duplication-free architecture is to have only one deployment of these
 services. Public cloud providers offer these services for your use. If you have a Kubernetes cluster, an alternative solution
-is to deploy your software systems in different [Kubernetes Namespaces](https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/) and deploy the common services to a shared Kubernetes namespace,
-which can be called the *platform* or *common-services*, for example.
+is to deploy your software systems in different [Kubernetes Namespaces](https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/)
+and deploy the common services to a shared Kubernetes namespace, which can be called the *platform* or *common-services*, for example.
 
 Duplication at the service level happens when two or more services have common functionality that could
-be extracted to a separate new microservice. For example, consider a case where both *user-account-service* and *order-service* have the functionality to send notification messages by email to a user.
+be extracted to a separate new microservice. For example, consider a case where both *user-account-service* and *order-service*
+have the functionality to send notification messages by email to a user.
 This email-sending functionality is duplicated in both microservices.
 Duplication can be avoided by extracting the email-sending functionality to a separate new microservice.
 The single responsibility of the microservices becomes more evident when the email-sending functionality is
@@ -1135,43 +1137,23 @@ it is possible to read the contents of the `/etc/config/LOG_LEVEL` file, which c
 {format: yaml, type: code}
 ![deployment.yaml](resources/chapter1/code/deployment2.yaml)
 
-In Kubernetes, editing of a ConfigMap is reflected in the respective mounted file. This means you can listen to changes
-in the */etc/config/LOG_LEVEL* file. Below is shown how to do it using the [watchdog](https://python-watchdog.readthedocs.io/en/stable/) library:
+In Kubernetes, editing of a ConfigMap is reflected in the respective mounted file. This means that you can listen to changes
+in the `/etc/config/LOG_LEVEL` file. Below is shown how to do it in Node.js with JavaScript:
 
-```python
-from watchdog.events import FileSystemEventHandler
-from watchdog.observers import Observer
+```js
+fs.watchFile('/etc/config/LOG_LEVEL', () => {
+  try {
+    const newLogLevel = fs.readFileSync(
+      '/etc/config/LOG_LEVEL', 'utf-8'
+    ).trim();
 
-from update_log_level import update_log_level
+    // Check here that 'newLogLevel' contains a valid log level
 
-
-class UpdateLogLevelFsEventHandler(FileSystemEventHandler):
-    def on_modified(self, event):
-        try:
-            with open('/etc/config/LOG_LEVEL', 'r') as file:
-                new_log_level = file.read()
-                # Check here that 'new_log_level'
-                # contains a valid log level
-                update_log_level(new_log_level)
-        except:
-            # Handler errors
-
-
-update_log_level_fs_event_handler = UpdateLogLevelFsEventHandler()
-observer = Observer()
-
-observer.schedule(
-    update_log_level_fs_event_handler,
-    path='/etc/config/LOG_LEVEL',
-    recursive=False
-)
-
-observer.start()
-
-# ...
-
-# observer.stop()
-# observer.join()
+    updateLogLevel(newLogLevel);
+  } catch (error) {
+    // Handle error
+  }
+});
 ```
 
 ### Kubernetes Secrets
@@ -1208,7 +1190,8 @@ MONGODB_PASSWORD=Ak9(lKt41uF==%lLO&21mA#gL0!"Dps2
 
 When using an external store, configuration information is removed from the application deployment package (e.g., Helm chart) and put in a centralized location.
 The external store can be implemented with a configuration API and a persistent data store, like a database.
-The external store provides opportunities for easier management and control of configuration data and for sharing configuration data across microservices. Configuration management can be made easier for administrators by building user interfaces.
+The external store provides opportunities for easier management and control of configuration data and for sharing configuration data across microservices.
+Configuration management can be made easier for administrators by building user interfaces.
 
 ## Service Substitution Principle
 
@@ -1322,8 +1305,8 @@ The microservice design is handled using object-oriented design principles, pres
 according to input from the domain experts. Usually, these experts come from the business and specifically from product management.
 The idea of DDD is to transfer the domain knowledge from the domain experts to individual software developers so that
 everyone participating in software development can share a common language that describes the domain. The idea of the common language
-is that people can understand each other, and no multiple terms are used to describe a single thing. If you have a banking related domain with an *account* entity, everyone should speak about *accounts*, not *money repositories*.
-This common language is also called the *ubiquitous language*.
+is that people can understand each other, and no multiple terms are used to describe a single thing. If you have a banking related domain with an *account* entity,
+everyone should speak about *accounts*, not *money repositories*. This common language is also called the *ubiquitous language*.
 
 The domain knowledge is transferred from product managers and architects to lead developers and product owners (POs)
 in development teams. The team's lead developer and PO share the domain knowledge with the rest of the team. This
@@ -1503,7 +1486,8 @@ If a microservice pod crashes, Kubernetes will notice that and start a new pod s
 number of microservice replicas (pods/instances) running. The replica count can be defined in the Kubernetes Deployment manifest for the microservice.
 
 But what if a microservice pod enters a deadlock and cannot serve requests? This situation can be remediated with the help of a
-[liveness probe](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/). You should always specify a liveness probe for each microservice Deployment. Below is an example of a microservice
+[liveness probe](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/).
+You should always specify a liveness probe for each microservice Deployment. Below is an example of a microservice
 Deployment where an HTTP GET type liveness probe is defined:
 
 {format: yaml, type: code}
@@ -1666,17 +1650,17 @@ communicate it in the library documentation.
 If a software component uses the *common-ui-lib*, the latest version of the library can always be safely taken into use because it won't contain
 any breaking changes, only new features, bug fixes, and security patches.
 
-This would be always safe:
+If you were using Node.js and NPM, this would be safe:
 
 ```bash
-pip install --upgrade common-ui-lib
+npm install --save common-ui-library@latest
 ```
 
-When you are ready to migrate to the new major version of the library, you can uninstall the old version and install the new major version in the following way:
+And when you are ready to migrate to the new major version of the library, you can uninstall the old version and install the new major version in the following way:
 
 ```bash
-pip uninstall common-ui-lib
-pip install common-ui-lib-2
+npm uninstall common-ui-library
+npm install --save common-ui-library-2
 ```
 
 Consider when to create a new major version of a library. When you created the first library
