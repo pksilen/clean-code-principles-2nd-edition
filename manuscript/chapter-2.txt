@@ -196,7 +196,6 @@ public class IconButton extends Button {
     }
 }
 
-
 var button = new Button();
 button.draw();
 
@@ -212,7 +211,7 @@ button.draw();
 
 ## Programming Paradigms
 
-The most popular programming languages, including Python, are multi-paradigm programming languages. Multi-paradigm languages
+The most popular programming languages, including C++, Java and JavaScript, are multi-paradigm programming languages. Multi-paradigm languages
 support the following programming paradigms:
 
 - Imperative programming
@@ -226,26 +225,25 @@ for the computer to follow to solve a problem or achieve a desired outcome. The 
 that modify the program state, typically using mutable variables and assignments. Imperative programming emphasizes
 how to achieve a result step by step, specifying the control flow and state changes explicitly. Typical imperative programming constructs
 are variable assignments, state mutations, match-case statements, if-statements, and different kinds of loops (for, while).
-Below is a code sample using imperative programming:
+Below is a code sample using imperative programming in JavaScript:
 
-```python
-from typing import Final
+```js
+const numbers = [1, 2, 3, 4, 5];
+const doubledEvenNumbers = [];
 
-numbers: Final = [1, 2, 3, 4, 5]
+for (const number of numbers) {
+    if (number % 2 == 0) {
+        doubledEvenNumbers.push(number**2)
+    }
+}
 
-doubled_even_numbers: Final = []
+console.log(doubledEvenNumbers)
 
-for number in numbers:
-    if number % 2 == 0:
-        doubled_even_numbers.append(number**2)
-
-print(doubled_even_numbers)
-
-# Output:
-# [4, 16]
+// Output:
+// [4, 16]
 ```
 
-In the above example, although the `doubled_even_numbers` variable is declared as `Final`, it is still a mutable list and
+In the above example, although the `doubled_even_numbers` variable is declared as `const`, it is still a mutable list and
 we mutate the list inside the `for` loop.
 
 ### Functional Programming
@@ -255,7 +253,8 @@ changing state and mutable data. It emphasizes the use of immutable data and the
 In functional programming, functions are first-class citizens, meaning they can be assigned to variables, passed as arguments
 to other functions, and returned as results. This enables the creation of higher-order functions and promotes modularity,
 code re-usability, and concise expression of complex operations in a declarative way. Functional programming avoids side effects,
-favoring [pure functions](https://en.wikipedia.org/wiki/Pure_function) that consistently produce the same output for a given input without causing side effects, making programs easier to reason about and test.
+favoring [pure functions](https://en.wikipedia.org/wiki/Pure_function) that consistently produce the same output for a
+given input without causing side effects, making programs easier to reason about and test.
 
 Unlike in imperative programming, in functional programming, you don't tell the computer *how* to do something but declare
 *what* you want, e.g., I want to filter even numbers from a sequence and calculate their squares.
@@ -267,68 +266,22 @@ is a function that does at least one of the following:
     2. Returns a function as its result.
 {/aside}
 
-Below is functional code that uses Python's list comprehension:
+Below is functional code that uses `map` and `filter` functions:
 
-```python
-from typing import Final
+```ts
+const numbers = [1, 2, 3, 4, 5];
+const is_even = (number: number) => number % 2 == 0;
+const squared = (number: number) => number**2;
 
-numbers: Final = [1, 2, 3, 4, 5]
+console.log(numbers.filter(is_even).map(squared));
 
-print([number**2 for number in numbers if number %2 == 0])
-
-# Output:
-# [4, 16]
+// Output:
+// [4, 16]
 ```
 
 As you can see, the above code is much safer, shorter, and more straightforward than the earlier imperative code. There are no variable assignments or state modifications.
-
-Let's implement the above code using `map` and `filter` functions:
-
-```python
-from typing import Final
-
-numbers: Final = [1, 2, 3, 4, 5]
-
-is_even: Final = lambda number: number % 2 == 0
-doubled: Final = lambda number: number**2
-
-print(list(map(doubled, filter(is_even, numbers))))
-
-# Output:
-# [4, 16]
-```
-
-In the above example, we assigned a *lambda* (a single statement anonymous function) to a variable. This practice is not according to PEP 8. We should use
-`def` to define a function instead:
-
-```python
-from typing import Final
-
-numbers: Final = [1, 2, 3, 4, 5]
-
-def is_even(number: int):
-    return number % 2 == 0
-
-def doubled(number: int):
-    return number**2
-
-print(list(map(doubled, filter(is_even, numbers))))
-
-# Output:
-# [4, 16]
-```
-
-Both the `is_even` and `doubled` are pure functions because they return the same output for the same input without
+Both the `is_even` and `squared` are pure functions because they return the same output for the same input without
 any side effects.
-The above expression could be easier to read. Let's use a variable (= constant) to store an intermediate value:
-
-```python
-even_numbers: Final = filter(is_even, numbers)
-print(list(map(doubled, even_numbers)))
-
-# Output:
-# [4, 16]
-```
 
 There is another way to implement the above code using a composition of functions. We can define reusable functions and
 compose more specific ones from general-purpose ones. Below is an example of function composition using the
@@ -340,30 +293,20 @@ applied `map` function where the first parameter is bound to the `doubled` funct
 or more functions in the following way: `compose(f, g)(x)` is the same as `f(g(x))` and `compose(f, g, h)(x)` is same as `f(g(h(x)))`
 and so on. You can compose as many functions as you need/want.
 
-```python
-from functools import partial
-from typing import Final
-
-from toolz import compose
-
-numbers: Final = [1, 2, 3, 4, 5]
+```ts
+import { compose, filter, map, partial } from "ramda";
 
 
-def is_even(number: int):
-    return number % 2 == 0
+const numbers = [1, 2, 3, 4, 5];
+const is_even = (number: number) => number % 2 == 0;
+const squared = (number: number) => number**2;
+const filter_even = partial(filter, [is_even]);
+const map_doubled = partial(map, [squared]);
+const doubled_even = compose(map_doubled, filter_even);
+console.log(doubled_even(numbers));
 
-
-def doubled(number: int):
-    return number**2
-
-
-filter_even: Final = partial(filter, is_even)
-map_doubled: Final = partial(map, doubled)
-doubled_even: Final = compose(list, map_doubled, filter_even)
-print(doubled_even(numbers))
-
-# Output:
-# [4, 16]
+// Output:
+// [4, 16]
 ```
 
 In the above example, all the following functions can be made re-usable and put into a library:
