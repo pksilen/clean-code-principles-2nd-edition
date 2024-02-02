@@ -1604,9 +1604,11 @@ The *dependency inversion principle* states:
 ![Dependency Inversion Principle](resources/chapter2/images/dep_inv_principle.png)
 
 *Dependency inversion principle* is the primary way to reduce coupling in a software component's code (the other way being the
-*interface segregation principle*). When you use the principle, your classes are not coupled to any concrete implementation but to an interface promising its implementors to offer certain functionality. For example, if your software component needs a collection to store and retrieve items and occasionally get the item count, you should define an interface for the wanted functionality:
+*interface segregation principle*). When you use the principle, your classes are not coupled to any concrete implementation
+but to an interface promising its implementors to offer certain functionality. For example, if your software component needs
+a collection to store and retrieve items and occasionally get the item count, you should define an interface for the wanted functionality:
 
-```python
+```java
 from typing import Protocol
 
 
