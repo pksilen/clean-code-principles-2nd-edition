@@ -922,7 +922,7 @@ public class SquareShape implements Shape {
 }
 ```
 
-Let's have another example where we have the following two classes:
+Let's have another example where we have the following two Java classes:
 
 ```java
 public class Dog {
@@ -970,34 +970,44 @@ solutions to the problem:
 Let's abstract the `eat` method to something common to both a dog and a robotic dog. We could change the
 `eat` method to a `recharge` method:
 
-```python
-class Dog:
-    def bark(self):
-        # ...
+```java
+public class Dog {
+  void bark() {
+    // ...
+  }
 
-    def walk(self):
-        # ...
+  void walk() {
+    // ...
+  }
 
-    def recharge(self):
-        # Eat
+  void recharge() {
+    // Eat
+  }
 
-    # ...
+  // ...
+}
 
 
-class RoboticDog(Dog):
-    def bark(self):
-        # ...
+public class RoboticDog extends Dog {
+  void bark() {
+    // Use super class method
+    // get_sound()
+  }
 
-    def walk(self):
-        # ...
+  void walk() {
+    // Use super class method
+    // get_speed()
+  }
 
-    def recharge(self):
-        # Charge the robot
+  void recharge() {
+    // Charge the robot
+  }
+}
 ```
 
 The other solution is to use composition over inheritance:
 
-```python
+```java
 class RoboticDog:
     def __init__(self, dog: Dog):
         self.__dog = dog
