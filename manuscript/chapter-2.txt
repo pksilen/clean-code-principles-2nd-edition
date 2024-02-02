@@ -436,7 +436,7 @@ When a class represents something, it can contain multiple methods. For example,
 methods like `deposit` and `withdraw`. It is still a single responsibility if these methods are simple enough
 and if there are not too many methods in the class.
 
-Below is a real-life code example where the *and* word is used in the function name:
+Below is a real-life Java code example where the *and* word is used in the function name:
 
 ```java
 void deletePageAndAllReferences(Page page) {
@@ -531,7 +531,7 @@ still use the same `useEffect` function, but now it behaves differently than in 
 seems like the `useEffect` function is doing multiple things. How to solve this? Let's think hypothetically again.
 We could extract functionality from the `useEffect` function and introduce yet another new function called `afterEveryRender` that can be called when we want something to happen after every render:
 
-```react
+```jsx
 export default function ButtonClickCounter() {
   const [clickCount, setClickCount] = useState(0);
 
@@ -546,7 +546,7 @@ document title after every render.
 
 Let's optimize our example so that the click count update happens only if the click count has changed:
 
-```react
+```jsx
 import { useEffect, useState } from "react";
 
 export default function ButtonClickCounter() {
@@ -568,7 +568,7 @@ the effect is not executed after every render but only when the click count is c
 Let's imagine how we could improve the above example. We could once again extract functionality from the `useEffect` function and introduce a new function that handles dependencies:
 `afterEveryRenderIfChanged`. Our hypothetical example would now look like this:
 
-```react
+```jsx
 export default function ButtonClickCounter() {
   const [clickCount, setClickCount] = useState(0);
 
@@ -608,72 +608,86 @@ particular parsing implementation is actually used. There could be a `JsonConfig
 The `JsonConfigParser` class is also protected from variations because possible variations in configuration parsing can be introduced in new classes instead of modifying
 an existing class.
 
-Let's have an example where this principle is *not* followed. We have the following existing and working code:
+Let's have an example where this principle is *not* followed. We have the following existing and working Java code:
 
-```python
-from typing import Protocol
+```java
+public interface Shape {
+}
 
+public class RectangleShape implements Shape {
+  private int width;
+  private int height;
 
-class Shape(Protocol):
-    # ...
+  public RectangleShape(final int width, final int height) {
+    this.width = width;
+    this.height = height;
+  }
 
+  public int getWidth() {
+    return width;
+  }
 
-class RectangleShape(Shape):
-    def __init__(self, width: int, height: int):
-        self.__width = width
-        self.__height = height
+  public int getHeight() {
+    return height;
+  }
 
-    @property
-    def width(self) -> int:
-       return self.__width
+  public void setWidth(final int newWidth) {
+    width = newWidth;
+  }
 
-    @property
-    def height(self) -> int:
-       return self.__height
-
-    @width.setter
-    def width(self, width: int) -> None:
-        self.__width = width
-
-    @height.setter
-    def height(self, height: int) -> None:
-        self.__height = height
+  public void setHeight(final int newHeight) {
+    height = newHeight;
+  }
+}
 ```
 
 Suppose we get an assignment to introduce support for square shapes. Let's try to modify the existing
 `RectangleShape` class, because a square is also a rectangle:
 
-```python
+```java
 class RectangleShape(Shape):
-    # Constructor for creating rectangles
-    def __init__(self, width: int, height: int):
-        self.__width = width
-        self.__height = height
+    public class RectangleShape implements Shape {
+      private int width;
+      private int height;
 
-    # Factory method for creating squares
-    @classmethod
-    def create_square(cls, side_length: int) -> 'RectangleShape':
-        return cls(side_length, side_length)
+      // Rectangle constructor
+      public RectangleShape(final int width, final int height)  {
+        this.width = width;
+        this.height = height;
+      }
 
-    @property
-    def width(self) -> int:
-        return self.__width
+      // Square constructor
+      public RectangleShape(final int sideLength) {
+        this.width = sideLength;
+        this.height = sideLength;
+      }
 
-    @property
-    def height(self) -> int:
-        return self.__height
+      public int getWidth() {
+          return width;
+      }
 
-    @width.setter
-    def width(self, width: int) -> None:
-        if self.__height == self.__width:
-            self.__height = width
-        self.__width = width
+      public int getHeight() {
+          return height;
+      }
 
-    @height.setter
-    def height(self, height: int) -> None:
-        if self.__height == self.__width:
-            self.__width = height
-        self.__height = height
+      public void setWidth(final int newWidth) {
+        if (height == width) {
+          //noinspection SuspiciousNameCombination
+          height = newWidth;
+        }
+
+        width = newWidth;
+      }
+
+      public void setHeight(final int newHeight) {
+        if (height == width) {
+          //noinspection SuspiciousNameCombination
+          width = newHeight;
+        }
+
+        height = newHeight;
+      }
+    }
 ```
 
 We needed to add a factory method for creating squares and modify two methods in the class. Everything works okay when we run tests.
@@ -686,18 +700,22 @@ A better solution to introduce support for square shapes is to use the *open-clo
 that implements the `Shape` protocol. Then, we don't have to modify any existing class, and there is no risk of accidentally
 breaking something in the existing code. Below is the new `SquareShape` class:
 
-```python
-class SquareShape(Shape):
-    def __init__(self, side_length: int):
-        self.__side_length = side_length
+```java
+public class SquareShape implements Shape {
+  private int sideLength;
 
-    @property
-    def side_length(self) -> int:
-        return self.__side_length
+  public SquareShape(final int sideLength) {
+    this.sideLength = sideLength;
+  }
 
-    @side_length.setter
-    def side_length(self, side_length: int) -> None:
-        self.__side_length = side_length
+  public int getSideLength() {
+    return sideLength;
+  }
+
+  public void setSideLength(final int newSideLength) {
+    sideLength = newSideLength;
+  }
+}
 ```
 
 An existing class can be safely modified by adding a new method in the following cases:
@@ -719,53 +737,52 @@ You can also enable your static code analysis tool to report an issue if a match
 an else branch is missing from an if/elif structure. Also, some static code analysis tools can report an issue if you miss handling
 an enum constant in a match-case statement.
 
-Here is an example of safeguarding an if/elif structure:
+Here is an example of safeguarding an if/elif structure in Java:
 
-```python
-from enum import Enum
-from typing import Protocol, Final
+```java
+public enum FilterType {
+  INCLUDE,
+  EXCLUDE
+}
 
+public interface Filter {
+  boolean isFilteredOut(...);
+}
 
-class FilterType(Enum):
-    INCLUDE = 1
-    EXCLUDE = 2
+public class FilterImpl implements Filter {
+  private final FilterType filterType;
 
+  public FilterImpl(final FilterType filterType, ...) {
+    this.filterType = filterType;
+    // ...
+  }
 
-class Filter(Protocol):
-    def is_filtered_out(self) -> bool:
-        pass
-
-
-class FilterImpl(Filter):
-    def __init__(self, filter_type: FilterType):
-        self.__filter_type: Final = filter_type
-
-    def is_filtered_out(self) -> bool:
-        if self.__filter_type == FilterType.INCLUDE:
-            # ...
-        elif self.__filter_type == FilterType.EXCLUDE:
-            # ...
-        else:
-            # Safeguarding
-            raise ValueError('Invalid filter type')
+  public boolean isFilteredOut(...) {
+    if (filterType == FilterType.INCLUDE) {
+      // ...
+    } else if (filterType == FilterType.EXCLUDE) {
+      // ..
+    } else {
+      // Safeguarding
+      throw new IllegalArgumentException("Invalid filter type");
+    }
+  }
+}
 ```
 
-Safeguarding might be needed for a [literal type union](https://peps.python.org/pep-0586/) also:
+In TypeScript, safeguarding might be needed for union types also:
 
-```python
-from typing import Literal
+```ts
+type FilterType = 'include' | 'exclude';
 
-FilterType = Literal['include', 'exclude']
-
-filter_type: FilterType = # ...
-
-if filter_type == 'include':
-    # ...
-elif filter_type == 'exclude':
-    # ...
-else:
-    # Safeguarding
-    raise ValueError('Invalid filter type')
+if (filterType === 'include') {
+  // ...
+} else if (filterType === 'exclude') {
+  // ...
+} else {
+  // Safeguarding
+  throw new Error("Invalid filter type");
+}
 ```
 
 In the future, if a new literal is added to the `FilterType` type and you forget to update the if-statement, you
@@ -773,31 +790,33 @@ get an exception raised instead of silently passing through the if-statement wit
 
 We can notice from the above examples that if/elif structures could be avoided
 with a better object-oriented design. For instance, we could create a `Filter` protocol and two separate classes,
-`IncludeFilter` and `ExcludeFilter`. The classes implement the `Filter` protocol. Using object-oriented design allows us to eliminate the `FilterType` enum and the if/elif structure.
+`IncludeFilter` and `ExcludeFilter`. The classes implement the `Filter` protocol. Using object-oriented design allows us
+to eliminate the `FilterType` enum and the if/elif structure.
 This is known as the *replace conditionals with polymorphism* refactoring technique. Refactoring is discussed more
 in the next chapter. Below is the above example refactored to be more object-oriented:
 
 ```python
-from typing import Protocol
+public interface Filter {
+  boolean isFilteredOut(...);
+}
 
+public class IncludeFilter implements Filter {
 
-class Filter(Protocol):
-    def is_filtered_out(self) -> bool:
-        pass
+  // ...
 
+  public boolean isFilteredOut(...) {
+    // ...
+  }
+}
 
-class IncludeFilter(Filter):
-    # ...
+public class ExcludeFilter implements Filter {
 
-    def is_filtered_out(self) -> bool:
-        # ...
+  // ...
 
-
-class ExcludeFilter(Filter):
-    # ...
-
-    def is_filtered_out(self) -> bool:
-        # ...
+  public boolean isFilteredOut(...) {
+    // ...
+  }
+}
 ```
 
 ### Liskov's Substitution Principle
