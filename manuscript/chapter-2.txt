@@ -1104,79 +1104,62 @@ It just returns a different iterator compared to the superclass.
 When following the *interface segregation principle*, you split larger interfaces into smaller interfaces so that no one should depend on something it does not use.
 Let's have an example where we have the following classes:
 
-```python
-from typing import Protocol
+```java
+public interface InterfaceA {
+  void method1();
+  void method2();
+  void method3();
+  void method4();
+  void method5();
+}
 
 
-class ProtocolA(Protocol):
-    def method1(self):
-        pass
+public class ClassB {
+  private final ProtocolA someAttribute;
 
-    def method2(self):
-        pass
-
-    def method3(self):
-        pass
-
-    def method4(self):
-        pass
-
-    def method5(self):
-        pass
+  // Depends on ProtocolA but
+  // uses only the following methods:
+  // method1, method2, method3
+}
 
 
-class ClassB():
-    __someAttribute: ProtocolA
+public class ClassC {
+  private final ProtocolA someAttribute;
 
-    # Depends on ProtocolA but
-    # uses only the following methods:
-    # method1, method2, method3
-
-
-class ClassC():
-    __someAttribute: ProtocolA
-
-    # Depends on ProtocolA and
-    # uses all methods from the ProtocolA
+  // Depends on ProtocolA and
+  // uses all methods from the ProtocolA
 ```
 
-The `ClassB` is depending on `method4` and `method5` even if it does not use them. We need to apply the *interface segregation principle* and segregate a smaller interface from the `ProtocolA`:
+The `ClassB` is depending on `method4` and `method5` even if it does not use them. We need to apply the *interface segregation principle* and segregate a smaller interface from the `InterfaceA`:
 
-```python
-from typing import Protocol
-
-
-class ProtocolA1(Protocol):
-    def method1(self):
-        pass
-
-    def method2(self):
-        pass
-
-    def method3(self):
-        pass
+```java
+public class InterfaceA1 {
+  void method1();
+  void method2();
+  void method3();
+}
 
 
-class ProtocolA(ProtocolA1):
-    def method4(self):
-        pass
-
-    def method5(self):
-        pass
+public class InterfaceA extends InterfaceA1 {
+  void method4();
+  void method5();
+}
 
 
-class ClassB():
-    __someAttribute: ProtocolA1
+public class ClassB() {
+  private final ProtocolA1 someAttribute;
 
-    # Depends on ProtocolA1
-    # and uses all methods of it
+  // Depends on ProtocolA1
+  // and uses all methods of it
+}
 
 
-class ClassC():
-    __someAttribute: ProtocolA
+public class ClassC() {
+  private final ProtocolA someAttribute;
 
-    # Depends on ProtocolA
-    # and uses all methods of it
+  // Depends on ProtocolA
+  // and uses all methods of it
+}
 ```
 
 *Interface segregation principle* is a way to reduce coupling in your software component. A software component's design
