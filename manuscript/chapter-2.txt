@@ -1609,18 +1609,11 @@ but to an interface promising its implementors to offer certain functionality. F
 a collection to store and retrieve items and occasionally get the item count, you should define an interface for the wanted functionality:
 
 ```java
-from typing import Protocol
-
-
-class Collection(Protocol):
-    def add(self, item):
-        pass
-
-    def remove(self, item):
-        pass
-
-    def length(self):
-        pass
+public interface Collection<T> {
+  void add(final T item);
+  void remove(final T item);
+  long size();
+}
 ```
 
 Being coupled to the above `Collection` interface is much weaker and less coupling than being coupled to a concrete implementation
@@ -1628,16 +1621,11 @@ like a stack or linked list.
 
 An interface is always an abstract type and cannot be instantiated. Below is an example of an interface:
 
-```python
-from typing import Protocol
-
-
-class Shape(Protocol):
-    def draw(self) -> None:
-        pass
-
-    def calculate_area(self) -> float:
-        pass
+```java
+public interface Shape {
+  void draw();
+  double calculateArea();
+}
 ```
 
 The name of an interface describes something abstract, which you cannot create an object of.
@@ -1646,37 +1634,48 @@ draw it or calculate its area because you don't know what shape it is. But when 
 interface, a concrete object of the class representing the interface can be created. Below is an example of three different classes
 that implement the `Shape` interface:
 
-```python
-from math import pi
-from typing import Final
+```java
+public class CircleShape implements Shape {
+  private final int radius;
+
+  public CircleShape(final int radius) {
+    this.radius = radius;
+  }
+
+  public void draw() {
+    // ...
+  }
+
+  public double calculateArea() {
+    return Math.PI * radius * radius;
+  }
+}
 
 
-class CircleShape(Shape):
-    def __init__(self, radius: int):
-        self.__radius: Final = radius
+public class RectangleShape implements Shape {
+  private final int width;
+  private final int height;
 
-    def draw(self) -> None:
-        # ...
+  public RectangleShape(final int width, final int height) {
+    this.width = width;
+    this.height = height;
+  }
 
-    def calculate_area(self) -> float:
-        return pi * self.__radius**2
+  public void draw() {
+    // ...
+  }
 
-
-class RectangleShape(Shape):
-    def __init__(self, width: int, height: int):
-        self.__width: Final = width
-        self.__height: Final = height
-
-    def draw(self) -> None:
-        # ...
-
-    def calculate_area(self) -> float:
-        return self.__width * self.__height
+  public double calculateArea() {
+    return width * height;
+  }
+}
 
 
-class SquareShape(RectangleShape):
-    def __init__(self, side_length: int):
-        super().__init__(side_length, side_length)
+public class SquareShape extends RectangleShape {
+  public SquareShape(final int sideLength) {
+   super(sideLength, sideLength);
+  }
+}
 ```
 
 We should program against the `Shape` interface when using shapes in code. In the below example, we make
@@ -1685,20 +1684,20 @@ a high-level class `Canvas` dependent on the `Shape` interface, not on any of th
 the `Shape` interface. We can also notice that the high-level class `Canvas` does not import anything from the
 low-level classes. Also, the abstraction `Shape` does not depend on concrete implementations (classes).
 
-```
-from typing import Final
+```java
+public class Canvas {
+  private final List<Shape> shapes = new ArrayList<>(10);
 
+  public void add(final Shape shape) {
+    shapes.add(shape);
+  }
 
-class Canvas:
-    def __init__(self):
-        self.__shapes: Final[list[Shape]] = []
-
-    def add(self, shape: Shape) -> None:
-        self.__shapes.append(shape)
-
-    def draw_shapes(self) -> None:
-        for shape in self.__shapes:
-            shape.draw()
+  public void drawShapes() {
+    for(final var shape : shapes) {
+      shape.draw();
+    }
+  }
+}
 ```
 
 A `Canvas` object can contain any shape and draw any shape. It can handle any of
@@ -1707,113 +1706,140 @@ the currently defined concrete shapes and any new ones defined in the future.
 If you did not program against interfaces and did not use the dependency inversion principle, your `Canvas` class would
 look like the following:
 
-```
-from typing import Final
+```java
+public class Circle {
+  public void draw() {
+    // ...
+  }
+}
 
 
-class Circle:
-    def draw(self) -> None:
-        # ...
+public class Rectangle {
+  public void draw() {
+    // ...
+  }
+}
 
 
-class Rectangle:
-    def draw(self) -> None:
-        # ...
+public class Square {
+  public void draw() {
+    // ...
+  }
+}
 
 
-class Square:
-    def draw(self) -> None:
-        # ...
+public class Canvas {
+  private final List<Circle> circles = new ArrayList<>(10);
+  private final List<Rectangle> rectangles = new ArrayList<>(10);
+  private final List<Square> squares = new ArrayList<>(10);
 
+  public void addCircle(final Circle circle) {
+    circles.add(circle);
+  }
 
-class Canvas:
-  def __init__(self):
-      self.__shapes: Final[list[Circle | Rectangle | Square]] = []
+  public void addRectangle(final Rectangle rectangle) {
+    rectangles.add(rectangle);
+  }
 
-  def add(self, shape: Circle | Rectangle | Square) -> None:
-      self.__shapes.append(shape)
+  public void addSquare(final Square square) {
+    squares.add(square);
+  }
 
-  def draw_shapes(self) -> None:
-      for shape in self.__shapes:
-          shape.draw()
+  public void drawShapes() {
+    for(final var circle : circles) {
+      circle.draw();
+    }
+
+    for(final var rectangle : rectangles) {
+      rectangle.draw();
+    }
+
+    for(final var square : squares) {
+      square.draw();
+    }
+  }
+}
 ```
 
 The above high-level `Canvas` class is coupled with all the low-level classes (`Circle`, `Rectangle`, and `Square`).
 The type annotations in the `Canvas` class must be modified if a new shape type is needed. If something changes in the public API
 of any low-level class, the `Canvas` class needs to be modified accordingly. In the above example, we implicitly specify
-the protocol for the `draw` method: it does not take arguments and returns `None`. Relying on implicit protocols is not
-a good solution, especially in non-trivial applications. It is better to program against interfaces and make protocols explicit.
+the interface for the `draw` method: it does not take arguments and returns nothing. Relying on implicit interfaces is not
+a good solution, especially in non-trivial applications. It is better to program against interfaces and make interfaces explicit.
 
 Let's have another example. If you have read books or articles about object-oriented design, you may have encountered
 something similar as is presented in the below example:
 
-```python
-class Dog:
-    def walk(self) -> None:
-        # ...
+```java
+public class Dog {
+  public void walk() {
+    // ...
+  }
 
-    def bark(self) -> None:
-        # ...
-
-
-class Fish:
-    def swim(self) -> None:
-        # ...
+  public void bark() {
+    // ...
+  }
+}
 
 
-class Bird:
-    def fly(self) -> None:
-        # ...
+public class Fish {
+  public void swim() {
+    // ...
+  }
+}
 
-    def sing(self) -> None:
-        # ...
+
+public class Bird {
+  public void fly() {
+    // ...
+  }
+
+  public void sing() {
+    // ...
+  }
+}
 ```
 
 Three concrete implementations are defined above, but no interface is defined. Let's say we are making
 a game that has different animals. The first thing to do when coding the game is to remember to program
-against interfaces and thus introduce an `Animal` protocol that we can use as an abstract base type. Let's try to create
-the `Animal` protocol based on the above concrete implementations:
+against interfaces and thus introduce an `Animal` interface that we can use as an abstract base type. Let's try to create
+the `Animal` interface based on the above concrete implementations:
 
 ```python
-from typing import Protocol
+public interface Animal {
+  void walk();
+  void bark();
+  void swim();
+  void fly();
+  void sing();
+}
 
 
-class Animal(Protocol):
-    def walk(self) -> None:
-        pass
+public class Dog implements Animal {
+  public void walk() {
+    // ...
+  }
 
-    def bark(self) -> None:
-        pass
+  public void bark() {
+    // ...
+  }
 
-    def swim(self) -> None:
-        pass
+  public void swim() {
+    throw new RuntimeException("Illegal operation");
+  }
 
-    def fly(self) -> None:
-        pass
+  public void fly() {
+    throw new RuntimeException("Illegal operation");
+  }
 
-    def sing(self) -> None:
-        pass
-
-
-class Dog(Animal):
-    def walk(self) -> None:
-        # ...
-
-    def bark(self) -> None:
-        # ...
-
-    def swim(self) -> None:
-        raise NotImplementedError()
-
-    def fly(self) -> None:
-        raise NotImplementedError()
-
-    def sing(self) -> None:
-        raise NotImplementedError()
+  public void sing() {
+    throw new RuntimeException("Illegal operation");
+  }
+}
 
 
-# Fish class ...
-# Bird class ...
+// Fish class ...
+// Bird class ...
 ```
 
 The above approach is wrong. We declare that the `Dog` class implements the `Animal` protocol, but
