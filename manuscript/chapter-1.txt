@@ -1910,7 +1910,8 @@ the materialized view should be indexed by the customer's `id` column to enable 
 needs more details about an order available in the materialized view. In that case, the *order-command-service* can
 be used to query the events of the order for additional information.
 
-Using event sourcing and CQRS offers availability over consistency, which the system end-users usually prefer, i.e., the end users usually prefer to get information fast, even if it is not current but will eventually be up-to-date.
+Using event sourcing and CQRS offers availability over consistency, which the system end-users usually prefer, i.e.,
+the end users usually prefer to get information fast, even if it is not current but will eventually be up-to-date.
 *Availability over consistency principle* is one of the IDEALS microservice principles.
 
 ### Distributed Transaction Patterns
