@@ -21,47 +21,8 @@ This chapter describes principles related to object-oriented design. The followi
 - Dependency injection principle
 - Avoid duplication principle
 
-We start the chapter by defining object-oriented programming (OOP) concepts and discussing different programming paradigms: object-oriented, imperative, and functional. We also analyze why OOP can be hard to master even though the concepts and fundamental principles are not so difficult to grasp.
-
-{aside}
-In the coming code samples, I don't use the `Final` type hint for local variables, even though most of the local variables I create are constants. I made this decision to improve the readability of the examples. For production code,
-I recommend you add the `Final` type hints for local variables that should not be modified. By default, local variables
-should not be modified after the initial assignment. You should usually introduce a new variable instead of modifying
-an existing one. This rule applies, of course, to the function parameter variables, too. You shouldn't modify them in the function body.
-
-```python
-from typing import Final
-
-
-# Mutable variable
-value = get_value()
-value = get_another_value()
-
-# Constant
-value2: Final = get_value()
-
-# Type checker reports an error
-value2 = get_another_value()
-```
-
-For all you language designers, variables should be constant by default, and if you want a mutable variable, that
-should be denoted by a keyword like `Mutable`. This is how Python should look like:
-
-```python
-from typing import Mutable
-
-
-# Constant
-value = get_value()
-
-# Type checker reports an error
-value = get_another_value()
-
-# Mutable
-value2: Mutable = get_value()
-value2 = get_another_value()
-```
-{/aside}
+We start the chapter by defining object-oriented programming (OOP) concepts and discussing different programming paradigms:
+object-oriented, imperative, and functional. We also analyze why OOP can be hard to master even though the concepts and fundamental principles are not so difficult to grasp.
 
 ## Object-Oriented Programming Concepts
 
@@ -83,25 +44,27 @@ Let's discuss each of the concepts next.
 ### Classes/Objects
 
 A class is a user-defined data type that acts as the blueprint for individual objects (instances of the class). An object is created
-using the class's `__init__` method, which sets the object's initial state. A class consists of *attributes* and *methods*, which can be either *class* or *instance* attributes/methods. Instance attributes define the
+using the class's *constructor* method, which sets the object's initial state. A class consists of *attributes* (or *properties*) and *methods*,
+which can be either *class* or *instance* attributes/methods. Instance attributes define the
 state of an object. Instance methods act on instance attributes, i.e., they are used to query and modify the state of an object.
 Class attributes belong to the class, and class methods act on class attributes.
 
 An object can represent either a concrete or abstract entity in the real world. For example, a circle and an employee object represent
 real-world entities, while an object representing an open file (a file handle) is an abstract entity. Objects can also be hybrid, representing something concrete and abstract.
 
-Attributes of an object can contain other objects to create object hierarchies. This is called *object composition*, handled in more detail in the *prefer composition over inheritance principle* section.
+Attributes of an object can contain other objects to create object hierarchies. This is called *object composition*,
+and is handled in more detail in the *prefer composition over inheritance principle* section.
 
 In pure object-oriented languages like Java, you must always create a class where you can put functions. Even if you have only
-class methods and no attributes, you must create a class in Java to host the class methods (static methods). In Python, you don't
-have to create classes for hosting functions; just put the functions into a single module or create a package (directory) and put each function
+class methods and no attributes, you must create a class in Java to host the class methods (static methods). In JavaScript, you don't
+have to create classes for hosting functions; just put the functions into a single module or create a directory and put each function
 in a separate module. Putting functions into classes has many benefits (e.g., dependency injection), which is why putting functions into classes is often a good idea.
 
 ### Encapsulation
 
 Encapsulation makes changing the internal state of an object directly outside of the object impossible. The idea of encapsulation
 is that the object's state is internal to the object and can be changed externally only by the object's public methods. Encapsulation contributes to better
-security and avoidance of data corruption. Unfortunately, the Python language does not support encapsulation, but some conventions can be used to simulate encapsulation. More about that in the *encapsulation principle* section.
+security and avoidance of data corruption. More about that in the *encapsulation principle* section.
 
 ### Abstraction
 
@@ -111,106 +74,64 @@ This makes it possible to change the implementation details without affecting an
 
 ### Inheritance
 
-Inheritance allows classes to be arranged in a hierarchy representing *is-a* relationships. For example, the `Employee` class might inherit from the `Person` class because an employee is also a person.
-All the attributes and methods in the parent (super) class also appear in the child (sub) class with the same names.
-For example, class `Person` might define attributes `name` and `birth_date`.
+Inheritance allows classes to be arranged in a hierarchy representing *is-a* relationships. For example, the `Employee`
+class might inherit from the `Person` class because an employee is also a person.
+All the attributes and methods in the parent (super) class also appear in the child class (subclass) with the same names.
+For example, class `Person` might define attributes `name` and `birthDate`.
 These will also be available in the `Employee` class. Child class can add methods and attributes. Child class can also
 override a method in the parent class. For example, the `Employee` might add attributes `employer` and `salary`. This technique allows
 easy re-use of the same functionality and data definitions, mirroring real-world relationships intuitively.
 
-Python also supports multiple inheritance, where a child class can have multiple parent classes. The problem with multiple inheritance is that
+C++ also supports multiple inheritance, where a child class can have multiple parent classes. The problem with multiple inheritance is that
 the child class can inherit different versions of a method with the same name. By default, multiple inheritance should be avoided whenever
-possible. Some languages, like Java, don't support multiple inheritance at all. In Python, inheriting from multiple so-called *mixin* classes can
-also be problematic because two mixin classes can also have clashing method names. Inheritance will cram additional functionality into a
+possible. Some languages, like Java, don't support multiple inheritance at all. Inheritance will cram additional functionality into a
 child class, making the class large and possibly not having a single responsibility. A better way to add functionality to a class is to compose
 the class of multiple other classes (the mixins). In that way, there is no need to worry about possible clashing of method names.
 
-Multiple inheritance is always allowed for interfaces. Because Python does not have interfaces, you can use multiple inheritance
-with an [abstract base class ](https://docs.python.org/3/library/abc.html)(ABC) or [protocol](https://peps.python.org/pep-0544/) serving as an interface. More about interfaces in the next section.
-
-{aside}
-Python 3.12 introduced the `@override` decorator that can be used for methods that are supposed to override a base class
-method. A similar kind of keyword or annotation is available in many other languages. Because the examples in this book are written for Python
-3.11, I am not using the `@override` decorator, but you should take it into use and specify it for each method that is supposed to override
-a base class (or protocol) method. Using the decorator will reveal cases where you accidentally misspell a method name so that it does not override a base class method.
-{/aside}
+Multiple inheritance is always allowed for interfaces. More about interfaces in the next section.
 
 ### Interface
 
 An interface specifies a contract that classes that implement the interface must obey. Interfaces are used to implement polymorphic behavior,
-which will be described in the next section. An interface consists of one or more methods that classes must implement. Python does not
-have interfaces but has *abstract base classes* (ABCs) and *protocols*. Both of these can be used to create an interface.
-The ABC syntax is more verbose than protocol syntax because you must always denote a method in an ABC with the `@abstractmethod` decorator.
+which will be described in the next section. An interface consists of one or more methods that classes must implement.
 You cannot instantiate an interface. It is just a contract specification.
 
-Below are two interfaces implemented inheriting from the `ABC` and one class that implements both interfaces:
+Below are two interfaces and two classes that implements the interfaces:
 
-```python
-from abc import ABC, abstractmethod
+```java
+public interface Drawable {
+    void draw();
+}
+
+public interface Clickable {
+    void click();
+}
+
+public class Window implement Drawable {
+    void draw() {
+        System.out.println("Window drawn");
+    }
+}
+
+public class Button implements Drawable, Clickable {
+    void draw() {
+        System.out.println("Button drawn");
+    }
+
+    void click() {
+        System.out.println("Button clicked");
+    }
+}
 
 
-class Drawable(ABC):
-    @abstractmethod
-    def draw(self) -> None:
-        pass
-
-
-class Clickable(ABC):
-    @abstractmethod
-    def click(self) -> None:
-        pass
-
-
-class Button(Drawable, Clickable):
-    def draw(self) -> None:
-        print("Button drawn")
-
-    def click(self) -> None:
-        print("Button clicked")
-
-
-button = Button()
+final var button = new Button()
 button.draw()
 button.click()
 
-# Output:
-# Button drawn
-# Button clicked
+// Output:
+// Button drawn
+// Button clicked
 ```
-
-You can also combine the usage of ABCs and protocols. However, sticking to one way of defining interfaces is good practice.
-Below is an example where the `Window` class implements two interfaces, one that is defined extending from the `ABC`
-(in the above code listing) and one that is defined as extending from the `Protocol`:
-
-```python
-from typing import Protocol
-
-
-class Draggable(Protocol):
-    def drag_to(self, x: int, y: int) -> None:
-        pass
-
-
-class Window(Drawable, Draggable):
-    def draw(self) -> None:
-        print("Window drawn")
-
-    def drag_to(self, x: int, y: int) -> None:
-        print(f"Window dragged to ({x}, {y})")
-
-
-window = Window()
-window.draw()
-window.drag_to(200, 300)
-
-# Output:
-# Window drawn
-# Window dragged to (200, 300)
-```
-
-{aside}
-For the rest of the book, I will interchangeably use the terms *interface* and *protocol*.
-{/aside}
 
 #### Interface evolution
 
@@ -219,28 +140,28 @@ method(s) to the interface, you might have to provide a default implementation i
 currently implement your interface don't implement the methods you are about to add to the interface. This is
 true in cases where the implementing classes are something you cannot or don't want to modify.
 
-Let's imagine you have a `Message` interface with `get_data` and `get_length_in_bytes` methods, and you have classes
+Let's imagine you have a `Message` interface with `getData` and `getLengthInBytes` methods, and you have classes
 implementing the `Message` interface, but you cannot modify the classes.
-You want to add `set_queued_at_instant` and `get_queued_at_instant` methods to the interface.
+You want to add `setQueuedAtInstant` and `getQueuedAtInstant` methods to the interface.
 You can add the methods to the interface but must provide a default implementation, like raising an error
 indicating the method is not implemented.
 
 ```python
-from typing import Protocol
+import java.time.Instant;
 
 
-class Message(Protocol):
-    def get_data(self) -> bytearray:
-        # ...
+public interface Message {
+    byte[] getData();
+    int getLengthInBytes();
 
-    def get_length_in_bytes(self) -> int:
-        # ...
+    default void setQueuedAtInstant(final Instant instant) {
+         throw new UnsupportedOperationException();
+    }
 
-    def set_queued_at_instant(self, timestamp_in_ms: int) -> None:
-        raise NotImplementedError()
-
-    def get_queued_at_instant(self) -> int:
-        raise NotImplementedError()
+    default Instant getQueuedAtInstant() {
+        throw new UnsupportedOperationException();
+    }
+}
 ```
 
 ### Polymorphism
@@ -252,17 +173,17 @@ When you call a method on the interface variable, that actual method to be calle
 what type of object is currently assigned to the interface variable. Below is an example of polymorphic behavior:
 
 ```python
-drawable: Drawable = Button()
-drawable.draw()
+Drawable drawable = new Button();
+drawable.draw();
 
-# Output:
-# Button drawn
+// Output:
+// Button drawn
 
-drawable = Window()
-drawable.draw()
+drawable = new Window();
+drawable.draw();
 
-# Output:
-# Window drawn
+//Output:
+// Window drawn
 ```
 
 Polymorphic behavior is also exhibited when you have a variable of the parent class type and assign a child class object
