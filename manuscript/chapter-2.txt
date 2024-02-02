@@ -394,7 +394,8 @@ as a *program against interfaces principle*. The five SOLID principles are the f
 > ***Classes should have one responsibility: representing a thing or providing a single functionality.***
 > ***Functions should do one thing only.***
 
-Single responsibility should be at a particular abstraction level. A class or function can become too large if the abstraction level is too high. Then, split the class or function into multiple classes or functions on a lower
+Single responsibility should be at a particular abstraction level. A class or function can become too large if the abstraction level is too high.
+Then, split the class or function into multiple classes or functions on a lower
 level of abstraction. The single responsibility principle is akin to the [separation of concerns](https://en.wikipedia.org/wiki/Separation_of_concerns) principle.
 In the *separation of concerns* principle, you divide a software component into distinct "sections". A section can be any size, e.g., a subdomain (package),
 module, class, or function.
