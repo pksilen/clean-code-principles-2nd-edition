@@ -285,11 +285,11 @@ any side effects.
 
 There is another way to implement the above code using a composition of functions. We can define reusable functions and
 compose more specific ones from general-purpose ones. Below is an example of function composition using the
-`compose` function from the [toolz](https://toolz.readthedocs.io/en/latest/api.html) library. The example also uses the `partial`
-function from the `functools` module to create
-partially applied functions. For example, the `filter_even` function is a partially applied `filter` function where
-the first parameter is bound to the `is_even` function. Similarly, the `map_doubled` function is a partially
-applied `map` function where the first parameter is bound to the `doubled` function. The `compose` function composes two
+`compose` function from the [ramda](https://ramdajs.com/) library. The example also uses the `partial`
+function from the same library to create
+partially applied functions. For example, the `filterEven` function is a partially applied `filter` function where
+the first parameter is bound to the `isEven` function. Similarly, the `mapSquared` function is a partially
+applied `map` function where the first parameter is bound to the `squared` function. The `compose` function composes two
 or more functions in the following way: `compose(f, g)(x)` is the same as `f(g(x))` and `compose(f, g, h)(x)` is same as `f(g(h(x)))`
 and so on. You can compose as many functions as you need/want.
 
@@ -298,12 +298,12 @@ import { compose, filter, map, partial } from "ramda";
 
 
 const numbers = [1, 2, 3, 4, 5];
-const is_even = (number: number) => number % 2 == 0;
+const isEven = (number: number) => number % 2 == 0;
 const squared = (number: number) => number**2;
-const filter_even = partial(filter, [is_even]);
-const map_doubled = partial(map, [squared]);
-const doubled_even = compose(map_doubled, filter_even);
-console.log(doubled_even(numbers));
+const filterEven = partial(filter, [isEven]);
+const mapSquared = partial(map, [squared]);
+const doubledEven = compose(mapSquared, filterEven);
+console.log(doubledEven(numbers));
 
 // Output:
 // [4, 16]
@@ -312,9 +312,9 @@ console.log(doubled_even(numbers));
 In the above example, all the following functions can be made re-usable and put into a library:
 
 - `is_even`
-- `doubled`
+- `squared`
 - `filter_even`
-- `map_doubled`
+- `map_squared`
 
 Modern code should favor functional programming over imperative programming when possible. As compared to functional programming,
 imperative programming comes with the following disadvantages:
