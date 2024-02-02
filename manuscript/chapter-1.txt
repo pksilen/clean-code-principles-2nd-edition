@@ -745,8 +745,11 @@ app.use('/graphql', graphqlHTTP({
 app.listen(4000);
 ```
 
-You can access the *GraphiQL* UI at *http://127.0.0.1:5000/graphql*
-On the left-hand side pane, you can specify a GraphQL query. For example, to query the user identified with an id 2:
+After you have started the above program with the `node server.js` command, you can access the GraphiQL endpoint with
+a browser at `http://localhost:4000/graphql`
+```
+
+On the left-hand side pane, you can specify a GraphQL query. For example, to query the user identified with id 2:
 
 ```graphql
 {
@@ -767,11 +770,40 @@ On the left-hand side pane, you can specify a GraphQL query. For example, to que
 }
 ```
 
-Because we have only implemented the *sales-item-service* lower-level microservice and not all the lower-level microservices,
-let's modify the *app.py* to return dummy static results instead of accessing the non-existent lower-level microservices:
+Because we haven't implemented the lower-level microservices, let's modify the part of the *server.js* where lower level
+microservices are accessed to return dummy static results instead of accessing the real lower-level microservices:
 
-{format: python}
-![app.py](resources/chapter1/code/app2.py)
+```js
+const [
+        { data: userAccount },
+        { data: salesItems },
+        { data: orders }
+      ] = await Promise.all([
+        Promise.resolve({
+          data: {
+            id,
+            userName: 'pksilen'
+          }
+        }),
+        Promise.resolve({
+          data: [
+            {
+              id: 1,
+              name: 'sales item 1'
+            }
+          ]
+        }),
+        Promise.resolve({
+          data: [
+            {
+              id: 1,
+              userId: id
+            }
+          ]
+        })
+      ]);
+```
+
 
 We should see the result below if we now execute the previously specified query. We assume that
 *sales-item-service* returns a single sales item with id 1.
@@ -782,7 +814,7 @@ We should see the result below if we now execute the previously specified query.
     "user": {
       "userAccount": {
         "id": "2",
-        "userName": "Petri"
+        "userName": "pksilen"
       },
       "salesItems": [
         {
@@ -801,22 +833,42 @@ We should see the result below if we now execute the previously specified query.
 }
 ```
 
-We can simulate a failure by modifying the *app.py* to start the app with the wrong URL for the *sales-item-service* (port 8000 is changed to 8001):
+We can simulate a failure by modifying the *server.js* to contain the following code:
 
-```bash
-export SALES_ITEM_SERVICE_URL=http://127.0.0.1:8001
-hypercorn app:app -b 127.0.0.1:5000
+```js
+const [
+        { data: userAccount },
+        { data: salesItems },
+        { data: orders }
+      ] = await Promise.all([
+        axios.get(`http://localhost:3000/user-accounts/${id}`),
+        Promise.resolve({
+          data: [
+            {
+              id: 1,
+              name: 'sales item 1'
+            }
+          ]
+        }),
+        Promise.resolve({
+          data: [
+            {
+              id: 1,
+              userId: id
+            }
+          ]
+        })
+      ]);
 ```
 
 Now, if we execute the query again, we will get the below error response because the GraphQL server cannot connect to
-a service at `localhost:8001` because no service runs at that address.
+a service at `localhost:3000` because no service runs at that address.
 
 ```json
 {
-  "data": null,
   "errors": [
     {
-      "message": "All connection attempts failed",
+      "message": "connect ECONNREFUSED 127.0.0.1:3000",
       "locations": [
         {
           "line": 2,
@@ -826,20 +878,10 @@ a service at `localhost:8001` because no service runs at that address.
       "path": [
         "user"
       ],
-      "extensions": {
-        "exception": {
-          "stacktrace": [ ...
-          ],
-          "context": {
-            "mapped_exc": "<class 'httpx.ConnectError'>",
-            "from_exc": "<class 'httpc...rotocolError'>",
-            "to_exc": "<class 'httpx...rotocolError'>",
-            "message": "'All connecti...tempts failed'"
-          }
-        }
-      }
+      "extensions": {}
     }
-  ]
+  ],
+  "data": null
 }
 ```
 
@@ -883,7 +925,7 @@ The result for the above query will be the following:
 The above example lacks some features like authorization that is needed for production. Authorization
 should ensure users can only execute the `user` query to fetch their resources. The authorization should fail if
 a user tries to execute the `user` query using someone else's `id`. Security will be discussed more in the coming
-*Security principles* chapter.
+*security principles* chapter.
 
 The `user` query in the previous example spanned over multiple lower-level microservices:
 *user-account-service*, *sales-item-service*, and *order-service*. Because the query is not mutating anything, it can be
@@ -899,7 +941,8 @@ Guidance on how to implement a distributed transaction is given later in this ch
 Service aggregation utilizes the [facade pattern](https://en.wikipedia.org/wiki/Facade_pattern).
 The facade pattern allows for hiding individual lower-level microservices behind a facade (the higher-level microservice).
 The clients of the software system access the system through the facade. They don't directly contact the individual lower-level
-microservices behind the facade because it breaks the encapsulation of the lower-level microservices inside the higher-level microservice. A client accessing the lower-level microservices directly creates unwanted coupling between the client
+microservices behind the facade because it breaks the encapsulation of the lower-level microservices inside the higher-level microservice.
+A client accessing the lower-level microservices directly creates unwanted coupling between the client
 and the lower-level microservices, which makes changing the lower-level microservices hard without affecting the client.
 
 Think about a post office counter as an example of a real-world facade. It serves as a facade for the post office and
