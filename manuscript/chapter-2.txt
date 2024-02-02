@@ -926,15 +926,15 @@ Let's have another example where we have the following two Java classes:
 
 ```java
 public class Dog {
-  void bark() {
+  public void bark() {
     // ...
   }
 
-  void walk() {
+  public void walk() {
     // ...
   }
 
-  void eat() {
+  public void eat() {
     // ...
   }
 
@@ -943,17 +943,17 @@ public class Dog {
 
 
 public class RoboticDog extends Dog {
-  void bark() {
+  public void bark() {
     // Use super class method
     // get_sound()
   }
 
-  void walk() {
+  public void walk() {
     // Use super class method
     // get_speed()
   }
 
-  void eat() {
+  public void eat() {
     // Robotic dog cannot eat
     throw new UnsupportedOperationException()
   }
@@ -972,15 +972,15 @@ Let's abstract the `eat` method to something common to both a dog and a robotic 
 
 ```java
 public class Dog {
-  void bark() {
+  public void bark() {
     // ...
   }
 
-  void walk() {
+  public void walk() {
     // ...
   }
 
-  void recharge() {
+  public void recharge() {
     // Eat
   }
 
@@ -989,17 +989,17 @@ public class Dog {
 
 
 public class RoboticDog extends Dog {
-  void bark() {
+  public void bark() {
     // Use super class method
     // get_sound()
   }
 
-  void walk() {
+  public void walk() {
     // Use super class method
     // get_speed()
   }
 
-  void recharge() {
+  public void recharge() {
     // Charge the robot
   }
 }
@@ -1008,15 +1008,19 @@ public class RoboticDog extends Dog {
 The other solution is to use composition over inheritance:
 
 ```java
-class RoboticDog:
-    def __init__(self, dog: Dog):
-        self.__dog = dog
+public class RoboticDog:
+  private final Dog dog;
 
-    def bark(self):
-        # Use self.__dog.get_sound()
+  public RoboticDog(final Dog dog) {
+      this.dog = dog
 
-    def walk(self):
-        # Use self.__dog.get_speed()
+  public void bark() {
+    // Use dog.get_sound()
+  }
+
+  public void walk() {
+    // Use dog.get_speed()
+  }
 ```
 
 Liskov's substitution principle requires the following:
