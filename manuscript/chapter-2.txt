@@ -100,27 +100,27 @@ Below are two interfaces and two classes that implements the interfaces:
 
 ```java
 public interface Drawable {
-    void draw();
+  void draw();
 }
 
 public interface Clickable {
-    void click();
+  void click();
 }
 
 public class Window implement Drawable {
-    public void draw() {
-        System.out.println("Window drawn");
-    }
+  public void draw() {
+    System.out.println("Window drawn");
+  }
 }
 
 public class Button implements Drawable, Clickable {
-    public void draw() {
-        System.out.println("Button drawn");
-    }
+  public void draw() {
+    System.out.println("Button drawn");
+  }
 
-    public void click() {
-        System.out.println("Button clicked");
-    }
+  public void click() {
+    System.out.println("Button clicked");
+  }
 }
 
 
@@ -151,16 +151,16 @@ import java.time.Instant;
 
 
 public interface Message {
-    byte[] getData();
-    int getLengthInBytes();
+  byte[] getData();
+  int getLengthInBytes();
 
-    default void setQueuedAtInstant(final Instant instant) {
-         throw new UnsupportedOperationException();
-    }
+  default void setQueuedAtInstant(final Instant instant) {
+     throw new UnsupportedOperationException();
+  }
 
-    default Instant getQueuedAtInstant() {
-        throw new UnsupportedOperationException();
-    }
+  default Instant getQueuedAtInstant() {
+    throw new UnsupportedOperationException();
+  }
 }
 ```
 
@@ -189,11 +189,11 @@ drawable.draw();
 Polymorphic behavior is also exhibited when you have a variable of the parent class type and assign a child class object
 to the variable, like in the below example:
 
-```python
+```java
 public class IconButton extends Button {
-    public void draw() {
-        System.out.println("Button with icon drawn");
-    }
+  public void draw() {
+    System.out.println("Button with icon drawn");
+  }
 }
 
 var button = new Button();
@@ -232,9 +232,9 @@ const numbers = [1, 2, 3, 4, 5];
 const doubledEvenNumbers = [];
 
 for (const number of numbers) {
-    if (number % 2 == 0) {
-        doubledEvenNumbers.push(number**2)
-    }
+  if (number % 2 == 0) {
+    doubledEvenNumbers.push(number**2)
+  }
 }
 
 console.log(doubledEvenNumbers)
@@ -311,10 +311,10 @@ console.log(doubledEven(numbers));
 
 In the above example, all the following functions can be made re-usable and put into a library:
 
-- `is_even`
+- `isEven`
 - `squared`
-- `filter_even`
-- `map_squared`
+- `filterEven`
+- `mapSquared`
 
 Modern code should favor functional programming over imperative programming when possible. As compared to functional programming,
 imperative programming comes with the following disadvantages:
@@ -429,7 +429,7 @@ An employee (who can have a bank account). Object composition is covered in more
 At the function level, each function should perform a single task. The function name should describe what task the function
 performs, meaning each function name should contain a verb. The function name should not contain the word *and*
 because it can mean that the function is doing more than one thing or you haven't named the function on a correct abstraction level.
-You should not name a function according to the steps it performs (e.g., do_this_and_that_and_then_some_third_thing) but
+You should not name a function according to the steps it performs (e.g., `doThisAndThatAndThenSomeThirdThing`) but
 instead, use wording on a higher level of abstraction.
 
 When a class represents something, it can contain multiple methods. For example, an `Account` class can have
@@ -438,16 +438,17 @@ and if there are not too many methods in the class.
 
 Below is a real-life code example where the *and* word is used in the function name:
 
-```python
-def delete_page_and_all_references(page: Page):
-    delete_page(page)
-    registry.delete_reference(page.name)
-    config_keys.delete_key(page.name.make_key())
+```java
+void deletePageAndAllReferences(Page page) {
+  deletePage(page);
+  registry.deleteReference(page.name);
+  configKeys.deleteKey(page.name.makeKey());
+}
 ```
 
 In the above example, the function does two things: delete a page and remove all the references to that page.
 But if we look at the code inside the function, we can realize that it is also doing a third thing: deleting a page key from configuration keys.
-So should the function be named `delete_page_and_all_references_and_config_key`? It does not sound reasonable.
+So should the function be named `deletePageAndAllReferencesAndConfigKey`? It does not sound reasonable.
 The problem with the function name is that it is at the same level of abstraction as the function statements.
 The function name should be at a higher level of abstraction than the statements inside the function.
 
