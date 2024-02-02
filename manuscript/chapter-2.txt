@@ -1028,49 +1028,53 @@ Liskov's substitution principle requires the following:
 - A subclass must implement the superclass API and retain (or, in some cases, replace) the functionality of the superclass.
 - A superclass should not have protected attributes because it allows subclasses to modify the state of the superclass, which can lead to incorrect behavior in the superclass.
 
-Below is an example where a subclass extends the behavior of a superclass in the `do_something` method. The functionality of the superclass is retained in the subclass
+Below is a Java example where a subclass extends the behavior of a superclass in the `do_something` method. The functionality of the superclass is retained in the subclass
 making a subclass object substitutable for a superclass object.
 
-```python
-class SuperClass:
-    # ...
+```java
+public class SuperClass {
+  // ...
 
-    def do_something(self):
-        # ...
+  public void doSomething() {
+    // ...
+  }
+}
 
+public class SubClass extends SuperClass {
+  // ...
 
-class SubClass(SuperClass):
-    # ...
+  public void doSomething() {
+    super.doSomething();
 
-    def do_something(self):
-        super().do_something()
-
-        # Some additional behaviour...
+    // Some additional behaviour...
+  }
+}
 ```
 
 Let's have a concrete example of using the above strategy. We have the following `CircleShape` class defined:
 
-```python
-from typing import Protocol
+```java
+public interface Shape {
+  void draw();
+}
 
 
-class Shape(Protocol):
-    def draw(self) -> None:
-        pass
-
-
-class CircleShape(Shape):
-    def draw(self) -> None:
-        # Draw the circle stroke here
+public class CircleShape implements Shape {
+  public void draw() {
+    // draw the circle stroke
+  }
+}
 ```
 
 Next, we introduce a class for filled circles:
 
-```python
-class FilledCircleShape(CircleShape):
-    def draw(self) -> None:
-        super().draw() # Draws the circle stroke
-        # Fill the circle here...
+```java
+public class FilledCircleShape extends CircleShape {
+  public void draw() {
+     super.draw(); // draws the circle stroke
+     // Fill the circle
+  }
+}
 ```
 
 The `FilledCircleShape` class fulfills the requirements of Liskov's substitution principle. We can use an instance of the
@@ -1079,13 +1083,15 @@ does all that the `CircleShape` class does, plus adds some behavior (= fills the
 
 You can also completely replace the superclass functionality in a subclass:
 
-```python
-from collections import UserList
-
-
-class ReverseList(UserList):
-    def __iter__(self):
-        return ReverseListIterator(self)
+{title: "ReverseArrayList.java"}
+```java
+public class ReverseArrayList<T> extends ArrayList<T>
+{
+  @Override
+  public Iterator<T> iterator() {
+    return new ReverseListIterator<>(this);
+  }
+}
 ```
 
 The above subclass implements the superclass API and retains its behavior: The `iterator` method still returns an iterator.
