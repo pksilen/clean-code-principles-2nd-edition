@@ -5888,13 +5888,19 @@ wrapper around the `abc_logger` instance from the library. There is not any actu
 
 {title: "Logger.ts"}
 ```ts
-import abcLogger from 'abc-logging-library';
 import { LogLevel } from 'LogLevel';
 
 
-interface Logger {
+export interface Logger {
   log(logLevel: LogLevel, logMessage: string): void;
 }
+```
+
+{title: "AbcLogger.ts"}
+```ts
+import abcLogger from 'abc-logging-library';
+import Logger from 'Logger';
+import LogLevel  from 'LogLevel';
 
 
 class AbcLogger implements Logger {
@@ -5903,7 +5909,7 @@ class AbcLogger implements Logger {
   }
 }
 
-export default new AbcLogger();
+export default AbcLogger;
 ```
 
 When you use the logger in your application, you can utilize the *singleton pattern* and create a singleton instance of
