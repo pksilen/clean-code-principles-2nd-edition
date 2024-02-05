@@ -2422,8 +2422,8 @@ It has the following attributes:
 
 - `origin` (vital because you cannot draw a circle without knowing its origin)
 - `radius` (vital because you cannot draw a circle without knowing its radius)
-- `stroke_color` (this is a must attribute even though a default value could be used)
-- `fill_color` (this is an optional attribute; a default value of `None` could be used)
+- `strokeColor` (this is a must attribute even though a default value could be used)
+- `fillColor` (this is an optional attribute; a default value of `None` could be used)
 
 Attributes `origin` and `radius` should be given in that order because you need to know the *origin* before you can start
 drawing the circle.
@@ -2431,133 +2431,144 @@ drawing the circle.
 The `Circle` class has the following methods:
 
 - draw (most used method, should be the first)
-- calculate_area (calculateXXX methods should be in alphabetical order because there is no logic or importance difference between methods)
-- calculate_perimeter
-- getters/properties (in the same order as respective attributes)
+- calculateArea (calculateXXX methods should be in alphabetical order because there is no logic or importance difference between methods)
+- calculatePerimeter
+- getters (in the same order as respective attributes)
 - setters (in the same order as respective attributes)
 
-Our `Circle` class would like the following:
+Our `Circle` class written in TypeScript would like the following:
 
-```python
-from Point import Point
+```ts
+import Point from 'Point';
 
 
-class Circle:
-    def __init__(
-        self,
-        origin: Point,
-        radius: float,
-        stroke_color: str,
-        fill_color: str = None
-    ):
-        self.__origin = origin
-        self.__radius = radius
-        self.__stroke_color = stroke_color
-        self.__fill_color = fill_color
+class Circle {
+  constructor(
+    private origin: Point,
+    private radius: number,
+    private strokeColor: string,
+    private fillColor: string | null = null
+  ) {
+  }
 
-    def draw(self) -> None:
-        # ...
+  draw(): void {
+    // ...
+  }
 
-    def calculate_area(self) -> float:
-        # ...
+  calculateArea(): number {
+    // ...
+  }
 
-    def calculate_perimeter(self) -> float:
-        # ...
+  calculatePerimeter(): number {
+    // ..
+  }
 
-    @property
-    def origin(self) -> Point:
-        return self.__origin
 
-    @property
-    def radius(self) -> float:
-        return self.__radius
+  getOrigin(): Point {
+    return this.origin;
+  }
 
-    @property
-    def stroke_color(self) -> str:
-        return self.__stroke_color
+  getRadius(): number {
+    return this.radius;
+  }
 
-    @property
-    def fill_color(self) -> str:
-        return self.__fill_color
+  getStrokeColor(): string {
+    return this.strokeColor;
+  }
 
-    @origin.setter
-    def origin(self, origin: Point) -> None:
-        self.__origin = origin
+  getFillColor(): string | null {
+    return this.fillColor;
+  }
 
-    @radius.setter
-    def radius(self, radius: float) -> None:
-        self.__radius = radius
+  setOrigin(origin: Point): void {
+    this.origin = origin;
+  }
 
-    @stroke_color.setter
-    def stroke_color(self, stroke_color: str) -> None:
-        self.__stroke_color = stroke_color
+  setRadius(radius: number): void {
+    this.radius = radius;
+  }
 
-    @fill_color.setter
-    def fill_color(self, fill_color: str) -> None:
-        self.__fill_color = fill_color
+  setStrokeColor(strokeColor: string): void {
+    this.strokeColor = strokeColor;
+  }
+
+  setFillColor(fillColor: string | null): void {
+    this.fillColor = fillColor;
+  }
+}
 ```
 
-## Package, Class and Function Sizing Principle
+## Package/Directory, Class and Function Sizing Principle
 
-> ***Use the maximum number of items (5-9) that can be stored in the short-term memory as the maximum size for a package, class, or function.***
+> ***Use the maximum number of items (5-9) that can be stored in the short-term memory as the maximum size for a package/directory, class, or function.***
 
-A package (or directory) should have a maximum of 5-9 modules. This allows you to find a specific module in the package quickly.
+A package (or directory) should have a maximum of 5-9 modules. This allows you to find a specific module (file) in the package quickly.
 If you have a package with many modules, it can be hard to find a specific module because they are listed in alphabetical order, and
 you cannot apply any logical order to them. I usually create packages that may only contain 2 or 3 modules. For example, I could have
-a *config* directory that has a *Config.py* module, and under the *config* directory, I could have a *parser* subdirectory that has the
-following modules: *ConfigParser.py*, *JsonConfigParser.py* and *YamlConfigParser.py*.
+a *config* directory that has a *Config.java* module, and under the *config* directory, I could have a *parser* subdirectory that has the
+following modules: *ConfigParser.java*, *JsonConfigParser.java* and *YamlConfigParser.java*.
 
 A class should have a maximum of 5-9 attributes and 5-9 methods. If your class has more than 5-9 attributes, extract attributes to a new class. Let's say you have the following class:
 
-```python
-class User:
-    id: str
-    first_name: str
-    last_name: str
-    street_address: str
-    zip_code: str
-    city: str
-    country: str
-    phone_number: str
-    email_address: str
-    gender: Gender
-    username: str
-    password: str
+```java
+public class User {
+  private String id;
+  private String firstName;
+  private String lastName;
+  private String streetAddress;
+  private String zipCode;
+  private String city;
+  private String country;
+  private String phoneNumber;
+  private String emailAddress;
+  private Gender gender;
+  private String username;
+  private String password;
+}
 ```
 
 The above class can be refactored to use *value objects* to reduce the number of attributes:
 
 ```python
-class Name:
-    first_name: str
-    last_name: str
+public class Name {
+  private String firstName;
+  private String lastName;
+}
 
-class Address:
-    street_address: str
-    zip_code: str
-    city: str
-    country: str
 
-class ContactInfo:
-    phone_number: str
-    email_address: str
+public class Address {
+  private String streetAddress;
+  private String zipCode;
+  private String city;
+  private String country;
+}
 
-class Credentials:
-    username: str
-    password: str
 
-class User:
-    id: str
-    name: Name,
-    address: Address,
-    contact_info: ContactInfo
-    gender: Gender
-    credentials: Credentials
+public class ContactInfo {
+  private String phoneNumber;
+  private String emailAddress;
+}
+
+
+public class Credentials {
+  private String username;
+  private String password;
+}
+
+public class User {
+  private String id;
+  private Name name;
+  private Address address;
+  private ContactInfo contactInfo;
+  private Gender gender;
+  private Credentials credentials;
+}
 ```
 
 If you have too many methods, use the *extract class* refactoring technique explained
 in the next chapter. As a rule of thumb, consider refactoring the class smaller if your class has more than 100-150 lines of code (not counting the import statements).
-Here is an example. If you have a software component with 10,000 lines of code, you should have a new class for at least every approx. 200 lines of code, meaning that the total number of classes in the software component should be at least 50, in practice, even more.
+Here is an example. If you have a software component with 10,000 lines of code, you should have a new class for at least every approx. 200 lines of code,
+meaning that the total number of classes in the software component should be at least 50, in practice, even more.
 
 A function should have a maximum of 5-9 statements. If you have a longer function, extract a function or functions that the original function calls.
 If you have a public method that calls several private methods, keep the number of those private methods small, preferably only one or two.
@@ -2583,8 +2594,10 @@ Names should always be the shortest, most descriptive ones. There is no reason t
 as `GeometricalObject` or `GeometricalShape`, if we can use simply `Shape`.
 
 When an interface represents an abstract actor, name it according to that abstract actor.
-The name of an interface should be derived from the functionality it provides. For example, suppose there is a `parse_config` method in the interface. In that case, the interface should be named `ConfigParser`, and if an interface has a `validate_object` method,
-the interface should be named `ObjectValidator`. Don't use mismatching name combinations like a `ConfigReader` interface with a `parse_config` method or an `ObjectValidator` interface with a `validate_data` method.
+The name of an interface should be derived from the functionality it provides. For example, suppose there is a `parseConfig` method
+in the interface. In that case, the interface should be named `ConfigParser`, and if an interface has a `validateObject` method,
+the interface should be named `ObjectValidator`. Don't use mismatching name combinations like a `ConfigReader` interface with
+a `parseConfig` method or an `ObjectValidator` interface with a `validateData` method.
 
 When an interface represents a capability, name it according to that capability. Capability is something that
 a concrete class is capable of doing. For example, a class could be sortable, iterable, comparable, equitable,
@@ -2592,12 +2605,16 @@ etc. Name the respective interfaces according to the capability: `Sortable`, `It
 The name of an interface representing a capability usually ends with *able* or *ing*.
 
 Don't name interfaces starting with the *I* prefix (or any other prefix or postfix). Instead, use an *Impl* postfix for
-class names to distinguish a class from an interface, but only when needed. For example, if you have an interface named `ConfigParser` and you have a concrete class implementing the interface and parsing configuration in JSON format, name the class `JsonConfigParser`, not `JsonConfigParserImpl`, because the `Impl` prefix is not needed to distinguish between the interface and implementing class. Remember that you should be programming against
+class names to distinguish a class from an interface, but only when needed. For example, if you have an interface named
+`ConfigParser` and you have a concrete class implementing the interface and parsing configuration in JSON format,
+name the class `JsonConfigParser`, not `JsonConfigParserImpl`, because the `Impl` prefix is not needed to distinguish between
+the interface and implementing class. Remember that you should be programming against
 interfaces, and if every interface has its name prefixed with an *I*, it just adds unnecessary noise to the code.
 
 Some examples of class names representing a thing are: `Account`, `Order`, `RectangleShape`, and `CircleShape`. In a class
 inheritance hierarchy, the names of classes usually refine the interface name or the base class name. For example,
-if there is an `InputMessage` interface, then there can be different concrete implementations (= classes) of the `InputMessage` interface. They can represent an input message from different sources, like `KafkaInputMessage` and `HttpInputMessage`.
+if there is an `InputMessage` interface, then there can be different concrete implementations (= classes) of the `InputMessage` interface.
+They can represent an input message from different sources, like `KafkaInputMessage` and `HttpInputMessage`.
 And there could be different subclasses for different data formats:  `AvroBinaryKafkaInputMessage` or `JsonHttpInputMessage`.
 
 The interface or base class name should be retained in the class or subclass name. Class names should follow the pattern:
@@ -2615,10 +2632,12 @@ the `Message` to `Msg`. There are no well-established abbreviations for other wo
 is questionable because `Bin` could also mean a *bin*. Don't abbreviate a word if you benefit only one or two characters.
 For example, there is no reason to abbreviate `Account` to `Accnt`.
 
-Instead of abbreviating, you can shorten a name by dropping one or more words from it, provided readers can still easily understand it. For example, if you have classes `InternalMessage`, `InternalMessageSchema` and
+Instead of abbreviating, you can shorten a name by dropping one or more words from it, provided readers can still easily understand it.
+For example, if you have classes `InternalMessage`, `InternalMessageSchema` and
 `InternalMessageField`, you could shorten the last two class names to `InternalSchema` and `InternalField`.
 This is because these two classes are mainly used in conjunction with the `InternalMessage` class: An `InternalMessage` object has
-a schema and one or more fields. You can also use nested classes: `InternalMessage.Schema` and `InternalMessage.Field`. The problem with nested classes is that they can make the module too large.
+a schema and one or more fields. You can also use nested classes: `InternalMessage.Schema` and `InternalMessage.Field`.
+The problem with nested classes is that they can make the module too large.
 
 If you have related classes and one or more class names require shortening, you should shorten all related class names
 to keep the naming uniform. For example, if you have two classes, `ConfigurationParser` and `JsonConfigurationParser`, you
