@@ -3227,28 +3227,26 @@ names would have been: `afterMount`, `afterUpdate`, and `beforeUnmount`.
 
 #### Naming Function Parameters
 
-Naming rules for function parameters are mostly the same as for variables. *Uniform naming principle* for variables
+Naming rules for function parameters are mostly the same as for variables. _Uniform naming principle_ for variables
 is described in the next chapter in more detail.
 
 There are some exceptions, like naming object parameters. When a function parameter is an object, the name of the object class can be left out from
 the parameter name when the parameter name and the function name implicitly describe the class of the parameter. This exception is acceptable because the function parameter type
 can always be easily checked by looking at the function signature.
-This should be easily done with a glance because a function should be short (a maximum of 5-9 statements).
-Below is an example of naming object type parameters:
+And this should be easily done with a glance because a function should be short (a maximum of 5-7 statements).
+Below is a TypeScript example of naming object type parameters:
 
-```python
-# Word 'Location' repeated, not optimal, but allowed
-def drive(start_location: Location, destination_location: Location) -> None:
-    # ...
+```ts
+// Word 'Location' repeated, not optimal, but allowed
+drive(startLocation: Location, destinationLocation: Location): void
 
-# Better way
-# When we think about 'drive' and 'start' or 'destination',
-# we can assume that 'start' and 'destination' mean locations
-def drive(start: Location, destination: Location) -> None:
-    # ...
+// Better way
+// When we think about 'drive' and 'start' or 'destination',
+// we can assume that 'start' and 'destination' mean locations
+drive(start: Location, destination: Location): void
 ```
 
-Some programming languages like Swift allow adding so-called *external names* to function parameters. Using external names
+Some programming languages like Swift allow adding so-called _external names_ to function parameters. Using external names
 can make a function call statement read better, as shown below:
 
 ```swift
@@ -3264,19 +3262,58 @@ func send(
   // ...
 }
 
-let start = new Location(...);
-let destination = new Location(...);
-drive(from: start, to: destination);
+
+let startLocation = new Location(...);
+let destLocation = new Location(...);
+drive(from: startLocation, to: destLocation);
 
 let message = "Some message";
-let sender = new Person(...);
-let recipient = new Person(...);
-send(message, from: sender, to: recipient);
+let person = new Person(...);
+let anotherPerson = new Person(...);
+send(message, from: person, to: anotherPerson);
 ```
 
 Always make the function call expression such that it has maximum readability: e.g., `copy(source, target)` not `copy(target, source)`
-or `write(line, file)` not `write(file, line)` or `decode(input_message, internal_message)` and `encode(internal_field, output_message)`. The examples contain implicit articles and prepositions. You can
+or `write(line, file)` not `write(file, line)` or `decode(inputMessage, internalMessage)` and `encode(internalField, outputMessage)`. The examples contain implicit articles and prepositions. You can
 easily imagine the missing articles and prepositions, e.g., *copy from a source to a target*, *write a line to a file* or *encode an internal field to an output message*.
+
+How would you name a UI function that closes a collapsible panel after a timeout if the panel is open?
+Inside the collapsible panel component, we could specify
+
+```ts
+function closeAfterTimeout(closeTimeoutInMs: number, isOpen: boolean): void {
+  // ...
+}
+```
+
+The above is not the best, because `close` and `timeout` are repeated twice. Let's modify the function definition by dropping
+one `close` and one `timeout` to avoid repetition:
+
+```ts
+function closeAfter(timeoutInMs: number, isOpen: boolean): void {
+  // ...
+}
+```
+
+We could improve the function name a bit more to specify what the `isOpen` parameter is used for:
+
+```ts
+function closeAfterIf(timeoutInMs: number, isOpen: boolean): void {
+  // ...
+}
+```
+
+Now we read the function definition in plain English: *close [this] after timeout in milliseconds if [this] is open*.
+And the `[this]` of course means the current collapsible panel object, so we could read:
+*close [the panel] after timeout in milliseconds if [the panel] is open*.
+
+We could write the above function definition in a very readable manner in Swift:
+
+```ts
+function close(after timeoutInMs: Int, if isOpen: Bool): void {
+  // ...
+}
+```
 
 ## Encapsulation Principle
 
