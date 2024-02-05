@@ -4466,19 +4466,23 @@ public final class ConfigParserFactory {
 
 Below is an example of a factory with multiple *create* methods:
 
-```python
-class ShapeFactory:
-    @staticmethod
-    def create_circle_shape(radius: int) -> Shape:
-        return CircleShape(radius)
+```java
+public final class ShapeFactory {
+  public static Shape createCircleShape(final int radius) {
+    return new CircleShape(radius);
+  }
 
-    @staticmethod
-    def create_rectangle_shape(width: int, height: int) -> Shape:
-        return RectangleShape(width, height)
+  public static Shape createRectangleShape(
+    final int width,
+    final int height
+  ) {
+    return new RectangleShape(width, height);
+  }
 
-    @staticmethod
-    def create_square_shape(side_length: int) -> Shape:
-        return SquareShape(side_length)
+  public static Shape createSquareShape(final int sideLength) {
+    return new SquareShape(sideLength);
+  }
+}
 ```
 
 #### Abstract Factory Pattern
