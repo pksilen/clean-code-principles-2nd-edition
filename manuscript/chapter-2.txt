@@ -3364,50 +3364,64 @@ In many cases, a shallow copy is enough. For example, a list of primitive values
 not require a deep copy of the list. But you should make a deep copy when needed.
 
 The copying approach can cause a performance penalty, but in many cases, that penalty is insignificant.
-You can easily create a copy of a list:
+In JavaScript, you can easily create a copy of an array:
 
-```python
-values = [1, 2, 3, 4, 5]
-values2 = values.copy()
+```js
+const values = [1, 2, 3, 4, 5];
+const copyOfValues = [...values];
 ```
 
 The second approach requires you to create an unmodifiable version of a modifiable object and return
-that unmodifiable object. You can create an unmodifiable version of a class by yourself. Below is an example:
+that unmodifiable object. Some languages offer an easy way to create unmodifiable versions of certain objects.
+In Java, you can create an unmodifiable version of a `List`, `Map`, or `Set` using `Collections.unmodifiableList`,
+`Collections.unmodifiableMap`, or `Collections.unmodifiableSet` factory method, respectively.
 
-```python
-from typing import Protocol, TypeVar
+You can also create an unmodifiable version of a class by yourself. Below is an example in Java:
 
-T = TypeVar('T')
+```java
+public interface MyList<T> {
+  void addToEnd(T item);
+  Optional<T> getItem(int index);
+}
 
+public class UnmodifiableMyList<T> implements MyList<T> {
+  private final MyList<T> list;
 
-class MyList(Protocol[T]):
-    def append(self, item: T) -> None:
-        # ...
+  public UnmodifiableMyList(final MyList<T> list) {
+    this.list = list;
+  }
 
-    def get_item(self, index: int) -> T | None:
-        # ...
+  public void addToEnd(final T item) {
+    throw new UnsupportedOperationException(...);
+  }
 
-
-class UnmodifiableMyList(MyList[T]):
-    def __init__(self, list_: MyList[T]):
-        self.__list = list_
-
-    def append(self, item: T) -> None:
-        raise NotImplementedError()
-
-    def get_item(self, index: int) -> T | None:
-        return self.__list.get_item(index)
+  public Optional<T> getItem(final int index) {
+    return list.getItem(index);
+  }
+}
 ```
 
 In the above example, the unmodifiable list class takes another list (a modifiable list) as a constructor argument. It
-only implements the `MyList` protocol methods that don't attempt to modify the wrapped list. In this case, it implements only the
-`get_item` method that delegates to the respective method in the `MyList` class. The methods of the `UnmodifiableMyList` class that attempt to modify
-the wrapped list should raise an error. The `UnmodifiableMyList` class utilizes the *proxy pattern* (discussed later in this chapter) by wrapping an object of the `MyList` class
+only implements the `MyList` interface methods that don't attempt to modify the wrapped list. In this case, it implements only the
+`getItem` method that delegates to the respective method in the `MyList` class. The `UnmodifiableMyList` class methods that attempt to modify
+the wrapped list should throw an error. The `UnmodifiableMyList` class utilizes the _proxy pattern_ by wrapping an object of the `MyList` class
 and partially allowing access to the `MyList` class methods.
 
+In C++, you can return an unmodifiable version by declaring the return type as _const_, for example:
+
+<div class="sourceCodeWithoutLabel">
+
+```cpp
+std::shared_ptr<const std::vector<std::string>>
+getStringValues() const;
+```
+
+Now callers of the `getStringValues` method cannot modify the returned vector of strings because it is declared
+const.
+
 Unmodifiable and immutable objects are slightly different. No one can modify an immutable object, but when you return an
-unmodifiable object from a method, the owning class can still modify that object, and modifications are visible to
-everyone who has earlier received an unmodifiable version of the object. If this is something undesirable, you should use
+unmodifiable object from a class method, that object can still be modified by the owning class, and modifications are visible to
+everyone that has received an unmodifiable version of the object. If this is something undesirable, you should use
 a copy instead.
 
 ### Don't Assign From a Method Parameter to a Modifiable Attribute
