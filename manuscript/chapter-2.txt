@@ -2187,25 +2187,76 @@ public class RestOrderController {
 
 The API offered by the microservice depends on the controller, as seen in the earlier diagram. The API is currently a REST API, but
 we could create and use a GraphQL controller. Then, our API, which depends on the controller, is a GraphQL API.
-You can create a controller for any client-server technology, like gRPC or WebSocket. You can even create a controller for standard input (stdin) or command line interface (CLI). A CLI controller reads command(s) from the command line arguments supplied to the microservice. Remember that you can have multiple controllers active in the same microservice. Your microservice could be used by frontend clients using a REST controller, or it could be used on the command line using its CLI controller.
+You can create a controller for any client-server technology, like gRPC or WebSocket. You can even create a controller
+for standard input (stdin) or command line interface (CLI). A CLI controller reads command(s) from the command line arguments supplied to the microservice.
+Remember that you can have multiple controllers active in the same microservice. Your microservice could be used by frontend clients using a REST controller,
+or it could be used on the command line using its CLI controller.
 
-As an example, below is a partial implementation of a GraphQL controller using FastAPI and [Strawberry](https://strawberry.rocks/) GraphQL library:
+Below is a partial implementation of a GraphQL controller with Java and Spring Boot:
 
-{format: python}
-![controllers/GraphQlOrderController.py](resources/chapter2/code/orderservice/controllers/GraphQlOrderController.py)
+{title: "GraphQlOrderController.java"}
+```java
+@Controller
+public class GraphQlOrderController {
+  @Autowired
+  private OrderService orderService;
+
+  @MutationMapping
+  public final Order createOrder(
+    @Argument final OrderArg orderArg
+  ) {
+    return orderService.createOrder(orderArg);
+  }
+
+  // Other API methods...
+}
+```
 
 The `RestOrderController` and `GraphQlOrderController` classes depend on the `OrderService` interface, which is
 part of the use case layer. Notice that the controllers do not rely on a concrete implementation of the use
 cases but depend on an interface according to the *dependency inversion principle*. Below is the definition for
 the `OrderService` protocol:
 
-{format: python}
-![services/OrderService.py](resources/chapter2/code/orderservice/services/OrderService.py)
+{title: "OrderService.java"}
+```java
+public interface OrderService {
+  Order createOrder(OrderArg orderArg);
+  Order getOrderById(Long id);
+  Iterable<Order> getOrderByUserAccountId(Long userAccountId);
+  void updateOrder(Long id, OrderArg orderArg);
+  void deleteOrderById(Long id);
+}
+```
 
 The below `OrderServiceImpl` class implements the `OrderService` protocol:
 
-{format: python}
-![services/OrderServiceImpl.py](resources/chapter2/code/orderservice/services/OrderServiceImpl.py)
+{title: "OrderServiceImpl.java"}
+```java
+@Service
+public class OrderServiceImpl implements OrderService {
+  private static final String ORDER = "Order";
+
+  @Autowired
+  private OrderRepository orderRepository;
+
+  @Override
+  public final Order createOrder(
+    final OrderArg orderArg
+  ) {
+    final var order = Order.from(orderArg);
+    return orderRepository.save(order);
+  }
+
+  @Override
+  public final Order getOrderById(final Long id) {
+    return orderRepository.findById(id)
+             .orElseThrow(() ->
+               new EntityNotFoundError(ORDER, id));
+  }
+
+  // Rest of the methods...
+}
+```
 
 The `OrderServiceImpl` class has a dependency on an order repository. This dependency is also inverted. The `OrderServiceImpl` class depends only on the `OrderRepository` interface. The order repository is used to orchestrate the persistence of order entities.
 Note that there is no direct dependency on a database. The term *repository* is abstract. It only means a place where data (entities) are stored. So the
@@ -2213,74 +2264,66 @@ repository can be implemented by a relational database, NoSQL database, file sys
 
 Below is the `OrderRepository` protocol:
 
-{format: python}
-![repositories/OrderRepository.py](resources/chapter2/code/orderservice/repositories/OrderRepository.py)
+{title: "OrderRepository.java"}
+```java
+public interface OrderRepository {
+  Order save(Order order);
+  Order findById(Long id);
+  // ...
+}
+```
 
 The `OrderRepository` interface depends only on the `Order` entity class. You can introduce an *output interface adapter* class
 that implements the `OrderRepository` interface. An output interface adapter adapts a particular concrete output destination (e.g., a database) to the `OrderRepository` interface.
 Entity classes do not depend on anything except other entities to create hierarchical entities (aggregates). For example, the `Order`
-entity consists of `OrderItem` entities. Let's introduce an `OrderRepository` *output interface adapter* class for an SQL database:
-
-{format: python}
-![repositories/SqlOrderRepository.py](resources/chapter2/code/orderservice/repositories/SqlOrderRepository.py)
-
-The above class requires the used database service to be configured in an environment variable named `DATABASE_URL`.
-For a local MySQL database, you could use:
-
-```bash
-# Assuming username:password to be root:password
-export DATABASE_URL=mysql://root:password@localhost:3306/orderservice
-```
-
-{aside}
-If you are interested in the implementation of the `to_entity_dict` method, please check Appendix A.
-{/aside}
-
-Changing the database to MongoDB can be done by creating a new output interface adapter class that implements the `OrderRepository` interface. We will implement a MongoDB repository in the coming *database principles* chapter.
+entity consists of `OrderItem` entities. For example, you can define `SqlOrderRepository` *output interface adapter* class for an SQL database.
+Changing the database to MongoDB can be done by creating a new `MongoDbOrderRepository` output interface adapter class that implements the `OrderRepository` interface.
 
 ![Clean Microservice Design for Order Service](resources/chapter2/images/04-05.png)
 
 When implementing a clean microservice design, everything is wired together using configuration and dependency injection.
-Dependency injection is configured using the [dependency-injector](https://python-dependency-injector.ets-labs.org/) library and by defining a `DiContainer` class:
+For example, an instance implementing the `OrderRepository` interface is created according to configuration and injected into an `OrderServiceImpl` instance by the Spring framework.
+In the case of Spring, the dependency injector is configured using a configuration file and annotations. The configuration file
+can be used to configure what database is used. Additionally, the Spring dependency injector creates an instance of the `OrderServiceImpl` class
+and injects it where an `OrderService` object is wanted.
 
-{format: python}
-![DiContainer.py](resources/chapter2/code/orderservice/DiContainer.py)
-
-If we want to change something in our microservice, we can create a new class and use that new class in the `DiContainer`.
-We could create a new repository class for a different type of database, create a new service class that implements
-part of services locally and part of them remotely, or introduce a new controller for gRPC, for example. All these changes
-would be according to the *open-closed principle* because we are not modifying any existing classes (except for the `DiContainer` of course)
-but we are extending our application by introducing new classes that implement existing interfaces.
-
-In the *app.py* file, we create an instance of the DI container, create the FastAPI app, define an error handler for mapping
-business errors to HTTP responses and finally wire the wanted controller to the FastAPI app:
-
-{format: python}
-![app.py](resources/chapter2/code/orderservice/app.py)
-
-{aside}
-Please check Appendix A if you are interested in the rest of the code (i.e., DTOs, entities, GraphQL schema (= types), and errors. When defining an identifier field for an entity/DTO, you should define it as a string. This will allow passing large integer values (64-bit or larger) to JavaScript clients. You can also use non-integer identifiers that have a string representation, like MongoDB object ids or UUIDs.
-Let's say you have a repository interface implemented by a file system repository. In that case, you must
-have a way to generate entity ids. You can use UUIDs or store the latest used id in the file system and use that value as the basis
-when getting a new id value.
-{/aside}
-
-The dependency injection container is the only place in a microservice that contains references to concrete implementations.
-The *dependency injection principle* is discussed more in a later section of this chapter. The dependency inversion principle
-and dependency injection principle usually go hand in hand. Dependency injection is used for wiring interface dependencies
-so that those become dependencies on concrete implementations, as shown in the figure below.
+The dependency injector is the only place in a microservice that contains references to concrete implementations. In many
+frameworks, the dependency injector is not a visible component, but its usage is configured using a configuration file
+and annotations. For example, in Spring, the `@Autowired` annotation tells the dependency injector to
+inject a concrete implementation into the annotated class field or constructor parameter. The _dependency injection principle_ is
+discussed more in a later section of this chapter. The dependency inversion principle and dependency injection principle
+usually go hand in hand. Dependency injection is used for wiring interface dependencies so that those become dependencies on concrete implementations, as seen in the figure below.
 
 ![Fig 3.4 Dependency Injection](resources/chapter2/images/di.png)
 
 Let's add a feature where the shopping cart is emptied when an order is created:
 
-{format: python}
-![services/ShoppingCartOrderService.py](resources/chapter2/code/orderservice/services/ShoppingCartOrderService.py)
+{title: "ShoppingCartEmptyingOrderService.java"}
+```java
+@Service
+public class ShoppingCartEmptyingOrderService implements OrderService {
+  @Autowired
+  private OrderRepository orderRepository;
 
-As you can see from the above code, the `ShoppingCartOrderService` class does not depend on any concrete implementation of the
+  @Autowired
+  private ShoppingCartService shoppingCartService;
+
+  @Override
+  public final Order createOrder(
+    final OrderArg orderArg
+  ) {
+    final var order = Order.from(orderArg);
+    final var savedOrder = orderRepository.save(order);
+    shoppingCartService.emptyCart(order.userAccountId);
+    return savedOrder;
+  }
+}
+```
+
+As you can see from the above code, the `ShoppingCartEmptyingOrderService` class does not depend on any concrete implementation of the
 shopping cart service. We can create an *output interface adapter* class that is a concrete implementation of the `ShoppingCartService` interface.
 For example, that interface adapter class connects to a particular external shopping cart service via a REST API. Once again,
-the dependency injector will inject a concrete `ShoppingCartService` implementation to an instance of the `ShoppingCartOrderService` class.
+the dependency injector will inject a concrete `ShoppingCartService` implementation to an instance of the `ShoppingCartEmptyingOrderService` class.
 
 Note that the above `create_order` method is not production quality because it lacks a transaction.
 
@@ -2295,17 +2338,10 @@ Let's showcase the final benefit:
 
 - Not tied to any single framework
 
-Let's change the used web framework from FastAPI to [Flask](https://flask.palletsprojects.com/). What we need to do is to create a Flask-specific version of the `RestOrderController`:
+Show with Express.js and Fastify
 
-{format: python}
-![controllers/FlaskRestOrderController.py](resources/chapter2/code/orderservice/controllers/FlaskRestOrderController.py)
-
-And finally, we shall create a Flask-specific application file *app_flask.py*:
-
-{format: python}
-![app_flask.py](resources/chapter2/code/orderservice/app_flask.py)
-
-We were able to change the used web framework by introducing two new small modules. We did not touch any existing modules. We can be confident that we did not break any existing functionality. We were once again successfully applying the *open-closed principle*
+We were able to change the used web framework by introducing two new small modules. We did not touch any existing modules.
+We can be confident that we did not break any existing functionality. We were once again successfully applying the *open-closed principle*
 to our codebase.
 
 It should be noted that the clean microservice design principle applies to other microservices with input or output, not just API microservices. We will have an example of this later in this chapter.
