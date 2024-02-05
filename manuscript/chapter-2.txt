@@ -3202,11 +3202,26 @@ You can access a collection element in some languages using the method `at(index
 Here the implicit verb is `get`. I recommend using method names with implicit verbs sparingly and only in circumstances where
 the implicit verb is self-evident and does not force a developer to think.
 
+#### Naming Property Getter Functions
+
+Property getter functions are usually named `get` + `<property-name>`.
+It is also possible to name a property getter that does not have a respective setter using just the property name. This is acceptable in cases where the property name cannot be confused with a verb.
+Below is a Java example of property getters:
+
+```java
+final var list = new MyList();
+
+list.size(); // OK
+list.length(); // OK
+list.empty(); // NOT OK, empty can be a verb.
+list.isEmpty(); // OK
+```
+
 #### Naming Lifecycle Methods
 
 Lifecycle methods are called on certain occasions only. Lifecycle method names should answer the question:
-When or "on what occasion" will this method be called? Examples of good names for lifecycle methods are: `on_init`, `on_error`,
-`on_success`, `after_mount`, `before_unmount`. For example, in React, there are lifecycle methods in class components called `componentDidMount`,
+When or "on what occasion" will this method be called? Examples of good names for lifecycle methods are: `onInit`, `onError`,
+`onSuccess`, `afterMount`, `beforeUnmount`. In React, there are lifecycle methods in class components called `componentDidMount`,
 `componentDidUpdate` and `componentWillUnmount`. There is no reason to repeat the class name in the lifecycle method names. Better
 names would have been: `afterMount`, `afterUpdate`, and `beforeUnmount`.
 
