@@ -5700,34 +5700,32 @@ vectorDrawing.save();
 
 > ***In the strategy pattern, the functionality of an object can be changed by changing an instance of a composed type to a different instance of that type.***
 
-Below is an example where the behavior of a `ConfigReader` class can be changed by changing the value of the `config_parser` attribute
+Below is a Java example where the behavior of a `ConfigReader` class can be changed by changing the value of the `config_parser` attribute
 to an instance of a different class. The default behavior is to parse the configuration in JSON format,
 which can be achieved by calling the constructor without a parameter.
 
-```python
-from typing import Final, Protocol
+```java
+public class ConfigReader {
+  private final ConfigParser configParser;
 
+  public ConfigReader() {
+    configParser = new JsonConfigParser();
+  }
 
-# Define Config class ...
+  public ConfigReader(final ConfigParser configParser) {
+    this.configParser = configParser;
+  }
 
+  public Configuration tryRead(final String configFilePathName) {
+    // Try read the configuration file contents to a string
+    // variable named 'configFileContents'
 
-class ConfigParser(Protocol):
-    def try_parse(self, config_str: str) -> Config:
-        pass
+    final Configuration configuration =
+      configParser.tryParse(configFileContents);
 
-
-# Define JsonConfigParser class ...
-
-
-class ConfigReader:
-    def __init__(self, config_parser: ConfigParser = JsonConfigParser()):
-        self.__config_parser: Final = config_parser
-
-    def try_read(self, config_file_path_name: str) -> Config:
-        # Try read 'config_file_path_name' to 'config_str'
-
-        config = self.__config_parser.try_parse(config_str)
-        return config
+    return configuration;
+  }
+}
 ```
 
 Using the strategy pattern, we can change the functionality of a `ConfigReader` instance by changing
@@ -5746,112 +5744,134 @@ by giving an instance of the `YamlConfigParser` class as a parameter for the `Co
 
 > ***The adapter pattern changes one interface to another interface. It allows you to adapt different interfaces to a single interface.***
 
-In the below example, we have defined a `Message` protocol for messages that can be consumed from a data source
+In the below C++ example, we have defined a `Message` interface for messages that can be consumed from a data source
 using a `MessageConsumer`.
 
-{title: "Message.py"}
-```python
-from typing import Protocol
+{title: "Message.h"}
+```cpp
+#include <cstdint>
 
 
-class Message(Protocol):
-    def get_data(self) -> bytearray:
-        pass
+class Message
+{
+public:
+  Message() = default;
+  virtual ~Message() = default;
 
-    def get_length_in_bytes(self) -> int:
-        pass
+  virtual uint8_t* getData() const = 0;
+  virtual std::size_t getDataLengthInBytes() const = 0;
+};
 ```
 
-{title: "MessageConsumer.py"}
-```python
-from typing import Protocol
+{title: "MessageConsumer.h"}
+```cpp
+#include <memory>
+#include "Message.h"
 
-import Message from Message
 
+class MessageConsumer
+{
+public:
+  MessageConsumer() = default;
+  virtual ~MessageConsumer() = default;
 
-class MessageConsumer(Protocol):
-    def consume_message(self) -> Message:
-        pass
+  virtual std::shared_ptr<Message> consumeMessage() = 0;
+};
 ```
 
-Next, we can define the message and message consumer adapter classes for [Apache Kafka](https://kafka.apache.org/) and [Apache Pulsar](https://pulsar.apache.org/):
+Next, we can define the message and message consumer adapter classes for Apache Kafka and Apache Pulsar:
 
-{title: "KafkaMsgConsumer.py"}
-```python
-from MessageConsumer import MessageConsumer
+{title: "KafkaMessageConsumer.h"}
+```cpp
+#include "MessageConsumer.h"
 
 
-class KafkaMsgConsumer(MessageConsumer):
-    def consume_message(self) -> Message:
-        # Consume a message from Kafka using a 3rd party
-        # Kafka library
-        # Wrap the consumed message inside an instance
-        # of the below-defined KafkaMessage class
-        # Return that KafkaMessage instance
+class KafkaMessageConsumer : public MessageConsumer
+{
+public:
+  KafkaMessageConsumer(...);
+  ~KafkaMessageConsumer() override;
+
+  std::shared_ptr<Message> consumeMessage() override {
+    // Consume a message from Kafka using a 3rd party
+    // Kafka library, e.g. LibRdKafka
+    // Wrap the consumed LibRdKafka message inside an instance
+    // of KafkaMessage class
+    // Return the KafkaMessage instance
+  }
+};
 ```
 
-{title: "KafkaMessage.py"}
-```python
-from typing import Final
+{title: "KafkaMessage.h"}
+```cpp
+#include <bit>
+#include <librdkafka/rdkafkacpp.h>
+#include "Message.h"
 
-from Message import Message
 
+class KafkaMessage : public Message
+{
+public:
+  explicit KafkaMessage(RdKafka::Message* const message):
+    m_message(message)
+  {}
 
-class KafkaMessage(Message):
-    def __init__(self, kafka_lib_msg):
-        # This is the "raw" message from the Kafka library
-        self.__kafka_lib_msg: Final = kafka_lib_msg
+  ~KafkaMessage() override
+  {
+    delete m_message;
+  }
 
-    def get_data(self) -> bytearray:
-        # Suppose there is 'value' property to get the
-        # message data as byte array
-        return self.__kafka_lib_msg.value
+  uint8_t* getData() const override
+  {
+    return std::bit_cast<uint8_t*>(m_message->payload());
+  }
 
-    def get_length_in_bytes(self) -> int:
-        return len(self.__kafka_lib_msg.value)
+  std::size_t getDataLengthInBytes() const override
+  {
+    return m_message->len();
+  }
+
+private:
+  RdKafka::Message* m_message;
+};
 ```
 
-{title: "PulsarMsgConsumer.py"}
-```python
-from MessageConsumer import MessageConsumer
+{title: "PulsarMessageConsumer.h"}
+```cpp
+#include "MessageConsumer.h"
 
 
-class PulsarMsgConsumer(MessageConsumer):
-    def consume_message(self) -> Message:
-        # Consume a message from Pulsar using a Pulsar client
-        # library.
-        # Wrap the consumed Pulsar message inside an instance
-        # of the below-defined PulsarMessage
-        # Return that PulsarMessage instance
+class PulsarMessageConsumer : public MessageConsumer
+{
+public:
+  PulsarMessageConsumer(...);
+  ~PulsarMessageConsumer() override;
+
+  std::shared_ptr<Message> consumeMessage() override {
+    // Consume a message from Pulsar using the Pulsar C++ client
+    // Wrap the consumed Pulsar message inside an instance
+    // of PulsarMessage
+    // Return the PulsarMessage instance
+  }
+};
 ```
 
-{title: "PulsarMessage.py"}
-```python
-from typing import Final
-
-from Message import Message
+{title: "PulsarMessage.h"}
+```cpp
+#include "Message.h"
 
 
-class PulsarMessage(Message):
-     def __init__(self, pulsar_lib_msg):
-        # This is the "raw" message from the Pulsar library
-        self.__pulsar_lib_msg: Final = pulsar_lib_msg
-
-    def get_data(self) -> bytearray:
-        # Suppose there is 'data' method to get the
-        # message data as byte array
-        return self.__pulsar_lib_msg.data()
-
-    def get_length_in_bytes(self) -> int:
-        # Suppose there is 'length' method
-        # to get the message length
-        return len(self.__pulsar_lib_msg.length())
+class PulsarMessage : public Message
+{
+public:
+  // ...
+};
 ```
 
-Now, we can use Kafka or Pulsar data sources with identical consumer and message interfaces.
+Now we can use Kafka or Pulsar data sources with identical consumer and message interfaces.
 In the future, it will be easy to integrate a new data source into the system.
 We only need to implement appropriate adapter classes (message and consumer classes) for the new data source. No other code changes are required.
-Thus, we would be following the *open-closed principle* correctly.
+Thus, we would be following the _open-closed principle_ correctly.
 
 Let's imagine that the API of the used Kafka library changed. We don't need to make changes in many
 places in the code. We need to create new adapter classes (message and consumer classes) for the new API and use those new adapter classes
@@ -5866,27 +5886,24 @@ changes in several places in the codebase, which is error-prone and against the 
 Let's have an example of using a 3rd party logging library. Initially, our adapter `AbcLogger` for a fictive *abc-logging-library* is just a
 wrapper around the `abc_logger` instance from the library. There is not any actual adapting done.
 
-{title: "Logger.py"}
-```python
-from typing import Protocol
+{title: "Logger.ts"}
+```ts
+import abcLogger from 'abc-logging-library';
+import { LogLevel } from 'LogLevel';
 
-from LogLevel import LogLevel
+
+interface Logger {
+  log(logLevel: LogLevel, logMessage: string): void;
+}
 
 
-class Logger(Protocol):
-    def log(self, log_level: LogLevel, message: str) -> None:
-        pass
-```
+class AbcLogger implements Logger {
+  log(logLevel: LogLevel, logMessage: string): void {
+    abcLogger.log(logLevel, logMessage);
+  }
+}
 
-{title: "AbcLogger.py"}
-```python
-from abc_logging_library import abc_logger
-from Logger import Logger
-from LogLevel import LogLevel
-
-class AbcLogger(Logger):
-    def log(self, log_level: LogLevel, message: str) -> None:
-        abc_logger.log(log_level, message)
+export default new AbcLogger();
 ```
 
 When you use the logger in your application, you can utilize the *singleton pattern* and create a singleton instance of
