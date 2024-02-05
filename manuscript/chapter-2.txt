@@ -3163,42 +3163,43 @@ final var url = new UrlBuilder()
 
 #### Naming Methods with Implicit Verbs
 
-Factory method names usually start with the verb *create*. Factory methods can be named so that the *create* verb is implicit, for example:
+Factory method names usually start with the verb _create_. Factory methods can be named so that the _create_ verb is implicit, for example in Java:
 
-```python
-Optional.of(value)
-Optional.empty() # Not optimal, 'empty' can be confused as a verb
-Either.with_left(value)
-Either.with_right(value)
-SalesItem.from_dto(input_sales_item)
+```java
+Optional.of(final T value)
+Optional.empty() // Not optimal, 'empty' can be confused as a verb
+Either.withLeft(final L value)
+Either.withRight(final R value)
+SalesItem.from(final SalesItemArg salesItemArg)
 ```
 
 The explicit versions of the above method names would be:
 
-```python
-Optional.create(value)
-Optional.create_empty()
-Either.create_with_left(value)
-Either.create_with_right(value)
-SalesItem.create_from_dto(input_sales_item)
+```java
+Optional.createOf(final T value)
+Optional.createEmpty()
+Either.createWithLeft(final L value)
+Either.createWithRight(final L value)
+SalesItem.createFrom(final SalesItemArg salesItemArg)
 ```
 
-Similarly, conversion methods can be named so that the *convert* verb is implicit. Conversion methods without a verb
-usually start with the *to* preposition, for example:
+Similarly, conversion methods can be named so that the _convert_ verb is implicit. Conversion methods without a verb
+usually start with the _to_ preposition, for example:
 
-```python
-numeric_value.to_string()
-dict_value.to_json()
+```java
+value.toString();
+object.toJson();
 ```
 
 The explicitly named versions of the above methods would be:
 
-```python
-numeric_value.convert_to_string()
-dict_value.convert_to_json()
+```java
+value.convertToString();
+object.convertToJson();
 ```
 
-I recommend using method names with implicit verbs sparingly and only in circumstances where
+You can access a collection element in some languages using the method `at(index)`.
+Here the implicit verb is `get`. I recommend using method names with implicit verbs sparingly and only in circumstances where
 the implicit verb is self-evident and does not force a developer to think.
 
 #### Naming Lifecycle Methods
