@@ -3319,14 +3319,7 @@ func close(after timeoutInMs: Int, if isOpen: Bool): void {
 
 > ***A class should encapsulate its state so that access to the state happens only via public methods.***
 
-Encapsulation is achieved by declaring class attributes private. Python does not have attribute access modifiers. You should use a naming convention:
-
-> ***Use an attribute name prefixed with `__` (double underscore) to denote a private attribute and a `_` prefix to denote a protected attribute.***
-
-The problem with the above naming convention is that it hinders the readability of the code. Still, I am using that convention throughout
-the book. In my opinion, Python's lack of the `protected` and `private` keywords, i.e., proper encapsulation, is a major problem.
-
-You can create getter and setter methods (or properties) if you need
+Encapsulation is achieved by declaring class attributes private. You can create getter and setter methods if you need
 the state to be modifiable outside the class. However, encapsulation is best ensured if you don't need to create getter
 and setter methods for the class attributes. Do not automatically implement or generate getter and setter methods for every class.
 Only create those accessor methods if needed, like when the class represents a modifiable data structure. An automatically generated getter can break
