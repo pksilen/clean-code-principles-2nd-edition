@@ -2120,7 +2120,8 @@ Use cases and entities together form the *core* or *model* of the service, also 
 The outermost layer of the use case layer usually contains application service classes that implement the use cases. For example, one method
 in a service class implements one use case. The use case layer can contain other layers of software needed to implement the
 use cases. The service classes serve as a facade to those other layers. The service classes (i.e., the facade) are meant to be used by the *input
-interface adapters*, i.e., the *controllers*. A controller is a common term used to describe an input interface adapter. The controller should delegate to application service classes. It coordinates and controls the activity but should not do much work itself.
+interface adapters*, i.e., the *controllers*. A controller is a common term used to describe an input interface adapter.
+The controller should delegate to application service classes. It coordinates and controls the activity but should not do much work itself.
 *Controller* is a pattern from GRASP principles. Similarly, a repository
 is a common term used to describe an output interface adapter that stores information, usually in persistent storage.
 
@@ -2144,21 +2145,45 @@ without affecting the business logic (use case and entities layers).
 Put entity-related business rules into entity classes. A `BankAccount` entity class should have
 a method for withdrawing money from the account. That method should enforce a business rule: Withdrawal is possible only if the account has enough funds.
 Don't put the withdrawal functionality into a service class and use `BankAccount`'s `get_balance` and `set_balance` accessors to perform the withdrawal
-procedure in the service class. That would be against the *tell, don't ask principle* discussed later in this chapter. Also, don't allow service classes to access sub-entities (and their methods) a `BankAccount` possibly contains. That would be against DDD principles and the *law of demeter* (discussed later in this chapter). DDD states that you should access an aggregate (`BankAccount`)  by its root only, not directly accessing any sub-entities.
+procedure in the service class. That would be against the *tell, don't ask principle* discussed later in this chapter.
+Also, don't allow service classes to access sub-entities (and their methods) a `BankAccount` possibly contains.
+That would be against DDD principles and the *law of demeter* (discussed later in this chapter).
+DDD states that you should access an aggregate (`BankAccount`)  by its root only, not directly accessing any sub-entities.
 
 Services orchestrate operations on one or more entities, e.g., a `BacklogItemService` can
 have a `setSprint` method that will fetch a `Sprint` entity and pass it to the `BacklogItem` entity's `setSprint` method, which verifies
-if the sprint for the backlog item can be set (only non-closed sprint can be set, i.e., current or future, not past sprints; a new sprint for a closed backlog item cannot be set. The closed backlog item has to remain in the sprint where it was closed.)
+if the sprint for the backlog item can be set (only non-closed sprint can be set, i.e., current or future, not past sprints;
+a new sprint for a closed backlog item cannot be set. The closed backlog item has to remain in the sprint where it was closed.)
 
-Let's assume that the `BacklogItem` entity class is large and the `setSprint` would contain a lot of validation code, making it even larger. In that case, you should extract a new class for backlog item sprint validation business rules, and the `BacklogItem` class should be composed of that new behavioral class: `BacklogItemSprintValidator`. In the `BacklogItem` class's `setSprint` method, the validation can be done with the following call: `sprintValidator.validate(newSprint, this)`.
+Let's assume that the `BacklogItem` entity class is large and the `setSprint` would contain a lot of validation code,
+making it even larger. In that case, you should extract a new class for backlog item sprint validation business rules,
+and the `BacklogItem` class should be composed of that new behavioral class: `BacklogItemSprintValidator`. In the `BacklogItem` class's `setSprint` method,
+the validation can be done with the following call: `sprintValidator.validate(newSprint, this)`.
 
 ### Real-Life Example
 
 Let's have a real-life example of creating an API microservice called *order-service*, which handles orders in an
-e-commerce software system. First, we define our input interface adapter, which is a REST API controller using [FastAPI](https://fastapi.tiangolo.com/):
+e-commerce software system. First, we define a REST API controller using Java and Spring Boot:
 
-{format: python}
-![controllers/RestOrderController.py](resources/chapter2/code/orderservice/controllers/RestOrderController.py)
+{title: "RestOrderController.java"}
+```java
+@RestController
+@RequestMapping("/orders")
+public class RestOrderController {
+  @Autowired
+  private OrderService orderService;
+
+  @PostMapping
+  @ResponseStatus(HttpStatus.CREATED)
+  public final Order createOrder(
+    @RequestBody final OrderArg orderArg
+  ) {
+    return orderService.createOrder(orderArg);
+  }
+
+  // Other API methods...
+}
+```
 
 The API offered by the microservice depends on the controller, as seen in the earlier diagram. The API is currently a REST API, but
 we could create and use a GraphQL controller. Then, our API, which depends on the controller, is a GraphQL API.
