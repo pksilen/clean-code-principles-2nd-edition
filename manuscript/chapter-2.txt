@@ -3945,7 +3945,10 @@ attribute of the entity.
 
 Value objects are domain objects that don't have an identity. Examples of value objects are an address or a price object.
 The price object can have two attributes: *amount* and *currency*, but it does not have an identity. Similarly an address
-object can have the following attributes: *street address*, *postal code*, *city* and *country*.
+object can have the following attributes: *street address*, *postal code*, *city* and *country*. Value objects can and many times
+should have behavior in them. For example a *price* value object can have a validation rule for accepted currencies. You can
+also put behavior, like converting a price object to another price object with different currency, into the `Price` value object class.
+So, value objects are not just holders for a set of primitive values.
 
 #### Aggregates
 
@@ -4840,162 +4843,174 @@ final var maybeUrl = Url.createUrl(urlParams);
 > ***Singleton pattern defines that a class can have only one instance.***
 
 Singletons are very common in pure object-oriented languages like Java. In many cases, a singleton class can be identified as not having any state.
-This is why only one instance of the class is needed. There is no point in creating
-multiple instances that are the same. In some non-pure object-oriented languages, singletons are not necessarily as common as
-in pure object-oriented languages and can often be replaced by just defining functions.
+And this is why only one instance of the class is needed. There is no point in creating
+multiple instances that are the same. In some non-pure object-oriented languages, singletons are not as common as in pure object-oriented languages and
+can often be replaced by just defining functions.
 
-In Python, a singleton instance can be created in a module and exported from it. When you import the singleton instance from the module
+In JavaScript/TypeScript, a singleton instance can be created in a module and exported. When you import the instance from the module
 in other modules, the other modules will always get the same exported instance, not a new instance every time.
-Below is an example of such a singleton. First, we define a singleton instance of the `__MyClass` class in a module named *my_class_singleton.py*. The `__MyClass` class is prefixed with two underscores to denote it is private. The only public thing in the module is the singleton instance.
+Below is an example of such a singleton:
 
-{title: "my_class_singleton.py"}
-```python
-class __MyClass:
-    # ...
+{title: "myClassSingleton.ts"}
+```ts
+class MyClass {
+  // ...
+}
 
-my_class_singleton = __MyClass()
+export const myClassSingleton = new MyClass();
 ```
 
-And in the *other_module_1.py* module, we import the singleton instance and use it:
+{title: "otherModule.ts"}
+```ts
+import { myClassSingleton } from 'myClassSingleton';
 
-{title: "other_module_1.py"}
-```python
-from my_class_singleton import my_class_singleton
-
-print(my_class_singleton)
+// ...
 ```
 
-We use the singleton instance also in *other_module_2.py* module:
+The singleton pattern can be implemented using a static class because it cannot be instantiated. The problem with a static class is that
+the singleton class is then hardcoded, and static classes can be hard or impossible to mock in unit testing. We should remember to _program against interfaces_. The best way to implement
+the singleton pattern is by using the _dependency inversion principle_ and the _dependency injection principle_. Below is an example in Java using the [Google Guice](https://github.com/google/guice) library for handling dependency
+injection. The constructor of the `FileConfigReader` class expects a `ConfigParser`.
+We annotate the constructor with the `@Inject` annotation to inject an instance implementing the `ConfigParser` interface:
 
-{title: "other_module_2.py"}
-```python
-from my_class_singleton import my_class_singleton
-import other_module_1
+```java
+import com.google.inject.Inject;
 
-print(my_class_singleton)
+public interface ConfigReader {
+  Configuration tryRead(...);
+}
+
+public class FileConfigReader
+         implements ConfigReader {
+  private ConfigParser configParser;
+
+  @Inject
+  public FileConfigReader(
+    final ConfigParser configParser
+  ) {
+    this.configParser = configParser;
+  }
+
+  public Configuration tryRead(
+    final String configFilePathName
+  ) {
+    final String configFileContents = // Read configuration file
+
+    final var configuration =
+      configParser.tryParse(configFileContents);
+
+    return configuration;
+  }
+}
 ```
 
-When you run the *other_module_2.py*, you should have the following kind of output where the object addresses are
-the same meaning that `my_class_singleton` is really a singleton.
+In the below DI module, we configure a singleton with a lazy binding.
+In the lazy binding, the `JsonConfigParser` class is only created
+when needed to be used.
 
-```
-<my_class_singleton.__MyClass object at 0x101042f90>
-<my_class_singleton.__MyClass object at 0x101042f90>
-```
+```java
+import com.google.inject.AbstractModule;
 
-The singleton pattern can also be implemented using a class with static methods only. The problem with such a class is that
-the singleton class is then hardcoded, and static classes can be hard or impossible to mock in unit testing (at least in some languages). We should remember
-to *program against interfaces*. Also, if you try to implement the singleton pattern yourself, you must remember to ensure thread safety in case
-of a multi-threaded program when creating the singleton instance. You might be better off using a dependency injection library that can provide
-thread-safe singletons out of the box.
-
-The best way to implement the singleton pattern is by using the *dependency inversion principle* and the *dependency injection principle*. Below is
-an example using the [dependency-injector](https://python-dependency-injector.ets-labs.org/) library for handling dependency injection. The constructor of the `FileConfigReader` class
-expects a `ConfigParser` instance. We annotate the constructor with the `@inject` annotation and provide a `ConfigParser` instance
-with the name `config_parser` from the DI container (defined later):
-
-```python
-from typing import Final, Protocol
-
-from dependency_injector.wiring import Provide, inject
-# Import ConfigParser protocol with try_parse method here...
-# Import Config ...
-
-
-class ConfigReader(Protocol):
-    def try_read(self, config_location: str) -> Config:
-        pass
-
-
-class FileConfigReader(ConfigReader):
-    @inject
-    def __init__(
-        self,
-         config_parser: ConfigParser = Provide['config_parser']
-     ):
-        self.__config_parser: Final = config_parser
-
-
-    def try_read(self, config_file_path_name: str) -> Config:
-        config_file_contents = # Read configuration file
-        config = self.__config_parser.try_parse(config_file_contents)
-        return config
+public class DiModule extends AbstractModule {
+  @Override
+  protected void configure() {
+    bind(ConfigParser.class)
+      .to(JsonConfigParser.class)
+      .in(Scopes.SINGLETON);
+  }
+}
 ```
 
-In the below `DiContainer` class, we first configure wiring, and then
-the name `config_parser` is bound to a singleton instance of the `ConfigParserImpl` class. (The `ConfigParserImpl` class code is not shown here). The `wiring_config`
-expects that the `FileConfigReader` class is defined in a module named `FileConfigReader.py`.
+Alternatively, we can define an eager singleton:
 
-```python
-from dependency_injector import containers, providers
+```java
+import com.google.inject.AbstractModule;
 
-
-class DiContainer(containers.DeclarativeContainer):
-    wiring_config = containers.WiringConfiguration(
-        modules=['FileConfigReader']
-    )
-
-    config_parser = providers.ThreadSafeSingleton(ConfigParserImpl)
+public class DiModule extends AbstractModule {
+  @Override
+  protected void configure() {
+    bind(ConfigParser.class)
+      .to(JsonConfigParser.class)
+      .asEagerSingleton();
+  }
+}
 ```
 
-The *dependency-injector* library will ensure that creating the `config_parser` singleton happens
-without race conditions in a multiple threads context. You can use `providers.Singleton` if you only have a single thread in your software component.
-
-Another way to ensure that only one singleton instance is created is to ensure the DI container is created at the beginning
+The best way to ensure that only one singleton instance is created is to ensure the DI container is created at the beginning
 of the application initialization (before starting threads) and singletons are created eagerly, not lazily. Eagerly means the singleton is created immediately, and lazily means it is created only when somebody needs it.
-A lazy instantiation can bring problems in a multi-threaded environment if synchronization is not used when the singleton instance is actually created.
+A lazy instantiation is of course possible, but can bring problems in a multi-threaded environment if synchronization is not used when the singleton instance is actually created.
 
 #### Prototype Pattern
 
 > ***The prototype pattern lets you create a new object using an existing object as a prototype.***
 
-Let's have an example with a `DrawnShape` class:
+Let's have a Java example with a `DrawnShape` class:
 
-```python
-from typing import Final, Protocol
-
-
-class Shape(Protocol):
-    # ...
+```java
+public interface Shape {
+  // ...
+}
 
 
-# Implement concrete shapes...
+// Implement concrete shapes...
 
 
-class Position(Protocol):
-    def get_x(self) -> int:
-        pass
-
-    def get_y(self) -> int:
-        pass
+public interface Position {
+  int getX();
+  int getY();
+}
 
 
-class DrawnShape:
-    def __init__ (self, position: Position, shape: Shape):
-        self.__position: Final = position
-        self.__shape: Final = shape
+public class DrawnShape {
+  private final Position position;
+  private final Shape shape;
 
-    def clone(self, position: Position) -> 'DrawnShape':
-        return DrawnShape(position, self.__shape)
+  public DrawnShape(
+    final Position position,
+    final Shape shape
+  ) {
+    this.position = position;
+    this.shape = shape;
+  }
+
+  public DrawnShape(
+    final Position position,
+    final DrawnShape drawnShape
+  ) {
+    this.position = position;
+    shape = drawnShape.getShape();
+  }
+
+  public DrawnShape cloneTo(
+    final Position position
+  ) {
+    return new DrawnShape(position, this);
+  }
+
+  public Shape getShape() {
+    return this.shape;
+  }
+}
 ```
 
-Applying the prototype pattern is to call the `clone` method on
-a prototype object and give the `position` parameter to specify where the new shape should be positioned.
+In the second constructor, we are using the prototype pattern. A new `DrawnShape` object is created from
+an existing `DrawnShape` object. An alternative way to use the prototype pattern is to call the `cloneTo` method on
+a prototype object and give the position parameter to specify where the new shape should be positioned.
 
 The prototype pattern is also used in JavaScript to implement prototypal inheritance. Since EcmaScript version 6,
-class-based inheritance has been available, and prototypal inheritance does not need to be used.
+class-based inheritance has been available, and prototypal inheritance is not needed to be used.
 
-The idea behind prototypal inheritance is that the common parts for the same class objects are stored in a
-prototype instance. These common parts typically mean the shared methods. There is no sense in storing the methods multiple
-times in each object. That would be a waste of resources because Javascript functions are objects themselves.
+The idea of prototypal inheritance is that the common parts for the same class objects are stored in a
+prototype instance. These common parts typically mean the shared methods. There is no sense in storing the methods multiple times in each object.
+That would be a waste of resources because Javascript functions are objects themselves.
 
-When you create a new object with the `Object.create` method, you give the prototype as a parameter. After that,
-you can set properties for the newly created object. When you call a method on the created object, and if that method
+When you create a new object with the `Object.create` method, you give the prototype as a parameter. After that, you can set properties
+for the newly created object. When you call a method on the created object, and if that method
 is not found in the object's properties, the prototype object will be looked up for the method. Prototypes can be chained
 so that a prototype object contains another prototype object. This chaining is used to implement an inheritance chain.
 Below is a simple example of prototypal inheritance:
 
-```js
+```ja
 const pet = {
   name: '',
   getName: function() { return this.name; }
@@ -5026,112 +5041,229 @@ dogNamedLuna.bark(); // Prints 'bark'
 > ***In the object pool pattern, created objects are stored in a pool where objects can be acquired from and returned for reuse. The object pool pattern is an optimization pattern because it allows the reuse of once-created objects.***
 
 If you need to create many short-lived objects, you should utilize an object pool and reduce the need
-for memory allocation and de-allocation, which takes time. Frequent object creation and
-destruction in garbage-collected languages cause extra work for the garbage collector, which consumes CPU time.
+for memory allocation and de-allocation, which takes time. In garbage-collected languages, frequent object creation and
+deletion cause extra work for the garbage collector, which consumes CPU time.
 
-Below is an example object pool protocol.
+Below is an example object pool implementation in C++. The below `LimitedSizeObjectPool` class implementation uses a spin lock in
+its methods to achieve thread safety. More about thread safety in the coming _concurrent programming principles_ chapter.
 
-```python
-from typing import Final, Protocol, TypeVar
+{title: "ObjectPool.h"}
+```cpp
+#include <memory>
 
-T = TypeVar('T')
+template <typename T>
+class ObjectPool
+{
+public:
+  virtual ~ObjectPool() = default;
 
-
-class ObjectPool(Protocol[T]):
-    def acquire_object(self, cls: type[T]) -> T:
-        pass
-
-    def return_object(self, object_: T) -> None:
-        pass
+  virtual std::shared_ptr<T> acquireObject() = 0;
+  virtual void returnObject(std::shared_ptr<T> object) = 0;
+};
 ```
 
-Below is an example object pool implementation.
+{title: "LimitedSizeObjectPool.h"}
+```cpp
+#include <deque>
+#include "ScopedSpinlock.h"
+#include "Spinlock.h"
+#include "ObjectPool.h"
 
-```python
-class LimitedSizeObjPool(ObjectPool[T]):
-    def __init__(self, max_pool_size: int):
-        self.__max_pool_size: Final = max_pool_size
-        self.__pooled_objects: Final[list[T]] = []
+template <typename T>
+class LimitedSizeObjectPool : public ObjectPool<T>
+{
+public:
+  explicit LimitedSizeObjectPool(const size_t maxPoolSize):
+    m_maxPoolSize(maxPoolSize)
+  {}
 
-    def acquire_object(self, cls: type[T]) -> T:
-        if self.__pooled_objects:
-            return self.__pooled_objects.pop(0)
-        else:
-            return cls()
+  std::shared_ptr<T> acquireObject()
+  {
+    std::shared_ptr<T> object;
+    const ScopedSpinlock scopedLock{m_lock};
 
-    def return_object(self, object_: T) -> None:
-        pool_is_not_full = len(self.__pooled_objects) < self.__max_pool_size
+    if (m_pooledObjects.empty())
+    {
+      object = std::make_shared<T>();
+    }
+    else
+    {
+      object = m_pooledObjects.front();
+      m_pooledObjects.pop_front();
+    }
 
-        if pool_is_not_full:
-            self.__pooled_objects.append(object_)
+    return object;
+  }
 
+  void returnObject(std::shared_ptr<T> object)
+  {
+    const ScopedSpinlock scopedLock{m_lock};
 
-class MyObject:
-    # ...
+    const bool poolIsFull =
+      m_pooledObjects.size() >= m_maxPoolSize;
 
+    if (poolIsFull)
+    {
+      object.reset();
+    }
+    else
+    {
+      m_pooledObjects.push_back(object);
+    }
+  }
 
-my_object_pool: LimitedSizeObjPool[MyObject] = LimitedSizeObjPool(2)
-my_object_1 = my_object_pool.acquire_object(MyObject)
-my_object_2 = my_object_pool.acquire_object(MyObject)
-my_object_3 = my_object_pool.acquire_object(MyObject)
-my_object_pool.return_object(my_object_1)
-my_object_pool.return_object(my_object_2)
-my_object_pool.return_object(my_object_3) # Does not fit to pool
-print(len(my_object_pool._LimitedSizeObjPool__pooled_objects))
-my_object_4 = my_object_pool.acquire_object(MyObject)
-print(my_object_1 == my_object_4) # Prints True
+private:
+  Spinlock m_lock;
+  size_t m_maxPoolSize;
+  std::deque<std::shared_ptr<T>> m_pooledObjects;
+};
 ```
 
 Below is a slightly different implementation of an object pool. The below implementation accepts clearable objects, meaning
-objects returned to the pool are cleared before reusing. You can also supply parameters used when constructing an object.
+objects returned to the pool are cleared before reusing. The below implementation allows you to define
+whether the allocated objects are wrapped inside a shared or unique pointer. You can also supply parameters used when constructing an object.
 
-```python
-class Clearable(Protocol):
-    def clear(self) -> None:
-        pass
+{title: "ObjectPool.h"}
+```
+#include <concepts>
+#include <deque>
+#include <memory>
 
+template<typename T>
+concept ClearableObject =
+requires(T object)
+{
+  { object.clear() } -> std::convertible_to<void>;
+};
 
-T = TypeVar('T', bound=Clearable)
+template<typename T, typename U>
+concept Pointer = std::derived_from<T, std::shared_ptr<U>> ||
+                  std::derived_from<T, std::unique_ptr<U>>;
 
+template<
+  ClearableObject O,
+  typename ObjectInterface,
+  Pointer<ObjectInterface> OP,
+  typename ...Args
+>
+class ObjectPool
+{
+public:
+  virtual ~ObjectPool() = default;
 
-class LimitedSizeObjPool(ObjectPool[T]):
-    def __init__(self, max_pool_size: int, *args, **kwargs):
-        self.__max_pool_size: Final = max_pool_size
-        self.__args: Final = args
-        self.__kwargs: Final = kwargs
-        self.__pooled_objects: Final[list[T]] = []
+  virtual OP acquireObject(Args&& ...args) = 0;
 
-    def acquire_object(self, cls: type[T]) -> T:
-        if self.__pooled_objects:
-            return self.__pooled_objects.pop(0)
-        else:
-            return cls(*self.__args, **self.__kwargs)
+  virtual void acquireObjects(
+    std::deque<OP>& objects,
+    size_t objectCount,
+    Args&& ...args
+   ) = 0;
 
-    def return_object(self, object_: T) -> None:
-        pool_is_not_full = len(self.__pooled_objects) < self.__max_pool_size
+  virtual void returnObject(OP object) = 0;
+  virtual void returnObjects(std::deque<OP>& objects) = 0;
+};
+```
 
-        if pool_is_not_full:
-            object_.clear()
-            self.__pooled_objects.append(object_)
+{title: "LimitedSizeObjectPool.h"}
+```cpp
+#include "ScopedLock.h"
+#include "Spinlock.h"
+#include "ObjectPool.h"
 
+template<
+  ClearableObject O,
+  typename ObjectInterface,
+  Pointer<ObjectInterface> OP,
+  typename ...Args
+>
+class LimitedSizeObjectPool :
+   public ObjectPool<O, ObjectInterface, OP, Args...>
+{
+public:
+  explicit LimitedSizeObjectPool(const size_t maxPoolSize) :
+    m_maxPoolSize(maxPoolSize)
+  {}
 
-class MyObject(Clearable):
-    def __init__(self, param1: int, param2: str, **kwargs):
-        print(param1, param2, kwargs)
+  OP acquireObject(Args&& ...args) override
+  {
+    const ScopedLock scopedLock(m_lock);
+    OP acquiredObject;
 
-    def clear(self) -> None:
-        print('Cleared')
+    if (const bool poolIsEmpty = m_pooledObjects.empty();
+            poolIsEmpty)
+    {
+      acquiredObject = OP{new O{std::forward<Args>(args)...}};
+    }
+    else
+    {
+      acquiredObject = m_pooledObjects.front();
+      m_pooledObjects.pop_front();
+    }
 
+    return acquiredObject;
+  }
 
-my_object_pool: LimitedSizeObjPool[MyObject] = LimitedSizeObjPool(
-    2, 1, 'test', name='John'
-)
+  void acquireObjects(
+    std::deque<OP>& objects,
+    const size_t objectCount,
+    Args&& ...args
+  ) override
+  {
+    for (size_t n{1U}; n <= objectCount; ++n)
+    {
+      objects.push_back(acquireObject(std::forward<Args>(args)...));
+    }
+  }
 
-# Prints: 1 test {'name': 'John'}
-my_object_1 = my_object_pool.acquire_object(MyObject)
+  void returnObject(OP object) override
+  {
+    const ScopedLock scopedLock(m_lock);
 
-# Prints: Cleared
-my_object_pool.return_object(my_object_1)
+    if (const bool poolIsFull = m_pooledObjects.size() >=
+                                m_maxPoolSize;
+            poolIsFull)
+    {
+        object.reset();
+    }
+    else
+    {
+        object->clear();
+        m_pooledObjects.push_back(object);
+    }
+  }
+
+  void returnObjects(std::deque<OP>& objects) override
+  {
+    while (!objects.empty())
+    {
+      returnObject(objects.front());
+      objects.pop_front();
+    }
+  }
+
+private:
+  size_t m_maxPoolSize;
+  Spinlock m_lock;
+  std::deque<OP> m_pooledObjects;
+};
+```
+
+In the below example, we create a message pool for a maximum of 5000 output messages.
+We get a shared pointer to an output message from the pool. The pool's concrete class to create
+new objects is `OutputMessageImpl`. When we acquire an output message from the pool, we provide a `size_t` type value (= output message length)
+to the constructor of the `OutputMessageImpl` class. The `OutputMessageImpl` class must be clearable, i.e.,
+it must have a `clear` method returning `void`.
+
+```cpp
+LimitedSizeObjectPool<
+  OutputMessageImpl,
+  OutputMessage,
+  std::shared_ptr<OutputMessage>,
+  size_t
+> outputMessagePool{5000U};
+
+// Acquire an output message of 1024 bytes from the pool.
+const auto outputMessage = outputMessagePool.acquireObject(1024U);
 ```
 
 ### Structural Design Patterns
@@ -5153,48 +5285,54 @@ to achieve a particular design. The following design patterns are presented:
 > ***In the composite pattern, a class can be composed of itself, i.e., the composition is recursive.***
 
 Recursive object composition can be depicted by how a user interface can be composed of different widgets.
-The example below shows a `Pane` class that is a `Widget`. A `Pane` object can contain several other `Widget` objects,
+In the Java example below, we have a `Pane` class that is a `Widget`. A `Pane` object can contain several other `Widget` objects,
 meaning a `Pane` object can contain other `Pane` objects.
 
-```python
-from typing import Final, Protocol
+```java
+public interface Widget {
+  void render();
+}
 
 
-class Widget(Protocol):
-    def render(self) -> None:
-        pass
+public class Pane implements Widget {
+  private final List<Widget> widgets;
+
+  public void render() {
+    // Render each widget inside pane
+  }
+}
 
 
-class Pane(Widget):
-    def __init__(self, widgets: list[Widget]):
-        self.__widgets: Final = widgets.copy()
+public class StaticText implements Widget {
+  public void render() {
+   // Render static text widget
+  }
 
-    def render(self) -> None:
-        # Render each widget inside pane
-
-
-class StaticText(Widget):
-    def render(self) -> None:
-        # Render static text widget
+  // ...
+}
 
 
-class TextInput(Widget):
-    def render(self) -> None:
-        # Render text input widget
+public class TextInput implements Widget {
+  public void render() {
+    // Render text input widget
+  }
+}
 
 
-class Button(Widget):
-   def render(self) -> None:
-        # Render button widget
+public class Button implements Widget {
+  public void render() {
+    // Render button widget
+  }
+}
 
 
-class Window:
-    def __init__(self, widgets: list[Widget]):
-        self.__widgets: Final = widgets.copy()
+public class UIWindow {
+  private final List<Widget> widgets = new ArrayList<>(10);
 
-    def render(self) -> None:
-        for widget in self.__widgets:
-            widget.render()
+  public void render() {
+    widgets.forEach(Widget::render);
+  }
+}
 ```
 
 Objects that form a tree structure are composed of themselves recursively.
@@ -5229,28 +5367,24 @@ For parsing an Avro schema, we could define classes for different sub-schemas by
 notice that the `RecordAvroFieldSchema` class can contain any `AvroFieldSchema` object, also
 other `RecordAvroFieldSchema` objects, making a `RecordAvroFieldSchema` object a composite object.
 
-```
-from typing import Protocol
+```java
+public interface AvroFieldSchema {
+  // ...
+}
 
+public class RecordAvroFieldSchema implements AvroFieldSchema {
+  private final List<AvroFieldSchema> subFieldSchemas;
 
-class AvroFieldSchema(Protocol):
-    # ...
+  // ...
+}
 
+public class StringAvroFieldSchema implements AvroFieldSchema {
+  // ...
+}
 
-class RecordAvroFieldSchema(AvroFieldSchema):
-    def __init__(self, sub_field_schemas: list[AvroFieldSchema]):
-        self.__sub_field_schemas: Final = sub_field_schemas.copy()
-
-
-class StringAvroFieldSchema(AvroFieldSchema):
-    # ...
-
-
-class IntAvroFieldSchema(AvroFieldSchema):
-    # ...
-
-
-# Schema classes for rest of Avro data types ...
+public class IntAvroFieldSchema implements AvroFieldSchema {
+  // ...
+}
 ```
 
 #### Facade Pattern
@@ -5271,69 +5405,67 @@ and there are configuration parsers that can parse a specific part of the config
 JSON or YAML. None of these implementations and details are visible to the user of the facade. Any of these implementations
 behind the facade can change at any time without affecting the users of the facade because facade users are not coupled to the lower-level implementations.
 
-Below is the implementation of the `Config` facade:
+Below is the implementation of the `Configuration` facade in Java:
 
-```python
-from typing import Protocol
-
-from dependency_injector.wiring import Provide, inject
-# Rest of imports ...
+```java
+import com.google.inject.Inject;
 
 
-class Config(Protocol):
-    def try_get_input_config(self) -> InputConfig:
-        pass
-
-    def try_get_transformer_config(self) -> TransformerConfig:
-        pass
-
-    def try_get_output_config(self) -> OutputConfig:
-        pass
+public interface Configuration {
+  InputConfig tryGetInputConfig();
+  TransformerConfig tryGetTransformerConfig();
+  OutputConfig tryGetOutputConfig();
+}
 
 
-class ConfigImpl(Config):
-    @inject
-    def __init__(
-        self,
-        config_reader: ConfigReader = Provide['config_reader'],
-        input_config_parser: InputConfigParser = Provide[
-            'input_config_parser'
-        ],
-        transformer_config_parser: TransformerConfigParser = Provide[
-            'transformer_config_parser'
-        ],
-        output_config_parser: OutputConfigParser = Provide[
-            'output_config_parser'
-        ]
-    ):
-        self.__config_reader: Final = config_reader
-        self.__input_config_parser: Final = input_config_parser
-        self.__transformer_config_parser: Final = transformer_config_parser
-        self.__output_config_parser: Final = output_config_parser
-        self.__config_string = ""
-        self.__input_config = None
-        self.__output_config = None
-        self.__transformer_config = None
+public class ConfigurationImpl implements Configuration {
+  private final ConfigReader configReader;
+  private final InputConfigParser inputConfigParser;
+  private final TransformerConfigParser transformerConfigParser;
+  private final OutputConfigParser outputConfigParser;
+  private String configString = "";
+  private Optional<InputConfig> inputConfig = Optional.empty();
+  private Optional<OutputConfig> outputConfig = Optional.empty();
 
-    def try_get_input_config(self) -> InputConfig:
-        if self.__input_config is None:
-            self.__try_read_config_if_needed()
+  private Optional<TransformerConfig> transformerConfig =
+    Optional.empty();
 
-            self.__input_config = self.__input_config_parser.try_parse(
-                self.__config_string
-            )
+  @Inject
+  public ConfigurationImpl(
+    final ConfigReader configReader,
+    final InputConfigParser inputConfigParser,
+    final TransformerConfigParser transformerConfigParser,
+    final OutputConfigParser outputConfigParser
+  ) {
+    // ...
+  }
 
-        return self.__input_config
+  public InputConfig tryGetInputConfig() {
+    return inputConfig.orElseGet(() -> {
+      tryReadConfigIfNeeded();
 
-    def try_get_transformer_config(self) -> TransformerConfig:
-        # ...
+      inputConfig =
+        inputConfigParser.tryParseInputConfig(configString);
 
-    def try_get_output_config(self) -> OutputConfig:
-        # ...
+      return inputConfig;
+    });
+  }
 
-    def __try_read_config_if_needed(self) -> None:
-        if not self.__config_string:
-            self.__config_string = self.__config_reader.try_read(...)
+  public TransformerConfig tryGetTransformerConfig() {
+    // ...
+  }
+
+  public OutputConfig tryGetOutputConfig() {
+    // ...
+  }
+
+  private void tryReadConfigIfNeeded() {
+    if (configString.isEmpty()) {
+      configString =
+        configReader.tryRead(...);
+    }
+  }
+}
 ```
 
 #### Bridge Pattern
