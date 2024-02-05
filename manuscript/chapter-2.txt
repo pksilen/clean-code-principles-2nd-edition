@@ -955,7 +955,7 @@ public class RoboticDog extends Dog {
 
   public void eat() {
     // Robotic dog cannot eat
-    throw new UnsupportedOperationException()
+    throw new UnsupportedOperationException();
   }
 }
 ```
@@ -1008,11 +1008,12 @@ public class RoboticDog extends Dog {
 The other solution is to use composition over inheritance:
 
 ```java
-public class RoboticDog:
+public class RoboticDog {
   private final Dog dog;
 
   public RoboticDog(final Dog dog) {
-      this.dog = dog
+      this.dog = dog;
+  }
 
   public void bark() {
     // Use dog.get_sound()
@@ -1021,6 +1022,7 @@ public class RoboticDog:
   public void walk() {
     // Use dog.get_speed()
   }
+}
 ```
 
 Liskov's substitution principle requires the following:
@@ -1115,49 +1117,50 @@ public interface InterfaceA {
 
 
 public class ClassB {
-  private final ProtocolA someAttribute;
+  private final InterfaceA someAttribute;
 
-  // Depends on ProtocolA but
+  // Depends on InterfaceA but
   // uses only the following methods:
   // method1, method2, method3
 }
 
 
 public class ClassC {
-  private final ProtocolA someAttribute;
+  private final InterfaceA someAttribute;
 
-  // Depends on ProtocolA and
+  // Depends on InterfaceA and
   // uses all methods from the ProtocolA
+}
 ```
 
 The `ClassB` is depending on `method4` and `method5` even if it does not use them. We need to apply the *interface segregation principle* and segregate a smaller interface from the `InterfaceA`:
 
 ```java
-public class InterfaceA1 {
+public interface InterfaceA1 {
   void method1();
   void method2();
   void method3();
 }
 
 
-public class InterfaceA extends InterfaceA1 {
+public interface InterfaceA extends InterfaceA1 {
   void method4();
   void method5();
 }
 
 
 public class ClassB() {
-  private final ProtocolA1 someAttribute;
+  private final InterfaceA1 someAttribute;
 
-  // Depends on ProtocolA1
+  // Depends on InterfaceA1
   // and uses all methods of it
 }
 
 
 public class ClassC() {
-  private final ProtocolA someAttribute;
+  private final InterfaceA someAttribute;
 
-  // Depends on ProtocolA
+  // Depends on InterfaceA
   // and uses all methods of it
 }
 ```
@@ -1825,15 +1828,15 @@ public class Dog implements Animal {
   }
 
   public void swim() {
-    throw new RuntimeException("Illegal operation");
+    throw new UnsupportedOperationException();
   }
 
   public void fly() {
-    throw new RuntimeException("Illegal operation");
+    throw new UnsupportedOperationException();
   }
 
   public void sing() {
-    throw new RuntimeException("Illegal operation");
+    throw new UnsupportedOperationException();
   }
 }
 
@@ -1842,10 +1845,10 @@ public class Dog implements Animal {
 // Bird class ...
 ```
 
-The above approach is wrong. We declare that the `Dog` class implements the `Animal` protocol, but
+The above approach is wrong. We declare that the `Dog` class implements the `Animal` interface, but
 it does not do that. It implements only methods `walk` and `bark` while other methods throw an exception. We should be
 able to supply any concrete animal implementation where an animal is required. But it is impossible because
-if we have a `Dog` object, we cannot safely call `swim`, `fly`, or `sing` methods because they will always raise an error.
+if we have a `Dog` object, we cannot safely call `swim`, `fly`, or `sing` methods because they will always throw an exception.
 
 The problem is that we defined the concrete classes before defining the interface. That approach is wrong.
 We should specify the interface first and then the concrete implementations. What we did above was the other way around.
@@ -1856,47 +1859,50 @@ at the methods `walk`, `fly`, and `swim`, they are all concrete actions. But wha
 three concrete actions? It is *move*. Walking, flying, and swimming are all ways
 of moving. Similarly, if we look at the `bark` and `sing` methods, they are also concrete actions. What is the abstract action
 common to these two concrete actions? It is *make sound*. And barking and
-singing are both ways to make a sound. When we use these abstract actions, our `Animal` protocol becomes the following:
+singing are both ways to make a sound. When we use these abstract actions, our `Animal` interface becomes the following:
 
-```python
-from typing import Protocol
-
-
-class Animal(Protocol):
-    def move(self) -> None:
-        pass
-
-    def make_sound(self) -> None:
-        pass
+```java
+public interface Animal {
+  void move();
+  void makeSound();
+}
 ```
 
-We can now redefine the animal classes to implement the new `Animal` protocol:
+We can now redefine the animal classes to implement the new `Animal` interface:
 
-```python
-class Dog(Animal):
-    def move(self) -> None:
-        # Walk ...
+```java
+public class Dog implements Animal {
+  public void move() {
+    // walk
+  }
 
-    def make_sound(self) -> None:
-        # Bark ...
-
-
-class Fish(Animal):
-    def move(self) -> None:
-        # Swim ...
-
-    def make_sound(self) -> None:
-        # Intentionally no operation
-        # (Fishes typically don't make sounds)
-        pass
+  public void makeSound() {
+    // bark
+  }
+}
 
 
-class Bird(Animal):
-    def move(self) -> None:
-        # Fly ...
+public class Fish implements Animal {
+  public void move() {
+    // swim
+  }
 
-    def make_sound(self) -> None:
-        # Sing ...
+  public void makeSound() {
+    // Intentionally no operation
+    // (Fishes typically don't make sounds)
+  }
+}
+
+
+public class Bird implements Animal {
+  public void move() {
+    // fly
+  }
+
+  public void makeSound() {
+    // sing
+  }
+}
 ```
 
 Now, we have the correct object-oriented design and can program against the `Animal` interface. We can call the `move` method
@@ -1904,27 +1910,26 @@ when we want an animal to move and the `make_sound` method when we want an anima
 
 After realizing that some birds don't fly at all, we can easily enhance our design. We can introduce two different implementations:
 
-```python
-from abc import abstractmethod
+```java
+public abstract class AbstractBird implements Animal {
+  public abstract void move();
 
+  public void makeSound() {
+    // sing
+  }
+}
 
-class AbstractBird(Animal):
-    @abstractmethod
-    def move(self) -> None:
-        pass
+public class FlyingBird extends AbstractBird {
+  public void move() {
+    // fly
+  }
+}
 
-    def make_sound(self) -> None:
-        # Sing ...
-
-
-class FlyingBird(AbstractBird):
-    def move(self) -> None:
-        # Fly ...
-
-
-class NonFlyingBird(AbstractBird):
-    def move(self) -> None:
-        # Walk ...
+public class NonFlyingBird extends AbstractBird {
+  public void move() {
+    // walk
+  }
+}
 ```
 
 We might also later realize that not all birds sing but make different sounds. Ducks quack, for example.
@@ -1932,117 +1937,145 @@ Instead of using inheritance as was done above, an even better alternative is to
 We compose the `Bird` class of behavioral classes for moving and making sounds. This is called the *strategy pattern*,
 and is discussed later in this chapter. We can give different moving and sound-making strategies for bird objects upon construction.
 
-```python
-class Mover(Protocol):
-    def move(self) -> None:
-        pass
+```java
+public interface Mover {
+  void move();
+}
 
+public interface SoundMaker {
+  void makeSound();
+}
 
-class SoundMaker(Protocol):
-    def make_sound(self) -> None:
-        pass
+public class Bird implements Animal {
+  private final Mover mover;
+  private final SoundMaker soundMaker;
 
+  public Bird(
+    final Mover mover,
+    final SoundMaker soundMaker
+  ) {
+    this.mover = mover;
+    this.soundMaker = soundMaker;
+  }
 
-class Bird(Animal):
-    def __init__(self, mover: Mover, sound_maker: SoundMaker):
-        self.__mover = mover
-        self.__sound_maker = sound_maker
+  public void move() {
+    mover.move();
+  }
 
-    def move(self):
-        self.__mover.move()
-
-    def make_sound(self):
-        self.__sound_maker.make_sound()
+  public void makeSound() {
+    soundMaker.makeSound();
+  }
+}
 ```
 
 I don't advocate adding a design pattern name to code entity names, but for demonstration purposes, we could make an exception here, and I can show
 how the code would look when making the *strategy pattern* explicit:
 
-```python
-class MovingStrategy(Protocol):
-    def move(self) -> None:
-        pass
+```java
+public interface MovingStrategy {
+  void move();
+}
 
 
-class SoundMakingStrategy(Protocol):
-    def make_sound(self) -> None:
-        pass
+public interface SoundMakingStrategy {
+  void makeSound();
+}
 
 
-class Bird(Animal):
-    def __init__(
-        self,
-        moving_strategy: MovingStrategy,
-        sound_making_strategy: SoundMakingStrategy,
-    ):
-        self.__moving_strategy = moving_strategy
-        self.__sound_making_strategy = sound_making_strategy
+public class Bird implements Animal {
+  private final MovingStrategy movingStrategy;
+  private final SoundMakingStrategy soundMakingStrategy;
 
-    def move(self):
-        self.__moving_strategy.move()
+  public Bird(
+    final MovingStrategy movingStrategy,
+    final SoundMakingStrategy soundMakingStrategy
+  ) {
+    this.movingStrategy = movingStrategy;
+    this.soundMakingStrategy = soundMakingStrategy;
+  }
 
-    def make_sound(self):
-        self.__sound_making_strategy.make_sound()
+  public void move() {
+    movingStrategy.move();
+  }
+
+  public void makeSound() {
+    soundMakingStrategy.makeSound();
+  }
+}
 ```
 
+As you can see above, adding the design pattern name made many names longer without adding any significant value.
+We should try to keep names as short as possible to enhance readability.
 Now, we can create birds with various behaviors for moving and making sounds. We can use the *factory pattern* to
 create different birds. The *factory pattern* is described in more detail later in this chapter. Let's introduce
 three different moving and sound-making behaviors and a factory to make three kinds of birds: goldfinches, ostriches,
 and domestic ducks.
 
-```python
-from enum import Enum
+```java
+public class Flyer implements Mover {
+  public void move() {
+    // fly
+  }
+}
 
+public class Runner implements Mover {
+  public void move() {
+    // run
+  }
+}
 
-class Flyer(Mover):
-    def move(self) -> None:
-        # fly
+public class Walker implements Mover {
+  public void move() {
+    // walk
+  }
+}
 
+public class GoldfinchSoundMaker implements SoundMaker {
+  public void makeSound() {
+    // Sing goldfinch specific songs
+  }
+}
 
-class Runner(Mover):
-    def move(self) -> None:
-        # run
+public class OstrichSoundMaker implements SoundMaker {
+  public void makeSound() {
+    // Make ostrich specific sounds like whistles,
+    // hoots, hisses, growls, and deep booming growls
+    // that sound like the roar of a lion
+  }
+}
 
+public class Quacker implements SoundMaker {
+  public void makeSound() {
+    // quack
+  }
+}
 
-class Walker(Mover):
-    def move(self) -> None:
-        # walk
+public enum BirdType {
+  GOLDFINCH,
+  OSTRICH,
+  DOMESTIC_DUCK
+}
 
+public class BirdFactory {
+  public Bird createBird(final BirdType birdType) {
+    return switch(birdType) {
+      case GOLDFINCH ->
+        new Bird(new Flyer(),
+                 new GoldfinchSoundMaker());
 
-class GoldfinchSoundMaker(SoundMaker):
-    def make_sound(self) -> None:
-        # Sing goldfinch specific songs
+      case OSTRICH ->
+        new Bird(new Runner(),
+                 new OstrichSoundMaker());
 
+      case DOMESTIC_DUCK ->
+        new Bird(new Walker(),
+                 new Quacker());
 
-class OstrichSoundMaker(SoundMaker):
-    def make_sound(self) -> None:
-        # Make ostrich specific sounds like whistles,
-        # hoots, hisses, growls, and deep booming growls
-        # that sound like the roar of a lion
-
-
-class Quacker(SoundMaker):
-    def make_sound(self) -> None:
-        # quack
-
-
-class BirdType(Enum):
-    GOLDFINCH = 1
-    OSTRICH = 2
-    DOMESTIC_DUCK = 3
-
-
-class BirdFactory:
-    def create_bird(self, bird_type: BirdType) -> Bird:
-        match bird_type:
-            case BirdType.GOLDFINCH:
-                return Bird(Flyer(), GoldfinchSoundMaker())
-            case BirdType.OSTRICH:
-                return Bird(Runner(), OstrichSoundMaker())
-            case BirdType.DOMESTIC_DUCK:
-                return Bird(Walker(), Quacker())
-            case _:
-                raise ValueError('Unsupported bird type')
+      default ->
+        throw new IllegalArgumentException("Unsupported type");
+    };
+  }
+}
 ```
 
 ## Clean Microservice Design Principle
