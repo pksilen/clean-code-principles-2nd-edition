@@ -4420,45 +4420,48 @@ This section describes design patterns for creating objects. The following desig
 A factory allows a dynamic way of creating objects instead of a static way by directly calling a concrete class constructor. A factory typically consists of precisely one or multiple methods for creating objects of a particular base type. This base type is usually an interface type. The factory decides what concrete type of object will be created. A factory
 separates the logic of creating objects from the objects themselves, which is in accordance with the *single responsibility principle*.
 
-Below is an example `ConfigParserFactory` that has a single `create` method for creating different kinds of
-`ConfigParser` objects. The return type of the factory's create method is an interface. This allows different kinds of objects
-in the class hierarchy to be created. In the case of a factory with a single create method, the method usually contains a match-case statement or
-an if/elif structure. Factories are the only place where extensive match-case statements or if/elif structures
-are allowed in object-oriented programming. If you have a lengthy match-case statement or long if/elif structure somewhere
-else in the code, that is typically a sign of a non-object-oriented design.
+Below is an example `ConfigParserFactory` class written in Java that has a single `create` method for creating different kinds of
+`ConfigParser` objects. In the case of a single create method, the method usually contains a switch-case statement or
+an if/else-if structure. Factories are the only place where extensive switch-case statements or if/else-if structures
+are allowed in object-oriented programming. If you have a lengthy switch-case statement or long if/else-if structure somewhere
+else in code, that is typically a sign of a non-object-oriented design.
 
-```python
-from enum import Enum
-from typing import Protocol
-
-
-class ConfigParser(Protocol):
-    # ...
+```java
+public interface ConfigParser {
+  // ...
+}
 
 
-class JsonConfigParser(ConfigParser):
-    # ...
+public class JsonConfigParser implements ConfigParser {
+  // ...
+}
 
 
-class YamlConfigParser(ConfigParser):
-    # ...
+public class YamlConfigParser implements ConfigParser {
+  // ...
+}
 
 
-class ConfigFormat(Enum):
-    JSON = 1
-    YAML = 2
+public enum ConfigFormat {
+  JSON,
+  YAML
+}
 
 
-class ConfigParserFactory:
-    @staticmethod
-    def create_config_parser(config_format: ConfigFormat) -> ConfigParser:
-        match config_format:
-            case ConfigFormat.JSON:
-                return JsonConfigParser()
-            case ConfigFormat.YAML:
-                return YamlConfigParser()
-            case _:
-                raise ValueError('Unsupported config format')
+public final class ConfigParserFactory {
+  public static ConfigParser createConfigParser(
+    final ConfigFormat configFormat
+  ) {
+    return switch(configFormat) {
+      case JSON -> new JsonConfigParser();
+      case YAML -> new YamlConfigParser();
+      default ->
+        throw new IllegalArgumentException(
+          "Unsupported config format"
+        );
+    };
+  }
+}
 ```
 
 Below is an example of a factory with multiple *create* methods:
