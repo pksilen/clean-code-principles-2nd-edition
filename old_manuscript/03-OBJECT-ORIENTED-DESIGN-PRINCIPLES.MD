@@ -2206,7 +2206,8 @@ Here is a non-comprehensive list of some method names that come in pairs:
 - &lt;something&gt;/dis&lt;something&gt;, e.g. connect/disconnect
 
 The `apt` tool in Debian/Ubuntu-based Linux has an `install` command to install a package, but the
-command for uninstalling a package is `remove`. It should be `uninstall`. The Kubernetes package manager Helm has this correct. It has an `install` command to install a Helm release and an `uninstall` command to uninstall it.
+command for uninstalling a package is `remove`. It should be `uninstall`. The Kubernetes package manager Helm has this correct.
+It has an `install` command to install a Helm release and an `uninstall` command to uninstall it.
 
 #### Naming Boolean Functions (Predicates)
 
