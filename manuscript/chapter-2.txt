@@ -4490,23 +4490,28 @@ public final class ShapeFactory {
 > ***In the abstract factory pattern, there is an abstract factory (interface) and one or more concrete factories (classes that implement the factory interface).***
 
 The abstract factory pattern extends the earlier described *factory pattern*. Usually, the abstract factory pattern should be
-used instead of the plain factory pattern. Below is an example of an abstract `ConfigParserFactory` with one concrete implementation:
+used instead of the plain factory pattern. Below is a Java example of an abstract `ConfigParserFactory` with one concrete implementation:
 
-```python
-class ConfigParserFactory(Protocol):
-    def create_config_parser(self, config_format: ConfigFormat) -> ConfigParser:
-        pass
+```java
+public interface ConfigParserFactory {
+  ConfigParser createConfigParser(ConfigFormat configFormat);
+}
 
-
-class ConfigParserFactoryImpl(ConfigParserFactory):
-    def create_config_parser(self, config_format: ConfigFormat) -> ConfigParser:
-        match config_format:
-            case ConfigFormat.JSON:
-                return JsonConfigParser()
-            case ConfigFormat.YAML:
-                return YamlConfigParser()
-            case _:
-                raise ValueError('Unsupported config format')
+public class ConfigParserFactoryImpl implements
+               ConfigParserFactory {
+   public final ConfigParser createConfigParser(
+     final ConfigFormat configFormat
+   ) {
+     return switch(configFormat) {
+       case JSON -> new JsonConfigParser();
+       case YAML -> new YamlConfigParser();
+       default ->
+         throw new IllegalArgumentException(
+           "Unsupported config format"
+         );
+    };
+  }
+}
 ```
 
 You should follow the *program against interfaces principle* and use the abstract `ConfigParserFactory` in your code instead of
@@ -4514,349 +4519,179 @@ a concrete factory. Then, using the *dependency injection principle*, you can in
 implementation, like `ConfigParserFactoryImpl`.
 
 When unit testing code, you should create mock objects instead of real ones with a
-factory. The abstract factory pattern comes to your help because you can supply a mock instance of the `ConfigParserFactory` in the tested code. Then, you can expect the mocked `create_config_parser` method to be called and return a mock instance
-conforming to the `ConfigParser` protocol. Then, you can expect the `parse` method to be called on the `ConfigParser` mock and return
-a mocked configuration. Below is an example unit test. We test the `initialize` method in the `Application` class containing
-a `ConfigParserFactory` type attribute. The `Application` class uses the `ConfigParserFactory` instance to create a `ConfigParser` object
-to parse the application configuration.
+factory. The abstract factory pattern comes to your help because you can inject a mock instance of the `ConfigParserFactory`
+in the tested code. Then you can expect the mocked `createConfigParser` method to be called and return a mock instance
+of the `ConfigParser` interface. And then, you can expect the `parse` method to be called on the `ConfigParser` mock and return
+a mocked configuration. Below is an example unit test that uses JUnit5 and [JMockit](https://jmockit.github.io/index.html) library.
+We test the `initialize` method in an `Application` class containing a `ConfigParserFactory` field. The `Application` class
+uses the `ConfigParserFactory` instance to create a `ConfigParser` to parse the application configuration. In the below test, we
+inject a `ConfigParserFactory` mock to an `Application` instance using the `@Injectable` annotation
+from JMockit. Unit testing and mocking are better described later in the _testing principles_ chapter.
 
-```python
-from typing import Protocol
+<div class="sourceCodeWithoutLabel">
 
+```java
+public class Application {
+  private ConfigParserFactory configParserFactory;
+  private Config config;
 
-class Config(Protocol):
-    # ...
+  public Application(final ConfigParserFactory configParserFactory) {
+    this.configParserFactory = configParserFactory;
+  }
 
+  public void initialize() {
+    // ...
 
-class ConfigParser(Protocol):
-    def parse(self) -> Config:
-        pass
+    final var configParser = configParserFactory.createConfigParser(...);
+    config = configParser.parse(...);
 
-    # ...
+    // ...
+  }
 
+  public Config getConfig() {
+    return config;
+  }
+}
 
-class ConfigParserFactory(Protocol):
-    def create_config_parser(self) -> ConfigParser:
-        pass
+public class ApplicationTests {
+  @Tested
+  Application application;
 
-    # ...
+  @Injectable
+  ConfigParserFactory configParserFactoryMock;
 
+  @Mocked
+  ConfigParser configParserMock;
 
-class Application:
-    def __init__(self, config_parser_factory: ConfigParserFactory):
-        self.__config_parser_factory = config_parser_factory
-        self.__config: Config | None = None
+  @Mocked
+  Config configMock;
 
-    def initialize(self) -> None:
-        # ...
-        config_parser = self.__config_parser_factory.create_config_parser(...)
-        self.__config = config_parser.parse(...)
-        # ...
+  @Test
+  public void testInitialize() {
+    // GIVEN
+    new Expectations() {{
+      configParserFactoryMock.createConfigParser(...);
+      result = configParserMock;
 
-    @property
-    def config(self):
-        return self.__config
+      configParserMock.parse(...);
+      result = configMock;
+    }};
+
+    // WHEN
+    application.initialize();
+
+    // THEN
+    assertEquals(application.getConfig(), configMock);
+  }
+}
 ```
-
-Here is the `ApplicationTests` class:
-
-```python
-from unittest import main, TestCase
-from unittest.mock import Mock
-
-from Application import Application
-from Config import Config
-from ConfigParser import ConfigParser
-from ConfigParserFactory import ConfigParserFactory
-
-
-class ConfigParserFactoryMock(ConfigParserFactory):
-     pass
-
-
-class ConfigParserMock(ConfigParser):
-    pass
-
-
-class ConfigMock(Config):
-    pass
-
-
-class ApplicationTests(TestCase):
-    def test_initialize(self):
-        # GIVEN
-        config_parser_factory_mock = ConfigParserFactoryMock()
-        config_parser_mock = ConfigParserMock()
-
-        config_parser_factory_mock.create_config_parser = Mock(
-            return_value=config_parser_mock
-        )
-
-        config_mock = ConfigMock()
-        config_parser_mock.parse = Mock(return_value=config_mock)
-        application = Application(config_parser_factory_mock)
-
-        # WHEN
-        application.initialize()
-
-        # THEN
-        self.assertEqual(application.config, config_mock)
-
-
-if __name__ == '__main__':
-    main()
-```
-
-In the above example, we created mocks manually. The `Mock` constructor creates a mock object that is also callable (i.e., it is also a mock function). You can supply the return value the mock should return when it is called in the `Mock` constructor.
-It is also possible to create mocks automatically using the `@patch` decorator, which can make code slightly less verbose, as shown
-below:
-
-```python
-from unittest import TestCase, main
-from unittest.mock import Mock, patch
-
-from Application import Application
-from Config import Config
-from ConfigParser import ConfigParser
-from ConfigParserFactory import ConfigParserFactory
-
-
-class ApplicationTests(TestCase):
-    @patch.object(ConfigParserFactory, '__new__')
-    @patch.object(ConfigParser, '__new__')
-    @patch.object(Config, '__new__')
-    def test_initialize(
-        self,
-        config_mock: Mock,
-        config_parser_mock: Mock,
-        config_parser_factory_mock: Mock,
-    ):
-        # GIVEN
-        config_parser_factory_mock.create_config_parser.return_value = (
-            config_parser_mock
-        )
-
-        config_parser_mock.parse.return_value = config_mock
-        application = Application(config_parser_factory_mock)
-
-        # WHEN
-        application.initialize()
-
-        # THEN
-        self.assertEqual(application.config, config_mock)
-
-
-if __name__ == '__main__':
-    main()
-```
-
-Unit testing and mocking are better described later in the *testing principles* chapter.
 
 #### Static Factory Method Pattern
 
-> ***In the static factory method pattern, objects are created using one or more factory methods in a class, and the class constructor is made private.***
-> ***The factory methods are usually class methods.***
-
-Static factory methods are useful if you need more than one constructor with different arguments because in Python a class can have only one constructor, the `__init__` methods.
+> ***In the static factory method pattern, objects are created using one or more static factory methods in a class, and the class constructor is made private.***
 
 If you want to validate the parameters supplied to a constructor,
-the constructor may raise an error. You cannot return an error value from a constructor. Creating constructors that cannot
-raise an error is recommended because it is relatively easy
-to forget to catch errors raised in a constructor if nothing in the constructor signature tells it can raise an error.
+the constructor may throw an error. You cannot return an error value from a constructor. Creating constructors that cannot
+throw an error is recommended because it is relatively easy
+to forget to catch errors thrown in a constructor if nothing in the constructor signature tells it can throw an error.
 See the next chapter for a discussion about the *error/exception handling principle*.
 
-```python
-class Url:
-    def __init__(
-        self,
-        scheme: str,
-        port: int,
-        host: str,
-        path: str,
-        query: str
-    ):
-        # Validate the arguments and raise an error if invalid
+Below is a TypeScript example of a constructor that can throw:
+
+```ts
+class Url {
+  constructor(
+    scheme: string,
+    port: number,
+    host: string,
+    path: string,
+    query: string
+  ) {
+    // Validate the arguments and throw if invalid
+  }
+}
 ```
 
-You can use the static factory method pattern to overcome the problem of raising an error in a constructor.
+You can use the static factory method pattern to overcome the problem of throwing an error in a constructor.
 You can make a factory method to return an optional value (if you don't need to return an error cause) or
-make the factory method raise an error. You can add a *try* prefix to the factory method name
+make the factory method throw an error. You should add a *try* prefix to the factory method name
 to signify that it can raise an error. Then, the function signature (function name) communicates to readers
 that the function may raise an error.
 
-Below is an example class with two factory methods. The constructor of the class is made private using a
-`PrivateConstructor` metaclass. Users can only create instances of the class by using a factory method.
+Below is an example class with two factory methods and a private constructor:
 
-```python
-from typing import Any, TypeVar
+{title: "Url.ts"}
+```
+class Url {
+  private constructor(
+    scheme: string,
+    port: number,
+    host: string,
+    path: string,
+    query: string
+  ) {
+    // ...
+  }
 
-T = TypeVar("T")
+  static createUrl(
+    scheme: string,
+    port: number,
+    host: string,
+    path: string,
+    query: string
+ ): Url | null {
+    // Validate the arguments and return 'null' if invalid
+  }
 
-
-class PrivateConstructor(type):
-    def __call__(
-        cls: type[T],
-        *args: tuple[Any, ...],
-        **kwargs: dict[str, Any]
-     ):
-        raise TypeError('Constructor is private')
-
-    def _create(
-        cls: type[T],
-        *args: tuple[Any, ...],
-        **kwargs: dict[str, Any]
-    ) -> T:
-        return super().__call__(*args, **kwargs)
-
-
-class Url(metaclass=PrivateConstructor):
-    def __init__(
-        self,
-        scheme: str,
-        port: int,
-        host: str,
-        path: str,
-        query: str
-    ):
-        # ...
-
-    @classmethod
-    def create_url(
-        cls,
-        scheme: str,
-        port: int,
-        host: str,
-        path: str,
-        query: str
-    ) -> 'Url | None':
-        # Validate the arguments and return 'None' if invalid
-        # If valid return a 'Url' instance:
-        # return cls._create(str, port, host, path, query)
-
-    @classmethod
-    def try_create_url(
-        cls,
-        scheme: str,
-        port: int,
-        host: str,
-        path: str,
-        query: str
-    ) -> 'Url':
-        # Validate the arguments and raise an error if invalid
-        # If valid return a 'Url' instance:
-        # return cls._create(str, port, host, path, query)
+  static tryCreateUrl(
+    scheme: string,
+    port: number,
+    host: string,
+    path: string,
+    query: string
+  ): Url {
+    // Validate the arguments and throw if invalid
+  }
+}
 ```
 
-Returning an optional value from a factory method allows the utilization of functional programming techniques. Python does not
-have an optional class, but let's first define an `Optional` class:
+Returning an optional value from a factory method allows utilizing functional programming techniques. Here is an
+example in Java:
 
-```python
-from collections.abc import Callable
-from typing import Generic, TypeVar
+```java
+public class Url {
+  private Url(
+    final String scheme,
+    final String host,
+    final int port,
+    final String path,
+    final String query
+  ) {
+    // ...
+  }
 
-T = TypeVar('T')
-U = TypeVar('U')
+  public static Optional<Url> createUrl(
+    final String scheme,
+    final String host,
+    final int port,
+    final String path,
+    final String query
+  ) {
+    // ...
+  }
+}
 
+final var maybeUrl = Url.createUrl(...);
 
-class Optional(Generic[T], metaclass=PrivateConstructor):
-    def __init__(self, value: T | None):
-        self.__value = value
-
-    @classmethod
-    def of(cls, value: T) -> 'Optional[T]':
-        return cls._create(value)
-
-    @classmethod
-    def of_nullable(cls, value: T | None) -> 'Optional[T]':
-        return cls._create(value)
-
-    @classmethod
-    def empty(cls) -> 'Optional[T]':
-        return cls._create(None)
-
-    def is_empty(self) -> bool:
-        return True if self.__value is None else False
-
-    def is_present(self) -> bool:
-        return False if self.__value is None else True
-
-    def try_get(self) -> T:
-        if self.__value is None:
-            raise ValueError('No value to get')
-        return self.__value
-
-    def try_get_or_else_raise(self, error: Exception):
-        if self.__value is None:
-            raise error
-        return self.__value
-
-    def if_present(self, consume: Callable[[T], None]) -> 'Optional[T]':
-        if self.__value is not None:
-            consume(self.__value)
-        return self
-
-    def or_else(self, other_value: T) -> T:
-        return other_value if self.__value is None else self.__value
-
-    def or_else_get(self, supply_value: Callable[[], T]) -> T:
-        return supply_value() if self.__value is None else self.__value
-
-    def map(self, map_: Callable[[T], U | None]) -> 'Optional[U]':
-        return (
-            self
-            if self.__value is None
-            else self.of_nullable(map_(self.__value))
-        )
-
-    def flat_map(self, map_: Callable[[T], 'Optional[U]']) -> 'Optional[U]':
-        return self if self.__value is None else map_(self.__value)
+maybeUrl.ifPresent(url -> {
+  // Do something with the validated and correct 'url'
+});
 ```
 
-{aside}
-**NOTE!** When I use the `Optional` class in this book, it is always the above-defined class, not the `Optional` from
-the Python's `typing` module.
-{/aside}
-
-Notice how the above `Optional` class code utilized the static factory method pattern. It has a private constructor and
-three factory methods to create different kinds of `Optional` objects. The additional benefit of using the static factory method pattern is that you can name
-the factory methods descriptively, which you can't do with a single constructor. The name of the factory method tells what
+Java's `Optional` class utilizes the static factory method pattern in an exemplary way. It has a private constructor and
+three factory methods `empty`, `of` and `ofNullable` to create different kinds of `Optional` objects. The additional benefit of using the static factory method pattern is that you can name
+the factory methods descriptively, which you can't do with constructors. The name of the factory method tells what
 kind of object will be created.
-
-```python
-class Url(metaclass=PrivateConstructor):
-     def __init__(
-          self,
-          scheme: str,
-          port: int,
-          host: str,
-          path: str,
-          query: str
-      ):
-          # ...
-
-    @classmethod
-    def create_url(
-        cls,
-        scheme: str,
-        host: str,
-        port: int,
-        path: str,
-        query: str
-    ) -> Optional['Url']:
-        # ...
-
-
-maybe_url = Url.create_url(...)
-
-# Do something with the URL in lambda
-maybe_url.if_present(lambda url: print(url))
-
-def print_url(url: Url):
-    print(url)
-
-# Do something with the URL using a function
-maybe_url.if_present(print_url)
-```
 
 #### Builder Pattern
 
