@@ -3427,20 +3427,25 @@ a copy instead.
 ### Don't Assign From a Method Parameter to a Modifiable Attribute
 
 If a class receives modifiable objects as constructor or method arguments, it is typically best practice not to
-directly assign those arguments to the internal state. If assigned directly, the class can purposely or accidentally modify those argument objects, which is probably not what the constructor or method caller
+assign those arguments to the internal state directly. If they are assigned directly, the class can,
+on purpose or accidentally modify those argument objects, which is probably not what the constructor or method caller
 expects.
 
 There are two ways to handle this situation:
 
-1) Store a copy of the modifiable argument object to the object's internal state
-2) Store an unmodifiable version of the modifiable argument object to the object's internal state. Note that the original modifiable object's owner can modify the object, which is reflected in the unmodifiable object, too. If this is something unwanted, use a copy instead.
+1) Store a copy of the modifiable argument object to the class's internal state
+2) Store an unmodifiable version of the modifiable argument object to the class's internal state
 
-Below is an example of the second approach:
+Below is a Java example of the second approach:
 
-```python
-class MyClass:
-    def __init__(self, values: MyList[int]):
-        self.__values = UnmodifiableMyList(values)
+```java
+public class MyClass {
+  private final List<Integer> values;
+
+  public MyClass(final List<Integer> values) {
+    this.values = Collections.unmodifiableList(values);
+  }
+}
 ```
 
 ## Prefer Composition Over Inheritance Principle
@@ -3450,35 +3455,57 @@ class MyClass:
 
 This principle is presented in the *Design Patterns* book by the *Gang of Four*. An example of composition is a car object composed of an engine and transmission object (to name a few).
 Objects are rarely "composed" by deriving from another object, i.e., using inheritance. But first, let's try to specify
-classes that implement the below `Car` protocol using inheritance and see where it leads us:
+classes that implement the below Java `Car` interface using inheritance and see where it leads us:
 
-```python
-from typing import Protocol
-
-
-class Car(Protocol):
-    def drive(self, start: Location, destination: Location) -> None:
-        pass
-
-
-class CombustionEngineCar(Car):
-    def drive(self, start: Location, destination: Location) -> None:
-        # ...
+```java
+public interface Car {
+  void drive(
+    Location start,
+    Location destination
+ );
+}
 
 
-class ElectricEngineCar(Car):
-    def drive(self, start: Location, destination: Location) -> None:
-        # ...
+public class CombustionEngineCar implements Car {
+  public void drive(
+    final Location start,
+    final Location destination
+  ) {
+    // ...
+  }
+}
 
 
-class ManualTransmissionCombustionEngineCar(CombustionEngineCar):
-    def drive(self, start: Location, destination: Location) -> None:
-        # ...
+public class ElectricEngineCar implements Car {
+  public void drive(
+    final Location start,
+    final Location destination
+  ) {
+    // ...
+  }
+}
 
 
-class AutomaticTransmissionCombustionEngineCar(CombustionEngineCar):
-    def drive(self, start: Location, destination: Location) -> None:
-       # ...
+public class ManualTransmissionCombustionEngineCar
+         extends CombustionEngineCar {
+  public void drive(
+    final Location start,
+    final Location destination
+  ) {
+    // ...
+  }
+}
+
+
+public class AutomaticTransmissionCombustionEngineCar
+         extends CombustionEngineCar {
+  public void drive(
+    final Location start,
+    final Location destination
+  ) {
+    // ...
+  }
+}
 ```
 
 If we wanted to add other components to a car, like a two or four-wheel drive, the number of classes
@@ -3495,329 +3522,405 @@ If the answer is yes, then composition should be used instead of inheritance.
 All the above things related to a car are actually properties of a car. A car *has an* engine.
 A car *has a* transmission. It *has a* two or four-wheel drive and design. We can turn the inheritance-based solution into a composition-based solution:
 
-```python
-from typing import Protocol
+```java
+public interface Drivable {
+  void drive(
+    Location start,
+    Location destination
+  );
+}
 
+public interface Engine {
+  // Methods like start, stop ...
+}
 
-class Drivable(Protocol):
-    def drive(self, start: Location, destination: Location) -> None:
-        pass
+public class CombustionEngine implements Engine {
+  // Methods like start, stop ...
+}
 
+public class ElectricEngine implements Engine {
+  // Methods like start, stop ...
+}
 
-class Engine(Protocol):
-    # Methods like start, stop ...
+public interface Transmission {
+  // Methods like changeGear ...
+}
 
+public class AutomaticTransmission implements Transmission {
+  // Methods like changeGear ...
+}
 
-class CombustionEngine(Engine):
-    # Methods like start, stop ...
+public class ManualTransmission implements Transmission {
+  // Methods like changeGear ...
+}
 
+// Define DriveType here...
+// Define Design here...
 
-class ElectricEngine(Engine):
-    # Methods like start, stop ...
+public class Car implements Drivable {
+  private final Engine engine;
+  private final Transmission transmission;
+  private final DriveType driveType;
+  private final Design design;
 
+  public Car(
+    final Engine engine,
+    final Transmission transmission,
+    final DriveType driveType,
+    final Design design
+  ) {
+    this.engine = engine;
+    this.transmission = transmission;
+    this.driveType = driveType;
+    this.design = design;
+  }
 
-class Transmission(Protocol):
-    # Methods like shift_gear ...
+  public void drive(
+    final Location start,
+    final Location destination
+  ) {
+    // To implement functionality, delegate to
+    // component classes, for example:
 
-
-class AutomaticTransmission(Transmission):
-    # Methods like shift_gear ...
-
-
-class ManualTransmission(Transmission):
-    # Methods like shift_gear ...
-
-
-# Define DriveType here...
-# Define Design here...
-
-
-class Car(Drivable):
-    def __init__(
-        self,
-        engine: Engine,
-        transmission: Transmission,
-        drive_type: DriveType,
-        design: Design
-    ):
-        self.__engine = engine
-        self.__transmission = transmission
-        self.__drive_type = drive_type
-        self.__design = design
-
-  def drive(self, start: Location, destination: Location) -> None:
-        # To implement functionality, delegate to
-        # component classes, for example:
-
-        # self.__engine.start()
-        # self.__transmission.shift_gear(...)
-        #  ...
-        # self.__engine.stop()
+    // engine.start();
+    // transmission.shiftGear(...);
+    // ...
+    // engine.stop();
+  }
+}
 ```
 
-Let's have a more realistic example with different chart types. At first, this sounds
-like a case where inheritance could be used: We have some abstract base charts that different concrete charts extend, for example:
+Let's have a more realistic example in TypeScript with different chart types. At first, this sounds
+like a case where inheritance could be used: We have some abstract base charts that different concrete charts extend:
 
-```python
-from abc import abstractmethod
-from typing import Protocol
-
-
-class Chart(Protocol):
-    def render_view(self) -> None:
-        pass
-
-    def update_data(self, ...) -> None:
-        pass
+```ts
+interface Chart {
+  renderView(): JSX.Element;
+  updateData(...): void;
+}
 
 
-class AbstractChart(Chart):
-    @abstractmethod
-    def render_view(self) -> None:
-        pass
+abstract class AbstractChart implements Chart {
+  abstract renderView(): JSX.Element;
+  abstract updateData(...): void;
 
-    @abstractmethod
-    def update_data(self, ...) -> None:
-        pass
-
-    # Implement some common functionality
-    # shared by all chart types
+  // Implement some common functionality
+  // shared by all chart types
+}
 
 
-class AbstractXAxisChart(AbstractChart):
-    @abstractmethod
-    def render_view(self) -> None:
-        pass
+abstract class XAxisChart extends AbstractChart {
+  abstract renderView(): JSX.Element;
 
-    def update_data(self, ...) -> None:
-        # This is common for all x-axis charts,
-        # like ColumnChart, LineChart and AreaChart
-
-
-class ColumnChart(AbstractXAxisChart):
-    def render_view(self) -> None:
-        # Render column chart using library XYZ
+  updateData(...): void {
+    // This is common for all x-axis charts,
+    // like ColumnChart, LineChart and AreaChart
+  }
+}
 
 
-# LineChart class definition here...
-# AreaChart class definition here...
+class ColumnChart extends XAxisChart {
+  renderView(): JSX.Element {
+    // ...
+
+    return (
+      <XYZChart
+        type="column"
+        data={data}
+        options={options}...
+      />;
+    );
+  }
+}
 
 
-class AbstractNonAxisChart(AbstractChart):
-    @abstractmethod
-    def render_view(self) -> None:
-        pass
-
-    def update_data(self, ...) -> None:
-        # This is common for all non-x-axis charts,
-        # like PieChart and DonutChart
+// LineChart class definition here...
+// AreaChart class definition here...
 
 
-class PieChart(AbstractNonAxisChart):
-    def render_view(self) -> None:
-        # Render pie chart using library XYZ
+abstract class NonAxisChart extends AbstractChart {
+  abstract renderView(): JSX.Element;
+
+  updateData(...): void {
+    // This is common for all non-x-axis charts,
+    // like PieChart and DonutChart
+  }
+}
 
 
-class DonutChart(PieChart):
-    def render_view(self) -> None:
-        # Render donut chart using library XYZ
+class PieChart extends NonAxisChart {
+  renderView(): JSX.Element {
+    // ...
+
+    return (
+      <XYZChart
+        type="pie"
+        data={data}
+        options={options}...
+      />;
+    );
+  }
+}
+
+
+class DonutChart extends PieChart {
+  renderView(): JSX.Element {
+    // ...
+
+    return (
+      <XYZChart
+        type="donut"
+        data={data}
+        options={options}...
+      />;
+    );
+  }
+}
 ```
 
-The above class hierarchy looks manageable: there should not be too many subclasses that need to be defined. We can, of course,
-think of new chart types, like a geographical map or data table for which we could add subclasses. One problem with
-a deep class hierarchy arises when you need to change or
+The above class hierarchy looks manageable: there should not be too many subclasses that need to be defined. We can, of course, think of new chart types, like a geographical map or data table
+for which we could add subclasses. One problem with a deep class hierarchy arises when you need to change or
 correct something related to a particular chart type. Let's say you want to change or correct some behavior
-related to a pie chart. You will first check the `PieChart` class to see if the behavior is defined there. If
-you can't find what you are looking for, navigate to the base class of the `PieChart` class (`AbstractNonAxisChart`) and look there.
-You might need to continue this navigation until you reach the base class where the behavior you want to
-change or correct is located. When you are incredibly familiar with the codebase, you might be able to locate the
-correct subclass on the first try. But in general, this is not a straightforward task and is a major drawback of deep class hierarchies.
+related to a pie chart. You will first check the `PieChart` class if the behavior is defined there. If
+you can't find what you are looking for, you need to navigate to the base class of the `PieChart` class (`NonAxisChart`) and look there. And
+you might need to continue this navigation until you reach the base class where the behavior you want to
+change or correct is located. Of course, if you are incredibly familiar with the codebase, you might be able to locate the
+correct subclass on the first try. But in general, this is not a straightforward task.
 
 Using class inheritance can
 introduce class hierarchies where some classes have significantly more methods than other classes.
 For example, in the chart inheritance chain, the `AbstractChart` class probably has significantly more methods than
-classes at the end of the inheritance chain. This class size difference creates an imbalance between classes, making it hard to reason about
+classes at the end of the inheritance chain. This class size difference creates an imbalance between classes making it hard to reason about
 what functionality each class provides.
 
-Even if the above class hierarchy looks okay at first sight, there is one problem. We have
-hardcoded what kind of chart view we are rendering. We use the *XYZ* chart library and render `XYZChart` views. Let's say we would like to introduce another chart library called *ABC*. We want to use both chart libraries
-in parallel so that the open-source version of our data visualization application uses the *XYZ* chart library, which is open
-source. The paid version of our application uses the commercial *ABC* chart library.
-When using class inheritance, we must create new classes for each concrete chart type for the *ABC* chart library.
+Even if the above class hierarchy might look okay at first sight, currently, there lies one problem. We have
+hardcoded what kind of chart view we are rendering. We are using the _XYZ_ chart library and rendering `XYZChart`
+views. Let's say we would like to introduce another chart library called _ABC_. We want to use both chart libraries
+in parallel so that the open-source version of our data visualization application uses the _XYZ_ chart library, which is open
+source. The paid version of our application uses the commercial _ABC_ chart library. When using class inheritance,
+we must create new classes for each concrete chart type for the _ABC_ chart library.
 So, we would have two classes for each concrete chart type, like here for the pie chart:
 
-```python
-class XyzPieChart(AbstractXyzNonAxisChart):
-    def render_view(self) -> None:
-        # Render pie chart using XYZ library
+```ts
+class XYZPieChart extends XyzNonAxisChart {
+  renderView(): JSX.Element {
+    // ...
+
+    return (
+      <XYZChart
+        type="pie"
+        data={data}
+        options={options}...
+      />;
+    );
+  }
+}
 
 
-class AbcPieChart(AbstractAbcNonAxisChart):
-    def render_view(self) -> None:
-        # Render pie chart using ABC library
+class ABCPieChart extends AbcNonAxisChart {
+  renderView(): JSX.Element {
+    // ...
+
+    return (
+      <ABCPieChart
+        dataSeries={dataSeries}
+        chartOptions={chartOptions}...
+      />;
+    );
+  }
+}
 ```
 
-Implementing the above functionalities using composition instead of inheritance has several benefits:
+Implementing the above functionality using composition instead of inheritance has several benefits:
 
 - It is more apparent what behavior each class contains
 - There is no significant size imbalance between classes, where some classes are huge and others relatively small
-- You can split chart behaviors into classes as you find fit, and is in accordance with the *single responsibility principle*
+- You can split chart behaviors into classes as you find fit, and is in accordance with the _single responsibility principle_
 
 In the below example, we have split some chart behavior into two types of classes: chart view renderers and chart data factories:
 
-```python
-from enum import Enum
-from typing import Protocol
+```ts
+interface Chart {
+  renderView(): JSX.Element;
+  updateData(...): void;
+}
 
 
-class Chart(Protocol):
-    def render_view(self) -> None:
-        pass
-
-    def update_data(self, ...) -> None:
-        pass
+interface ChartViewRenderer {
+  renderView(data: ChartData, options: ChartOptions): JSX.Element;
+}
 
 
-# Define ChartData class...
-# Define ChartOptions class...
+interface ChartDataFactory {
+  createData(...): ChartData
+}
 
 
-class ChartViewRenderer(Protocol):
-    def render_view(self, data: ChartData, options: ChartOptions) -> None:
-        pass
+// ChartData...
+// ChartOptions...
 
 
-class ChartDataFactory(Protocol):
-    def create_data(self, ...) -> ChartData:
-        pass
+class ChartImpl implements Chart {
+  private data: ChartData;
+  private options: ChartOptions;
+
+  constructor(
+    private readonly viewRenderer: ChartViewRenderer,
+    private readonly dataFactory: ChartDataFactory
+  ) {
+    // ...
+  }
+
+  renderView(): JSX.Element {
+    return this.viewRenderer.renderView(this.data, this.options);
+  }
+
+  updateData(...): void {
+    this.data = this.dataFactory.createData(...);
+  }
+}
 
 
-class ChartImpl(Chart):
-    def __init__ (
-        self,
-        view_renderer: ChartViewRenderer,
-        data_factory: ChartDataFactory,
-        options: ChartOptions
-    ):
-        self.__view_renderer = view_renderer
-        self.__data_factory = data_factory
-        self.__options = options
-        self.__data = None,
+class XYZPieChartViewRenderer implements ChartViewRenderer {
+  renderView(data: ChartData, options: ChartOptions): JSX.Element {
+    // ...
 
-    def render_view(self) -> None:
-        self.__view_renderer.render_view(self.__data, self.__options)
-
-    def update_data(self, ...) -> None:
-        self.__data = self.__data_factory.create_data(...)
+    return (
+      <XYZPieChart
+        data={dataInXyzChartLibFormat}
+        options={optionsInXyzChartLibFormat}...
+      />;
+    );
+  }
+}
 
 
-class XyzPieChartViewRenderer(ChartViewRenderer):
-    def render_view(self, data: ChartData, options: ChartOptions) -> None:
-        # Render pie chart with XYZ library
+class ABCPieChartViewRenderer implements ChartViewRenderer {
+   renderView(data: ChartData, options: ChartOptions): JSX.Element {
+     // ...
+
+     return (
+       <ABCPieChart
+         dataSeries={dataInAbcChartLibFormat}
+         chartOptions={optionsInAbcChartLibFormat}...
+       />;
+     );
+   }
+}
 
 
-class AbcPieChartViewRenderer(ChartViewRenderer):
-    def render_view(self, data: ChartData, options: ChartOptions) -> None:
-        # Render pie chart with ABC library
+// ABCColumnChartViewRenderer...
+// XYZColumnChartViewRenderer...
 
 
-# Define AbcColumnChartViewRenderer class...
-# Define XyzColumnChartViewRenderer class...
-# Define XAxisChartDataFactory class ...
-# Define NonAxisChartDataFactory class ...
+type ChartType = 'column' | 'pie';
+
+interface ChartFactory {
+  createChart(chartType: ChartType): Chart;
+}
 
 
-class ChartType(Enum):
-    COLUMN = 1
-    PIE = 2
+class ABCChartFactory implements ChartFactory {
+  createChart(chartType: ChartType): Chart {
+    switch(chartType) {
+      case 'column':
+        return new ChartImpl(new ABCColumnChartViewRenderer(),
+                             new XAxisChartDataFactory());
+      case 'pie':
+        return new ChartImpl(new ABCPieChartViewRenderer(),
+                             new NonAxisChartDataFactory());
+
+      default:
+        throw new Error('Invalid chart type');
+    }
+  }
+}
 
 
-class ChartFactory(Protocol):
-    def create_chart(self, chart_type: ChartType) -> Chart:
-        pass
+class XYZChartFactory implements ChartFactory {
+  createChart(chartType: ChartType): Chart {
+    switch(chartType) {
+      case 'column':
+        return new ChartImpl(new XYZColumnChartViewRenderer(),
+                             new XAxisChartDataFactory());
+      case 'pie':
+        return new ChartImpl(new XYZPieChartViewRenderer(),
+                             new NonAxisChartDataFactory());
 
-
-class AbcChartFactory(ChartFactory):
-    def create_chart(self, chart_type: ChartType) -> Chart:
-        match chart_type:
-            case ChartType.COLUMN:
-                return ChartImpl(AbcColumnChartViewRenderer(),
-                                 XAxisChartDataFactory())
-            case ChartType.PIE:
-                return ChartImpl(AbcPieChartViewRenderer(),
-                                NonAxisChartDataFactory())
-            case _:
-                raise ValueError('Invalid chart type')
-
-
-class XyzChartFactory(ChartFactory):
-    def create_chart(self, chart_type: ChartType) -> Chart:
-        match chart_type:
-            case ChartType.COLUMN:
-                return ChartImpl(XyzColumnChartViewRenderer(),
-                                 XAxisChartDataFactory())
-            case ChartType.PIE:
-                return ChartImpl(XyzPieChartViewRenderer(),
-                                NonAxisChartDataFactory())
-            case _:
-                raise ValueError('Invalid chart type')
+      default:
+        throw new Error('Invalid chart type');
+    }
+  }
+}
 ```
 
-The `XyzPieChartViewRenderer` and `AbcPieChartViewRenderer` classes use the *adapter pattern* as they convert
-the supplied data and options to an implementation-specific (ABC or XYZ chart library) interface.
+The `XYZPieChartViewRenderer` and `ABCPieChartViewRenderer` classes use the _adapter pattern_ as they convert
+the supplied data and options to an implementation (ABC or XYZ chart library) specific interface.
 
 We can easily add more functionality by composing the `ChartImpl` class of more classes. There could be, for example, a title
 formatter, tooltip formatter class, y/x-axis label formatter, and event handler classes.
 
-```python
-class ChartImpl(Chart):
-    def __init__ (
-        self,
-        view_renderer: ChartViewRenderer,
-        data_factory: ChartDataFactory,
-        title_formatter: ChartTitleFormatter,
-        tooltip_formatter: ChartTooltipFormatter,
-        x_axis_label_formatter: ChartXAxisLabelFormatter,
-        event_handler: ChartEventHandler,
-        options: ChartOptions
-    ):
-        # ...
+```ts
+class ChartImpl implements Chart {
+  private data: ChartData;
+  private options: ChartOptions;
 
-    # Chart methods ...
+  constructor(
+    private readonly viewRenderer: ChartViewRenderer,
+    private readonly dataFactory: ChartDataFactory,
+    private readonly titleFormatter: ChartTitleFormatter,
+    private readonly tooltipFormatter: ChartTooltipFormatter,
+    private readonly xAxisLabelFormatter: ChartXAxisLabelFormatter,
+    private readonly eventHandler: ChartEventHandler
+  ) {
+    // ...
+  }
+
+  renderView(): JSX.Element {
+    return this.viewRenderer.renderView(this.data, this.options);
+  }
+
+  updateData(...): void {
+    this.data = this.dataFactory.createData(...);
+  }
+}
 
 
-class AbcChartFactory(ChartFactory):
-    def create_chart(self, chart_type: ChartType) -> Chart:
-        match chart_type:
-            case ChartType.COLUMN:
-                return ChartImpl(AbcColumnChartViewRenderer(),
-                                 XAxisChartDataFactory(),
-                                 ChartTitleFormatterImpl(),
-                                 XAxisChartTooltipFormatter(),
-                                 ChartXAxisLabelFormatterImpl(),
-                                 ColumnChartEventHandler())
+class ABCChartFactory implements ChartFactory {
+  createChart(chartType: ChartType): Chart {
+    switch(chartType) {
+      case 'column':
+        return new ChartImpl(new ABCColumnChartViewRenderer(),
+                             new XAxisChartDataFactory(),
+                             new ChartTitleFormatterImpl(),
+                             new XAxisChartTooltipFormatter(),
+                             new ChartXAxisLabelFormatterImpl(),
+                             new ColumnChartEventHandler());
 
-            case ChartType.PIE:
-                return ChartImpl(AbcColumnChartViewRenderer(),
-                                NonAxisChartDataFactory(),
-                                ChartTitleFormatterImpl(),
-                                NonAxisChartTooltipFormatter(),
-                                NullXAxisLabelFormatter(),
-                                NonAxisChartEventHandler())
+     case 'pie':
+       return new ChartImpl(new ABCColumnChartViewRenderer(),
+                            new NonAxisChartDataFactory(),
+                            new ChartTitleFormatterImpl(),
+                            new NonAxisChartTooltipFormatter(),
+                            new NullXAxisLabelFormatter(),
+                            new NonAxisChartEventHandler());
 
-            case _:
-                raise ValueError('Invalid chart type')
+      default:
+        throw new Error('Invalid chart type');
+    }
+  }
+}
 ```
 
 ## Tactical Domain-Driven Design Principle
 
-> ***Domain-driven design (DDD) is a software design approach where software is modeled to match the language of the problem domain that the software tries to solve. DDD is hierarchical. The top-level domain can be divided into subdomains.***
+> ***In Tactical DDD you define your domain models in more details. Tactical DDD is applied within a single bounded context.***
 
 We continue here where we left with strategical DDD in the last chapter. Strategic DDD was about dividing a software system to subdomains and bounded contexts (microservices).
 Tactical DDD is about implementing a single bounded context.
 Tactical DDD means that the structure of a bounded context and the names appearing in the code (interface, class, function, and variable names)
 should match the domain's vocabulary and the ubiquitous language. For example, names like *Account*, *withdraw*, *deposit*,
-*make_payment* should be used in a *payment-service* software component.
+*make_payment* should be used in a *payment-service* bounded context.
 
 ### Tactical DDD Concepts
 
