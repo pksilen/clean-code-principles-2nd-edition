@@ -5480,46 +5480,48 @@ but the implementation is deferred to subclasses of the abstract class. Here, in
 
 ![Bridge Pattern](resources/chapter2/images/bridge_pattern.png)
 
-Let's have an example with shapes and drawings capable of drawing different shapes:
+Let's have a Java example with shapes and drawings capable of drawing different shapes:
 
-```python
-from typing import Final, Protocol
-
-from Point import Point
-from ShapeRenderer import ShapeRenderer
-
-
-class Shape(Protocol):
-    def render(self, renderer: ShapeRenderer) -> None:
-        pass
+```java
+public interface Shape {
+  void render(final ShapeRenderer renderer);
+}
 
 
-class RectangleShape(Shape):
-    def __init__(
-        self,
-        upper_left_corner: Point,
-        width: int,
-        height: int
-    ):
-        self.__upper_left_corner: Final = upper_left_corner
-        self.__width: Final = width
-        self.__height: Final = height
+public class RectangleShape implements Shape {
+  private final Point upperLeftCorner;
+  private final int width;
+  private final int height;
 
-    def render(self, renderer: ShapeRenderer) -> None:
-        renderer.render_rectangle(
-            self.__upper_left_corner,
-            self.__width,
-            self.__height
-        )
+  public RectangleShape(
+    final Point upperLeftCorner,
+    final int width,
+    final int height
+    ) {
+    this.upperLeftCorner = upperLeftCorner;
+    this.width = width;
+    this.height = height;
+  }
+
+  public void render(final ShapeRenderer renderer) {
+    renderer.renderRectangleShape(upperLeftCorner, width, height);
+  }
+}
 
 
-class CircleShape(Shape):
-    def __init__(self, center: Point, radius: int):
-        self.__center: Final = center
-        self.__radius: Final = radius
+public class CircleShape implements Shape {
+  private final Point center;
+  private final int radius;
 
-    def render(self, renderer: ShapeRenderer):
-        renderer.render_circle(self.__center, self.__radius)
+  public CircleShape(final Point center, final int radius) {
+    this.center = center;
+    this.radius = radius;
+  }
+
+  public void render(final ShapeRenderer renderer) {
+    renderer.renderCircleShape(center, radius);
+  }
+}
 ```
 
 The above `RectangleShape` and `CircleShape` classes are abstractions (or delegating classes) because they delegate their functionality (rendering)
@@ -5527,148 +5529,152 @@ to an external class (implementation class) of the `ShapeRenderer` type. We can 
 the shape classes. Let's define two shape renderers, one for rendering raster shapes and another for rendering vector
 shapes:
 
-```python
-from typing import Final, Protocol
+```java
+public interface ShapeRenderer {
+  void renderCircleShape(final Point center, final int radius);
 
-from Canvas import Canvas
-from Point import Point
-from SvgElement import SvgElement
+  void renderRectangleShape(
+    final Point upperLeftCorner,
+    final int width,
+    final int height
+  );
 
-
-class ShapeRenderer(Protocol):
-    def render_circle(self, center: Point, radius: int) -> None:
-        pass
-
-    def render_rectangle(
-        self,
-        upper_left_corner: Point,
-        width: int,
-        height: int
-    ) -> None:
-        pass
-
-    # Methods for rendering other shapes ...
+  // Methods for rendering other shapes...
+}
 
 
-class RasterShapeRenderer(ShapeRenderer):
-    def __init__(self, canvas: Canvas):
-        self.__canvas: Final = canvas
+public class RasterShapeRenderer implements ShapeRenderer {
+  private final Canvas canvas;
 
-    def render_circle(self, center: Point, radius: int):
-        # Render circle to canvas
+  public RasterShapeRenderer(final Canvas canvas) {
+    this.canvas = canvas;
+  }
 
-    def render_rectangle(
-        self,
-        upper_left_corner: Point,
-        width: int,
-        height: int
-    ):
-        # Render rectangle to canvas
+  public void renderCircleShape(
+    final Point center,
+    final int radius
+  ) {
+    // Renders circle to canvas
+  }
 
-    # Methods for rendering other shapes to canvas ...
+  public void renderRectangleShape(
+    final Point upperLeftCorner,
+    final int width,
+    final int height
+  ) {
+    // Renders a rectangle to canvas
+  }
+
+  // Methods for rendering other shapes to the canvas
+}
 
 
-class VectorShapeRenderer(ShapeRenderer):
-    def __init__(self, svg_root: SvgElement):
-        self.__svg_root: Final = svg_root
+public class VectorShapeRenderer implements ShapeRenderer {
+  private final SvgElement svgRoot;
 
-    def render_circle(self, center: Point, radius: int):
-        # Render circle as SVG element and attach as child to SVG root
+  public VectorShapeRenderer(final SvgElement svgRoot) {
+    this.svgRoot = svgRoot;
+  }
 
-    def render_rectangle(
-        self,
-        upper_left_corner: Point,
-        width: int,
-        height: int
-    ):
-        # Render rectangle as SVG element
-        # and attach as child to SVG root
+  public void renderCircleShape(
+    final Point center,
+    final int radius
+  ) {
+    // Render circle as SVG element and attach as child to SVG root
+  }
 
-    # Methods for rendering other shapes ...
+  public void renderRectangleShape(
+    final Point upperLeftCorner,
+    final int width,
+    final int height
+  ) {
+    // Render rectangle as SVG element
+    // and attach as child to SVG root
+  }
+
+  // Methods for rendering other shapes
+}
 ```
 
 Let's implement two different drawings, a raster and a vector drawing:
 
-```python
-from abc import abstractmethod
-from typing import Final, Protocol
+```java
+public interface Drawing {
 
-from Canvas import Canvas
-from RasterShapeRenderer import RasterShapeRenderer
-from Shape import Shape
-from ShapeRenderer import ShapeRenderer
-from SvgElement import SvgElement
-from VectorShapeRenderer import VectorShapeRenderer
+  void draw();
+  void save();
+}
 
+public abstract class AbstractDrawing implements Drawing {
+  private final String name;
 
-class Drawing(Protocol):
-    def draw(self, shapes: list[Shape]) -> None:
-        pass
+  public AbstractDrawing(final String name) {
+    this.name = name;
+  }
 
-    def save(self) -> None:
-        pass
+  public final void save() {
+    final var fileName = name + getFileExtension();
+    final var data = getData();
 
+    // Save the 'data' to 'fileName'
+  }
 
-class AbstractDrawing(Drawing):
-    def __init__(self, name: str):
-        self.__name: Final = name
+  public final void draw(final List<Shape> shapes) {
+    for (final var shape: shapes) {
+      shape.render(getShapeRenderer());
+    }
+  }
 
-    @final
-    def draw(self, shapes: list[Shape]) -> None:
-        for shape in shapes:
-            shape.render(self._get_shape_renderer())
+  protected abstract ShapeRenderer getShapeRenderer();
+  protected abstract String getFileExtension();
+  protected abstract byte[] getData();
+}
 
-    @final
-    def save(self) -> None:
-        file_name = self.__name + self._get_file_extension()
-        data = self._get_data()
+public class RasterDrawing extends AbstractDrawing {
+  private final Canvas canvas = new Canvas();
 
-        # Save the 'data' to 'file_name' ...
+  private final RasterShapeRenderer shapeRenderer =
+    new RasterShapeRenderer(canvas);
 
-    @abstractmethod
-    def _get_shape_renderer(self) -> ShapeRenderer:
-        pass
+  public RasterDrawing(final String name) {
+    super(name);
+  }
 
-    @abstractmethod
-    def _get_file_extension(self) -> str:
-        pass
+  protected ShapeRenderer getShapeRenderer() {
+    return shapeRenderer;
+  }
 
-    @abstractmethod
-    def _get_data(self) -> bytearray:
-        pass
+  protected String getFileExtension() {
+    return ".png";
+  }
 
+  protected byte[] getData() {
+    // get data from the 'canvas' object
+  }
+}
 
-class RasterDrawing(AbstractDrawing):
-    def __init__(self, name: str):
-        super().__init__(name)
-        self.__canvas: Final = Canvas()
-        self.__shape_renderer = RasterShapeRenderer(self.__canvas)
+public class VectorDrawing extends AbstractDrawing {
+  private final SvgElement svgRoot = new SvgElement();
 
-    def _get_shape_renderer(self) -> ShapeRenderer:
-        return self.__shape_renderer
+  private final VectorShapeRenderer shapeRenderer =
+    new VectorShapeRenderer(svgRoot);
 
-    def _get_file_extension(self) -> str:
-        return '.png'
+  public VectorDrawing(final String name) {
+    super(name);
+  }
 
-    def _get_data(self) -> bytearray:
-        # Get data from the 'canvas' object
+  protected ShapeRenderer getShapeRenderer() {
+    return shapeRenderer;
+  }
 
+  protected String getFileExtension() {
+    return ".svg";
+  }
 
-class VectorDrawing(AbstractDrawing):
-    def __init__(self, name: str):
-        super().__init__(name)
-        self.__svg_root: Final = SvgElement()
-        self.__shape_renderer = VectorShapeRenderer(self.__svg_root)
-
-    def _get_shape_renderer(self) -> ShapeRenderer:
-        return self.__shape_renderer
-
-    def _get_file_extension(self) -> str:
-        return '.svg'
-
-    def _get_data(self) -> bytearray:
-        # Get data from the 'svg_root' object
-```
+  protected byte[] getData() {
+    // get data from the 'svgRoot' object
+  }
+}
 
 In the above example, we have delegated the rendering behavior of the shape classes to concrete classes implementing the `ShapeRenderer` protocol.
 The `Shape` classes only represent a shape but don't render the shape. They have a single responsibility of representing
@@ -5677,16 +5683,17 @@ a shape. Regarding rendering, the shape classes are "abstractions" because they 
 Now, we can have a list of shapes and render them differently. We can do this as shown below because we did not couple the shape classes with
 any specific rendering behavior.
 
-```python
-shapes = [RectangleShape(Point(...), 2, 3), CircleShape(Point(...), 4)]
+```java
+final List<Shape> shapes = new ArrayList<>(50);
+// Add various shapes to 'shapes' list here...
 
-raster_drawing = RasterDrawing('raster-drawing')
-raster_drawing.draw(shapes)
-raster_drawing.save()
+final var rasterDrawing = new RasterDrawing("raster-drawing-1");
+rasterDrawing.draw(shapes);
+rasterDrawing.save();
 
-vector_drawing = VectorDrawing('vector-drawing')
-vector_drawing.draw(shapes)
-vector_drawing.save()
+final var vectorDrawing = new VectorDrawing("vector-drawing-1");
+vectorDrawing.draw(shapes);
+vectorDrawing.save();
 ```
 
 #### Strategy Pattern
