@@ -4697,124 +4697,143 @@ kind of object will be created.
 
 > ***Builder pattern allows you to construct objects piece by piece.***
 
-In the builder pattern, you add properties to the built object with the *add_xxx* methods of the builder class. After adding all the needed properties, you can build the final object using
-the *build* or *build_xxx* method of the builder class.
+In the builder pattern, you add properties to the built object with _addXXX_
+methods of the builder class. After adding all the needed properties, you can build the final object using
+the _build_ or _buildXXX_ method of the builder class.
 
-For example, you can construct a URL from parts of the URL. Below is an example of using a `UrlBuilder` class:
+For example, you can construct a URL from parts of the URL. Below is a Java example of using a `UrlBuilder` class:
 
-```python
-url = UrlBuilder().add_scheme('https').add_host('www.google.com').build_url()
+```java
+final Optional<Url> url = new UrlBuilder()
+  .addScheme("https")
+  .addHost("www.google.com")
+  .buildUrl();
 ```
 
 The builder pattern has the benefit that properties given for the builder can be validated in the build method. You can make the
-builder's build method return an optional indicating whether the building was successful. Or, you can make the build method raise an error if you need to provide
-an error. If the build method can raise an error, name it using a *try* prefix, for example, `try_build_url`.
-The builder pattern also has the benefit of not needing to add default properties to the builder. For example, *https* could be
-the default scheme, and if you are building an HTTPS URL, the `add_scheme` does not need to be called. The only problem is
-that you must consult the builder documentation to determine the default values. They are not visible in the API.
+builder's build method return an optional indicating whether the building was successful. Or, you can make the build method throw if you need to return
+an error. Then you should name the build method using a _try_ prefix, for example, `tryBuildUrl`.
+The builder pattern also has the benefit of not needing to add default properties to the builder. For example, _https_ could be
+the default scheme, and if you are building an HTTPS URL, the `addScheme` is not needed to be called. The only problem is
+that you must consult the builder documentation to determine the default values.
 
 One drawback with the builder pattern is that you can give the parameters logically in the wrong order like this:
 
-```python
-url = UrlBuilder().add_host('www.google.com').add_scheme('https').build_url()
+```java
+final Optional<Url> url = new UrlBuilder()
+  .addHost("www.google.com")
+  .addScheme("https")
+  .buildUrl();
 ```
 
-It works, of course, but it does not look so nice. So, if you are using a builder, always try to give the parameters for the builder in a
-logically correct order if such an order exists. The builder pattern works well when there isn't any inherent order among the parameters.
+It works but does not look so nice. So if you are using a builder, always try to give the parameters for the builder in a logically correct order if such order exists. The builder pattern works well when there isn't any inherent order among the parameters.
 Below is an example of such a case: A house built with a `HouseBuilder` class.
 
-```python
-house = HouseBuilder()\
-  .add_kitchen()\
-  .add_living_room()\
-  .add_bedrooms(3)\
-  .add_bath_rooms(2)\
-  .add_garage()\
-  .build_house()
+```java
+final House house = new HouseBuilder()
+  .addKitchen()
+  .addLivingRoom()
+  .addBedrooms(3)
+  .addBathRooms(2)
+  .addGarage()
+  .buildHouse();
 ```
 
-You can achieve functionality similar to a builder with a factory method with parameters that have default values:
+You can achieve functionality similar to a builder with a factory method with default parameters:
 
-```python
-class Url(metaclass=PrivateConstructor):
-     def __init__(
-          self,
-          host: str,
-          path: str,
-          query: str,
-          scheme: str = 'https',
-          port: int = 443,
-      ):
-          # ...
+{title: "Url.ts"}
+```ts
+class Url {
+  private constructor(
+    host: string,
+    path?: string,
+    query?: string,
+    scheme = 'https',
+    port = 443
+  ) {
+    // ...
+  }
 
-    @classmethod
-    def create_url(
-        cls,
-         host: str,
-         path: str,
-         query: str,
-         scheme: str = 'https',
-         port: int = 443,
-    ) -> 'Url | None':
-        # ...
+  static createUrl(
+    host: string,
+    path?: string,
+    query?: string,
+    scheme = 'https',
+    port = 443
+  ): Url | null {
+    // Validate the arguments and return 'null' if invalid
+  }
+}
 ```
 
-In the factory method above, there is clear visibility of what the default values are. But you cannot now
+In the factory method above, there is clear visibility of what the default values are. Of course, you cannot now
 give the parameters in a logical order. There is also a greater possibility that you accidentally provide some parameters
 in the wrong order because many of them are of the same type (string). This won't be a potential issue with
 a builder where you use a method with a specific name to give a specific parameter. In modern development environments,
-giving parameters in the wrong order is less probable because IDEs offer so-called [inlay hints](https://www.jetbrains.com/help/idea/inlay-hints.html) for parameters. With inlay hints enabled, it is easier to see
+giving parameters in the wrong order is less probable because IDEs offer [inlay hints](https://www.jetbrains.com/help/idea/inlay-hints.html) for parameters. It is easy to see
 if you provide a particular parameter in the wrong position. As shown below, giving parameters in the wrong order can also be avoided using
-semantically validated function parameter types. That topic will be discussed later in this chapter when we discuss primitive-type obsession.
+semantically validated function parameter types. Semantically validated function parameters will be discussed later in this chapter.
 
-```python
-class Url(metaclass=PrivateConstructor):
-    # ...
-
-    @classmethod
-    def create_url(
-        cls,
-        host: Host,
-        path: Path,
-        query: Query,
-        scheme: Scheme = Scheme.create('https'),
-        port: Port = Port.create(443),
-    ) -> 'Url | None':
-        # ...
+{title: "Url.ts"}
+```ts
+class Url {
+  static createUrl(
+    host: Host,
+    path?: Path,
+    query?: Query,
+    scheme = Scheme.createScheme('https'),
+    port = Port.createPort(443)
+ ): Url | null {
+    // ...
+  }
+}
 ```
 
-You can always use a parameter object as an additional alternative to a builder. Below is an example:
+You can also use factory method overloading in languages like Java, where default parameters are not supported.
+But that solution, for example, in the `Url` class case, can not be easily implemented and requires quite many
+overloaded methods to be introduced, which can be overwhelming for a developer.
 
-```python
-from dataclasses import dataclass
-
-from Optional import Optional
-from PrivateConstructor import PrivateConstructor
-
-
-@dataclass
-class UrlParams:
-    host: str
-    scheme: str = 'https'
-    port: int = 443
-    path: str = ""
-    query: str = ""
+You can always use a parameter object, not only in Java but in many other languages, too. Below is an
+example in Java:
 
 
-class Url(metaclass=PrivateConstructor):
-    def __init__(self, url_params: UrlParams):
-        # ...
-
-    @classmethod
-    def create_url(cls, url_params: UrlParams) -> 'Optional[Url]':
-        # ...
+```java
+import lombok.Getter;
+import lombok.Setter;
 
 
-url_params = UrlParams('www.google.com', query='query=design+patterns')
-maybe_url = Url.create_url(url_params)
+@Getter
+@Setter
+public class UrlParams {
+  private String scheme = "https";
+  private String host;
+  private int port = 443;
+  private String path = "";
+  private String query = "";
+
+  UrlParams(final String host) {
+    this.host = host;
+  }
+}
+
+
+public class Url {
+  private Url(final UrlParams urlParams) {
+    // ...
+  }
+
+  public static Optional<Url> createUrl(
+    final UrlParams urlParams
+  ) {
+    // ...
+  }
+}
+
+
+final var urlParams = new UrlParams("www.google.com");
+urlParams.setQuery("query=design+patterns");
+final var maybeUrl = Url.createUrl(urlParams);
 ```
-
-The above solution is quite similar to using a builder.
 
 #### Singleton Pattern
 
