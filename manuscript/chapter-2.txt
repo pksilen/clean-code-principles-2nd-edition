@@ -2357,7 +2357,8 @@ So, a vertical slice can contain a single class or multiple classes that form a 
 However, using some design principles for a vertical slice implementation is good practice. I suggest to use the *clean microservice design*.
 You can use vertical slice design and clean microservice design principles together. They are not mutually exclusive principles.
 
-If your microservice is a small API, e.g., just containing a handful of simple CRUD operations, you don't necessarily get much benefit from vertical slicing. If you are not using the vertical slice design, adding a new CRUD operation requires changes to existing classes. These changes include adding new methods to mostly immutable or stateless classes,
+If your microservice is a small API, e.g., just containing a handful of simple CRUD operations, you don't necessarily get much benefit from vertical slicing.
+If you are not using the vertical slice design, adding a new CRUD operation requires changes to existing classes. These changes include adding new methods to mostly immutable or stateless classes,
 which can be considered extensions instead of modifications and are according to the open-closed principle. Adding a method
 to an immutable or stateless class rarely breaks existing functionality in
 existing methods. This is why I haven't used vertical slicing in the examples in this book.
