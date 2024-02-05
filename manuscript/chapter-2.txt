@@ -4248,47 +4248,49 @@ After defining the interfaces between the above-defined subdomains, the four sub
 This can speed up the microservice development significantly. The code of each subdomain should be put into separate source
 code folders. We will discuss source code organization more in the next chapter.
 
-Based on the above design, the following  data processing pipeline can
-be implemented:
+Based on the above design, the following data processing pipeline can be implemented (C++):
 
-```python
-class DataExporterApp:
-    def run(self) -> None:
-        while self.__is_running:
-            input_message = (
-                self.__input_msg_consumer.consume_input_message()
-            )
+```cpp
+void DataExporterApp::run()
+{
+  while(m_isRunning)
+  {
+    const auto inputMessage =
+      m_inputMessageConsumer.consumeInputMessage();
 
-            internal_message = self.__input_msg_decoder.decode(
-                input_message
-            )
+    const auto internalMessage =
+      m_inputMessageDecoder.decodeToInternalMessage(inputMessage);
 
-            transformed_message = self.__msg_transformer.transform(
-                internal_message
-            )
+    const auto transformedMessage =
+      m_messageTransformer.transform(*internalMessage);
 
-            output_message = self.__output_msg_encoder.encode(
-                transformed_message
-            )
+    const auto outputMessage =
+      m_outputMessageEncoder.encode(transformedMessage);
 
-            self.__output_msg_producer.produce(output_message)
+    m_outputMessageProducer.produce(outputMessage);
+  }
+}
 ```
 
-The `transform` method of the `MessageTransformer` class can be implemented in the following way:
+And the `MessageTransformer::transform` method can be implemented in the following way:
 
-```python
-class MessageTransformer:
-    def transform(
-        self, internal_message: InternalMessage
-    ) -> InternalMessage:
-        transformed_message = InternalMessage()
+```cpp
+std::unique_ptr<InternalMessage> MessageTransformer::transform(
+  const InternalMessage& internalMessage
+)
+{
+  const auto transformedMessage =
+    std::make_unique<InternalMessageImpl>();
 
-        for field_transformer in self.__field_transformers:
-            field_transformer.transform_field(
-                internal_message, transformed_message
-            )
+  std::ranges::for_each(m_fieldTransformers,
+                        [&internalMessage, &transformedMessage]
+                        (const auto& fieldTransformer) {
+    fieldTransformer.transform(internalMessage,
+                               transformedMessage);
+  });
 
-        return transformed_message
+  return transformedMessage;
+}
 ```
 
 ### Tactical DDD Example 2: Anomaly Detection Microservice
