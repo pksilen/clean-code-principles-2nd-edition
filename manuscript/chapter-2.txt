@@ -3295,7 +3295,7 @@ function closeAfter(timeoutInMs: number, isOpen: boolean): void {
 }
 ```
 
-We could improve the function name a bit more to specify what the `isOpen` parameter is used for:
+We could improve the function name a bit more by specifying what the `isOpen` parameter is used for using an `if` word:
 
 ```ts
 function closeAfterIf(timeoutInMs: number, isOpen: boolean): void {
@@ -3309,8 +3309,8 @@ And the `[this]` of course means the current collapsible panel object, so we cou
 
 We could write the above function definition in a very readable manner in Swift:
 
-```ts
-function close(after timeoutInMs: Int, if isOpen: Bool): void {
+```swift
+func close(after timeoutInMs: Int, if isOpen: Bool): void {
   // ...
 }
 ```
