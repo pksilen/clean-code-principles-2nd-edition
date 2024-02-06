@@ -5914,49 +5914,34 @@ export default AbcLogger;
 
 When you use the logger in your application, you can utilize the *singleton pattern* and create a singleton instance of
 the `AbcLogger` in the DI container and let the DI framework inject the logger to all parts of the software component where
-a logger is needed. Here is how the DI container could look:
+a logger is needed. Here is how the DI module could look:
 
-{title: "DiContainer.py"}
-```python
-from AbcLogger import AbcLogger
-from dependency_injector import containers, providers
+{title: "DiModule.ts"}
+```ts
+import { Module } from 'noicejs';
+import AbcLogger from 'AbcLogger';
 
+class DiModule extends Module {
+  public async configure(options) {
+    await super.configure(options);
 
-class DiContainer(containers.DeclarativeContainer):
-    wiring_config = containers.WiringConfiguration(
-        # List all the modules here
-        modules=[...]
-    )
-
-    logger = providers.ThreadSafeSingleton(AbcLogger)
-    # Other bindings ...
+    this.bind('logger').toConstructor(AbcLogger);
+  }
+}
 ```
 
-Now, when you need the logger in any other class of the application, you can get it:
+When you need the logger in any other class of the application, you can get it:
 
-```python
-from dependency_injector.wiring import Provide, inject
-from Logger import Logger
+```ts
+import { Container, Inject } from 'noicejs';
 
-
+@Inject('logger')
 class SomeClass:
-    @inject
-    def __init__(self, logger: Logger = Provide['logger']):
-        # ...
-```
+  private readonly Logger logger;
 
-or even easier:
-
-```python
-from dependency_injector.wiring import Provide
-from Logger import Logger
-
-
-class SomeClass:
-    __logger: Logger = Provide['logger']
-
-    def __init__(self):
-        # ...
+  constructor(args) {
+    this.logger = args.logger;
+  }
 ```
 
 Suppose that in the future, a better logging library is available called *xyz-logging-library*, and we
@@ -5964,31 +5949,40 @@ would like to take that into use, but it has a slightly different interface. Its
 the logging method is named differently, and the parameters are given in different order compared to the *abc-logging-library*.
 We can create a `XyzLogger` adapter class for the new logging library and update the `DiContainer`. No other code changes are required elsewhere in the codebase to take the new logging library into use.
 
-{title: "XyzLogger.py"}
-```python
-from xyz_logging_library import xyz_log_writer
-from Logger import Logger
-from LogLevel import LogLevel
+{title: "XyzLogger.ts"}
+```ts
+import xyzLogWriter from 'xyz-logging-library';
+import Logger from Logger;
+import LogLevel from 'LogLevel';
 
-class XyzLogger(Logger):
-    def log(self, log_level: LogLevel, message: str) -> None:
-        xyz_log_writer.write_log_entry(message, log_level)
+
+class XyzLogger implements Logger {
+  log(logLevel: LogLevel, logMessage: string): void {
+    xyzLogWriter.writeLogEntry(logMessage, logLevel);
+  }
+}
+
+export default XyzLogger;
 ```
 
-{title: "DiContainer.py"}
-```python
-# ...
+{title: "DiModule.ts"}
+```ts
+import { Module } from 'noicejs';
+import XyzLogger from 'XyzLogger';
 
-class DiContainer(containers.DeclarativeContainer):
-    # ...
-    logger = providers.ThreadSafeSingleton(XyzLogger)
-    # ...
+class DiModule extends Module {
+  public async configure(options) {
+    await super.configure(options);
+
+    this.bind('logger').toConstructor(XyzLogger);
+  }
+}
 ```
 
 We didn't have to modify all the places where logging is used in the codebase (and we can be sure that logging is used in many places!).
 We have saved ourselves from a lot of error-prone and unnecessary work, and once again, we have followed the *open-closed principle* successfully.
 
-In some languages (not Python) where mocking of, e.g., concrete classes is not possible, wrapping a 3rd party library in an adapter class enables you to unit test against the adapter class interface instead of the concrete classes of the 3rd party library.
+In some languages where mocking of, e.g., concrete classes is not possible, wrapping a 3rd party library in an adapter class enables you to unit test against the adapter class interface instead of the concrete classes of the 3rd party library.
 
 #### Proxy Pattern
 
