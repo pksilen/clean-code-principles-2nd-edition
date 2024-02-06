@@ -6095,143 +6095,180 @@ cannot modify an existing class, e.g., the existing class is in a 3rd party libr
 to follow the *open-closed principle* because you don't have to modify an existing
 method to augment its functionality. Instead, you can create a decorator class that contains the new functionality.
 
-Below is an example of the decorator pattern. There is a standard SQL statement executor implementation and
+Below is a TypeScript example of the decorator pattern. There is a standard SQL statement executor implementation and
 two decorated SQL statement executor implementations: one that adds logging functionality and one that adds SQL statement
 execution timing functionality. Finally, a double-decorated SQL statement executor is created that logs an SQL statement and times its execution.
 
-```python
-import time
-from collections.abc import Awaitable
-from typing import Any, Protocol
-
-from logger import logger
-from LogLevel import LogLevel
+```ts
+import logger from 'logger';
+import LogLevel from 'LogLevel';
 
 
-class SqlStatementExecutor(Protocol):
-    async def try_execute(
-        self, sql_statement: str, parameter_values: list[Any] | None = None
-    ) -> Awaitable[Any]:
-        pass
+interface SqlStatementExecutor {
+  tryExecute(
+    sqlStatement: string,
+    parameterValues?: any[]
+  ): Promise<any>;
+}
 
 
-class SqlStatementExecutorImpl(SqlStatementExecutor):
-    async def try_execute(
-        self, sql_statement: str, parameter_values: list[Any] | None = None
-    ) -> Awaitable[Any]:
-        return await self.__get_connection().execute(
-            sql_statement, parameter_values
-        )
+class SqlStatementExecutorImpl implements SqlStatementExecutor {
+  // Implement getConnection()
 
-    # Implement __get_connection() ...
-
-
-class LoggingSqlStatementExecutor(SqlStatementExecutor):
-    def __init__(self, sql_statement_executor: SqlStatementExecutor):
-        self.__sql_statement_executor = sql_statement_executor
-
-    async def try_execute(
-        self, sql_statement: str, parameter_values: list[Any] | None = None
-    ) -> Awaitable[Any]:
-
-        logger.log(
-            LogLevel.DEBUG, f'Executing SQL statement: {sql_statement}'
-        )
-
-        return await self.__sql_statement_executor.try_execute(
-            sql_statement, parameter_values
-        )
+  tryExecute(
+    sqlStatement: string,
+    parameterValues?: any[]
+  ): Promise<any> {
+    return this.getConnection().execute(sqlStatement,
+                                        parameterValues);
+  }
+}
 
 
-class TimingSqlStatementExecutor(SqlStatementExecutor):
-    def __init__(self, sql_statement_executor: SqlStatementExecutor):
-        self.__sql_statement_executor = sql_statement_executor
+class LoggingSqlStatementExecutor
+        implements SqlStatementExecutor {
+  constructor(
+    private readonly sqlStatementExecutor: SqlStatementExecutor
+  ) {}
 
-    async def try_execute(
-        self, sql_statement: str, parameter_values: list[Any] | None = None
-    ) -> Awaitable[Any]:
-        start_time_in_ns = time.time_ns()
+  tryExecute(
+    sqlStatement: string,
+    parameterValues?: any[]
+  ): Promise<any> {
+    logger.log(LogLevel.Debug,
+               `Executing SQL statement: ${sqlStatement}`);
 
-        result = await self.__sql_statement_executor.try_execute(
-            sql_statement, parameter_values
-        )
-
-        end_time_in_ns = time.time_ns()
-        duration_in_ns = end_time_in_ns - start_time_in_ns
-        duration_in_ms = duration_in_ns / 1_000_000
-
-        logger.log(
-            LogLevel.DEBUG,
-            f'SQL statement execution duration: {duration_in_ms} ms',
-        )
-
-        return result
+    return this.sqlStatementExecutor
+      .tryExecute(sqlStatement, parameterValues);
+  }
+}
 
 
-timing_and_logging_sql_statement_executor = LoggingSqlStatementExecutor(
-    TimingSqlStatementExecutor(SqlStatementExecutorImpl())
-)
+class TimingSqlStatementExecutor
+        implements SqlStatementExecutor {
+  constructor(
+    private readonly sqlStatementExecutor: SqlStatementExecutor
+  ) {}
+
+  async tryExecute(
+    sqlStatement: string,
+    parameterValues?: any[]
+  ): Promise<any> {
+    const startTimeInMs = Date.now();
+
+    const result =
+      await this.sqlStatementExecutor
+        .tryExecute(sqlStatement, parameterValues);
+
+    const endTimeInMs = Date.now();
+    const durationInMs = endTimeInMs - startTimeInMs;
+
+    logger.log(LogLevel.Debug,
+    `SQL statement execution duration: ${durationInMs} ms`);
+
+    return result;
+  }
+}
+
+
+const timingAndLoggingSqlStatementExecutor =
+  new LoggingSqlStatementExecutor(
+    new TimingSqlStatementExecutor(
+      new SqlStatementExecutorImpl()));
 ```
 
-You can also use the decorator pattern with functions and methods in Python. Python decorators allow us to wrap a function
-to extend its behavior. Python decorators are functions that
+You can also use the decorator pattern with functions and methods in TypeScript. Decorators allow us to wrap a function
+to extend its behavior. Decorators are functions that
 take a function as a parameter and return another function that is used in place of the decorated function. Let's have an elementary
-example of a function decorator in Python:
+example of a function decorator:
 
-```python
-# Decorator
-def print_hello(func):
-    def wrapped_func(*args, **kwargs):
-        print('Hello')
-        return func(*args, **kwargs)
+```ts
+// Decorator
+function printHello(func: any, context: ClassMethodDecoratorContext) {
+  function wrappedFunc(this: any, ...args: any[]) {
+    console.log('Hello');
+    return func.call(this, ...args);
+  }
 
-    return wrapped_func
-
-
-@print_hello
-def add(a: int, b: int) -> int:
-    return a + b
+  return wrappedFunc;
+}
 
 
-result = add(1, 2)
-print(result) # Prints: Hello 3
+class Adder {
+  @printHello
+  add(a: number, b: number): number {
+    return a + b;
+  }
+}
+
+
+// Prints: Hello 3
+const result = new Adder().add(1, 2);
+console.log(result);
+```
+
+Decorators can accept parameters:
+
+```ts
+function printText(text: string) {
+  function decorate(func: any, context: ClassMethodDecoratorContext) {
+    function wrappedFunc(this: any, ...args: any[]) {
+      console.log(text);
+      return func.call(this, ...args);
+    }
+
+    return wrappedFunc;
+  }
+
+  return decorate;
+}
+
+
+class Adder {
+  @printText('Hello World!')
+  add(a: number, b: number): number {
+    return a + b;
+  }
+}
+
+
+// Prints: Hello World! 3
+const result = new Adder().add(1, 2);
+console.log(result);
 ```
 
 Let's have another example with a decorator that times the execution of a function and prints it to the console:
 
-```python
-import time
-from functools import wraps
+```ts
+// Decorator
+function timed(func: any, context: ClassMethodDecoratorContext) {
+  function wrapped_func(this: any, ...args: any[]) {
+    const start_time_in_ns = process.hrtime.bigint();
+    const result = func.call(this, ...args);
+    const end_time_in_ns = process.hrtime.bigint();
+    const duration_in_ns = end_time_in_ns - start_time_in_ns;
+
+    console.log(
+      `Exec of func "${String(context.name)}" took ${duration_in_ns} ns`
+    );
+
+    return result;
+  }
+
+  return wrapped_func;
+}
 
 
-# Decorator
-def timed(func):
-    @wraps(func)
-    def wrapped_func(*args, **kwargs):
-        start_time_in_ns = time.perf_counter_ns()
-        result = func(*args, **kwargs)
-        end_time_in_ns = time.perf_counter_ns()
-        duration_in_ns = end_time_in_ns - start_time_in_ns
-
-        print(
-            f'Exec of func "{func.__name__}" took {duration_in_ns} ns'
-        )
-
-        return result
-
-    return wrapped_func
+  class Adder {
+    @timed
+    add(a: number, b: number): number {
+      return a + b;
+    }
+  }
 
 
-@timed
-def add(a: int, b: int) -> int:
-    return a + b
-
-
-result = add(1, 2)
-print(result)
-# Prints, for example:
-# Exec of func "add" took 625 ns
-# 3
+// Prints, for example: Exec of func "add" took 7500 ns
+const result = new Adder().add(1, 2);
 ```
 
 You can combine multiple decorators, for example:
