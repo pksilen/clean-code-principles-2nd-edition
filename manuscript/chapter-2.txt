@@ -6428,74 +6428,267 @@ When receiving a request, each handler can decide what to do:
 - Process the request without passing it to the subsequent handlers (terminating the chain)
 - Leave the request unprocessed and pass it to the next handler
 
-The FastAPI web framework utilizes the chain of responsibility pattern for handling requests.
-In the FastAPI framework, you can write pluggable behavior using [middlewares](https://fastapi.tiangolo.com/tutorial/middleware/), a concept similar to
-[Servlet filters](https://www.oracle.com/java/technologies/filters.html) in Java. Below is an example of a middleware that adds HTTP request processing time to the response
-in a custom HTTP header:
+One of the most famous implementations of this pattern is Java servlet filters. A servlet filter processes
+incoming HTTP requests before passing them to the actual servlet for handling. Servlet filters can be used to implement
+various functionality like logging, compression, encryption/decryption, input validation, etc.
 
-```python
-import time
+Let's have an example of a servlet filter that adds logging before and after each HTTP request is processed:
 
-from fastapi import FastAPI, Request
+{title: "LoggingFilter.java"}
+```java
+import java.io.IOException;
 
-app = FastAPI()
+import javax.servlet.*;
+import javax.servlet.annotation.WebFilter;
 
+@WebFilter(urlPatterns = {"/*"})
+public class LoggingFilter implements Filter {
+  // No initialization needed, thus empty method
+  public void init(final FilterConfig filterConfig)
+    throws ServletException
+  {}
 
-@app.middleware('http')
-async def add_request_processing_time_header(request: Request, call_next):
-    start_time_in_ns = time.time_ns()
-    response = await call_next(request)
-    end_time_in_ns = time.time_ns()
-    processing_time_in_ns = end_time_in_ns - start_time_in_ns
-    processing_time_in_ms = processing_time_in_ns / 1_000_000
+  // No cleanup needed, thus empty method
+  public void destroy()
+  {}
 
-    response.headers['X-Processing-Time-Millis'] = str(
-        processing_time_in_ms
-    )
+  public void doFilter(
+    final ServletRequest request,
+    final ServletResponse response,
+    final FilterChain filterChain
+  ) throws IOException, ServletException
+  {
+    final var responseWriter = response.getWriter();
+    responseWriter.print("Before response\n");
 
-    return response
+    // Sends request to the next filter
+    // or when no more filters to the servlet
+    filterChain.doFilter(request, response);
+
+    responseWriter.print("\nAfter response");
+  }
+}
 ```
 
-Below is an authorization and logging middleware example:
+{title: "HelloWorldServlet.java"}
+```java
+import java.io.IOException;
 
-```python
-from fastapi import FastAPI, Response, Request
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.*;
 
-app = FastAPI()
+@WebServlet("/helloworld")
+public class HelloWorldServlet extends HttpServlet {
+  public void doGet(
+    HttpServletRequest request,
+    HttpServletResponse response
+  ) throws ServletException, IOException {
+    response.setContentType("text/plain");
+    final var responseWriter = response.getWriter();
+    responseWriter.print("Hello, world!");
+  }
+}
+```
 
-# Authorization middleware
-@app.middleware('http')
-async def authorize(request: Request, call_next):
-    # From request's 'Authorization' header,
-    # extract the bearer JWT, if present
-    # set 'token_is_present' variable value to True
-    # Verify the validity of JWT and assign result
-    # to 'token_is_valid' variable
+When we send an HTTP GET request to the `/helloworld` endpoint, we should get the following response:
 
-    if token_is_valid:
-        response = await call_next(request)
-    elif token_is_present:
-        # NOTE! call_next is not invoked,
-        # this will terminate the request
-        response = Response('Unauthorized', 403)
-    else:
-        # NOTE! call_next is not invoked,
-        # this will terminate the request
-        response = Response('Unauthenticated', 401)
+```
+Before response
+Hello, world!
+After response
+```
 
-    return response
+Let's implement a JWT authorization filter:
 
+{title: "JwtAuthorizationFilter.java"}
+```
+import java.io.IOException;
 
-# Logging middleware
-@app.middleware('http')
-async def log(request: Request, call_next):
-    print(f'GET {str(request.url)}')
-    return await call_next(request)
+import javax.servlet.*;
+import javax.servlet.annotation.WebFilter;
+import javax.servlet.http.HttpServletResponse;
 
+@WebFilter(urlPatterns = {"/*"})
+public class AuthorizationFilter implements Filter {
+  public void init(final FilterConfig filterConfig)
+    throws ServletException
+  {}
 
-@app.get('/hello')
-def hello():
-    return 'Hello!'
+  public void destroy()
+  {}
+
+  public void doFilter(
+    final ServletRequest request,
+    final ServletResponse response,
+    final FilterChain filterChain
+  ) throws IOException, ServletException {
+
+    // From request's 'Authorization' header,
+    // extract the bearer JWT
+    // Set 'tokenIsPresent' variable value
+    // to true or false
+    // Verify the validity of JWT and assign result
+    // to 'tokenIsValid' variable
+
+    HttpServletResponse httpResponse =
+      (HttpServletResponse) response;
+
+    if (tokenIsValid) {
+      filterChain.doFilter(request, response);
+    } else if (tokenIsPresent) {
+      // NOTE! filterChain is not invoked,
+      // this will terminate the request
+      httpResponse.setStatus(403);
+      final var responseWriter = response.getWriter();
+      responseWriter.print("Unauthorized");
+      responseWriter.close();
+    } else {
+    // NOTE! filterChain is not invoked,
+    // this will terminate the request
+    httpResponse.setStatus(401);
+    final var responseWriter = response.getWriter();
+    responseWriter.print("Unauthenticated");
+    responseWriter.close();
+    }
+  }
+}
+```
+
+The [Express}(https://expressjs.com/) framework for Node.js utilizes the chain of responsibility pattern for handling requests.
+In the Express framework, you can write pluggable behavior using _middlewares_, a concept similar to
+servlet filters in Java. Below is the same logging and authorization example as above, but written using JavaScript and
+the Express framework:
+
+```js
+const express = require('express')
+const app = express()
+
+// Authorization middleware
+function authorize(request, response, next) {
+  // From request's 'Authorization' header,
+  // extract the bearer JWT, if present
+  // Set 'tokenIsPresent' variable value
+  // Verify the validity of JWT and assign result
+  // to 'tokenIsValid' variable
+
+  if (tokenIsValid) {
+    next();
+  } else if (tokenIsPresent) {
+    // NOTE! next is not invoked,
+    // this will terminate the request
+    response.writeHead(403);
+    response.end('Unauthorized');
+  } else {
+    // NOTE! next is not invoked,
+    // this will terminate the request
+    response.writeHead(401);
+    response.end('Unauthenticated');
+  }
+}
+
+// Logging before middleware
+function logBefore(request, response, next) {
+  response.write('Before response\n');
+  next();
+}
+
+// Use authorization and logging middlewares
+app.use(authorize, logBefore);
+
+app.get('/helloworld', (request, response, next) => {
+  response.write('Hello World!\n');
+  next();
+});
+
+// Logging after middleware
+function logAfter(request, response, next) {
+  response.write('After response\n');
+  response.end();
+  next();
+}
+
+app.use(logAfter);
+
+app.listen(4000);
+```
+
+We cannot use Express middlewares as described below:
+
+```js
+// Logging middleware
+async function log(request, response, next) {
+  response.write('Before response\n');
+  await next();
+  response.write('After response\n');
+
+  // You cannot use response.end('After response\n')
+  // because that would close the response stream
+  // before Hello World! is written and the output
+  // would be just:
+  // Before response
+  // After response
+}
+
+// Use authorization and logging middlewares
+app.use(authorize, log);
+
+app.get('/helloworld', (request, response) => {
+  setTimeout(() => response.end('Hello World!\n'), 1000);
+});
+```
+
+The reason is that the `next` function does not return a promise we could await.
+For this reason, the output from the `/helloworld` endpoint would be in the wrong order:
+
+```
+Before response
+After response
+Hello World!
+```
+
+ESLint plugins utilize the chain of responsibility pattern, too. Below is code for defining one rule in an
+ESLint plugin:
+
+```js
+create(context) {
+  return {
+    NewExpression(newExpr) {
+      if (
+        newExpr.callee.name === "SqlFilter" &&
+        newExpr.arguments &&
+        newExpr.arguments[0] &&
+        newExpr.arguments[0].type !== "Literal"
+      ) {
+        context.report(
+          newExpr,
+          `SqlFilter constructor's 1st parameter must be a string literal`
+        );
+      }
+    }
+  };
+}
+```
+
+ESLint plugin framework will call the `create` function and supply the `context` parameter. The `create` function should return an
+object of functions to analyze different _abstract syntax tree_ (AST) nodes. In the above example, we are only interested
+in `NewExpression` nodes and analyze the creation of a new `SqlFilter` object. The first parameter supplied for
+the `SqlFilter` constructor should be a literal. If not, we report an issue using the `context.report` method.
+
+When running ESLint with the above plugin and rule enabled, whenever ESLint encounters a _new_ expression in a code file,
+the above-supplied `NewExpression` handler function will be called to check if the _new_ expression in the code is valid.
+
+The following code will pass the above ESLint rule:
+
+```js
+const sqlFilter = new SqlFilter('field1 > 0');
+```
+
+And the following code won't:
+
+```js
+const sqlExpression = 'field1 > 0';
+const sqlFilter = new SqlFilter(sqlExpression);
 ```
 
 #### Observer Pattern
