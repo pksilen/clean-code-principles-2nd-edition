@@ -6324,97 +6324,77 @@ in memory consumption after applying this pattern.
 Shapes that the game draws have the following properties: size, form, fill color, stroke color, stroke width, and stroke style.
 
 ```python
-from typing import Final, Protocol
+public interface Shape {
+  // ...
+}
 
 
-class Shape(Protocol):
-    # ...
+// Color...
+// StrokeStyle...
 
 
-# Define Color...
-# Define StrokeStyle...
+public class AbstractShape implements Shape {
+  private final Color fillColor;
+  private final Color strokeColor;
+  private final int strokeWidth;
+  private final StrokeStyle strokeStyle;
+
+  // ...
+}
 
 
-class AbstractShape(Shape):
-    def __init__(
-        self,
-        fill_color: Color,
-        stroke_color: Color,
-        stroke_width: int,
-        stroke_style: StrokeStyle
-    ):
-        self.__fill_color: Final = fill_color
-        self.__stroke_color: Final = stroke_color
-        self.__stroke_width: Final = stroke_width
-        self.__stroke_style: Final = stroke_style
+public class CircleShape extends AbstractShape {
+  private final int radius;
+
+  // ...
+}
 
 
-class CircleShape(AbstractShape):
-    def __init__(
-        self,
-        fill_color: Color,
-        stroke_color: Color,
-        stroke_width: int,
-        stroke_style: StrokeStyle,
-        radius: int
-    ):
-        super().__init__(
-            fill_color,
-            stroke_color,
-            stroke_width,
-            stroke_style
-        )
-
-        self.__radius: Final = radius
+// LineSegment...
 
 
-# Define LineSegment ...
+public class PolygonShape extends AbstractShape {
+  private final List<LineSegment> lineSegments;
 
-
-class PolygonShape(AbstractShape):
-  def __init__(
-      self,
-      fill_color: Color,
-      stroke_color: Color,
-      stroke_width: int,
-      stroke_style: StrokeStyle,
-      line_segments: list[LineSegment]
-  ):
-      super().__init__(
-          fill_color,
-          stroke_color,
-          stroke_width,
-          stroke_style
-      )
-
-      self.__line_segments: Final = line_segments.copy()
+  // ...
+}
 ```
 
 When analyzing the `PolygonShape` class, we notice that it contains many properties
 that consume memory. A polygon with many line segments can consume a noticeable amount of memory.
-If the game draws many identical polygons in different screen positions and always creates a new `PolygonShape` object, there would be a lot of identical `PolygonShape` objects in the memory. To remediate this, we can introduce a flyweight class, `DrawnShapeImpl`,
+If the game draws many identical polygons in different screen positions and always creates a new `PolygonShape` object,
+there would be a lot of identical `PolygonShape` objects in the memory. To remediate this, we can introduce a flyweight class, `DrawnShapeImpl`,
 which contains the position of a shape and a reference to the actual shape. In this way, we can draw a lot of
 `DrawnShapeImpl` objects that all contain a reference to the same `PolygonShape` object:
 
 ```python
-from typing import Final, Protocol
+public interface DrawnShape {
+  // ...
+}
 
 
-class DrawnShape(Protocol):
-    # ...
+public class DrawnShapeImpl implements DrawnShape {
+  private final Shape shape;
+  private Position screenPosition;
+
+  public DrawnShapeImpl(
+    final Shape shape,
+    final Position screenPosition
+  ) {
+    this.shape = shape;
+    this.screenPosition = screenPosition;
+  }
+
+  // ...
+}
 
 
-class DrawnShapeImpl(DrawnShape):
-    def __init__(self, shape: Shape, screen_position: Position):
-        self.__shape: Final = shape
-        self.__screen_position: Final = screen_position
+final Shape polygon = new PolygonShape(...);
+final List<Position> positions = generateLotsOfPositions();
 
-    # ...
-
-
-polygon = PolygonShape(...)
-positions = generate_lots_of_positions()
-drawn_polygons = [DrawnShapeImpl(polygon, position) for position in positions]
+final var drawnPolygons = positions.stream().map(position ->
+  new DrawnShapeImpl(polygon, position)
+);
 ```
 
 ### Behavioral Design Patterns
