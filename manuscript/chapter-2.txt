@@ -6696,137 +6696,133 @@ const sqlFilter = new SqlFilter(sqlExpression);
 > ***The observer pattern lets you define an observe-notify (or publish-subscribe) mechanism to notify one or more objects***
 > ***about events that happen to the observed object.***
 
-One typical example of using the observer pattern is a UI view observing a model.
-The UI view will be notified whenever the model changes and can redraw itself. Let's have an example:
+One typical example of using the observer pattern is a UI view observing a model. The UI view will be notified whenever the model changes and can redraw itself. Let's have an example with Java:
 
-```python
-from typing import Protocol, Final
-
-
-class Observer(Protocol):
-    def notify_about_change(self) -> None:
-        pass
+```java
+public interface Observer {
+  void notifyAboutChange();
+}
 
 
-class Observable(Protocol):
-    def observe_by(self, observer: Observer) -> None:
-        pass
+public interface Observable {
+  void observeBy(Observer observer);
+}
 
 
-class ObservableImpl(Observable):
-    def __init__(self):
-        self.__observers: Final[list[Observer]] = []
+public class ObservableImpl {
+  private final List<Observer> observers = new ArrayList<>();
 
-    def observe_by(self, observer: Observer):
-        self.__observers.append(observer)
+  public void observeBy(final Observer observer) {
+    observers.add(observer);
+  }
 
-    def _notify_observers(self) -> None:
-        for observer in self.__observers:
-            observer.notify_about_change()
-
-
-# Define Todo ...
+  protected void notifyObservers() {
+    observers.forEach(Observer::notifyAboutChange);
+  }
+}
 
 
-class TodosModel(ObservableImpl):
-    __todos: list[Todo]
+public class TodosModel extends ObservableImpl {
+  private List<Todo> todos = new ArrayList<>(25);
 
-    def __init__(self):
-        super().__init__()
-        self.__todos = []
+  // ...
 
-    def add_todo(self, todo: Todo) -> None:
-        self.__todos.append(todo)
-        self._notify_observers()
+  public void addTodo(final Todo todo) {
+    todos.add(todo);
+    notifyObservers();
+  }
 
-    def remove_todo(self, todo: Todo) -> None:
-        self.__todos.remove(todo)
-        self._notify_observers()
+  public void removeTodo(final Todo todo) {
+    todos.remove(todo);
+    notifyObservers();
+  }
+}
 
 
-class TodosView(Observer):
-    def __init__(self, todos_model: TodosModel):
-        self.__todos_model = todos_model
-        todos_model.observe_by(self)
+public class TodosView implements Observer {
+  private final TodosModel todosModel;
 
-    def notify_about_change(self) -> None:
-        # Will be called when todos model change
-        self.render()
+  public TodosView(final TodosModel todosModel) {
+    this.todosModel = todosModel;
+    todosModel.observeBy(this);
+  }
 
-    def render(self) -> None:
-        # Renders todos ...
+  public void notifyAboutChange() {
+    // Will be called when todos model change
+    render();
+  }
+
+  public void render() {
+    // Renders todos...
+  }
+}
 ```
 
-Let's have another example that utilizes the publish-subscribe pattern. Below, we define a `MessageBroker` class that
-contains the following methods: `publish`, `subscribe`, and `unsubscribe`.
+Let's have another example that utilizes the publish-subscribe pattern. Below we define a `MessageBroker` class that contains the following methods: `publish`, `subscribe`, and `unsubscribe`.
 
-```python
-from collections.abc import Callable
-from typing import Final, Protocol, TypeVar
-
-T = TypeVar('T')
+```java
+public interface MessagePublisher<T> {
+  void publish(String topic, T message);
+}
 
 
-class MessagePublisher(Protocol[T]):
-    def publish(self, topic: str, message: T) -> None:
-        pass
+@FunctionalInterface
+public interface MessageHandler<T> {
+  void handle(T message);
+}
 
 
-class MessageSubscriber(Protocol[T]):
-    def subscribe(
-        self, topic: str, handle_message: Callable[[T], None]
-    ) -> None:
-        pass
+public interface MessageSubscriber<T> {
+  void subscribe(String topic,
+                 MessageHandler<T> messageHandler);
+}
 
 
-MessageHandlers = list[Callable[[T], None]]
+public class MessageBroker<T> implements
+               MessagePublisher<T>, MessageSubscriber<T> {
+  private final Map<String, List<MessageHandler<T>>>
+    topicToMessageHandlers = new HashMap<>();
 
+  public void publish(
+    final String topic,
+    final T message
+  ) {
+    final var messageHandlers =
+      topicToMessageHandlers.get(topic);
 
-class MessageBroker(MessagePublisher[T], MessageSubscriber[T]):
-    def __init__(self):
-        self.__topic_to_handle_msgs: Final[dict[str, MessageHandlers]] = {}
+    if (messageHandlers != null) {
+      messageHandlers.forEach(messageHandler ->
+        messageHandler.handle(message));
+    }
+  }
 
-    def publish(self, topic: str, message: T) -> None:
-        handle_messages = self.__topic_to_handle_msgs.get(topic)
+  public void subscribe(
+    final String topic,
+    final MessageHandler<T> messageHandler
+  ) {
+    final var messageHandlers =
+      topicToMessageHandlers.get(topic);
 
-        if handle_messages is not None:
-            for handle_message in handle_messages:
-                handle_message(message)
+      if (messageHandlers == null) {
+        topicToMessageHandlers.put(topic, List.of(messageHandler));
+      } else {
+        messageHandlers.add(messageHandler);
+      }
+  }
 
-    def subscribe(
-        self, topic: str, handle_message: Callable[[T], None]
-    ) -> None:
-        handle_messages = self.__topic_to_handle_msgs.get(topic)
+   public void unsubscribe(
+    final String topic,
+    final MessageHandler<T> messageHandlerToRemove
+  ) {
+    final var messageHandlers = topicToMessageHandlers.get(topic);
 
-        if handle_messages is None:
-            self.__topic_to_handle_msgs[topic] = [handle_message]
-        else:
-            handle_messages.append(handle_message)
-
-    def unsubscribe(
-        self, topic: str, handle_message: Callable[[T], None]
-    ) -> None:
-        handle_messages = self.__topic_to_handle_msgs.get(topic)
-
-        if handle_messages is not None:
-            handle_messages.remove(handle_message)
-
-
-message_broker: MessageBroker[str] = MessageBroker()
-
-
-def print_message(message: str):
-    print(message)
-
-
-topic = 'test'
-message_broker.subscribe(topic, print_message)
-message_broker.publish(topic, 'Hi!') # Prints 'Hi!'
-message_broker.unsubscribe(topic, print_message)
-
-# Does not print, because unsubscribed
-message_broker.publish('test', 'Hi!')
+    messageHandlers.removeIf(messageHandler ->
+      messageHandler == messageHandlerToRemove);
+  }
+}
 ```
+
+In the above example, we could have used the built-in Java `Consumer<T>` interface instead of the custom `MessageHandler<T>` interface.
 
 #### Command/Action Pattern
 
