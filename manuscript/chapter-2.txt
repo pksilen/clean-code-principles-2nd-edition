@@ -5992,158 +5992,98 @@ When using the proxy pattern, you define a proxy class that wraps another class 
 to the wrapped class. The proxy class implements the interface of the wrapped class and is used in place of the wrapped
 class in the code.
 
-Below is an example of a proxy class, `CachingEntityStore`, that caches the results of entity store operations:
+Below is an example of a TypeScript proxy class, `CachingEntityStore`, that caches the results of entity store operations:
 
-{title: "Cache.py"}
-```python
-from typing import Protocol, TypeVar
+```ts
+class MemoryCache<K, V> {
+  // ...
 
-TKey = TypeVar('TKey')
-TValue = TypeVar('TValue')
+  retrieveBy(key: K): V {
+    // ...
+  }
+
+  store(key: K, value: V, timeToLiveInSecs?: number): void {
+    // ...
+  }
+}
 
 
-class Cache(Protocol[TKey, TValue]):
-    def retrieve_value(self, key: TKey) -> TValue | None:
-        pass
+interface EntityStore<T> {
+  getEntityById(id: number): Promise<T>;
+}
 
-    def store(
-        self,
-        key: TKey,
-        value: TValue,
-        time_to_live_in_secs: int = 0
-    ) -> None:
-        pass
+
+class DbEntityStore<T> implements EntityStore<T> {
+  getEntityById(id: number): Promise<T> {
+    // Try get entity from database
+  }
+}
+
+
+class CachingEntityStore<T> implements EntityStore<T> {
+  private readonly entityCache = new MemoryCache<number, T>();
+
+  constructor(private readonly entityStore: EntityStore<T>)
+  {}
+
+  async getEntityById(id: number): Promise<T> {
+    let entity = this.entityCache.retrieveBy(id);
+
+    if (entity === undefined) {
+      entity = await this.entityStore.getEntityById(id);
+      const timeToLiveInSecs = 60;
+      this.entityCache.store(id, entity, timeToLiveInSecs);
+    }
+
+    return entity;
+  }
+}
 ```
 
-{title: "MemoryCache.py"}
-```python
-from typing import TypeVar
-
-from Cache import Cache
-
-TKey = TypeVar('TKey')
-TValue = TypeVar('TValue')
-
-class MemoryCache(Cache[TKey, TValue]):
-    # ...
-
-    def retrieve_value(self, key: TKey) -> TValue | None:
-        # ...
-
-    def store(
-        self,
-        key: TKey,
-        value: TValue,
-        time_to_live_in_secs: int = 0
-    ) -> None:
-        # ...
-```
-
-{title: "EntityStore.py"}
-```python
-from collections.abc import Awaitable
-from typing import Protocol, TypeVar
-
-T = TypeVar('T')
-
-
-class EntityStore(Protocol[T]):
-    async def try_get_entity(self, id_: int) -> Awaitable[T]:
-        pass
-```
-
-{title: "DbEntityStore.py"}
-```python
-from collections.abc import Awaitable
-from typing import TypeVar
-
-from EntityStore import EntityStore
-
-T = TypeVar('T')
-
-
-class DbEntityStore(EntityStore[T]):
-    async def try_get_entity(self, id_: int) -> Awaitable[T]:
-        # Try get entity from database ...
-```
-
-{title: "CachingEntityStore.py"}
-```python
-from collections.abc import Awaitable
-from typing import Final, TypeVar
-
-from EntityStore import EntityStore
-from MemoryCache import MemoryCache
-
-T = TypeVar('T')
-
-
-class CachingEntityStore(EntityStore[T]):
-    def __init__(self, entity_store: EntityStore[T]):
-        self.__entity_store: Final = entity_store
-        self.__entity_cache: Final[MemoryCache[int, T]] = MemoryCache()
-
-    async def try_get_entity(self, id_: int) -> Awaitable[T]:
-        entity = self.__entity_cache.retrieve_value(id_)
-
-        if entity is None:
-            entity = await self.__entity_store.try_get_entity(id_)
-            time_to_live_in_secs = 60
-            self.__entity_cache.store(id_, entity, time_to_live_in_secs)
-
-        return entity
-```
-
-In the above example, the `CachingEntityStore` class is the proxy class wrapping an instance implementing the `EntityStore` protocol, like an instance of the `DbEntityStore` class that stores entities in a database.
+In the above example, the `CachingEntityStore` class is the proxy class wrapping an `EntityStore`.
 The proxy class is modifying the wrapped class behavior by conditionally delegating to the wrapped class. It
-only delegates to the wrapped class if an entity is not found in the cache. Instead of a class, you can use the proxy pattern with a function by utilizing Python's `@cache` decorator.
+delegates to the wrapped class only if an entity is not found in the cache.
 
-Below is another example of a proxy class that authorizes a user before performing a service operation:
+Below is another TypeScript example of a proxy class that authorizes a user before performing a service operation:
 
-```python
-from collections.abc import Awaitable
-from typing import Final, Protocol
-
-from User import User
-from UserAuthorizer import UserAuthorizer
+```ts
+interface UserService {
+  getUserById(id: number): Promise<User>;
+}
 
 
-class UserService(Protocol):
-    class Error(Exception):
-        pass
-
-    async def try_get_user(self, id_: int) -> Awaitable[User]:
-        pass
-
-
-class UserServiceImpl(UserService):
-    async def try_get_user(self, id_: int) -> Awaitable[User]:
-        # Try get user by id ...
+class UserServiceImpl implements UserService {
+  getUserById(id: number): Promise<User> {
+    // Try get user by id
+  }
+}
 
 
-class AuthorizingUserService(UserService):
-    def __init__(
-        self,
-        user_service: UserService,
-        user_authorizer: UserAuthorizer
-    ):
-        self.__user_service: Final = user_service
-        self.__user_authorizer: Final = user_authorizer
+class AuthorizingUserService implements UserService {
+  constructor(
+    private readonly userService: UserService,
+    private readonly userAuthorizer: UserAuthorizer
+  ) {}
 
-    async def try_get_user(self, id_: int) -> Awaitable[User]:
-        try:
-            await self.__user_authorizer.try_authorize_user(id_)
-        except UserAuthorizer.AuthorizeUserError as error:
-            raise self.Error(error)
+  async getUserById(id: number): Promise<User> {
+    try {
+      await this.userAuthorizer.tryAuthorizeUser(id);
+    } catch (error: any) {
+      throw new UserServiceError(error.message);
+    }
 
-        return await self.__user_service.try_get_user(id_)
+    return this.userService.getUserById(id);
+  }
+}
 ```
 
-In the above example, the `AuthorizingUserService` class is a proxy class that wraps an instance implementing the
-`UserService` protocol, like an instance of the `UserServiceImpl` class (the actual implementation of the user service). The proxy class is modifying the wrapped class behavior by conditionally delegating to the wrapped
+In the above example, the `AuthorizingUserService` class is a proxy class that wraps a
+`UserService`. The proxy class is modifying the wrapped class behavior by conditionally delegating to the wrapped
 class. It will delegate to the wrapped class only if authorization is successful.
 
-As the last example, we could define a `RateLimitedXyzService` proxy class that wraps a `XyzService` class. The rate-limited service class delegates to the wrapped class only if the service calling rate limit is not exceeded. The rate-limited service class should raise an error if the rate is exceeded.
+
+As the last example, we could define a `RateLimitedXyzService` proxy class that wraps a `XyzService` class.
+The rate-limited service class delegates to the wrapped class only if the service calling rate limit is not exceeded. The rate-limited service class should raise an error if the rate is exceeded.
 
 #### Decorator Pattern
 
