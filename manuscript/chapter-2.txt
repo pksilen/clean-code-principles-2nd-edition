@@ -6274,81 +6274,44 @@ const result = new Adder().add(1, 2);
 You can combine multiple decorators, for example:
 
 ```python
-# Decorator
-def logged(func):
-    @wraps(func)
-    def wrapped_func(*args, **kwargs):
-        result = func(*args, **kwargs)
-        # In real-life, you use a logger here instead of print
-        print(f'Func "{func.__name__}" executed')
-        return result
+function logged(func: any, context: ClassMethodDecoratorContext) {
+  function wrapped_func(this: any, ...args: any[]) {
+    const result = func.call(this, ...args);
+    console.log(
+      `Func "${String(context.name)}" executed`
+    );
 
-    return wrapped_func
+    return result;
+  }
 
-@logged
-@timed
-def add(a: int, b: int) -> int:
-    return a + b
+  return wrapped_func;
+}
 
-result = add(1, 2)
-print(result)
-# Prints, for example:
-# Exec of func "add" took 583 ns
-# Func "add" executed
-# 3
-```
+function timed(func: any, context: ClassMethodDecoratorContext) {
+  function wrapped_func(this: any, ...args: any[]) {
+    const start_time_in_ns = process.hrtime.bigint();
+    const result = func.call(this, ...args);
+    const end_time_in_ns = process.hrtime.bigint();
+    const duration_in_ns = end_time_in_ns - start_time_in_ns;
 
-If you change the order of decorators, you get the output in a different order, too. And the execution time of the function
-is now longer because the time spent in logging is also added to the total execution time:
+    console.log(
+      `Exec of func "${String(context.name)}" took ${duration_in_ns} ns`
+    );
 
-```python
-@timed
-@logged
-def add(a: int, b: int) -> int:
-    return a + b
+    return result;
+  }
+
+  return wrapped_func;
+}
 
 
-result = add(1, 2)
-print(result)
-# Prints, for example:
-# Func "add" executed
-# Exec of func "add" took 9708 ns
-# 3
-```
-
-You can also use decorator functions without the @-syntax to create new functions:
-
-```python
-def add(a: int, b: int) -> int:
-    return a + b
-
-logged_add = logged(add)
-timed_add = timed(add)
-logged_timed_add = logged(timed(add))
-timed_logged_add = timed(logged(add))
-
-print(logged_add(1,2))
-# Prints
-# Func "add" executed
-# 3
-
-print(timed_add(1,2))
-# Prints, for example
-# Exec of func "add" took 209 ns
-# 3
-
-print(logged_timed_add(1, 2))
-# Prints, for example
-# Exec of func "add" took 208 ns
-# Func "add" executed
-# 3
-
-print(timed_logged_add(1, 2))
-# Prints, for example
-# Func "add" executed
-# Exec of func "add" took 1250 ns
-# 3
-```
+class Adder {
+  @logged
+  @timed
+  add(a: number, b: number): number {
+    return a + b;
+  }
+}
 
 #### Flyweight Pattern
 
