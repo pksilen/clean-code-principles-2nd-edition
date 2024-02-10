@@ -72,3 +72,14 @@ Strategical DDD event storming, mention that it is question about Big-picture ev
 on timeline, but actors, commands and entities can be added if they make the design clearer. Also opportunities and problems
 should listed so that they can later be addressed. At the end of the event storming session take several photos of designs and sticth
 them together to a large single document for future reference.
+
+Tactical DDD: Domain services usually should not contain access to data repository or otherwise be side-effectful. Try to aim for
+a functional and immutable domain services and objects and put side-effects to the outer application service layer. Application service
+layer can have several variations, but a single application services implements a use case or a feature. In the simplest form, application
+service is a transaction script when no domain services are needed. This is usually the case for simple CRUD-based APIs where the application
+service method perform a CRUD operation like creating a new sales in sales-item-service or for example, a backlog item service
+can have an update backlog item use case or feature where in the application service layer the app service methods first fetched the sprint
+the backlog item is assigned from repository and then calls backlogItemFactory to tryCreate a new backlogitem with the specific
+sprint object given also as a parameter in addition to the updated backLogItemDto. Factory can validate if the sprint is correct (now or in future, not a past one). When backlog item
+is created, it can persisted by giving it repository's update method. There needs no domain services be present.
+When the model has domain services, the application services delegate to them for more complex operations. 
