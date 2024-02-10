@@ -57,6 +57,10 @@ Or if teams are siloed that can lead that non-communication can produce compatib
 A team suitable for a modular monolith or microservies architecture mainly communicates internally and on communicates the needed amount
 with other team or teams to agree upon interfaces (context mapping) between bounded contexts.
 
-Give Examples of context mapping styles using the mobile telecom analytics software system. Give example of a published language
+Give Examples of context mapping styles using the mobile telecom analytics software system. The interface between radio and core networks
+and the data ingester could be a partnership. Example of a shared kernel in banking software system, could be money kernel that consists of money
+related operations like currency exchanges, implemented in a library. The interface between data ingester and data aggregator can be
+Conformist or Supplier-Consumer. The interface between insights-visualizer-config and web-client can be partnership. The insighs-data-service could
+be made generic and interface between it and web-client is open host service. Give example of a published language
 when exporter has config file in JSON format, and another team builds configuration store and UI for defining the exporter configuration.
 The context mapping is a Conformist to a published language (two styles combined).
