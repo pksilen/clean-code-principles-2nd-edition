@@ -64,3 +64,11 @@ Conformist or Supplier-Consumer. The interface between insights-visualizer-confi
 be made generic and interface between it and web-client is open host service. Give example of a published language
 when exporter has config file in JSON format, and another team builds configuration store and UI for defining the exporter configuration.
 The context mapping is a Conformist to a published language (two styles combined).
+
+Strategical DDD target is to divide a large business domain into several bounded context with their basic interfacing mechanish or 
+communication/coordination pattern defined. A single team is responsible for a bounded context.
+
+Strategical DDD event storming, mention that it is question about Big-picture event storming focusing on domain events
+on timeline, but actors, commands and entities can be added if they make the design clearer. Also opportunities and problems
+should listed so that they can later be addressed. At the end of the event storming session take several photos of designs and sticth
+them together to a large single document for future reference.
