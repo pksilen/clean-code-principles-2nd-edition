@@ -39,3 +39,8 @@ example with data exporter microservice
   8. The network is homogenous
      Network has many parts. If the VMs are in same rack, the latency and bandwidth are higher compared to connections
      between VMs in two different availability zones.
+
+Microservices benefits: high degree of organizational autonomy, self-directed fast-paced teams with minimal communication overhead with other teams. This can be achieved with a well-modularized
+monolith, too. There things were planning with teams is needed, things that are visible to software users and administrators so that software feels harmonous:
+UX/UI design, configurability, observability (including logging format, SLIs, metric dashboards, SLOs and alarms). But the things that are not visible to customer
+the team can decide how to do it best, choose the programming language, framework, libraries, testing methods and tools.
