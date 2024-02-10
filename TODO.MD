@@ -1,7 +1,7 @@
 This book does not solely promote microservices, but as said modular monolith can be a viable alternatively to a microservices
 architecture. Even if you are creating a modular monolith, it is good to know microservice design principles so that you can build
 the modular monolith such that you are able to extract it or part of it to microservices if needed in the future. For this reason, 
-even if you are not building microservices, it is worth to know the basic design principles for them.
+even if you are not building microservices, it is worth to know the basic design principles of them.
 
 - in clean architecture, mention that writing component tests will be easy, because
 fake input/output adapters can be used to integrate the business logic of the software component. Give
@@ -50,3 +50,13 @@ monolith, too. There things were planning with teams is needed, things that are 
 UX/UI design, configurability, observability (including logging format, SLIs, metric dashboards, SLOs and alarms). But the things that are not visible to customer
 the team can decide how to do it best, choose the programming language, framework, libraries, testing methods and tools.
 The team independence can result in not being able to follow the DRY principle. There should be enough communication to avoid unnecessary duplicated effort.
+
+Team Communication is a new section in Team Principles. Describe conway's law that organization communication structure resembles the
+software architectural structure. If there is no clear organizational communication structure, the architecture can be a big ball of mud monolith.
+Or if teams are siloed that can lead that non-communication can produce compatibility issues when two teams software need to work together.
+A team suitable for a modular monolith or microservies architecture mainly communicates internally and on communicates the needed amount
+with other team or teams to agree upon interfaces (context mapping) between bounded contexts.
+
+Give Examples of context mapping styles using the mobile telecom analytics software system. Give example of a published language
+when exporter has config file in JSON format, and another team builds configuration store and UI for defining the exporter configuration.
+The context mapping is a Conformist to a published language (two styles combined).
