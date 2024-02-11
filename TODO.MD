@@ -71,7 +71,8 @@ communication/coordination pattern defined. A single team is responsible for a b
 Strategical DDD event storming, mention that it is question about Big-picture event storming focusing on domain events
 on timeline, but actors, commands and entities can be added if they make the design clearer. Also opportunities and problems
 should listed so that they can later be addressed. At the end of the event storming session take several photos of designs and sticth
-them together to a large single document for future reference.
+them together to a large single document for future reference. Mention that big picture event storming is gather people with
+diverse responsibilities, including product management, architects, lead and senior developers, domain experts, UX designers.
 
 Tactical DDD: Domain services usually should not contain access to data repository or otherwise be side-effectful. Try to aim for
 a functional and immutable domain services and objects and put side-effects to the outer application service layer. Application service
