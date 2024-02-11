@@ -70,13 +70,19 @@ communication/coordination pattern defined. A single team is responsible for a b
 
 Strategical DDD event storming, mention that it is question about "Big-picture" event storming focusing on domain events
 on timeline, but actors, commands and entities can be added if they make the design clearer. Also opportunities and problems
-should listed so that they can later be addressed. At the end of the event storming session take several photos of designs and sticth
+should listed so that they can later be addressed. Domain events can be triggered by various parties like users, admins, time schedule, external systems. At the end of the event storming session take several photos of designs and sticth
 them together to a large single document for future reference. Mention that big picture event storming is gather people with
 diverse responsibilities, including product management, architects, lead and senior developers, domain experts, UX designers.
-There are two other forms of event storming process modeling and software design, introduced in the next chapter. For more about
+There is other form of event storming called software design level event storming, introduced in the next chapter. For more about
 strategical DDD, I suggest you consult books: Architecture Modernization and Strategic Monoliths and Microservices.
 The domain events on timeline are not a single line of events but multiple, i.e. many things can happen at the same time. Things
-can belong to same subdomain or different. It does not matter, the main idea is to register everything that can happen in the software
+can belong to same subdomain or different. Different lines of events can be used to represent failure scenarios or edge cases of a feature.
+To distinguish between these, a sticky note can be added before multiple lines of events to describe are these event lines parallel or
+do they represent different scenarios. Big picture event storming is chaotic exploration in the beginning. The structure for the events
+is emergent. You should be able to move events on the whiteboard and add events to any positions organize the initial chaos to something
+more systematic.
+
+It does not matter, the main idea is to register everything that can happen in the software
 system to be build. When you have a large and diverse group people participating in the event storming session, the better and more complete
 representation of the software system to be built you get. The likelihood of forgetting major domain events is smaller. The abstraction level
 of domain events should not be too high or too low. Events should describe a feature or use case an bounded context implements, but not
@@ -84,6 +90,7 @@ the implementation details. Event "order placed" might be on too high level beca
 events: payment processed, shopping cart emptied, sales item inventory updated, order created, for example. On the other hand, events like
 Button in order form pressed and order entity persisted in database are too low level events. These are events describe implementation details
 and are not part of big-picture events storming, but can be part of software design level event storming which is part of tactical DDD.
+The most experienced and technical oriented participant should guide the level of abstraction in the domain events.
 
 Tactical DDD: Domain services usually should not contain access to data repository or otherwise be side-effectful. Try to aim for
 a functional and immutable domain services and objects and put side-effects to the outer application service layer. Application service
