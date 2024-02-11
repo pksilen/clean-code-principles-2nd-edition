@@ -68,11 +68,13 @@ The context mapping is a Conformist to a published language (two styles combined
 Strategical DDD target is to divide a large business domain into several bounded context with their basic interfacing mechanish or 
 communication/coordination pattern defined. A single team is responsible for a bounded context.
 
-Strategical DDD event storming, mention that it is question about Big-picture event storming focusing on domain events
+Strategical DDD event storming, mention that it is question about "Big-pictur"e event storming focusing on domain events
 on timeline, but actors, commands and entities can be added if they make the design clearer. Also opportunities and problems
 should listed so that they can later be addressed. At the end of the event storming session take several photos of designs and sticth
 them together to a large single document for future reference. Mention that big picture event storming is gather people with
 diverse responsibilities, including product management, architects, lead and senior developers, domain experts, UX designers.
+There are two other forms of event storming process modeling and software design, introduced in the next chapter. For more about
+strategical DDD, I suggest you consult books: Architecture Modernization and Strategic Monoliths and Microservices.
 
 Tactical DDD: Domain services usually should not contain access to data repository or otherwise be side-effectful. Try to aim for
 a functional and immutable domain services and objects and put side-effects to the outer application service layer. Application service
