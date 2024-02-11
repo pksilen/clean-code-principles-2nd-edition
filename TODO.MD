@@ -68,13 +68,22 @@ The context mapping is a Conformist to a published language (two styles combined
 Strategical DDD target is to divide a large business domain into several bounded context with their basic interfacing mechanish or 
 communication/coordination pattern defined. A single team is responsible for a bounded context.
 
-Strategical DDD event storming, mention that it is question about "Big-pictur"e event storming focusing on domain events
+Strategical DDD event storming, mention that it is question about "Big-picture" event storming focusing on domain events
 on timeline, but actors, commands and entities can be added if they make the design clearer. Also opportunities and problems
 should listed so that they can later be addressed. At the end of the event storming session take several photos of designs and sticth
 them together to a large single document for future reference. Mention that big picture event storming is gather people with
 diverse responsibilities, including product management, architects, lead and senior developers, domain experts, UX designers.
 There are two other forms of event storming process modeling and software design, introduced in the next chapter. For more about
 strategical DDD, I suggest you consult books: Architecture Modernization and Strategic Monoliths and Microservices.
+The domain events on timeline are not a single line of events but multiple, i.e. many things can happen at the same time. Things
+can belong to same subdomain or different. It does not matter, the main idea is to register everything that can happen in the software
+system to be build. When you have a large and diverse group people participating in the event storming session, the better and more complete
+representation of the software system to be built you get. The likelihood of forgetting major domain events is smaller. The abstraction level
+of domain events should not be too high or too low. Events should describe a feature or use case an bounded context implements, but not
+the implementation details. Event "order placed" might be on too high level because it is masking the following lower level
+events: payment processed, shopping cart emptied, sales item inventory updated, order created, for example. On the other hand, events like
+Button in order form pressed and order entity persisted in database are too low level events. These are events describe implementation details
+and are not part of big-picture events storming, but can be part of software design level event storming which is part of tactical DDD.
 
 Tactical DDD: Domain services usually should not contain access to data repository or otherwise be side-effectful. Try to aim for
 a functional and immutable domain services and objects and put side-effects to the outer application service layer. Application service
