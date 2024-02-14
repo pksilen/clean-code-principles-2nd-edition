@@ -13,8 +13,8 @@ think of that vast legacy system, a so-called big ball of mud.
 Many legacy monoliths have lousy design and contain unmodular spaghetti code full of technical debt. But you can create
 a monolith with minimal technical debt when you create it as modular. This means that different teams can handle the design
 and implementation of those modules separately. Monolith can be a sustainable alternative for a small company or a startup.
-They can start with a modular monolith and break it down into two microservices later if needed.
-Compared to microservices, developing a monolith can save time when testing, deployment, observability, and transactions
+They can start with a modular monolith and break it down into two microservices later if needed. A small company has limited resources. They can save resources by implementing a monolith. A startup can save time when implementing a monolith first.
+Developing a monolith can save time compared to microservices because testing, deployment, observability, and transactions
 are easier to implement. The decision between a modular monolith and microservices architecture is a strategic architectural
 decision that should be carefully analyzed by the system architect together with the architecture team.
 So, the benefits and drawbacks of microservices (listed in a later section of this chapter) should be carefully considered.
