@@ -22,6 +22,10 @@ When choosing a microservice architecture, the sizing of each microservice shoul
 This is also an important strategic decision but not always an easy one.
 You might get it initially wrong, meaning that you later need to combine several microservices into a single larger microservice or split a large microservice into smaller ones.
 
+This book does not solely promote microservices, but as said, modular monolith can be a viable alternative to a microservices
+architecture in some cases. Even if you are creating a modular monolith, it is good to know microservice design principles so that you can build
+the modular monolith in such a way that you can split it into microservices if needed in the future. For this reason,  it is worth to know the fundamental design principles of microservices.
+
 Cloud-native software is built of loosely coupled scalable, resilient, and observable services that can run
 in public, private, or hybrid clouds. Cloud-native software utilizes technologies like containers (e.g., Docker),
 microservices, serverless functions, and container orchestration (e.g., Kubernetes), and it can be automatically
