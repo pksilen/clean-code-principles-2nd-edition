@@ -2345,6 +2345,7 @@ We can be confident that we did not break any existing functionality. We were on
 to our codebase.
 
 It should be noted that the clean microservice design principle applies to other microservices with input or output, not just API microservices. We will have an example of this later in this chapter.
+One additional benefit of the clean microservice design that has not been mentioned yet is that you can write component tests that test the software component's business logic (or the model) using fake input and output adapters instead of the real ones. Let's take a data exporter microservice as an example. It reads data from an input source (e.g., Apache Kafka) and transforms it in various ways before writing to an output destination (e.g., Apache Pulsar). We can test the transformation business logic using a fake input and output adapter injected into the software component. Running the tests will be fast because there is no need to spin up an instance of Kafka and Pulsar. Later, we can augment the component tests with some integration tests that test the integration to real input and output. We will talk more about component and integration tests in a later chapter.
 
 ## Vertical Slice Design Principle
 
