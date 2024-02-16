@@ -2334,15 +2334,18 @@ Now we have seen examples of the following benefits of clean microservice design
 - Not tied to a specific database
 - Not dependent on any specific external service implementation
 
-Let's showcase the final benefit:
+The final benefit of clean microservice design:
 
 - Not tied to any single framework
 
-Show with Express.js and Fastify
+This is not always straightforward, and in our case, if we want to change our framework from Spring Boot to, e.g., Jakarta EE or Quarkus, we would have to make changes in places other than the application class and the controller only. This is because we are
+using Spring-specific dependency injection and Spring-specific repository implementation. Being unable to replace the framework easily is the main drawback of
+large frameworks like Spring, JakartaEE, Django, or Nest.js. Most of the time, you would be better off with small single-purpose libraries (remember the *microlibraries* from the first chapter)
+instead of using a massive framework. Switching from one micro library to another is less effort than trying to change a big framework.
 
-We were able to change the used web framework by introducing two new small modules. We did not touch any existing modules.
-We can be confident that we did not break any existing functionality. We were once again successfully applying the *open-closed principle*
-to our codebase.
+In my other book *Clean Code Principles And Patterns: Python Edition", I give you an example where we easily change a *FastAPI*-based microservice
+to a *Flask*-based microservice. In that example, we can change the used web framework by introducing two new small modules (application and controller modules). We do not touch any existing modules.
+Thus, we can be confident that we do not break any existing functionality. We successfully apply the *open-closed principle* to our software.
 
 It should be noted that the clean microservice design principle applies to other microservices with input or output, not just API microservices. We will have an example of this later in this chapter.
 One additional benefit of the clean microservice design that has not been mentioned yet is that you can write component tests that test the software component's business logic (or the model) using fake input and output adapters instead of the real ones. Let's take a data exporter microservice as an example. It reads data from an input source (e.g., Apache Kafka) and transforms it in various ways before writing to an output destination (e.g., Apache Pulsar). We can test the transformation business logic using a fake input and output adapter injected into the software component. Running the tests will be fast because there is no need to spin up an instance of Kafka and Pulsar. Later, we can augment the component tests with some integration tests that test the integration to real input and output. We will talk more about component and integration tests in a later chapter.
