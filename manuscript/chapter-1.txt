@@ -1309,7 +1309,10 @@ should only have read access to the shared data.
 
 ## Strategical Domain-Driven Design Principle
 
-> ***Design software system architecture by conducting domain-driven design (DDD) starting from the top of the software hierarchy (software system) and ending at the microservice (bounded context) level.***
+> ***Design software system architecture by conducting domain-driven design (DDD) starting from the top of the software hierarchy (software system) and ending at the bounded context level.***
+
+Strategical DDD aims to divide a large business domain into several bounded contexts with their basic interfacing mechanisms or
+communication/coordination patterns defined. A single team is responsible for a bounded context. In a microservice architecture, a bounded context can be a microservice, for example.
 
 I often compare software system architectural design to the architectural design of a house. The house represents a software
 system. The entrances in the house's facade represent the software system's external interfaces. The rooms in the house are the microservices
