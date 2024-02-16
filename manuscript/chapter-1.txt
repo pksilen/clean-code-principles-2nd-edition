@@ -1357,17 +1357,29 @@ DDD says that a single team should own a bounded context, and each bounded conte
 true if a bounded context consists of one or more microservices). A bounded context or a microservice can become hard to manage and change if the responsibility is shared between multiple teams.
 
 When the splitting of a software system into subdomains and bounded context is not straightforward, you can use *big-picture event storming*
-workshop to help you identify your software system's subdomains and bounded context. Event storming is particularly useful when the software system is extensive and its requirements are unclear.
-Event storming workshop gathers people with diverse responsibilities, including product management, architects, lead and senior developers, domain experts, UX designers.
+workshop to help you identify your software system's subdomains and bounded context. Event storming is particularly useful when the software system is extensive, and its requirements are unclear.
+Event storming workshop gathers people with diverse responsibilities, including product management, architects, lead and senior developers, domain experts, and UX designers.
 The basic idea of the event-storming process is to model your software system's domain events on a timeline and then group a set of domain events to form
-a subdomain or a bounded context. Domain events can be triggered by various parties like users, admins, external systems or on schedule. Below is an example of an event storming process result where *domain events* are listed as solid-line boxes along the time axis.
-After listing all the domain events, they are grouped into subdomains/bounded contexts shown with dotted lines.  In addition to the domain events, opportunities and problems
-related to them should listed so that they can be addressed later in the workshop or afterwards depending on the time reserved for the workshop. At the end of the event storming session take several photos of designs and sticth
-them together to a large single document for future reference. If you want to read more about strategical DDD, I suggest you consult the following books: *Architecture Modernization* by *Nick Tune* and *Jean-Georges Perrin* and *Strategic Monoliths and Microservices* by *Vaughn Vernon* and *Jaskula Tomasz*.
+a subdomain or a bounded context. Domain events can be triggered by various parties like users, admins, external systems, or on schedule. Initially, event storming can be a chaotic exploration, but
+it does not matter because the main idea is to register everything that can happen in the software system to be built.
+The structure of the events is emergent. You should be able to move events on the whiteboard and add events to any positions to organize the initial chaos into something more systematic.
+When you have a large and diverse group of people participating in the event storming session, you get a better and more complete
+representation of the software system to be built. The likelihood of forgetting major domain events is smaller.
 
+The abstraction level of domain events should not be too high or too low. Events should describe a feature or use case a bounded context implements but not
+the implementation details. Event *order placed* might be on a too high abstraction level because it is masking the following lower-level
+events: payment processed, shopping cart emptied, sales item inventory updated, order created, for example. On the other hand, events like
+*button in order form pressed* and *order entity persisted in the database* are too low-level events. These events describe implementation details
+and are not part of big-picture events storming but are part of *software design-level event storming* which is part of tactical DDD described in the next chapter.
+The most experienced and technically oriented participants should guide the domain events' abstraction level.
 
-You should continue the event-storming process for each bounded context to figure out additional DDD concepts related to the domain events.
-The *software design-level event-storming* process is better described in the next chapter.
+Below is an example of an event storming workshop result where *domain events* are listed as solid-line boxes along the time axis. The domain events on the timeline usually do not form a single line of events but multiple lines, meaning that many events can happen at the same time.
+Different lines of events can be used to represent, e.g., failure scenarios and edge cases of a feature. A sticky note can be added before different lines of events to describe whether the event lines are parallel or
+represent different scenarios. After listing all the domain events, they are grouped into subdomains/bounded contexts shown with dotted lines. In addition to the domain events, opportunities and problems
+related to them should listed so that they can be addressed later in the workshop or afterward, depending on the time reserved for the workshop. At the end of the event storming session, take several photos of the designs and stitch the photos together to form a document for future reference. If you want to read more about strategical DDD, I suggest you consult the following books: *Architecture Modernization* by *Nick Tune* and *Jean-Georges Perrin* and *Strategic Monoliths and Microservices* by *Vaughn Vernon* and *Jaskula Tomasz*.
+
+You should continue the event-storming process with *software design-level event-storming* for each bounded context to figure out additional DDD concepts related to the domain events.
+The *software design-level event-storming* workshop is described in the next chapter.
 
 ![Event storming](resources/chapter1/images/event_storming.png)
 
