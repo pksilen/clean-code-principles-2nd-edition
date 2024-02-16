@@ -6577,6 +6577,7 @@ the Express framework:
 
 ```js
 const express = require('express')
+
 const app = express()
 
 // Authorization middleware
