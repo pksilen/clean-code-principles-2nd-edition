@@ -6862,19 +6862,29 @@ Let's create a simple concrete action/command that prints a message:
 
 ```java
 public class PrintAction implements Action {
-    def __init__(self, message: str):
-        self.__message: Final = message
+  private final String message;
 
-    def perform(self) -> None:
-        print(self.__message)
+  public PrintAction(final String message) {
+    this.message = message;
+  }
+
+  public void perform() {
+    System.out.print(message);
+  }
+}
 
 
-class PrintCommand(Command):
-    def __init__(self, message: str):
-        self.__message: Final = message
+public class PrintCommand implements Command {
+  private final String message;
 
-    def execute(self) -> None:
-        print(self.__message)
+  public PrintCommand(final String message) {
+    this.message = message;
+  }
+
+  public void execute() {
+    System.out.print(message);
+  }
+}
 ```
 
 As can be seen, the above `PrintAction` and `PrintCommand` instances encapsulate the state that is used when the action/command
@@ -6882,14 +6892,18 @@ is performed (usually at a later stage compared to action/command instance creat
 
 Now we can use our print action/command:
 
-```python
-actions = [PrintAction('Hello'), PrintAction('World')]
-for action in actions:
-    action.perform()
+```java
+final var actions = List.of(new PrintAction("Hello"), new PrintAction("World"));
 
-commands = [PrintCommand('Hello'), PrintCommand('World')]
-for command in commands:
-    command.execute()
+for (final var action : actions) {
+  action.perform();
+}
+
+final var commands = List.of(new PrintCommand("Hello"), new PrintCommand("World"));
+
+for (final var command : commands) {
+  command.execute();
+}
 ```
 
 Using actions or commands makes it possible to follow the open-closed principle because every new action or command
@@ -6899,33 +6913,37 @@ Actions and commands can be made undoable, provided that the action/command is u
 is not undoable because you cannot undo print to the console. Let's introduce an undoable action: add an item to a list.
 It is an action that can be undone by removing the item from the list.
 
-```python
-from typing import Final, Generic, TypeVar
-
-T = TypeVar('T')
-
-
-class AddToListAction(Action, Generic[T]):
-    def __init__(self, item: T, items: list[T]):
-        self.__item: Final = item
-        self.__items: Final = items
-
-    def perform(self) -> None:
-        self.__items.append(self.__item)
-
-    def undo(self) -> None:
-        try:
-            self.__items.remove(self.__item)
-        except ValueError:
-            pass
+```java
+interface UndoableAction extends Action {
+  void undo();
+}
 
 
-values = [1, 2]
-add3ToValuesAction = AddToListAction(3, values)
-add3ToValuesAction.perform()
-print(values)   # Prints [1, 2, 3]
-add3ToValuesAction.undo()
-print(values)   # Prints [1, 2]
+class AddToListAction<T> implements UndoableAction {
+  private final T item;
+  private final List<T> items;
+
+  public AddToListAction(final T item, final List<T> items) {
+    this.item = item;
+    this.items = items;
+  }
+
+  public void perform() {
+    items.add(item);
+  }
+
+  public void undo() {
+    items.remove(item);
+  }
+}
+
+
+final var values = new ArrayList<>(List.of(1, 2));
+final var add3ToValuesAction = new AddToListAction<>(3, values);
+add3ToValuesAction.perform();
+System.out.println(values);  //  Prints [1, 2, 3]
+add3ToValuesAction.undo();
+System.out.println(values);  // Prints [1, 2]
 ```
 
 #### Iterator Pattern
