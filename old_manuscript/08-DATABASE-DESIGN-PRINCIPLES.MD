@@ -68,6 +68,8 @@ the following columns:
 - name
 - price
 
+
+
 Each entity table must have a primary key defined. The primary key must be unique for each row in the table.
 In the below example, we are using the `@Id` annotation to define the `id` column as the primary key containing
 a unique value for each row. The `@GeneratedValue` annotation defines that the database should automatically generate

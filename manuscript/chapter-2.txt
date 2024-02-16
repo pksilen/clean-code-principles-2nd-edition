@@ -4023,18 +4023,18 @@ Events are operations on entities and form the business use cases. Services usua
 events can be implemented by having an `OrderService` with the following methods: `create_order`, `update_order`, and
 `cancel_order`.
 
-#### Event Storming
+#### Design-Level Event Storming
 
-*Eevent storming* is a lightweight method a team can use to discover DDD-related concepts in a software component.
-The event storming process typically follows the below
-steps:
+*Design-level event storming* is a lightweight method (a workshop), a team can use to discover DDD-related concepts in a bounded context.
+The event storming process typically follows the below steps:
 
 1) Figure out *domain events* (events are usually written in past tense)
 2) Figure out *commands* that caused the *domain events*
 3) Add *actors*/*services* that execute the *commands*
 4) Figure out related *entities*
 
-In event storming, the different DDD concepts like events, commands, actors, and entities are represented with sticky notes in different colors. These sticky notes are put on a wall, and related sticky notes are grouped together, like actor(s), command(s), and entity/entities for a specific
+In event storming workshop, the different DDD concepts like events, commands, actors, and entities are represented with sticky notes in different colors.
+These sticky notes are put on a wall, and related sticky notes are grouped together, like the actor, the command, and entity/entities for a specific
 domain event. If you are interested in details of the event storming process, there is a book named *Introducing EventStorming* by *Alberto Brandolini*.
 
 ### Tactical DDD Example 1: Data Exporter Microservice
