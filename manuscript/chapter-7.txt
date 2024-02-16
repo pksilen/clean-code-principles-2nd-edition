@@ -472,6 +472,23 @@ Below is the implementation of the `OrmSalesItemRepository`:
 {format: python}
 ![repositories/OrmSalesItemRepository.py](resources/chapter6/code/salesitemservice/repositories/OrmSalesItemRepository.py)
 
+The domain entity and database entity are not necessarily the same. A typical example is when the entity id in the database entity is numeric, a 64-bit integer, but the domain entity has it as a string so that it can be used by any client (including JavaScript, where numeric limits are
+less than 64-bit).
+You often benefit from creating separate entity classes for a repository and the domain model. You might want to store domain entities in a database in a slightly different format. In that case, you
+must define separate entity classes for the domain and the repository. You can name database-related entities with a Db-prefix, e.g. DbSalesItem.
+In the DbSalesItem class, you need two conversion methods: from a domain entity and to a domain entity:
+
+```java
+DbSalesItem.from(domainEntity)
+DbSalesItem.from(salesItem)
+
+salesItem = dbSalesItem.toDomainEntity()
+```
+
+If you need to change your database, you can have mixed format ids (e.g., from a relational database with BIGINT ids to a MongoDB with string-format ObjectIds). If you want uniform unique ids, you must generate them
+in your software component, not by the database. This might be a good approach also from the security point of view to prevent [IDOR](https://cheatsheetseries.owasp.org/cheatsheets/Insecure_Direct_Object_Reference_Prevention_Cheat_Sheet.html). If you generate random UUIDs in your application, and you have accidentally broken authorization (IDOR), it is not possible for an attacker to guess UUIDs and try to access other users' resources using them.
+
+
 ### Use Parameterized SQL Statements Principle
 
 > ***If you are not using an ORM for database access, use parameterized SQL statements to prevent potential SQL injection attacks.***
