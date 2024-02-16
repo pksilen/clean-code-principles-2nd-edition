@@ -1347,19 +1347,21 @@ It is an area where you don't have to excel, but you should use a 3rd party solu
 
 For example, a banking software system can have a bounded context for loan applications and another for making payments. The ubiquitous languages in bounded contexts can differ. For example, consider an airline software system with the following bounded contexts: customers, ticketing, cargo, and airplane maintenance. The four bounded contexts can use the term *flight*, but the flights in the different bounded contexts differ. They are entities with the same name but with different attributes. Those bounded contexts can interface with each other by referencing each other's representation of a flight using a flight id that is a common attribute in all the bounded contexts.
 
-Various strategies exist on how bounded contexts interface with each other. The interface between them can be jointly designed by two teams (a partnership) or one bounded context
-defines the interface. The interface provider can be sovereign (other bounded contexts must conform to the interface), or the interface provider can listen to the interface consumer needs. Perhaps the most modern and useful way to create an interface between two (or more) bounded contexts is for the interface provider to create an *open host service* with a *published language* that can serve all interface consumers. Basically, this means creating a microservice API using a specific API technology like REST. The bounded context acting as an interface provider does not have to expose its model (entities and ubiquitous language) as such to other bounded contexts. It can use DTOs to map entities to clients' expected format and map the client format back to entities. Using DTOs enables smoother interfacing between different ubiquitous languages. A bounded context can create a so-called *anticorruption layer* for talking to another bounded context to translate the other bounded context's ubiquitous language into its own ubiquitous language. This is a good example of using the *adapter pattern*.
+Various strategies exist on how bounded contexts interface with each other. This is called *context mapping*. The interface between them can be jointly designed by two teams (a context mapping strategy called *partnership*) or one bounded context
+defines the interface for others to consume. The interface provider can be sovereign (other bounded contexts must conform to the interface; this context mapping strategy is called *conformist*), or the interface provider can listen to the interface consumer needs (a context mapping strategy called *supplier-consumer*). Perhaps the most modern and useful way to create an interface between two (or more) bounded contexts is for the interface provider to create an *open host service* with a *published language* that can serve all interface consumers. Basically, this means creating a microservice API using a specific API technology like REST. The bounded context acting as the interface provider does not have to expose its model (entities and ubiquitous language) as such to other bounded contexts. It can use DTOs to map entities to clients' expected format and map the client format back to entities. Using DTOs enables smoother interfacing between different ubiquitous languages. A bounded context can create a so-called *anticorruption layer* for talking to another bounded context to translate the other bounded context's ubiquitous language into its own ubiquitous language. This is an excellent example of using the *adapter pattern*.
+Another example of the *published language* context mapping is when a microservice has a configuration in JSON format, and another team builds a configuration store and UI for defining and storing the configuration.
+The context mapping between the microservice and the configuration store is *conformist* and *published language*. The configuration store and UI components will conform to the specific configuration format specified by the microservice.
 
 Strategical DDD fits well together with the microservice architecture. In both, something big is split into smaller, more manageable parts.
 DDD says that a single team should own a bounded context, and each bounded context should have its own source code repository or repositories (this will be automatically
 true if a bounded context consists of one or more microservices). A bounded context or a microservice can become hard to manage and change if the responsibility is shared between multiple teams.
 
-When the splitting of a software system into subdomains and bounded context is not straightforward, you can use *event storming*
+When the splitting of a software system into subdomains and bounded context is not straightforward, you can use *big-picture event storming*
 process to help you identify your software system's subdomains and bounded context. Event storming is particularly useful when the software system is extensive and its requirements are unclear.
 The basic idea of the event-storming process is to model your software system's domain events on a timeline and then group a set of domain events to form
 a subdomain or a bounded context. Below is an example of an event storming process result where *domain events* are listed as solid-line boxes along the time axis.
 After listing all the domain events, they are grouped into subdomains/bounded contexts shown with dotted lines. You can continue the event-storming process for each bounded context to figure out additional DDD concepts related to the domain events.
-The event-storming process is better described in the next chapter.
+The *software design-level event-storming* process is better described in the next chapter.
 
 ![Event storming](resources/chapter1/images/event_storming.png)
 
@@ -1421,12 +1423,27 @@ software system.
 
 ![Microservices](resources/chapter1/images/02-05.png)
 
-The last part of architectural design is to define the inter-service communication methods.
-The *data-ingester-service* needs to send raw data to *data-aggregator-service*. Data is sent using
-asynchronous fire-and-forget requests and is implemented using a message broker. The communication
-between the *data-aggregator-service* and the *insights-visualizer-data-service* should use the
+The last part of architectural design is to define the inter-service communication methods, i.e., context mapping.
+The interface between radio and core networks and the *data-ingester-service* could be a *partnership*. The interface is
+planned together with both sides.
+
+The *data-ingester-service* needs to send raw data to *data-aggregator-service*. The context mapping between them could be
+*supplier-consumer*, where the *data-ingester-service* is the supplier. Data is sent using
+asynchronous fire-and-forget requests and is implemented using a message broker.
+
+The *insights-visualizer-data-service* should *conform* to the interface provided by the *data-aggregator-service*.
+The communication between the *data-aggregator-service* and the *insights-visualizer-data-service* should use the
 *shared data* communication method because the *data-aggregator-service* generates aggregated data that the
-*insights-visualizer-data-service* uses. The communication between the *insights-visualizer-web-client* in the
+*insights-visualizer-data-service* uses.
+
+The context mapping between the *insights-visualizer-web-client* and *insights-visualizer-configuration-service*
+should be a *partnership* because they are closely related to each other. The best way to achieve a *partnership* is when the same team is responsible for both microservices.
+
+The context mapping between the *insights-visualizer-web-client* and *insights-visualizer-data-service* should
+be *open host service*. This is because the *insights-visualizer-data-service* is not only used by the *insights-visualizer-web-client*
+in the future, but it should be made a generic *insights-data-service* that other services can use.
+
+The communication between the *insights-visualizer-web-client* in the
 frontend and the *insights-visualizer-data-service* and *insights-visualizer-configuration-service* in the backend
 is synchronous communication that can be implemented using an HTTP-based JSON-RPC, REST, or GraphQL API.
 
