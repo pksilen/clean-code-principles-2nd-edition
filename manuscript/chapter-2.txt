@@ -2343,7 +2343,7 @@ using Spring-specific dependency injection and Spring-specific repository implem
 large frameworks like Spring, JakartaEE, Django, or Nest.js. Most of the time, you would be better off with small single-purpose libraries (remember the *microlibraries* from the first chapter)
 instead of using a massive framework. Switching from one micro library to another is less effort than trying to change a big framework.
 
-In my other book *Clean Code Principles And Patterns: Python Edition", I give you an example where we easily change a *FastAPI*-based microservice
+In my other book [Clean Code Principles And Patterns: Python Edition](https://leanpub.com/cleancodeprinciplesandpatternspythonedition), I give you an example where we easily change a *FastAPI*-based microservice
 to a *Flask*-based microservice. In that example, we can change the used web framework by introducing two new small modules (application and controller modules). We do not touch any existing modules.
 Thus, we can be confident that we do not break any existing functionality. We successfully apply the *open-closed principle* to our software.
 
