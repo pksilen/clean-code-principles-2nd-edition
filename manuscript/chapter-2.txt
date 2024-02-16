@@ -6453,6 +6453,7 @@ import java.io.IOException;
 import javax.servlet.*;
 import javax.servlet.annotation.WebFilter;
 
+
 @WebFilter(urlPatterns = {"/*"})
 public class LoggingFilter implements Filter {
   // No initialization needed, thus empty method
@@ -6490,6 +6491,7 @@ import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
 
+
 @WebServlet("/helloworld")
 public class HelloWorldServlet extends HttpServlet {
   public void doGet(
@@ -6520,6 +6522,7 @@ import java.io.IOException;
 import javax.servlet.*;
 import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletResponse;
+
 
 @WebFilter(urlPatterns = {"/*"})
 public class AuthorizationFilter implements Filter {
@@ -6567,7 +6570,7 @@ public class AuthorizationFilter implements Filter {
 }
 ```
 
-The [Express}(https://expressjs.com/) framework for Node.js utilizes the chain of responsibility pattern for handling requests.
+The [Express](https://expressjs.com/) framework for Node.js utilizes the chain of responsibility pattern for handling requests.
 In the Express framework, you can write pluggable behavior using _middlewares_, a concept similar to
 servlet filters in Java. Below is the same logging and authorization example as above, but written using JavaScript and
 the Express framework:
