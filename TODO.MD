@@ -1,18 +1,3 @@
-Give Examples of context mapping styles using the mobile telecom analytics software system. The interface between radio and core networks
-and the data ingester could be a partnership. Example of a shared kernel in banking software system, could be money kernel that consists of money
-related operations like currency exchanges, implemented in a library. The interface between data ingester and data aggregator can be
-Conformist or Supplier-Consumer. The interface between insights-visualizer-config and web-client can be partnership. The insighs-data-service could
-be made generic and interface between it and web-client is open host service. Give example of a published language
-when exporter has config file in JSON format, and another team builds configuration store and UI for defining the exporter configuration.
-The context mapping is a Conformist to a published language (two styles combined).
-
-Strategical DDD event storming, mention that it is question about "Big-picture" event storming focusing on domain events
-on timeline, but actors, commands and entities can be added if they make the design clearer. Also opportunities and problems
-should listed so that they can later be addressed. Domain events can be triggered by various parties like users, admins, time schedule, external systems. At the end of the event storming session take several photos of designs and sticth
-them together to a large single document for future reference. Mention that big picture event storming is gather people with
-diverse responsibilities, including product management, architects, lead and senior developers, domain experts, UX designers.
-There is other form of event storming called software design level event storming, introduced in the next chapter. For more about
-strategical DDD, I suggest you consult books: Architecture Modernization and Strategic Monoliths and Microservices.
 The domain events on timeline are not a single line of events but multiple, i.e. many things can happen at the same time. Things
 can belong to same subdomain or different. Different lines of events can be used to represent failure scenarios or edge cases of a feature.
 To distinguish between these, a sticky note can be added before multiple lines of events to describe are these event lines parallel or
