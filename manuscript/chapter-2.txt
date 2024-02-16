@@ -6285,7 +6285,7 @@ const result = new Adder().add(1, 2);
 
 You can combine multiple decorators, for example:
 
-```python
+```ts
 function logged(func: any, context: ClassMethodDecoratorContext) {
   function wrapped_func(this: any, ...args: any[]) {
     const result = func.call(this, ...args);
@@ -6335,7 +6335,7 @@ in memory consumption after applying this pattern.
 
 Shapes that the game draws have the following properties: size, form, fill color, stroke color, stroke width, and stroke style.
 
-```python
+```java
 public interface Shape {
   // ...
 }
@@ -6379,7 +6379,7 @@ there would be a lot of identical `PolygonShape` objects in the memory. To remed
 which contains the position of a shape and a reference to the actual shape. In this way, we can draw a lot of
 `DrawnShapeImpl` objects that all contain a reference to the same `PolygonShape` object:
 
-```python
+```java
 public interface DrawnShape {
   // ...
 }
