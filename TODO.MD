@@ -1,9 +1,3 @@
-
-- CQRS: Give a real-life example of a materialized view, order entities. The materialized view can only store a summaries of orders which
-- can be visualized e.g. in UI and when details of a specific order entity are request the complete order aggragate is recrated from events
-- in the event store. System using CQRS with a materialized view is usually having eventual consistency, so the value coming from the 
-- materialized view may not contain the latest change(s) yet.
-
 - 7 Fallacies of distributed computing:
   1. The network is reliable
      For this you don't have to prepare separately in every micorservice, but use a service mesh like Istio to handle

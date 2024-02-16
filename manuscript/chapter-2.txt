@@ -6831,35 +6831,22 @@ In the above example, we could have used the built-in Java `Consumer<T>` interfa
 
 The command/action pattern is one way to follow the open-closed principle, i.e., extending code by creating new command/action classes for additional functionality instead of modifying existing code.
 
-{aside}
-Python full-stack developers familiar with React and Redux know that Redux requires implementing reducers, which are typically switch-case
-statements for executing a particular action. For improved object-oriented design, you could create a reducer that takes action objects as input
-and performs the action when it receives an action object. This approach is discussed in more detail in my other book *Clean Code Principles And Patterns: A Software Practitioner's Handbook*.
-{/aside}
+Let's create a simple action and command interface:
 
-Let's create a simple action and command protocol:
+```java
+public interface Action {
+  void perform();
+}
 
-```python
-from typing import Protocol
-
-
-class Action(Protocol):
-    def perform(self) -> None:
-        pass
-
-
-class Command(Protocol):
-    def execute(self) -> None:
-        pass
+public interface Command {
+  void execute();
+}
 ```
 
 Let's create a simple concrete action/command that prints a message:
 
-```python
-from typing import Final
-
-
-class PrintAction(Action):
+```java
+public class PrintAction implements Action {
     def __init__(self, message: str):
         self.__message: Final = message
 

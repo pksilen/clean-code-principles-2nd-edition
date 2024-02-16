@@ -57,6 +57,7 @@ This chapter discusses the following architectural principles and patterns:
 - Git version control principle
 - Architectural patterns
 - Preferred technology stacks principle
+- 7 Fallacies of distributed computing
 
 ## Software Hierarchy
 
@@ -2218,3 +2219,32 @@ could be made that a new technology stack should replace an existing preferred t
 Many developers are keen on learning new things on a regular basis. They should be encouraged to work on hobby projects
 with technologies of their choice, and they should be able to utilize new programming languages and frameworks in selected
 new projects.
+
+## 7 Fallacies of distributed computing
+
+When you are using a microservice architecture, you have a distributed computing environment and should be
+aware of the seven fallacies of distributed computing:
+
+1. The network is reliable
+   You don't have to prepare for network unreliability separately in each microservice. You can and should use a service mesh like Istio to handle the main issues related to network unreliability. A service mesh offers automatic retries, timeouts, and circuit breakers, for instance.
+2. Latency is zero
+   Latency can vary from time to time. Usually, you deploy your software system to a single cloud region.
+   In that case, latency is small and, for many applications, is on an acceptable level. If you have a real-time application with strict latency requirements, you might need to conduct testing and measure the latency and see
+   if it is acceptable.
+3. Bandwidth is infinite.
+   Bandwidth inside a single cloud region is high. If you transfer high amounts of data, with testing, you can measure if the bandwidth is
+   enough.
+4. The network is secure.
+   Insider attackers might be able to sniff the network traffic. Use a service mesh to implement mTLS between microservices to secure the network traffic.
+5. Network topology does not change
+   Topology can change and produce suboptimal routes that cause bottlenecks.
+6. There is one administrator
+   Many admins can cause problems, e.g., if they make conflicting or incompatible configuration changes.
+7. Transport cost is zero
+   Even if the transport is not separately charged, its cost is baked in other prices, like the used infrastructure and services. The more data
+   you transfer, the more it can cost you. Remember that when you use microservices, all transferred data must be
+   serialized and deserialized, causing additional CPU consumption compared to a monolith where information can be exchanged
+   in the memory. This is a crucial aspect to consider when deciding between a distributed and monolithic architecture.
+8. The network is homogenous
+   The network has many parts. If two communicating virtual machines are in the same rack, the latency and bandwidth are higher compared to connections
+   between VMs in two different availability zones, let alone in two different regions.
