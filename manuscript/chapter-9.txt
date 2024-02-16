@@ -15,6 +15,7 @@ This chapter presents teamwork principles. The following principles are describe
 - Ask and offer help principle
 - Well-defined development team roles principle
 - Competence transfer principle
+- Inter-team communication principle
 
 ## Use Agile Framework Principle
 
@@ -483,3 +484,21 @@ as part of the competence transfer:
 - Explaining the CI/CD pipeline (if it differs from CI/CD pipelines of other software components)
 - Explaining other possible automated functional and non-functional tests, like E2E tests, performance and stability tests
 - Explaining the observability of the software component, i.e., logging, audit logging, metrics, dashboards, and alerts
+
+
+## Inter-Team Communication Principle
+
+> ***Regardless of whether you have a distributed or modular monolithic software architecture, teams should have a high degree of organizational autonomy. This means self-directed and fast-paced teams with minimal communication overhead with other teams.***
+
+*Conway's law* describes how an organization's communication structure resembles the architectural structure of the produced software.
+The software architecture can be a big ball of mud-type monolith without a clear organizational communication structure.
+If teams are siloed, the missing communication between the teams can produce compatibility issues when software components produced by the teams need to work together.
+A team suitable for a modular monolith or microservices architecture mainly communicates internally but co-operates
+with other teams to agree upon interfaces (context mapping) between bounded contexts.
+
+There are some things when coordination between teams is needed. Those are the things that are visible to software's end-users and administrators.
+Software should look and feel harmonious, not something that is crafted by siloed teams.
+For example, coordination is needed in UX/UI design, customer documentation, configuration, and observability (logging format, SLIs, metric dashboards, SLOs, and alarms).
+The team can decide what is best for things that are not visible to customers and users. The team can choose the programming language, framework, libraries, testing methods, and tools.
+High independence in teams and lack of inter-team communication can result in an inability to follow the *DRY principle*. There should always be enough communication to avoid unnecessary duplicated effort.
+
