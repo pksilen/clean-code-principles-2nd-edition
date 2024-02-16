@@ -3992,7 +3992,7 @@ to consume a message from a data source.
 #### Factories
 
 In domain-driven design, the creation of domain objects can be separated from the object classes to factories. Factories are
-objects that are dedicated to creating objects of a particular type. More about the *factory pattern* in a later section of this chapter.
+objects that are dedicated to creating objects of a particular type. Domain object factories can be created using the *factory pattern* which is described in a later section of this chapter.
 
 #### Repositories
 
@@ -4008,6 +4008,14 @@ Services orchestrate operations on aggregate roots. For example, an `OrderServic
 An application service typically uses a related repository to perform persistence-related operations. A service can also be seen as an actor with specific command(s).
 For example, in a data exporter microservice, there can be an input message consumer service that has a command
 to consume a message from a data source.
+
+Domain services usually should not contain access to a repository (or other output interface) or otherwise be side-effectful. Aim for
+a side-effect-free, functional, and immutable domain model (domain services and objects) and put side effects on the outer application service layer. The application service
+layer can have several variations. A single application service (or service class method) implements a use case or a feature. In the simplest form, an application service is a *transaction script* when no domain services are involved. This is usually the case for simple CRUD-based APIs where the application service class performs simple CRUD operations like creating a new sales item. Let's have an example of a transaction script with a backlog item service. The service has an update backlog item use case (or feature) where the application service method first fetches the sprint the backlog item is assigned from a repository and then calls the backlog item factory to create a new backlog item with the specific
+sprint object also given as a parameter in addition to the updated backlog item DTO. The factory should validate if the sprint is valid (a current or a future sprint, not a past one).
+The factory can be implemented in various ways, using one of the *factory patterns*, e.g., a separate factory class or a factory method in the entity class.
+Factory can create different variants of backlog item entities if needed. For example, the factory can create various objects based on the backlog item type, like a `TeamBacklogItem` or `ProductBacklogItem` object.
+After the backlog item is created using the factory, it can be persisted using a repository's update method. In this simple example, there is no need for domain services. In more complex cases, the model usually has domain services to which application services delegate for more complex operations.
 
 #### Events
 
