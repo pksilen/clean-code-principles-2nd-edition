@@ -3205,6 +3205,20 @@ value.convertToString();
 object.convertToJson();
 ```
 
+Java has some factory methods that could be shortened:
+
+```java
+final var value = Integer.parseInt(string);
+final var value = Long.parseLong(string);
+```
+
+Shorter method names would be:
+
+```java
+final var value = Integer.from(intString);
+final var value = Long.from(longString);
+```
+
 You can access a collection element in some languages using the method `at(index)`.
 Here the implicit verb is `get`. I recommend using method names with implicit verbs sparingly and only in circumstances where
 the implicit verb is self-evident and does not force a developer to think.
@@ -7452,7 +7466,8 @@ public class LiteralExpression implements Expression {
 ```
 
 What we need is a parser for the AST. A parser goes through a "sentence" in the specialized language and produces
-an AST ready for evaluation. The parser implementation is not part of this design pattern, but I will present the parser implementation below using the *test-driven development* (TDD) process. The TDD process is better described in the coming *testing principles* chapter.
+an AST ready for evaluation. The parser implementation is not part of this design pattern, but I will present the parser implementation below using the *test-driven development* (TDD) process.
+The TDD process is better described in the coming *testing principles* chapter.
 
 First, we will list the things we need to test.
 
@@ -7474,48 +7489,65 @@ First, we will list the things we need to test.
 
 Let's start with the first test:
 
-```python
-class ParserTests(unittest.TestCase):
-    __parser = Parser()
+```java
+import org.junit.jupiter.api.Test;
 
-    def test_parse__with_literal(self):
-        # WHEN
-        ast = self.__parser.parse('5')
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-        # THEN
-        self.assertEqual(ast.evaluate(), 5)
+
+class ParserTests {
+  private final Parser parser = new Parser();
+
+  @Test
+  void testParseWithLiteral() {
+    // WHEN
+    final var ast = parser.parse("5");
+
+    // THEN
+    assertEquals(5, ast.evaluate());
+  }
+}
 ```
 
 Let's create an implementation that makes the above test pass. We should write the simplest possible code and only enough code to make
 the test pass.
 
-```python
-class Parser:
-    def parse(self, sentence: str) -> Expression:
-        return LiteralExpression(5)
+```java
+public class Parser {
+  Expression parse(final String sentence) {
+    return new LiteralExpression(5);
+  }
+}
 ```
 
 Let's add a test:
 
-```python
-class ParserTests(unittest.TestCase):
-    def test_parse__with_literal(self):
-        # WHEN
-        ast = self.__parser.parse('5')
-        ast2 = self.__parser.parse('7')
+```java
+class ParserTests {
+  private final Parser parser = new Parser();
 
-        # THEN
-        self.assertEqual(ast.evaluate(), 5)
-        self.assertEqual(ast2.evaluate(), 7)
+  @Test
+  void testParseWithLiteral() {
+    // WHEN
+    final var ast = parser.parse("5");
+    final var ast2 = parser.parse("7");
+
+    // THEN
+    assertEquals(5, ast.evaluate());
+    assertEquals(7, ast2.evaluate());
+  }
+}
 ```
 
 Let's generalize the implementation:
 
-```python
-class Parser:
-    def parse(self, sentence: str) -> Expression:
-        literal = int(sentence)
-        return LiteralExpression(literal)
+```java
+public class Parser {
+  Expression parse(final String sentence) {
+    final var literal = Integer.parseInt(sentence);
+    return new LiteralExpression(literal);
+  }
+}
 ```
 
 Let's add a test:
