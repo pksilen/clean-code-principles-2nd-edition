@@ -7554,26 +7554,28 @@ Let's add a test:
 
 ```java
 class ParserTests {
+  // ...
+
+  @Test
+  void testParseWithInvalidLiteral() {
+    // WHEN + THEN
+    assertThrows(Parser.ParseError.class, () -> parser.parse("XX"));
+  }
+}
+```
+
+Let's modify the implementation to make the above test pass:
+
+```java
+public class Parser {
   public static class ParseError extends Exception {
   }
 
-  Expression parse(final String sentence) throws ParseError {
-    final var tokens = sentence.split("\\+");
-    final var leftLiteral = parseLiteral(tokens[0].trim());
-
-    if (tokens.length == 1) {
-      return leftLiteral;
-    } else {
-      final var rightLiteral = parseLiteral(tokens[1].trim());
-      return new AddExpression(leftLiteral, rightLiteral);
-    }
-  }
-
-  Expression parseLiteral(final String string) throws ParseError {
+  Expression tryParse(final String sentence) throws ParseError {
     try {
-      final var literal = Integer.parseInt(string);
+      final var literal = Integer.parseInt(sentence);
       return new LiteralExpression(literal);
-    } catch (final NumberFormatException error) {
+    } catch(final NumberFormatException error) {
       throw new ParseError();
     }
   }
@@ -7617,27 +7619,27 @@ literal parsing into a separate private method:
 
 ```java
 public class Parser {
-  // ...
+  public static class ParseError extends Exception {
+  }
 
-  Expression parse(final String sentence) throw ParseError {
-    final var tokens = sentence.split("+");
-    final var leftLiteral = parseLiteral(token[0].trim());
+  Expression parse(final String sentence) throws ParseError {
+    final var tokens = sentence.split("\\+");
+    final var leftLiteral = parseLiteral(tokens[0].trim());
 
-    if tokens.length == 1 {
+    if (tokens.length == 1) {
       return leftLiteral;
     } else {
-      rightLiteral = parse_literal(tokens[1].trim())
-      return new AddExpression(leftLiteral, rightLiteral)
+      final var rightLiteral = parseLiteral(tokens[1].trim());
+      return new AddExpression(leftLiteral, rightLiteral);
     }
   }
 
-  Expression parseLiteral(final String literalString) throw ParseError {
-   try {
-     final var literal = Integer.parseInt(sentence);
-     return new LiteralExpression(literal);
-   } catch(final NumberFormatException error) {
-     throw new ParseError();
-   }
+  Expression parseLiteral(final String string) throws ParseError {
+    try {
+      final var literal = Integer.parseInt(string);
+      return new LiteralExpression(literal);
+    } catch (final NumberFormatException error) {
+      throw new ParseError();
     }
   }
 }
@@ -7645,18 +7647,21 @@ public class Parser {
 
 Let's add a test:
 
-```python
-class ParserTests(unittest.TestCase):
-    # ...
+```java
+class ParserTests {
+  // ...
 
-    def test_try_parse__with_addition(self):
-        # WHEN
-        ast = self.__parser.try_parse('2+5')
-        ast2 = self.__parser.try_parse(' 2  +   5 ')
+  @Test
+  void testParseWithAddition() throws Parser.ParseError {
+    // WHEN
+    final var ast = parser.parse("2+5");
+    final var ast2 = parser.parse(" 3  +   5 ");
 
-        # THEN
-        self.assertEqual(ast.evaluate(), 7)
-        self.assertEqual(ast2.evaluate(), 7)
+    // THEN
+    assertEquals(7, ast.evaluate());
+    assertEquals(8, ast2.evaluate());
+  }
+}
 ```
 
 We notice that the above test passes. Let's add another test, then:
