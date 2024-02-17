@@ -606,6 +606,9 @@ Modifying existing code always poses a risk of breaking something that works.
 Any time you find yourself modifying some method in an existing class, you should consider if
 this principle could be followed and if the modification could be avoided. Every time you modify an existing class, you can
 introduce a bug in the working code. The idea of this principle is to leave the working code untouched so it does not get accidentally broken.
+When applying the *open-closed principle*, you create a kind of plugin architecture where new functionality is introduced as plugins (new
+implementation classes) that are plugged into existing code using, e.g., factories and dependency injection.
+
 The *open-closed principle* is called *protected variations* in the GRASP principles. The protected variation principle protects existing
 classes from variations in other classes. For example, if you have a `ConfigReader` class that needs to parse the configuration, but the configuration format can vary. The `ConfigReader` class is protected from variations by introducing a `ConfigParser` interface for which various implementations can be provided. The `ConfigReader` depends only on the `ConfigParser` interface and does not need to know what
 particular parsing implementation is actually used. There could be a `JsonConfigParser` class for parsing the configuration in JSON format, and later, a `YamlConfigParser` class could be introduced to parse the configuration in YAML format.
