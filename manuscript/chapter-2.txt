@@ -7417,30 +7417,38 @@ We need to define the expression classes. Our implementation will have one non-l
 that represents an addition operation and another leaf type expression class named `LiteralExpression` that represents a literal
 (integer) value.
 
-```python
-from typing import Protocol
+```java
+public interface Expression {
+  int evaluate();
+}
 
 
-class Expression(Protocol):
-    def evaluate(self) -> int:
-        pass
+public class AddExpression implements Expression {
+  private final Expression left;
+  private final Expression right;
+
+  public AddExpression(final Expression left, final Expression right) {
+    this.left = left;
+    this.right = right;
+  }
+
+  public int evaluate() {
+    return left.evaluate() + right.evaluate();
+  }
+}
 
 
-class AddExpression(Expression):
-    def __init__(self, left: Expression, right: Expression):
-         self.__left = left
-         self.__right = right
+public class LiteralExpression implements Expression {
+  private final int value;
 
-    def evaluate(self) -> int:
-        return self.__left.evaluate() + self.__right.evaluate()
+  public LiteralExpression(final int value) {
+    this.value = value;
+  }
 
-
-class LiteralExpression(Expression):
-    def __init__(self, value: int):
-        self.__value = value
-
-    def evaluate(self) -> int:
-        return self.__value
+  public int evaluate() {
+    return value;
+  }
+}
 ```
 
 What we need is a parser for the AST. A parser goes through a "sentence" in the specialized language and produces
