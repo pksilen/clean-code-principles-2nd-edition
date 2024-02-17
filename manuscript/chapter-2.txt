@@ -7393,22 +7393,20 @@ The [abstract syntax tree](https://en.wikipedia.org/wiki/Abstract_syntax_tree) (
 structure of the expressions. The expressions are divided into two main types: a leaf and a non-leaf expression:
 
 ```java
-public class Expression {
-  void evaluate() {
+public interface Expression {
+  void evaluate();
+}
+
+
+public class LeafExpression implements Expression {
+  public void evaluate() {
     // ...
   }
 }
 
 
-public class LeafExpression extends Expression {
-  void evaluate() {
-    // ...
-  }
-}
-
-
-public class NonLeafExpression extends Expression {
-  void evaluate() {
+public class NonLeafExpression implements Expression {
+  public void evaluate() {
     // ...
   }
 }
