@@ -6956,7 +6956,7 @@ action/command pattern with the Zustand library in my forthcoming book: *Clean C
 
 Below is a Redux reducer:
 
-_todosReducer.js_
+{title: "todosReducer.js"}
 ```
 function todosReducer(state = initialState, action) {
   switch (action.type) {
