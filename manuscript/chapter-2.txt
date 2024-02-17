@@ -7392,25 +7392,31 @@ for (final var number : reversedNumbers) {
 The [abstract syntax tree](https://en.wikipedia.org/wiki/Abstract_syntax_tree) (AST) is represented by expression objects using the *composite pattern* to create a tree
 structure of the expressions. The expressions are divided into two main types: a leaf and a non-leaf expression:
 
-```python
-class Expression:
-    # ...
-    def evaluate(self):
-        # ...
+```java
+public class Expression {
+  void evaluate() {
+    // ...
+  }
+}
 
 
-class LeafExpression(Expression):
-    def evaluate(self):
-        # ...
+public class LeafExpression extends Expression {
+  void evaluate() {
+    // ...
+  }
+}
 
 
-class NonLeafExpression(Expression):
-    def evaluate(self):
-        # ...
+public class NonLeafExpression extends Expression {
+  void evaluate() {
+    // ...
+  }
+}
 ```
 
 Let's have an example with a simple specialized language where we can write addition operations, like `1 + 2 + 3`.
-We need to define the expression classes. Our implementation will have one non-leaf type expression class called `AddExpression` that represents an addition operation and another leaf type expression class named `LiteralExpression` that represents a literal
+We need to define the expression classes. Our implementation will have one non-leaf type expression class called `AddExpression`
+that represents an addition operation and another leaf type expression class named `LiteralExpression` that represents a literal
 (integer) value.
 
 ```python
