@@ -7321,47 +7321,61 @@ export default function TodosTableView(
 
 > ***The iterator pattern can be used to add iteration capabilities to a class.***
 
-Let's create a reverse iterator for the Python's `list` class. We implement the `Iterator` abstract base class by supplying an implementation
-for the `__next__` method:
+Let's create a reverse iterator for Java's `List` class. We implement the `Iterator` interface by supplying implementations
+for the `hasNext` and the `next` methods:
 
-```python
-from collections.abc import Iterator
-from typing import Final, TypeVar
+{title: "ReverseListIterator.java"}
+```java
+public class ReverseListIterator<T> implements Iterator<T> {
+  private final List<T> values;
+  private int iteratorPosition;
 
-T = TypeVar('T')
+  public ReverseListIterator(final List<T> values) {
+    this.values = Collections.unmodifiableList(values);
+    iteratorPosition = values.size() - 1;
+  }
 
+  @Override
+  public boolean hasNext() {
+    return iteratorPosition >= 0;
+  }
 
-class ReverseListIterator(Iterator[T]):
-    def __init__(self, values: list[T]):
-        self.__values: Final = values.copy()
-        self.__position = len(values) - 1
-
-    def __next__(self) -> T:
-        if self.__position < 0:
-            raise StopIteration()
-        next_value = self.__values[self.__position]
-        self.__position -= 1
-        return next_value
-
-    def __iter__(self) -> Iterator[T]:
-        return self
+  @Override
+  public T next() {
+    // Note! We don't check the iteratorPosition
+    // validity here, it is checked in hasNext() method,
+    // which must be called before calling next() method
+    // and only call next() method if hasNext() method
+    // returned true
+    final var nextValue = values.get(iteratorPosition);
+    iteratorPosition--;
+    return nextValue;
+  }
+}
 ```
 
-We can put the `ReverseListIterator` class into use in a `ReverseList` class defined below:
+We can put the `ReverseListIterator` class into use in a `ReverseArrayList` class defined below:
 
-```python
-class ReverseList(list[T]):
-    def  __iter__(self) -> Iterator[T]:
-      return ReverseListIterator(self)
+{title: "ReverseArrayList.java"}
+```java
+public class ReverseArrayList<T> extends ArrayList<T>
+{
+  @Override
+  public Iterator<T> iterator() {
+    return new ReverseListIterator<>(this);
+  }
+}
 ```
 
-Now, we can use the new iterator to iterate over a list in reverse order:
+Now we can use the new iterator to iterate over a list in reverse order:
 
-```python
-reversed_numbers = ReverseList([1, 2, 3, 4, 5])
+```java
+final var reversedNumbers = new ReverseArrayList<Integer>();
+reversedNumbers.addAll(List.of(1,2,3,4,5));
 
-for number in reversed_numbers:
-    print(number)
+for (final var number : reversedNumbers) {
+  System.out.println(number);
+}
 
 // Prints:
 // 5
