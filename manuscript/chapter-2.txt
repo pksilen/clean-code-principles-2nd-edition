@@ -6949,6 +6949,379 @@ add3ToValuesAction.undo();
 System.out.println(values);  // Prints [1, 2]
 ```
 
+Let's have an example using the [Redux](https://redux.js.org/) library's *legacy syntax*, well-known by many React developers.
+We are not using the newer syntax offered by the *@reduxjs/toolkit* package. For modern React state management, there are
+simpler-to-use libraries than Redux Toolkit, namely [Zustand](https://github.com/pmndrs/zustand). I will discuss using the
+action/command pattern with the Zustand library in my forthcoming book: *Clean Code Principles for Frontends: React Edition*.
+
+Below is a Redux reducer:
+
+_todosReducer.js_
+```
+function todosReducer(state = initialState, action) {
+  switch (action.type) {
+    case 'ADD_TODO':
+      return {
+        ...state,
+        todos: [...state.todos, {
+          id: action.payload.id,
+          name: action.payload.name,
+          isDone: false
+        }]
+      };
+    case 'MARK_TODO_DONE':
+      const newTodos = state.todos.map(todo => {
+        if (todo.id !== action.payload.id) {
+          return todo;
+        }
+
+        return {
+          ...todo,
+          isDone: true
+        };
+      });
+
+      return {
+        ...state,
+        todos: newTodos
+      };
+    default:
+      return state;
+  }
+}
+```
+
+In the above example, we define a `todosReducer` which can handle two different actions: `ADD_TODO` and
+`MARK_TODO_DONE`. The implementation of the actions is inlined inside the switch statement, which makes the code somewhat
+hard to read. We can refactor the above code so that we introduce two classes for action objects:
+
+_AddTodoAction.ts_
+```
+export default class AddTodoAction {
+  constructor(
+    private readonly id: number,
+    private readonly name: string
+  ) {}
+
+  perform(state: TodoState): TodoState {
+    return {
+      ...state,
+      todos: [...state.todos, {
+        id: this.id,
+        name: this.name,
+        isDone: false
+      }]
+   };
+  }
+}
+```
+
+_MarkDoneTodoAction.ts_
+```
+export default class MarkDoneTodoAction {
+  constructor(private readonly id: number) {}
+
+  perform(state: TodoState): TodoState {
+    const newTodos = state.todos.map(todo => {
+      if (todo.id !== this.id) {
+        return todo;
+      }
+
+      return {
+        ...todo,
+        isDone: true
+      };
+    });
+
+    return {
+      ...state,
+      todos: newTodos
+    };
+  }
+}
+```
+
+Now we can redesign the `todosReducer` to look like the following:
+
+_todosReducer.ts_
+```
+import AddTodoAction from './AddTodoAction';
+import MarkDoneTodoAction from './MarkDoneTodoAction';
+
+function todosReducer(
+  state: TodoState = initialState,
+  { payload: { id, name }, type }: any
+) {
+  switch (type) {
+    case 'ADD_TODO':
+      return new AddTodoAction(id, name).perform(state);
+    case 'MARK_TODO_DONE':
+      return new MarkDoneTodoAction(id).perform(state);
+    default:
+      return state;
+  }
+}
+```
+
+We have separated actions into classes, and the `todosReducer` function becomes simpler.
+However, we should make the code object-oriented by replacing the conditionals (switch-case) with polymorphism.
+Let's do the following modifications: introduce a generic base class for actions and a base class for
+todo-related actions:
+
+_AbstractAction.ts_
+```
+export default abstract class AbstractAction<S> {
+  abstract perform(state: S): S;
+}
+```
+
+_AbstractTodoAction.ts_
+```
+import AbstractAction from './AbstractAction';
+
+export default abstract class AbstractTodoAction extends
+  AbstractAction<TodoState> {}
+```
+
+The todo action classes must be modified to extend the `AbstractTodoAction` class:
+
+_AddTodoAction.ts_
+```
+import AbstractTodoAction from './AbstractTodoAction';
+
+export default class AddTodoAction extends AbstractTodoAction {
+  // ...
+}
+```
+
+_MarkDoneTodoAction.ts_
+```
+import AbstractTodoAction from './AbstractTodoAction';
+
+export default class MarkDoneTodoAction extends AbstractTodoAction {
+  // ...
+}
+```
+
+Then we can introduce a generic function to create a reducer. This function will create a reducer function
+that perform actions for a given action base class:
+
+_createReducer.ts_
+```
+import AbstractAction from './AbstractAction';
+
+export default function createReducer<S>(
+  initialState: S,
+  ActionBaseClass:
+    abstract new (...args: any[]) => AbstractAction<S>
+) {
+  return function(
+    state: S = initialState,
+    action: { type: AbstractAction<S> }
+   ) {
+     return action.type instanceof ActionBaseClass
+       ? action.type.perform(state)
+       : state;
+  };
+}
+```
+
+Let's create the initial state for todos:
+
+_Todo.ts_
+```
+export type Todo = {
+  id: number,
+  name: string,
+  isDone: boolean
+}
+```
+
+_initialTodosState.ts_
+```
+import { Todo } from './Todo';
+
+export type TodoState = {
+  todos: Todo[];
+}
+
+const initialTodosState = {
+  todos: []
+} as TodoState
+
+export default initialTodosState;
+```
+
+Next, we can create a Redux store using the `createReducer` function, the initial todo state, and the base action class for
+todo-related actions:
+
+_store.ts_
+```
+import { combineReducers, createStore } from "redux";
+import createReducer from "./createReducer";
+import initialTodosState from "./initialTodoState";
+import AbstractTodoAction from "./AbstractTodoAction";
+
+const rootReducer = combineReducers({
+  todoState: createReducer(initialTodosState, AbstractTodoAction)
+});
+
+export default createStore(rootReducer);
+```
+
+Now we have an object-oriented solution for dispatching actions in the following way:
+
+<div class="sourceCodeWithoutLabel">
+
+```
+dispatch({ type: new AddTodoAction(id, name) });
+dispatch({ type: new MarkTodoDoneAction(id) });
+```
+</div>
+
+Let's modify the `AbstractAction` class to support undoable actions. By default, an action is not undoable:
+
+_AbstractAction.ts_
+```
+export default abstract class AbstractAction<S> {
+  abstract perform(state: S): S;
+
+  getName(): string {
+    return this.constructor.name;
+  }
+
+  isUndoable(): boolean {
+    return false;
+  }
+}
+```
+
+Let's also create a new class to serve as a base class for undoable actions:
+
+_AbstractUndoableAction.ts_
+```
+import AbstractAction from "./AbstractAction";
+
+export default abstract class AbstractUndoableAction<S> extends
+         AbstractAction<S> {
+  override isUndoable(): boolean {
+    return true;
+  }
+}
+```
+
+Let's define a class for undo-actions. An undo-action
+sets the state as it was before performing the actual action.
+
+_UndoAction.ts_
+```
+import AbstractAction from "./AbstractAction";
+
+export default class UndoAction<S> extends AbstractAction<S> {
+  constructor(
+    private readonly actionName: string,
+    private readonly ActionBaseClass:
+      abstract new (...args: any[]) => AbstractAction<S>,
+    private readonly state: S
+  ) {
+    super();
+  }
+
+  override getName(): string {
+    return this.actionName;
+  }
+
+  override perform(state: S): S {
+    return this.state;
+  }
+
+  getActionBaseClass():
+    abstract new (...args: any[]) => AbstractAction<S>
+  {
+    return this.ActionBaseClass;
+  }
+}
+```
+
+Let's modify the `createReducer` function to create undo-actions for undoable actions and store them in a stack named `undoActions`.
+When a user wants to perform an undo of the last action, the topmost element from the `undoActions` stack can be popped and executed.
+
+_undoActions.ts_
+```
+import UndoAction from "./UndoAction";
+
+const undoActions = [] as UndoAction<any>[];
+export default undoActions;
+```
+
+_createReducer.ts_
+```
+// ...
+import undoActions from './undoActions';
+import AbstractAction from "./AbstractAction";
+import UndoAction from "./UndoAction";
+
+function createReducer<S>(
+  initialState: S,
+  ActionBaseClass:
+    abstract new (...args : any[]) => AbstractAction<S>
+) {
+  return function(
+    state: S = initialState,
+    action: { type: AbstractAction<S> }
+  ) {
+    let newState;
+
+    if (action.type instanceof UndoAction &&
+        action.type.getActionBaseClass() === ActionBaseClass) {
+      newState = action.type.perform(state);
+    } else if (action.type instanceof ActionBaseClass) {
+      if (action.type.isUndoable()) {
+          undoActions.unshift(new UndoAction(
+            action.type.getName(),
+            ActionBaseClass,
+            state));
+      }
+
+      newState = action.type.perform(state);
+    } else {
+      newState = state;
+    }
+
+    return newState;
+  };
+}
+```
+
+Commands/Actions can also be defined without an object-oriented approach using a newly created function with a closure.
+In the below example, the function `() => toggleTodoDone(id)` is redefined for each todo. The function redefinition will
+always create a new closure that stores the current `id` variable value. We can treat the `() => toggleTodoDone(id)` as an
+action or command because it "encapsulates" the `id` value in the closure.
+
+_TodosTableView.tsx_
+```
+// type Props = ...
+
+export default function TodosTableView(
+  { toggleTodoDone, todos }: Props
+) {
+  const todoElements = todos.map(({ id, name }) => (
+    <tr>
+      <td>{id}</td>
+      <td>{name}</td>
+      <td>
+        <input
+          type="checkbox"
+          onChange={() => toggleTodoDone(id)}
+        />
+      </td>
+    </tr>
+  ));
+
+  return <table><tbody>{todoElements}</tbody></table>;
+}
+```
+
 #### Iterator Pattern
 
 > ***The iterator pattern can be used to add iteration capabilities to a class.***
