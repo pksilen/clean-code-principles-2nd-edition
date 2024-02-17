@@ -6950,9 +6950,7 @@ System.out.println(values);  // Prints [1, 2]
 ```
 
 Let's have an example using the [Redux](https://redux.js.org/) library's *legacy syntax*, well-known by many React developers.
-We are not using the newer syntax offered by the *@reduxjs/toolkit* package. For modern React state management, there are
-simpler-to-use libraries than Redux Toolkit, for example [Zustand](https://github.com/pmndrs/zustand). I will discuss using the
-action/command pattern with the Zustand library in my forthcoming book: *Clean Code Principles for Frontends: React Edition*.
+We are not using the newer syntax offered by the *@reduxjs/toolkit* package.
 
 Below is a Redux reducer:
 
