@@ -7816,15 +7816,18 @@ If you are interested in creating a parser, read about [Recursive descent parser
 
 For the expression `1 + 2 + 3`, the parser should produce the following kind of AST:
 
-```python
-# Parser should return 'ast' of below kind
-ast = AddExpression(
-    LiteralExpression(1),
-    AddExpression(LiteralExpression(2), LiteralExpression(3))
-)
+```java
+// Parser should return 'ast' of below kind
+final var ast = new AddExpression(
+  new LiteralExpression(1),
+  new AddExpression(
+    new LiteralExpression(2),
+    new LiteralExpression(3)
+  )
+);
 
-# Prints 6
-print(ast.evaluate())
+// Prints 6
+System.out.print(ast.evaluate());
 ```
 
 #### State Pattern
