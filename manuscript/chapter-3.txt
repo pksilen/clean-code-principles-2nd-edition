@@ -2809,41 +2809,49 @@ public class Rectangle {
 
 You can see from the above code that we no longer need to perform *shotgun surgery* if we need to change the `Rectangle` class. For example, let's say that our rectangles should always have a height double the width. We can refactor the `Rectangle` class to the following:
 
-```python
-class Rectangle:
-    def __init__(
-        self,
-        width: float,
-        drawer: Drawer,
-        calculator: Calculator,
-        sizer: Sizer,
-    ):
-        self.__width = width
-        self.__height = 2 * width
-        self.__drawer = drawer
-        self.__calculator = calculator
-        self.__sizer = sizer
+```java
+public class Rectangle {
+  private float width;
+  private float height;
+  private final Drawer drawer;
+  private final Calculator calculator;
+  private final Sizer sizer;
 
-    def draw(self) -> None:
-        self.__drawer.draw_rectangle(self.__width, self.__height)
+  public Rectangle(
+    final float width,
+    final Drawer drawer,
+    final Calculator calculator,
+    final Sizer sizer
+  ) {
+    this.width = width;
+    this.height = 2 * width;
+    this.drawer = drawer;
+    this.calculator = calculator;
+    this.sizer = sizer;
+  }
 
-    def calculate_area(self) -> float:
-        return self.__calculator.calc_rect_area(
-            self.__width, self.__height
-        )
+  public void draw() {
+    drawer.drawRectangle(width, height);
+  }
 
-    def calculate_perimeter(self) -> float:
-        return self.__calculator.calc_rect_perimeter(
-            self.__width, self.__height
-        )
+  public float calculateArea() {
+    return calculator.calcRectArea(width, height);
+  }
 
-    def increase_width(self, percentage: float) -> None:
-        self.__width = self.__sizer.increase(self.__width, percentage)
-        self.__height = 2 * self.__width
+  public float calculatePerimeter() {
+    return calculator.calcRectPerimeter(width, height);
+  }
 
-    def increase_height(self, percentage: float) -> None:
-        self.__height = self.__sizer.increase(self.__height, percentage)
-        self.__width = self.__height / 2
+  public void increaseWidth(final float percentage) {
+    width = sizer.increase(width, percentage);
+    height = 2 * width;
+  }
+
+  public void increaseHeight(final float percentage) {
+    height = sizer.increase(height, percentage);
+    width = height / 2
+  }
+}
 ```
 
 ## Static Code Analysis Principle
