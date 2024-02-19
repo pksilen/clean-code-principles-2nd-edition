@@ -1950,7 +1950,7 @@ bool TransformThread::transform(
 
 As an exception to this rule, you can have multiple return statements in a function when the function has optimal length and would become too long if it is refactored to contain a single return statement.
 Additionally, it is required that the semantic meaning of the return value is clear from the function name or the return type of the function. This is usually true if the return value is a boolean value or
-an object. In case of multiple return statements, you can use so-called [guard clauses](https://en.wikipedia.org/wiki/Guard_(computer_science)) at the beginning of the function. These guard clauses are if-statement that can return early from the function if a
+an object. In case of multiple return statements, you can use so-called [guard clauses](https://en.wikipedia.org/wiki/Guard_(computer_science)) at the beginning of the function. These guard clauses are if-statements that can return early from the function if a
 certain condition is met. You can have multiple guard clauses. Here is a Java example of a guard clause:
 
 ```java
@@ -2013,7 +2013,6 @@ private areEqual(
 
 As the second exception to this rule, you can use multiple return locations in a factory because you know
 from the factory name what type of objects it creates. Below is an example factory with multiple return statements:
-
 
 ```cpp
 enum class CarType
@@ -2088,12 +2087,13 @@ Those parameter hints might reveal cases where arguments for a function are not 
 
 You can give a function argument with the wrong type when type annotations are not used. For example,
 a function requires a string representation of a number, but you provide a number. Naming function arguments correctly can help. Instead of
-naming a string argument, *amount*, the argument should be named as *amount_string* or *amount_as_string*.
+naming a string argument, *amount*, the argument should be named as *amountString* or *amountAsString*.
 
 ### Function Return Value Type Might Be Misunderstood
 
-Determining the function return value type can be difficult. It is not necessarily 100% clear from the name of the function. For example, if you have a function named `get_value`, the return value type is not 100% clear. It might be apparent only if you know the context of the function well. As an improvement,
-the function should be appropriately named, for example: `get_value_as_string()`, if the returned value is always a string. If the return value type is unclear
+Determining the function return value type can be difficult. It is not necessarily 100% clear from the name of the function. For example,
+if you have a function named `getValue`, the return value type is not 100% clear. It might be apparent only if you know the context of the function well. As an improvement,
+the function should be appropriately named, for example: `getValueAsString()`, if the returned value is always a string. If the return value type is unclear
 when looking at the function name, you must analyze the function's source code to determine the return value
 type. That is unnecessary and error-prone manual work that can be avoided using function return type annotations.
 
