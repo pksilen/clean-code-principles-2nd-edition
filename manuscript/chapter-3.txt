@@ -698,6 +698,7 @@ spring-example-service/
         └── com.silensoft.springexampleservice/
             ├── domainA/
             │   ├── AController.java
+                ├── ADbEntity.java            │
             │   ├── ADto.java
             │   ├── AEntity.java
             │   ├── AError.java
@@ -705,13 +706,13 @@ spring-example-service/
             │   └── AService.java
             └── domainB/
                 ├── BController.java
+                ├── BDbEntity.java
                 ├── BDto.java
                 ├── BEntity.java
                 ├── BError.java
                 ├── BRepository.java
                 └── BService.java
 ```
-</div>
 
 You can have several levels of nested domains:
 
