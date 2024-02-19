@@ -436,30 +436,31 @@ of the original code:
 There is a reason why the `map` function takes the parameters in that order. It is to make function partial application
 possible.
 
-### Naming Class Attributes
+### Naming Class Properties
 
-Class attributes should be named so that the class name is not repeated in the attribute names. Below is an example of incorrect naming:
+Class properties (i.e., class attributes, fields, or member variables) should be named so that the class name is not repeated in the
+property names. Below is a Java example of incorrect naming:
 
-```python
-class Order:
-    def __init__(self, order_id: int, order_state: OrderState):
-        self.__order_id = order_id
-        self.__order_state = order_state
+```java
+public class Order {
+  private long orderId;
+  private OrderState orderState;
+}
 ```
 
 Below is the above code with corrected names:
 
-```python
-class Order:
-    def __init__(self, id_: int, state: OrderState):
-        self.__id = id_
-        self._state = state
+```java
+public class Order {
+  private long id;
+  private OrderState state;
+}
 ```
 
-If you have an attribute to store a callback function (e.g., event handler or lifecycle callback), you should name it so that it tells on what occasion the stored
-callback function is called. Name attributes storing event handlers using the
-following pattern: `on` + `<event-type>`, e.g., `on_click` or `on_submit`. Name attributes storing lifecycle callbacks in a similar way you
-would name a lifecycle method, for example: `on_init`, `after_mount`, or `before_mount`.
+If you have a class property to store a callback function (e.g., event handler or lifecycle callback), you should name it so that it tells on what occasion the stored
+callback function is called. Name properties storing event handlers using the
+following pattern: `on` + `<event-type>`, e.g., `onClick` or `onSubmit`. Name properties storing lifecycle callbacks in a similar way you
+would name a lifecycle method, for example: `onInit`, `afterMount`, or `beforeMount`.
 
 ### General Naming Rules
 
