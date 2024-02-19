@@ -1601,6 +1601,9 @@ have a method for parsing an integer from a string. That is a method where imple
 as a static method in a final utility class:
 
 ```java
+// Utility class is declared final
+// You should not be able to extend the utility class,
+// because the method implementation are not expected to change
 public final class ParseUtils {
   private ParseUtils() {
     // Utility class with static methods only
