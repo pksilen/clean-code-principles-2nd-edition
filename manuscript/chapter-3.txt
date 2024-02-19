@@ -2233,61 +2233,74 @@ public class Bird {
 To make the above class smaller, we can extract two behavioral classes: `BirdMover` and `BirdSoundMaker`.
 After refactoring, we have the following classes:
 
-```python
-from typing import Protocol
-
-class BirdMover(Protocol):
-    def move(self):
-        pass
+```java
+public interface BirdMover {
+  void move();
+}
 
 
-class BirdMoverImpl(BirdMover):
-    def move(self):
-        # ...
+public class BirdMoverImpl implements BirdMover {
+  public void move() {
+    // Use the below helper methods ...
+  }
 
-    def __move_helper1(self):
-            # ...
+  private void moveHelper1() {
+    // ...
+  }
 
-    # ...
+  // ...
 
-    def __move_helper4(self):
-        # ...
-
-
-class BirdSoundMaker:
-    def make_sound(self):
-        pass
-
-
-class BirdSoundMakerImpl(BirdSoundMaker):
-    def make_sound(self):
-        # ...
-
-    def make_sound_helper1(self):
-        # ...
-
-    # ...
-
-    def make_sound_helper4(self):
-        # ...
+  private void moveHelper4() {
+    // ...
+  }
+}
 
 
-class Bird:
-    def __init__(self, mover: BirdMover, sound_maker: BirdSoundMaker):
-        self.__mover: Final = mover
-        self.__sound_maker: Final = sound_maker
+public interface BirdSoundMaker {
+  void makeSound();
+}
 
-    def move(self):
-        # Call self.__mover.move()
 
-    def make_sound(self):
-        # Call self.__sound_maker.make_sound()
+public class BirdSoundMakerImpl implements BirdSoundMaker {
+  public void makeSound() {
+    // Use the below helper methods ...
+  }
 
-     # Possibly some other public methods ...
+  private void makeSoundHelper1() {
+    // ...
+  }
+
+  // ...
+
+  private void makeSoundHelper4() {
+    // ...
+  }
+}
+
+
+public class Bird {
+  private final BirdMover mover;
+  private final BirdSoundMaker soundMaker;
+
+  public Bird(final BirdMover mover, final BirdSoundMaker soundMaker) {
+    this.mover = mover;
+    this.soundMaker = soundMaker;
+  }
+
+  public void move() {
+    // Call mover.move()
+  }
+
+  public void makeSound() {
+    // Call soundMaker.makeSound()
+  }
+
+  // Possibly some other public methods ...
+}
 ```
 
-The above solution allows us to use the *strategy pattern*. We can introduce new classes that implement the `BirdMover` and `BirdSoundMaker` protocols and supply them to the `Bird` class constructor. We can now modify the behavior of the `Bird` class
-using the *open-closed principle*.
+The above solution allows us to use the *strategy pattern*. We can introduce new classes that implement the `BirdMover` and `BirdSoundMaker` protocols and supply them to the `Bird` class constructor.
+We can now modify the behavior of the `Bird` class using the *open-closed principle*.
 
 ### Extract Constant
 
