@@ -517,14 +517,17 @@ consistent and professional. It makes the code look pretty bad if no naming conv
 
 > ***Structuring a source code repository systematically in a certain way makes it easy for other developers to discover wanted information quickly.***
 
-You can create source code repositories for starter projects. Create a source code repository containing a starter project per each technology stack to ensure the uniformity of the repository structures.
-Below is an example of structuring a source code repository for a Python microservice.
-In the below example, a containerized (Docker) microservice deployed to a Kubernetes cluster is assumed. Your CI/CD tool might require
-the CI/CD pipeline code to reside in a specific directory. But if not, place the CI/CD pipeline code in a *cicd* directory.
+Below are examples of ways to structure source code repositories for Java, C++, and JavaScript/TypeScript microservices.
+In the below examples, a containerized (Docker) microservice deployed to a Kubernetes cluster is assumed. Your CI tool might require
+that the CI/CD pipeline code must reside in a specific directory. But if not, place the CI/CD pipeline code in a _cicd_ directory.
+
+### Java Source Code Repository Structure
+
+Below is the proposed source code repository structure for a Java microservice (Gradle build tool is used):
 
 ```
-my-python-service
-├── cicd
+java-service
+├── ci-cd
 │   └── Jenkinsfile
 ├── docker
 │   ├── Dockerfile
@@ -533,8 +536,11 @@ my-python-service
 ├── env
 │   ├── .env.dev
 │   └── .env.ci
+├── gradle
+│   └── wrapper
+│       └── ...
 ├── helm
-│   └── my-python-service
+│   └── java-service
 │       ├── templates
 │       ├── .helmignore
 │       ├── Chart.yaml
@@ -547,10 +553,104 @@ my-python-service
 ├── scripts
 │   └── // Bash scripts here...
 ├── src
-├── venv
+│   ├── main
+│   │   ├── java
+│   │   │   └── com.domain.java-service
+│   │   │       └── // source code
+│   │   └── resources
+│   └── test
+│       ├── java
+│       │   └── com.domain.java-service
+│       │       └── // unit test code
+│       └── resources
 ├── .gitignore
-├── .pylintrc
+├── build.gradle
+├── gradlew
+├── gradlew.bat
+├── README.MD
+└── settings.gradle
+```
+
+### C++ Source Code Repository Structure
+
+Below is the proposed source code repository structure for a C++ microservice (CMake build tool is used):
+
+```
+cpp-service
+├── ci-cd
+│   └── Jenkinsfile
+├── docker
+│   ├── Dockerfile
+│   └── docker-compose.yml
+├── docs
+├── env
+│   ├── .env.dev
+│   └── .env.ci
+├── helm
+│   └── cpp-service
+│       ├── templates
+│       ├── .helmignore
+│       ├── Chart.yaml
+│       ├── values.schema.json
+│       └── values.yaml
+├── integration-tests
+│   ├── features
+│   │   └── feature1.feature
+│   └── steps
+├── scripts
+│   └── // Bash scripts here...
+├── src
+│   ├── // source code here
+│   │   main.cpp
+│   └── CMakeLists.txt
+├── test
+│   ├── // unit test code
+│   │   main.cpp
+│   └── CMakeLists.txt
+├── .gitignore
+├── CMakeLists.txt
 └── README.MD
+```
+
+### JavaScript/TypeScript Source Code Repository Structure
+
+Below is the proposed source code repository structure for a JavaScript/TypeScript microservice:
+
+```
+ts-service
+├── ci-cd
+│   └── Jenkinsfile
+├── docker
+│   ├── Dockerfile
+│   └── docker-compose.yml
+├── docs
+├── env
+│   ├── .env.dev
+│   └── .env.ci
+├── helm
+│   └── ts-service
+│       ├── templates
+│       ├── .helmignore
+│       ├── Chart.yaml
+│       ├── values.schema.json
+│       └── values.yaml
+├── integration-tests
+│   ├── features
+│   │   └── feature1.feature
+│   └── steps
+├── scripts
+│   └── // Bash scripts here...
+├── src
+│   └── // source code here
+├── test
+│   └── // unit test code here
+├── .gitignore
+├── .eslintrc.json
+├── .prettier.rc
+├── package.json
+├── package-lock.json
+├── README.MD
+└── tsconfig.json
 ```
 
 Unit test modules should be in the same directory as source code modules, but you can also put them in a specific *test* directory.
@@ -559,94 +659,109 @@ Unit test modules should be in the same directory as source code modules, but yo
 
 > ***Structure source code tree primarily by domains, not by technical details. Each source code directory should have a single responsibility at its abstraction level.***
 
-Below is an example of a microservice's *src* directory that is *not* organized by domains but is
+Below is an example of a Spring Boot microservice's _src_ directory that is not organized by domains but is
 incorrectly organized according to technical details:
 
 ```
-example-service/
+spring-example-service/
 └── src/
-    ├── controllers/
-    │   ├── AController.py
-    │   └── BController.py
-    ├── entities/
-    │   ├── AEntity.py
-    │   └── BEntity.py
-    ├── errors/
-    │   ├── AError.py
-    │   └── BError.py
-    ├── dtos/
-    │   ├── ADto.py
-    │   └── BDto.py
-    ├── repositories/
-    │   ├── ARepository.py
-    │   └── BRepository.py
-    └── services/
-        ├── AService.py
-        └── BService.py
+    └── java/
+        └── com.silensoft.springexampleservice/
+            ├── controllers/
+            │   ├── AController.java
+            │   └── BController.java
+            ├── entities/
+            │   ├── AEntity.java
+            │   └── BEntity.java
+            ├── errors/
+            │   ├── AError.java
+            │   └── BError.java
+            ├── dtos/
+            │   ├── ADto.java
+            │   └── BDto.java
+            ├── repositories/
+            │   ├── DbAEntity.java
+            │   ├── DbBEntity.java
+            │   ├── ARepository.java
+            │   └── BRepository.java
+            └── services/
+                ├── AService.java
+                └── BService.java
 ```
 
 Below is the above example modified so that directories are organized by domains:
 
 ```
-example-service/
+spring-example-service/
 └── src/
-    ├── domainA/
-    │   ├── AController.py
-    │   ├── ADto.py
-    │   ├── AEntity.py
-    │   ├── AError.py
-    │   ├── ARepository.py
-    │   └── AService.py
-    └── domainB/
-        ├── BController.py
-        ├── BDto.py
-        ├── BEntity.py
-        ├── BError.py
-        ├── BRepository.py
-        └── BService.py
+    └── java/
+        └── com.silensoft.springexampleservice/
+            ├── domainA/
+            │   ├── AController.java
+            │   ├── ADto.java
+            │   ├── AEntity.java
+            │   ├── AError.java
+            │   ├── ARepository.java
+            │   └── AService.java
+            └── domainB/
+                ├── BController.java
+                ├── BDto.java
+                ├── BEntity.java
+                ├── BError.java
+                ├── BRepository.java
+                └── BService.java
 ```
+</div>
 
 You can have several levels of nested domains:
 
+<div class="sourceCodeWithoutLabel">
+
 ```
-example-service/
+spring-example-service/
 └── src/
-    ├── domainA/
-    │   ├── domainA-1/
-    │   │   ├── A1Controller.py
-    │   │   └── ...
-    │   └── domainA-2/
-    │       ├── A2Controller.py
-    │       └── ...
-    └── domainB/
-        ├── BController.py
-        └── ...
+    └── java/
+        └── com.silensoft.springexampleservice/
+            ├── domainA/
+            │   ├── domainA-1/
+            │   │   ├── A1Controller.java
+            │   │   └── ...
+            │   └── domainA-2/
+            │       ├── A2Controller.java
+            │       └── ...
+            └── domainB/
+                └── BController.java
+
 ```
+</div>
 
 If you want, you can create subdirectories for technical details inside a domain directory. This is the recommended
-approach if, otherwise, the domain directory would contain more than 5 to 7 files. Below is an example of the *salesitem* domain:
+approach if, otherwise, the domain directory would contain more than 5 to 7 files. Below is an example of the _salesitem_ domain:
+
+<div class="sourceCodeWithoutLabel">
 
 ```
 sales-item-service
 └── src
-    └── salesitem
-        ├── dtos
-        │   ├── InputSalesItem.py
-        │   └── OutputSalesItem.py
-        ├── entities
-        │   └── SalesItem.py
-        ├── errors
-        │   ├── SalesItemServiceError.py
-        │   ├── Error1.py
-        │   └── Error2.py
-        ├── repository
-        │   ├── SalesItemRepository.py
-        │   └── SalesItemRepositoryImpl.py
-        ├── service
-        │   ├── SalesItemService.py
-        │   └── SalesItemServiceImpl.py
-        └── SalesItemController.py
+    └── java
+        └── com.silensoft.salesitemservice
+            └── salesitem
+                ├── dtos
+                │   ├── SalesItemArg.java
+                │   └── SalesItemResponse.java
+                ├── entities
+                │   └── SalesItem.java
+                ├── errors
+                │   └── SalesItemRelatedError.java
+                │   └── SalesItemRelatedError2.java
+                ├── repository
+                │   └── SalesItemRepository.java
+                ├── service
+                │   ├── SalesItemService.java
+                │   └── SalesItemServiceImpl.java
+                └── SalesItemController.java
 ```
+</div>
 
 To highlight the *clean microservice design principle*, we could also use the following kind of directory
 layout:
