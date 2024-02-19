@@ -1608,43 +1608,42 @@ bufferIsNotFull = messages.length < maxSize;
 If you encounter a [magic number](https://en.wikipedia.org/wiki/Magic_number_(programming)) in your code, you should introduce either a named constant or an enumerated type (enum) for that value.
 In the below example, we are returning two magic numbers, 0 and 1:
 
-```python
-import sys
+{title: "main.cpp"}
+```cpp
+int main()
+{
+  Application application;
 
-from Application import Application
+  if (application.run())
+  {
+    // Application was run successfully
+    return 0;
+  }
 
-
-application = Application()
-
-if application.run():
-    # Application was run successfully
-    sys.exit(0)
-
-# Exit code: failure
-sys.exit(1)
+  // Exit code: failure
+  return 1;
+}
 ```
 
 Let's introduce an enumerated type, `ExitCode,` and use it instead of magic numbers:
 
-```python
-import sys
-from enum import IntEnum
+{title: "main.cpp"}
+```
+enum class ExitCode
+{
+  Success = 0,
+  Failure = 1
+};
 
-from Application import Application
+int main()
+{
+  Application application;
+  const bool appWasRun = application.run();
 
-
-class ExitCode(IntEnum):
-    Success = 0
-    Failure = 1
-
-
-app_was_run = Application().run()
-
-exit_code = (
-    ExitCode.Success if app_was_run else ExitCode.Failure
-)
-
-sys.exit(exit_code)
+  return static_cast<int>(
+    appWasRun ? ExitCode::Success : ExitCode::Failure
+  );
+}
 ```
 
 It is now easy to add more exit codes with descriptive names later if needed.
