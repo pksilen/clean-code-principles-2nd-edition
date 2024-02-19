@@ -466,46 +466,48 @@ would name a lifecycle method, for example: `onInit`, `afterMount`, or `beforeMo
 
 #### Use Short, Common Names
 
-When picking a name for something, use the most common shortest name. If you have a function named *relinquish_something*,
-consider a shorter and more common name for the function. You could rename the function to *release_something*, for example. The word "release" is
-shorter and more commonly used than the "relinquish" word. Use
+When picking a name for something, use the most common shortest name. If you have a function named _relinquishSomething_, consider a shorter and more common name for the function. You could rename the function to _releaseSomething_, for example. The word "release" is
+shorter and more common than the "relinquish" word. Use
 Google to search for word synonyms, e.g., "relinquish synonym", to find the shortest and most common similar term.
 
 #### Pick One Term And Use It Consistently
 
 Let's assume that you are building a data exporter microservice and you are currently using the following terms in the code:
-*message*, *report*, *record* and *data*. Instead of using four terms to describe the same thing, you should pick just one term, like *message*, and use it consistently throughout the microservice code. One way to avoid end up having multiple terms for the same thing is to conduct domain-driven design. It enables you to create a ubiquitous language.
+_message_, _report_, _record_ and _data_. Instead of using four different terms to describe the same thing, you should pick just one term,
+like _message_, for example, and use it consistently throughout the microservice code.
+
+Suppose you need to figure out a term to indicate a property of a class. You should pick just
+one term, like _property_, and use it consistently everywhere. You should not use multiple terms like
+_attribute_, _field_, and _member_ to describe a property of a class.
 
 #### Avoid Obscure Abbreviations
 
 Many abbreviations are commonly used, like *str* for a string, *num/nbr* for a number, *prop* for a property, or *val* for a value.
 Most programmers use these, and I use them to make long names shorter. If a variable name is short, the full name should be used instead,
-like *number_of_items* instead of *nbr_of_items*. Use abbreviations in cases where the variable name otherwise becomes too long (20 or more characters).
+like *numberOfItems* instead of *nbrOfItems*. Use abbreviations in cases where the variable name otherwise becomes too long (20 or more characters).
 What you should especially try to avoid is using uncommon abbreviations. For example, do not abbreviate *amount* to *amnt* or *discount* to *dscnt* because those abbreviations are not really used.
 
 #### Avoid Too Short Or Meaningless Names
 
-Names that are too short do not communicate what the variable is about. Avoid using a single-character variable name like
-in the following example, where five threads are started:
+Names that are too short do not communicate what the variable is about. As loop counters, use a variable name like _index_ or _&lt;something&gt;Index_ if the loop variable is used to index something, like
+an array, for example. An indexing variable should start from zero. If the loop variable is counting the number of things, use _number_ or
+_&lt;something&gt;Number_ as the variable name, and start the loop counter from value one instead of zero. For example,
+a loop to start five threads should be written in C++ in the following way:
 
-```python
-for i in range(1, 6):
-    start_thread(i)
+```cpp
+for (size_t threadNumber{1U}; threadNumber <= 5U; ++threadNumber)
+{
+  startThread(threadNumber);
+}
 ```
 
-Instead, use a proper variable name to indicate what the loop counter is for:
+If you don't need to use the loop counter value inside the loop, you can use a loop variable named _count_:
 
-```python
-for thread_number in range(1, 6):
-    start_thread(thread_number)
-```
-
-If you don't need to use the loop counter value inside the loop, you can use an underscore as the loop variable name
-to indicate that it is not used. The below loop loops `object_count` times:
-
-```python
-for _ in range(object_count):
-    objects.append(acquire_object())
+```cpp
+for (size_t count{1U}; count <= objectCount; ++count)
+{
+  objects.push_back(acquireObject(std::forward<Args>(args)...));
+}
 ```
 
 Even if you don't agree with all naming conventions presented here and in the previous chapter, I recommend you create rules for naming code entities, like classes, functions, and variables. That would make your code look
