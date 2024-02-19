@@ -822,14 +822,14 @@ If you follow the *clean microservice design* principle and add or change an int
 you should not need to make any code changes to the business logic part of the service (the *businesslogic* directory).
 
 Below is the source code directory structure for the data exporter microservice designed in the previous
-chapter. There are subdirectories for the four subdomains: input, internal message, transformer, and output.
-A subdirectory is created for each common
-nominator in the class names. You can locate a particular file effortlessly by navigating the directory tree.
-You can grasp the contents of a directory with a glance because the number of source code files in each directory is low. The problem with directories containing many files
-is that finding the wanted file is not easy. For this reason, a single source code directory should ideally have 2-4 files. The absolute
+chapter. There are subdirectories for the four subdomains: input, internal message, transformer, and output. There is a subdirectory created for each common
+nominator in the class names. It is effortless to navigate the directory
+tree when locating a particular file. Also, the number of source code files in each directory is low.
+You can grasp the contents of a directory with a glance. The problem with directories containing many files
+is that it is not easy to find the wanted file. For this reason, a single directory should ideally have 2-4 files. The absolute
 maximum is 5-7 files.
 
-Note that a couple of directories are left unexpanded below to shorten the example. It should be easy for the reader
+Note that below, a couple of directories are left unexpanded to shorten the example. It should be easy for the reader
 to infer the contents of the unexpanded directories.
 
 ```
@@ -838,63 +838,147 @@ src
 ├── input
 │   ├── config
 │   │   ├── parser
-│   │   │   ├── InputConfigParser.py
-│   │   │   └── JsonInputConfigParser.py
+│   │   │   ├── json
+│   │   │   │   ├── JsonInputConfigParser.cpp
+│   │   │   │   └── JsonInputConfigParser.h
+│   │   │   └── InputConfigParser.h
 │   │   ├── reader
-│   │   │   ├── InputConfigReader.py
-│   │   │   └── LocalFileSystemInputConfigReader.py
-│   │   ├── InputConfig.py
-│   │   └── InputConfigImpl.py
+│   │   │   ├── localfilesystem
+│   │   │   │   ├── LocalFileSystemInputConfigReader.cpp
+│   │   │   │   └── LocalFileSystemInputConfigReader.h
+│   │   │   └── InputConfigReader.h
+│   │   ├── InputConfig.h
+│   │   ├── InputConfigImpl.cpp
+│   │   └── InputConfigImpl.h
+│   │
 │   └── message
 │       ├── consumer
-│       │   ├── InputMsgConsumer.py
-│       │   └── KafkaInputMsgConsumer.py
+│       │   ├── kafka
+│       │   │   ├── KafkaInputMessageConsumer.cpp
+│       │   │   └── KafkaInputMessageConsumer.h
+│       │   └── InputMessageConsumer.h
 │       ├── decoder
-│       │   ├── InputMsgDecoder.py
-│       │   └── AvroBinaryInputMsgDecoder.py
-│       ├── InputMessage.py
-│       └── KafkaInputMessage.py
+│       │   ├── avrobinary
+│       │   │   ├── AvroBinaryInputMessageDecoder.cpp
+│       │   │   └── AvroBinaryInputMessageDecoder.h
+│       │   └── InputMessageDecoder.h
+│       ├── kafka
+│       │   ├── KafkaInputMessage.cpp
+│       │   └── KafkaInputMessage.h
+│       │
+│       └── InputMessage.h
+├── internalmessage
+    ├── field
+│   ├── InternalMessage.h
+│   ├── InternalMessageImpl.cpp
+│   └── InternalMessageImpl.h
+├── transformer
+│   ├── config
+│   │   ├── parser
+│   │   ├── reader
+│   │   ├── TransformerConfig.h
+│   │   ├── TransformerConfigImpl.cpp
+│   │   └── TransformerConfigImpl.h
+│   ├── field
+│   │   ├── copy
+│   │   │   ├── CopyFieldTransformer.cpp
+│   │   │   └── CopyFieldTransformer.h
+│   │   ├── expression
+│   │   ├── filter
+│   │   ├── typeconversion
+│   │   ├── FieldTransformer.h
+│   │   ├── FieldTransformers.h
+│   │   ├── FieldTransformaresImpl.cpp
+│   │   └── FieldTransformersImpl.h
+│   └── message
+│       ├── MessageTransformer.h
+│       ├── MessageTransformerImpl.cpp
+│       └── MessageTransformerImpl.h
+└── output
+    ├── config
+    │   ├── parser
+    │   ├── reader
+    │   ├── OutputConfig.h
+    │   ├── OutputConfigImpl.cpp
+    │   └── OutputConfigImpl.h
+    └── message
+        ├── encoder
+        │   ├── avrobinary
+        │   └── OutputMessageEncoder.h
+        ├── producer
+        │   ├── pulsar
+        │   └── OutputMessageProducer.h
+        ├── OutputMessage.h
+        ├── OutputMessageImpl.cpp
+        └── OutputMessageImpl.h
+```
+</div>
+
+Below is the Java version of the above directory structure:
+
+<div class="sourceCodeWithoutLabel">
+
+```
+src
+├── common
+├── input
+│   ├── config
+│   │   ├── parser
+│   │   │   ├── InputConfigParser.java
+│   │   │   └── JsonInputConfigParser.java
+│   │   ├── reader
+│   │   │   ├── InputConfigReader.java
+│   │   │   └── LocalFileSystemInputConfigReader.java
+│   │   ├── InputConfig.java
+│   │   └── InputConfigImpl.java
+│   └── message
+│       ├── consumer
+│       │   ├── InputMessageConsumer.java
+│       │   └── KafkaInputMessageConsumer.java
+│       ├── decoder
+│       │   ├── InputMessageDecoder.java
+│       │   └── AvroBinaryInputMessageDecoder.java
+│       ├── InputMessage.java
+│       └── KafkaInputMessage.java
 ├── internalmessage
 │   ├── field
-│   ├── InternalMessage.py
-│   └── InternalMessageImpl.py
+│   ├── InternalMessage.java
+│   └── InternalMessageImpl.java
 ├── transformer
 │   ├── config
 │   ├── field
 │   │   ├── impl
-│   │   │   ├── CopyFieldTransformer.py
-│   │   │   ├── ExprFieldTransformer.py
-│   │   │   ├── FilterFieldTransformer.py
-│   │   │   └── TypeConvFieldTransformer.py
-│   │   ├── FieldTransformer.py
-│   │   ├── FieldTransformers.py
-│   │   └── FieldTransformersImpl.py
+│   │   │   ├── CopyFieldTransformer.java
+│   │   │   ├── ExpressionFieldTransformer.java
+│   │   │   ├── FilterFieldTransformer.java
+│   │   │   └── TypeConversionFieldTransformer.java
+│   │   ├── FieldTransformer.java
+│   │   ├── FieldTransformers.java
+│   │   └── FieldTransformersImpl.java
 │   └── message
-│       ├── MsgTransformer.py
-│       └── MsgTransformerImpl.py
+│       ├── MessageTransformer.java
+│       └── MessageTransformerImpl.java
 └── output
     ├── config
     └── message
-        ├── encoder
-        └── producer
 ```
 
 We could also structure the code according to the *clean microservice design* in the following way:
 
 ```
-src
+src/main/java
 ├── common
 ├── businesslogic
 │   ├── input
 │   │   ├── config
-│   │   │   ├── InputConfig.py
-│   │   │   ├── InputConfigImpl.py
-│   │   │   ├── InputConfigParser.py
-│   │   │   └── InputConfigReader.py
+│   │   │   ├── InputConfig.java
+│   │   │   ├── InputConfigImpl.java
+│   │   │   ├── InputConfigParser.java
+│   │   │   └── InputConfigReader.java
 │   │   └── message
 │   │       ├── InputMessage.java
-│   │       ├── InputMsgConsumer.py
-│   │       └── InputMsgDecoder.py
+│   │       ├── InputMsgConsumer.java
+│   │       └── InputMsgDecoder.java
 │   ├── internalmessage
 │   │   ├── field
 │   │   ├── InternalMessage.java
@@ -903,16 +987,16 @@ src
 │   │   ├── config
 │   │   ├── field
 │   │   │   ├── impl
-│   │   │   │   ├── CopyFieldTransformer.py
-│   │   │   │   ├── ExprFieldTransformer.py
-│   │   │   │   ├── FilterFieldTransformer.py
-│   │   │   │   └── TypeConvFieldTransformer.py
-│   │   │   ├── FieldTransformer.py
-│   │   │   ├── FieldTransformers.py
-│   │   │   └── FieldTransformersImpl.py
+│   │   │   │   ├── CopyFieldTransformer.java
+│   │   │   │   ├── ExprFieldTransformer.java
+│   │   │   │   ├── FilterFieldTransformer.java
+│   │   │   │   └── TypeConvFieldTransformer.java
+│   │   │   ├── FieldTransformer.java
+│   │   │   ├── FieldTransformers.java
+│   │   │   └── FieldTransformersImpl.java
 │   │   └── message
-│   │       ├── MsgTransformer.py
-│   │       └── MsgTransformerImpl.py
+│   │       ├── MsgTransformer.java
+│   │       └── MsgTransformerImpl.java
 │   └── output
 │       ├── config
 │       └── message
@@ -920,22 +1004,22 @@ src
     ├── config
     │   ├── parser
     │   │   └── json
-    │   │       ├── JsonInputConfigParser.py
-    │   │       ├── JsonTransformerConfigParser.py
-    │   │       └── JsonOutputConfigParser.py
+    │   │       ├── JsonInputConfigParser.java
+    │   │       ├── JsonTransformerConfigParser.java
+    │   │       └── JsonOutputConfigParser.java
     │   └── reader
     │       └── localfilesystem
-    │           ├── LocalFileSystemInputConfigReader.py
-    │           ├── LocalFileSystemTransformerConfigReader.py
-    │           └── LocalFileSystemOutputConfigReader.py
+    │           ├── LocalFileSystemInputConfigReader.java
+    │           ├── LocalFileSystemTransformerConfigReader.java
+    │           └── LocalFileSystemOutputConfigReader.java
     ├── input
     │   ├── kafka
-    │   │   ├── KafkaInputMsgConsumer.py
+    │   │   ├── KafkaInputMsgConsumer.java
     │   │   └── KafkaInputMessage.java
-    │   └── AvroBinaryInputMsgDecoder.py
+    │   └── AvroBinaryInputMsgDecoder.java
     └── output
-        ├── CsvOutputMsgEncoder.py
-        └── PulsarOutputMsgProducer.py
+        ├── CsvOutputMsgEncoder.java
+        └── PulsarOutputMsgProducer.java
 ```
 
 From the above directory structure, we can easily see the following:
@@ -948,69 +1032,86 @@ Any change we want or need to make in the *ifadapters* directory should not affe
 *businesslogic* directory.
 
 Below is the source code directory structure for the anomaly detection microservice designed in the previous
-chapter. The *anomaly* directory is expanded. We can see that our implementation is using
-JSON for various parsing activities and [self-organizing maps](https://en.wikipedia.org/wiki/Self-organizing_map) (SOM) is used for anomaly detection. JSON and Apache Kafka are used
+chapter. The _anomaly_ directory is expanded. We can see that our implementation is using
+JSON for various parsing activities and self-organizing maps (SOM) is used for anomaly detection. JSON and Kafka are used
 to publish anomaly indicators outside the microservice. Adding
 new concrete implementations to the below directory structure is straightforward. For example, if we wanted to add YAML support
-for configuration files, we could create *yaml* subdirectories to place YAML-specific implementation classes.
+for configuration files, we could create _yaml_ subdirectories where we could place YAML-specific implementation classes.
 
 ```
 src
 ├── anomaly
 │   ├── detection
 │   │   ├── configuration
-│   │   │   ├── factory
-│   │   │   │   ├── AnomalyDetectionConfigFactory.py
-│   │   │   │   └── AnomalyDetectionConfigFactoryImpl.py
 │   │   │   ├── parser
-│   │   │   │   ├── AnomalyDetectionConfigParser.py
-│   │   │   │   └── JsonAnomalyDetectionConfigParser.py
-│   │   │   ├── AnomalyDetectionConfig.py
-│   │   │   └── AnomalyDetectionConfigImpl.py
+│   │   │   │   ├── json
+│   │   │   │   │   ├── JsonAnomalyDetectionConfigParser.cpp
+│   │   │   │   │   └── JsonAnomalyDetectionConfigParser.h
+│   │   │   │   └── AnomalyDetectionConfigParser.h
+│   │   │   ├── AnomalyDetectionConfig.h
+│   │   │   ├── AnomalyDetectionConfigFactory.h
+│   │   │   ├── AnomalyDetectionConfigFactoryImpl.h
+│   │   │   ├── AnomalyDetectionConfigImpl.cpp
+│   │   │   └── AnomalyDetectionConfigImpl.h
 │   │   ├── engine
-│   │   │   ├── AnomalyDetectionEngine.py
-│   │   │   └── AnomalyDetectionEngineImpl.py
+│   │   │   ├── AnomalyDetectionEngine.h
+│   │   │   ├── AnomalyDetectionEngineImpl.cpp
+│   │   │   └── AnomalyDetectionEngineImpl.h
 │   │   ├── rule
-│   │   │   ├── factory
-│   │   │   │   ├── AnomalyDetectionRuleFactory.py
-│   │   │   │   └── AnomalyDetectionRuleFactoryImpl.py
 │   │   │   ├── parser
-│   │   │   │   ├── AnomalyDetectionRuleParser.py
-│   │   │   │   └── AnomalyDetectionRuleParserImpl.py
-│   │   │   ├── AnomalyDetectionRule.py
-│   │   │   └── AnomalyDetectionRuleImpl.py
-│   │   ├── AnomalyDetector.py
-│   │   └── AnomalyDetectorImpl.py
+│   │   │   │   ├── json
+│   │   │   │   │   ├── JsonAnomalyDetectionRuleParser.cpp
+│   │   │   │   │   └── JsonAnomalyDetectionRuleParser.h
+│   │   │   │   └── AnomalyDetectionRuleParser.h
+│   │   │   ├── AnomalyDetectionRule.h
+│   │   │   ├── AnomalyDetectionRuleFactory.h
+│   │   │   ├── AnomalyDetectionRuleFactoryImpl.h
+│   │   │   ├── AnomalyDetectionRuleImpl.cpp
+│   │   │   └── AnomalyDetectionRuleImpl.h
+│   │   ├── AnomalyDetector.h
+│   │   ├── AnomalyDetectorImpl.cpp
+│   │   └── AnomalyDetectorImpl.h
 │   ├── indicator
-│   │   ├── factory
-│   │   │   ├── AnomalyIndicatorFactory.py
-│   │   │   └── AnomalyIndicatorFactoryImpl.py
 │   │   ├── publisher
-│   │   │   ├── AnomalyIndicatorPublisher.py
-│   │   │   └── KafkaAnomalyIndicatorPublisher.py
+│   │   │   ├── kafka
+│   │   │   │   ├── KafkaAnomalyIndicatorPublisher.cpp
+│   │   │   │   └── KafkaAnomalyIndicatorPublisher.h
+│   │   │   └── AnomalyIndicatorPublisher
 │   │   ├── serializer
-│   │   │   ├── AnomalyIndicatorSerializer.py
-│   │   │   └── JsonAnomalyIndicatorSerializer.py
-│   │   ├── AnomalyIndicator.py
-│   │   └── AnomalyIndicatorImpl.py
+│   │   │   ├── json
+│   │   │   │   ├── JsonAnomalyIndicatorSerializer.cpp
+│   │   │   │   └── JsonAnomalyIndicatorSerializer.h
+│   │   │   └── AnomalyIndicatorSerializer.h
+│   │   ├── AnomalyIndicator.h
+│   │   ├── AnomalyIndicatorFactory.h
+│   │   ├── AnomalyIndicatorFactoryImpl.h
+│   │   ├── AnomalyIndicatorImpl.cpp
+│   │   └── AnomalyIndicatorImpl.h
 │   └── model
-│       ├── factory
-│       │   ├── AnomalyModelFactory.py
-│       │   └── AnomalyModelFactoryImpl.py
+│       ├── som
+│       │   ├── SomAnomalyModel.cpp
+│       │   ├── SomAnomalyModel.h
+│       │   └── SomAnomalyModelFactory.h
 │       ├── training
 │       │   ├── engine
-│       │   │   ├── AnomalyModelTrainingEngine.py
-│       │   │   └── AnomalyModelTrainingEngineImpl.py
-│       │   ├── AnomalyModelTrainer.py
-│       │   └── SomAnomalyModelTrainer.py
-│       ├── AnomalyModel.py
-│       └── SomAnomalyModel.py
+│       │   │   ├── AnomalyModelTrainingEngine.h
+│       │   │   ├── AnomalyModelTrainingEngineImpl.cpp
+│       │   │   └── AnomalyModelTrainingEngineImpl.h
+│       │   ├── som
+│       │   │   ├── SomAnomalyModelTrainer.cpp
+│       │   │   └── SomAnomalyModelTrainer.h
+│       │   └── AnomalyModelTrainer.h
+│       ├── AnomalyModel.h
+│       └── AnomalyModelFactory.h
 ├── common
 ├── measurement
-├── app.py
+├── Application.h
+├── Application.cpp
+├── DependencyInjector.h
+└── main.cpp
 ```
 
-For full-stack Python developers, let's have one more example with a *data-visualization-web-client*.
+Let's have one more example with a _data-visualization-web-client_.
 
 This web client's UI consists of the following pages, which all include a common header:
 
