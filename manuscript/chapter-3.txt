@@ -274,41 +274,23 @@ Correct naming would be:
 vmsCategories, error = vmsClient.GetCategories(vmsUrl, logger)
 ```
 
-### Naming Dictionary Variables
+### Naming Map Variables
 
-Dictionaries are accessed by requesting a *value* for a certain *key*. This is why I recommend naming dictionaries using the pattern *key_to_value*, *key_to_value_map*
-or *key_to_value_dict*.
-Let’s say we have a dictionary containing order counts for customer ids. This dictionary should be named `customer_id_to_order_count`, `customer_id_to_order_count_map`, or `customer_id_to_order_count_dict`.
-If we have a list of suppliers for product names, the mapping variable should be named `product_name_to_suppliers`, `product_name_to_suppliers_map`, or `product_name_to_suppliers_dict`.
-Below is an example of accessing dicts:
+Maps are accessed by requesting a _value_ for a certain _key_. This is why I recommend naming maps using the pattern _keyToValue_ or keyToValueMap_.
+Let’s say we have a map containing order counts for customer ids. This map should be named `customerIdToOrderCount` or `customerIdToOrderCountMap`.
+Or if we have a list of suppliers for product names, the map variable should be named `productNameToSuppliers` or `productNameToSuppliersMap`.
+Below is an example of accessing maps in Java:
 
-```python
-order_count = customer_name_to_order_count.get(customer_name)
-suppliers = product_name_to_suppliers.get(product_name)
+```java
+final var orderCount = customerIdToOrderCount.get(customerId);
+final var suppliers = productNameToSuppliers.get(productName);
 ```
 
-Below are examples of iterating over a dict:
+Below is an example of iterating over a map in JavaScript:
 
-```python
-customer_name_to_order_count = {
-    'John': 10,
-    'Peter': 5
-}
-
-for customer_name in customer_name_to_order_count:
-    print(customer_name)
-
-for customer_name in customer_name_to_order_count.keys():
-    print(customer_name)
-
-for order_count in customer_name_to_order_count.values():
-    print(order_count)
-
-for (
-    customer_name,
-    order_count,
-) in customer_name_to_order_count.items():
-    print(customer_name, order_count)
+```ja
+Object.entries(customerIdToOrderCount)
+      .map(([customerId, orderCount]) => ...);
 ```
 
 ### Naming Pair and Tuple Variables
