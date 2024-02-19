@@ -52,16 +52,16 @@ an *age* or *year* variable is a number and, more specifically, an integer. So, 
 name to indicate its type. It already tells you its type.
 
 One of the most used categories of integer variables is a count or number of something. You see those kinds of variables in every piece
-of code. I recommend using the following convention for naming those variables: *number_of_&lt;something&gt;* or alternatively
-*&lt;something&gt;_count*. For example, *number_of_failures* or *failure_count*. You should not use a variable named *failures*
+of code. I recommend using the following convention for naming those variables: *numberOf&lt;something&gt;* or alternatively
+*&lt;something&gt;Count*. For example, *numberOfFailures* or *failureCount*. You should not use a variable named *failures*
 to designate a failure count. The problem with that variable name is it does not clearly specify the variable type
 and thus can cause some confusion. This is because a variable named *failures* can be misunderstood as a collection variable
 (e.g., a list of failures).
 
 If the unit of a variable is not self-evident, always add information about the unit to the end of the variable name. For example, instead of
-naming a variable *tooltip_show_delay*, you should name it *tooltip_show_delay_in_millis* or *tooltip_show_delay_in_ms*. If you have a variable
-whose unit is self-evident, unit information is not needed. So, there is no need to name an *age* variable as *age_in_years*. But if you are
-measuring age in months, you must name the respective variable as *age_in_months* so that people don't assume that age is measured in
+naming a variable *tooltipShowDelay*, you should name it *tooltipShowDelayInMillis* or *tooltipShowDelayInMs*. If you have a variable
+whose unit is self-evident, unit information is not needed. So, there is no need to name an *age* variable as *ageInYyears*. But if you are
+measuring age in months, you must name the respective variable as *ageInMonths* so that people don't assume that age is measured in
 years.
 
 ### Naming Floating-Point Number Variables
@@ -69,14 +69,14 @@ years.
 Floating-point numbers are not as common as integers, but sometimes you need them too. Some values are intrinsically floating-point numbers,
 like most un-rounded measures (e.g., price, height, width, or weight). A floating-point variable would be a safe bet if you need to store a measured value.
 
-If you need to store an amount of something that is not an integer, use a variable named *&lt;something&gt;_amount*, like *rainfall_amount*.
+If you need to store an amount of something that is not an integer, use a variable named *&lt;something&gt;Amount*, like *rainfallAmount*.
 When you see the “amount of something” in code, you can automatically think it is a floating-point number. If you need to use a number in arithmetic,
 depending on the application, you might want to use either floating-point or integer arithmetic. In the case of money, you should use
-integer arithmetic to avoid rounding errors. Instead of a floating-point *money_amount* variable, you should have
-an integer variable, like *money_in_cents*.
+integer arithmetic to avoid rounding errors. Instead of a floating-point *moneyAmount* variable, you should have
+an integer variable, like *moneyInCents*.
 
-If the unit of a variable is not self-evident, add information about the unit to the end of the variable name, like *rainfall_amount_in_mm*, *width_in_inches*,
-*angle_in_degrees* (values 0-360), *failure_percent* (values 0-100), or *failure_ratio* (values 0-1).
+If the unit of a variable is not self-evident, add information about the unit to the end of the variable name, like *rainfallAmountInMm*, *widthInInches*,
+*angleInDegrees* (values 0-360), *failurePercent* (values 0-100), or *failureRatio* (values 0-1).
 
 ### Naming Boolean Variables
 
