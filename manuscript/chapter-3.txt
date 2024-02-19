@@ -233,42 +233,45 @@ if (producerCreationResult == Result.Ok) {
 
 When naming lists and sets, you should use the plural form of a noun, like *customers*, *errors*, or *tasks*. These kinds of names work well in the code, for example:
 
-```python
-def process(customers: list[Customer]) -> list[Customer]:
-    # ...
+```ts
+function handle(customers: Customer[]): Customer[] {
+  // ...
+}
 
-customers = [...]
+const customers = [new Customer()];
 
-for customer in customers:
-    # ...
+for (const customer of customers) {
+  // ...
+}
 
-processed_customers = process(customers)
+const processedCustomers = handle(customers);
 
-def is_even(integer: int) -> bool:
-    return integer % 2 == 0
+function isEven(integer: number): boolean {
+  return integer % 2 === 0;
+}
 
-integers = [1, 2, 3, 4, 5]
-even_integers = filter(is_even, integers)
+const integers = [1, 2, 3, 4, 5];
+const evenIntegers = integers.filter(isEven);
 ```
 
 This plural noun naming convention is usually enough because you don't necessarily need to know the underlying collection implementation. Using this naming convention
 allows you to change the type of a collection variable without changing the variable name.
 If you are iterating over a collection, it does not matter if it is a list or set. Thus, it does not bring any
-benefit if you add the collection type name to the variable name, for example, *customer_list* or *task_set*. Those names are just longer.
+benefit if you add the collection type name to the variable name, for example, *customerList* or *taskSet*. Those names are just longer.
 You might want to specify the collection type in some special cases. Then, you can use the following kinds of variable names:
-*queue_of_tasks*, *stack_of_cards*, or *set_of_timestamps*.
+*queueOfTasks*, *stackOfCards*, or *setOfTimestamps*.
 
-Below is an example where the function is named correctly to return a collection (of categories), but the variable
+Below is an example in Go language, where the function is named correctly to return a collection (of categories), but the variable
 receiving the return value is not named according to the collection variable naming convention:
 
-```python
-vms_data = vms_client.get_categories(vms_url, logger)
+```go
+vmsdata, error = vmsClient.GetCategories(vmsUrl, logger)
 ```
 
 Correct naming would be:
 
-```python
-vms_categories = vms_client.get_categories(vms_url, logger)
+```go
+vmsCategories, error = vmsClient.GetCategories(vmsUrl, logger)
 ```
 
 ### Naming Dictionary Variables
