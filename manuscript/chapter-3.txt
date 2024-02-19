@@ -665,7 +665,7 @@ incorrectly organized according to technical details:
 ```
 spring-example-service/
 └── src/
-    └── java/
+    └── main/java/
         └── com.silensoft.springexampleservice/
             ├── controllers/
             │   ├── AController.java
@@ -694,11 +694,11 @@ Below is the above example modified so that directories are organized by domains
 ```
 spring-example-service/
 └── src/
-    └── java/
+    └── main/java/
         └── com.silensoft.springexampleservice/
             ├── domainA/
             │   ├── AController.java
-                ├── ADbEntity.java            │
+            │   ├── ADbEntity.java            │
             │   ├── ADto.java
             │   ├── AEntity.java
             │   ├── AError.java
@@ -716,12 +716,10 @@ spring-example-service/
 
 You can have several levels of nested domains:
 
-<div class="sourceCodeWithoutLabel">
-
 ```
 spring-example-service/
 └── src/
-    └── java/
+    └── main/java/
         └── com.silensoft.springexampleservice/
             ├── domainA/
             │   ├── domainA-1/
@@ -734,35 +732,32 @@ spring-example-service/
                 └── BController.java
 
 ```
-</div>
 
 If you want, you can create subdirectories for technical details inside a domain directory. This is the recommended
 approach if, otherwise, the domain directory would contain more than 5 to 7 files. Below is an example of the _salesitem_ domain:
 
-<div class="sourceCodeWithoutLabel">
-
 ```
 sales-item-service
 └── src
-    └── java
+    └── main/java
         └── com.silensoft.salesitemservice
             └── salesitem
                 ├── dtos
-                │   ├── SalesItemArg.java
-                │   └── SalesItemResponse.java
+                │   ├── InputSalesItem.java
+                │   └── OutputSalesItem.java
                 ├── entities
                 │   └── SalesItem.java
                 ├── errors
-                │   └── SalesItemRelatedError.java
+                │   ├── SalesItemRelatedError.java
                 │   └── SalesItemRelatedError2.java
                 ├── repository
+                │   ├── DbSalesItem.java
                 │   └── SalesItemRepository.java
                 ├── service
                 │   ├── SalesItemService.java
                 │   └── SalesItemServiceImpl.java
                 └── SalesItemController.java
 ```
-</div>
 
 To highlight the *clean microservice design principle*, we could also use the following kind of directory
 layout:
@@ -770,24 +765,25 @@ layout:
 ```
 sales-item-service
 └── src
-    └── salesitem
-        ├── businesslogic
-        │    ├── dtos
-        │    │   ├── InputSalesItem.py
-        │    │   └── OutputSalesItem.py
-        │    ├── entities
-        │    │   └── SalesItem.py
-        │    ├── errors
-        │    │   ├── SalesItemServiceError.py
-        │    │   ├── Error1.py
-        │    │   └── Error2.py
-        │    ├── repository
-        │    │   └── SalesItemRepository.py
-        │    └── service
-        │        ├── SalesItemService.py
-        │        └── SalesItemServiceImpl.py
-        ├── RestSalesItemController.py
-        └── SqlSalesItemRepository.py
+    └── main/java
+        └── com.silensoft.salesitemservice
+            └── salesitem
+                ├── businesslogic
+                │    ├── dtos
+                │    │   ├── InputSalesItem.java
+                │    │   └── OutputSalesItem.java
+                │    ├── entities
+                │    │   └── SalesItem.java
+                │    ├── errors
+                │    │   ├── SalesItemServiceError.java
+                │    │   └── SalesItemServiceError2.java
+                │    ├── repository
+                │    │   └── SalesItemRepository.java
+                │    └── service
+                │        ├── SalesItemService.java
+                │        └── SalesItemServiceImpl.java
+                ├── RestSalesItemController.java
+                └── SqlSalesItemRepository.java
 ```
 
 The *businesslogic* directory could also be named *core*, *model*, or even *usecases*, especially if you are also using the *vertical slice design* principle where you put each vertical slice (feature) in a subdirectory of the *usecases* directory.
@@ -797,28 +793,29 @@ Or if we have multiple input interface adapters (controllers) and output interfa
 ```
 sales-item-service
 └── src
-    └── salesitem
-        ├── businesslogic
-        │    ├── dtos
-        │    │   ├── InputSalesItem.py
-        │    │   └── OutputSalesItem.py
-        │    ├── entities
-        │    │   └── SalesItem.py
-        │    ├── errors
-        │    │   ├── SalesItemServiceError.py
-        │    │   ├── Error1.py
-        │    │   └── Error2.py
-        │    ├── repository
-        │    │   └── SalesItemRepository.py
-        │    └── service
-        │        ├── SalesItemService.py
-        │        └── SalesItemServiceImpl.py
-        ├── controllers
-        │    ├── FlaskRestSalesItemController.py
-        │    └── AriadneGraphQlSalesItemController.py
-        └── repositories
-             ├── SqlSalesItemRepository.py
-             └── MongoDbSalesItemRepository.py
+    └── main/java
+        └── com.silensoft.salesitemservice
+            └── salesitem
+                ├── businesslogic
+                │    ├── dtos
+                │    │   ├── InputSalesItem.java
+                │    │   └── OutputSalesItem.java
+                │    ├── entities
+                │    │   └── SalesItem.java
+                │    ├── errors
+                │    │   ├── SalesItemServiceError.java
+                │    │   └── SalesItemServiceError2.java
+                │    ├── repository
+                │    │   └── SalesItemRepository.java
+                │    └── service
+                │        ├── SalesItemService.java
+                │        └── SalesItemServiceImpl.java
+                ├── controllers
+                │    ├── RestSalesItemController.java
+                │    └── GraphQlSalesItemController.java
+                └── repositories
+                     ├── SqlSalesItemRepository.java
+                     └── MongoDbSalesItemRepository.java
 ```
 
 If you follow the *clean microservice design* principle and add or change an interface adapter (e.g., a controller or a repository),
