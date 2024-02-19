@@ -295,23 +295,15 @@ Object.entries(customerIdToOrderCount)
 
 ### Naming Pair and Tuple Variables
 
-A variable containing a pair should be named using the pattern *variable1_and_variable2*. For example: `height_and_width`. And for tuples,
-the recommended naming pattern is *variable1_variable2_...and_variableN*. For instance: `height_width_and_depth`. If the tuple
-does not have values that should be individually named, you can treat it as an immutable list and name it according to the collection variable
-naming convention.
+A variable containing a pair should be named using the pattern _variable1AndVariable2_. For example: `heightAndWidth`. And for tuples,
+the recommended naming pattern is _variable1Variable2...andVariableN_. For instance: `heightWidthAndDepth`.
 
-Below is an example of using pairs and tuples:
+Below is an example of using pairs and tuples in JavaScript:
 
-```python
-height_and_width = (100, 200)
-height, width = height_and_width
-height_width_and_depth = (100, 200, 40)
-height, *, depth = height_width_and_depth
-numbers = (1, 2, 3, 4, 5)
-print(numbers[-1]) # Prints 5
-print(numbers[0:2]) # Prints (1,2)
-print(numbers[:2]) # Prints (1,2)
-print(numbers[1:]) # Prints (2, 3, 4, 5)
+```js
+const heightAndWidth = [100, 200];
+const heightWidthAndDepth = [100, 200, 40];
+const [height, , depth] = heightWidthAndDepth;
 ```
 
 ### Naming Object Variables
