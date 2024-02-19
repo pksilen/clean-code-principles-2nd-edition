@@ -2849,7 +2849,7 @@ public class Rectangle {
 
   public void increaseHeight(final float percentage) {
     height = sizer.increase(height, percentage);
-    width = height / 2
+    width = height / 2;
   }
 }
 ```
