@@ -1948,7 +1948,21 @@ bool TransformThread::transform(
 }
 ```
 
-As an exception to this rule, you can have multiple return statements in a function when the function has optimal length and would become too long if it is refactored to contain a single return statement. Additionally, it is required that the semantic meaning of the return value is clear from the function name or the return type of the function. Below is an example of a function with multiple return statements. It is also clear
+As an exception to this rule, you can have multiple return statements in a function when the function has optimal length and would become too long if it is refactored to contain a single return statement.
+Additionally, it is required that the semantic meaning of the return value is clear from the function name or the return type of the function. This is usually true if the return value is a boolean value or
+an object. In case of multiple return statements, you can use so-called [guard clauses](https://en.wikipedia.org/wiki/Guard_(computer_science)) at the beginning of the function. These guard clauses are if-statement that can return early from the function if a
+certain condition is met. You can have multiple guard clauses. Here is a Java example of a guard clause:
+
+```java
+public Optional<Session> getSession(final String userName){
+    if (userName.isEmpty()) {
+        return Optional.empty();
+    }
+
+    // Rest of the method code follows here...
+}
+
+Below is an example of a function with multiple return statements. It is also clear
 from the function name what the return value means. Also, the length of the function is optimal: seven statements.
 
 ```ts
