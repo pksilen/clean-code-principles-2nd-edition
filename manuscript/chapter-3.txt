@@ -1176,11 +1176,11 @@ src
 │       │   ├── actions
 │       │   │   ├── AbstractHeaderAction.ts
 │       │   │   └── NavigateToPageAction.ts
-│       │   ├── services
 │       │   └── state
 │       │       ├── types
 │       │       ├── HeaderState.ts
 │       │       └── initialHeaderState.ts
+        ├── services
 │       ├── view
 │       │    ├── navigation
 │       │    │   ├── NavigationView.module.scss
