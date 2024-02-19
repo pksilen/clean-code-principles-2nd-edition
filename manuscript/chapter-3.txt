@@ -2758,7 +2758,7 @@ public interface Calculator {
 }
 
 public interface Sizer {
-  float increase(final float length final float percentage);
+  float increase(final float length, final float percentage);
 
   // Possible other methods ...
 }
@@ -2785,24 +2785,25 @@ public class Rectangle {
     this.sizer = sizer;
   }
 
-    def draw(self) -> None:
-        self.__drawer.draw_rectangle(self.__width, self.__height)
+  public void draw() {
+    drawer.drawRectangle(width, height);
+  }
 
-    def calculate_area(self) -> float:
-        return self.__calculator.calc_rect_area(
-            self.__width, self.__height
-        )
+  public float calculateArea() {
+    return calculator.calcRectArea(width, height);
+  }
 
-    def calculate_perimeter(self) -> float:
-        return self.__calculator.calc_rect_perimeter(
-            self.__width, self.__height
-        )
+  public float calculatePerimeter() {
+    return calculator.calcRectPerimeter(width, height);
+  }
 
-    def increase_width(self, percentage: float) -> None:
-        self.__width = self.__sizer.increase(self.__width, percentage)
+  public void increaseWidth(final float percentage) {
+    width = sizer.increase(width, percentage);
+  }
 
-    def increase_height(self, percentage: float) -> None:
-        self.__height = self.__sizer.increase(self.__height, percentage)
+  public void increaseHeight(final float percentage) {
+    height = sizer.increase(height, percentage);
+  }
 }
 ```
 
