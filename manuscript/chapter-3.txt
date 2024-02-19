@@ -1180,7 +1180,7 @@ src
 │       │       ├── types
 │       │       ├── HeaderState.ts
 │       │       └── initialHeaderState.ts
-        ├── services
+        ├── service
 │       ├── view
 │       │    ├── navigation
 │       │    │   ├── NavigationView.module.scss
@@ -1192,11 +1192,11 @@ src
 └── store.ts
 ```
 
-In the above example, we have created two directories for the technical details of the *header* domain: model and view directories. The model directory
-contains actions, services, and the state, and the view directory contains the view component, its possible subcomponents, and
+In the above example, we have created two directories for the technical details of the *header* domain: model, service, and view directories. The model directory
+contains actions and the state, and the view directory contains the view component, its possible subcomponents, and
 CSS definitions. The model's state directory can contain a subdirectory for types
 used in the subdomain state. The state directory should always contain the type definition for the subdomain's state and the initial state.
-The services directory contains one or more services that use the respective backend services to control the backend model.
+The service directory contains one or more services that use the respective backend services to control the backend model.
 
 ## Avoid Comments Principle
 
