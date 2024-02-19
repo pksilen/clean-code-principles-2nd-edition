@@ -1180,7 +1180,7 @@ src
 │       │       ├── types
 │       │       ├── HeaderState.ts
 │       │       └── initialHeaderState.ts
-        ├── service
+│       ├── service
 │       ├── view
 │       │    ├── navigation
 │       │    │   ├── NavigationView.module.scss
@@ -1234,43 +1234,55 @@ a user should not adhere to them because they are internal details subject to ch
 
 ### Name Things Properly
 
-When you name things like a function poorly, you might end up attaching a comment to the function. It is imperative to focus on naming things correctly. When following the *single responsibility principle*
-and *uniform naming principle*, it should be easier to name things correctly and avoid comments. Below is an example of
+When you name things like a function poorly, you might end up attaching a comment to the function. To avoid writing comments, it is imperative to focus on naming things correctly. When following the _single responsibility principle_
+and the _uniform naming principle_, it should be easier to name things correctly and avoid comments. Below is an example of
 a function with a comment:
 
-```python
-class MessageBuffer:
-    # Return False if buffer full,
-    # True if message written to buffer
-    def write(self, message: Message) -> bool:
-        # ...
+_MessageBuffer.h_
+```
+class MessageBuffer
+{
+public:
+  // Return false if buffer full,
+  // true if message written to buffer
+  bool write(const std::shared_ptr<Message>& message);
+}
 ```
 
 If we drop the comment, we will have the following code:
 
-```python
-class MessageBuffer:
-    def write(self, message: Message) -> bool:
-        # ...
+_MessageBuffer.h_
+```
+class MessageBuffer
+{
+public:
+  bool write(const std::shared_ptr<Message>& message);
+}
 ```
 
 Dropping the comment alone is not the best solution because some crucial information is now missing. What does that boolean return
-value mean? It is not 100% clear. We can assume that returning `True` means the message was successfully written, but
-nothing about returning `False` is communicated. We can only assume it is some error, but we are not sure what error.
+value mean? It is not 100% clear. We can assume that returning `true` means that message was successfully written, but
+nothing is communicated about returning `false`. We can only assume it is some error, but not sure what error.
 
 In addition to removing the comment, we should give a better name for the function and rename it as follows:
 
-```python
-class MessageBuffer:
-    def write_if_buf_not_full(self, message: Message) -> bool:
-        pass
+_MessageBuffer.h_
+```
+class MessageBuffer
+{
+public:
+  bool writeIfBufferNotFull(
+    const std::shared_ptr<Message>& message
+  );
+}
 ```
 
-Now, the purpose of the function is clear, and we can be sure what the boolean return value means. It
+Now the purpose of the function is clear, and we can be sure what the boolean return value means. It
 means whether the message was written to the buffer. Now we also know why the writing of a message can fail: the
 buffer is full. This will give the function caller sufficient information about what to do next. It should
-probably wait a while so the buffer reader has enough time to read messages from the buffer
+probably wait a while so that the buffer reader has enough time to read messages from the buffer
 and free up some space.
+
 
 Below is a real-life example of C++ code where the comment and the function name do not match. Don't worry, you don't
 need to understand C++ to understand the example.
