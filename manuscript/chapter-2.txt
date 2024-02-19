@@ -7734,25 +7734,29 @@ class ParserTests {
 
 Let's make the test pass:
 
-```python
+```java
 class Parser:
-    # ...
+    // ...
 
-    def try_parse(self, sentence: str) -> Expression:
-        [first_token, *rest_of_tokens] = sentence.split('+')
-        left_literal = self.__parse_literal(first_token.strip())
+    Expression parse(final String sentence) throws ParseError {
+      final var tokens = sentence.split("\\+");
+      final var leftLiteral = parseLiteral(tokens[0].trim());
 
-        if not rest_of_tokens:
-            return left_literal
-        elif len(rest_of_tokens) == 1:
-            right_literal = self.__parse_literal(rest_of_tokens[0].strip())
-            return AddExpression(left_literal, right_literal)
-        else:
-            return AddExpression(
-                left_literal, self.try_parse('+'.join(rest_of_tokens))
-            )
+      if (tokens.length == 1) {
+        return leftLiteral;
+      } else if (tokens.length == 2){
+        final var rightLiteral = parseLiteral(tokens[1].trim());
+        return new AddExpression(leftLiteral, rightLiteral);
+      } else {
+        final var restOfTokens = Arrays
+            .stream(tokens, 1, tokens.length)
+            .toArray(String[]::new);
 
-    # ...
+        return new AddExpression(leftLiteral, parse(String.join("+", restOfTokens)));
+       }
+    }
+
+    // ...
 ```
 
 The final four tests also pass:
