@@ -2861,45 +2861,52 @@ public class Rectangle {
 Static code analysis tools find bugs and design-related issues on your behalf. Use multiple static code analysis tools to get the full benefit. Different tools might detect
 different issues. Using static code analysis tools frees people's time in code reviews to focus on things that automation cannot tackle.
 
-Below is a list of some popular static code analysis tools for Python:
+Below is a list of some common static code analysis tools for different languages:
 
-- [PyLint](https://pylint.pycqa.org/en/latest/index.html)
-- [Ruff](https://docs.astral.sh/ruff/)
-- [SonarLint](https://www.sonarsource.com/products/sonarlint/)
-- [SonarQube/SonarCloud](https://www.sonarsource.com/products/sonarqube/)
-- [Black](https://black.readthedocs.io/en/stable/) (Code formatter)
-- [Blue](https://blue.readthedocs.io/en/latest/) (Code formatter)
-- [Mypy](https://mypy-lang.org/)
-- [Jetbrains PyCharm](https://www.jetbrains.com/pycharm/) inspections
+- Java
+    - Jetbrains IntelliJ IDEA IDE inspections
+    - SonarLint
+    - SonarQube/SonarCloud
+- C++
+    - Jetbrains CLion IDE inspections
+    - Clang-Tidy
+    - MISRA C++ 2008 guidelines
+    - CppCheck
+    - SonarLint
+    - SonarQube/SonarCloud
+- TypeScript
+    - Jetbrains WebStorm IDE inspections
+    - ESLint (+ various plugins, like TypeScript plugin)
+    - SonarLint
+    - SonarQube/SonarCloud
 
 Infrastructure and deployment code should be treated the same way as source code. Remember to run static code analysis
-tools on your infrastructure and deployment code, too. Several tools are available for analyzing infrastructure and deployment code,
-like [Checkcov](https://www.checkov.io/), which can be used for analyzing Terraform, Kubernetes, and Helm code. Helm tool contains a linting command
-to analyze Helm chart files, and [Hadolint](https://github.com/hadolint/hadolint) is a tool for analyzing *Dockerfiles* statically.
+tools on your infrastructure and deployment code, too. Several tools are available for analyzing infrastructure and deployment code, like _Checkcov_, which can be used for analyzing Terraform, Kubernetes, and Helm code. Helm tool contains a linting command
+to analyze Helm chart files, and _Hadolint_ is a tool for analyzing _Dockerfiles_ statically.
 
 ### Common Static Code Analysis Issues
 
 | Issue                                                                                        | Description/Solution                                                                                                                                                                                                                                |
 |----------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Chain of instance of checks                                                                  | This issue indicates a chain of conditionals in favor of object-oriented design. Use the *replace conditionals with polymorphism* refactoring technique to solve this issue.                                                                        |
-| Feature envy                                                                                 | Use the *tell, don't ask principle* from the previous chapter to solve this issue.                                                                                                                                                                  |
-| Use of concrete classes                                                                      | Use the *program against interfaces* principle from the previous chapter to solve this issue.                                                                                                                                                       |
-| Assignment to a function argument                                                            | Don't modify function arguments but introduce a new variable.                                                                                                         |
-| Commented-out code                                                                           | Remove the commented-out code. If you need that piece of code in the future, it is available in the version control system forever.                                                                                                                 |
-| Const correctness                                                                            | Make attributes and variables `Final` whenever possible to achieve immutability and avoid accidental modifications.                                                                                                                          |
-| Nested match statement                                                                       | Use match statements mainly only in factories. Do not nest them.                                                                                                                                                                                   |
-| Nested conditional expression (ternary operator)                                              | Conditional expression should not be nested because it greatly hinders the code readability.                                                                                                                                                   |
-| Overly complex boolean expression                                                            | Split the boolean expression into parts and introduce constants to store the parts and the final expression.                                                                                                                                         |
-| Expression can be simplified                                                                 | This can be refactored automatically by an IDE.                                                                                                                                                                                                    |
-| Match statement without default branch                                                      | Always introduce a default branch and raise an exception there. Otherwise, when you use a match statement with an enum, you might encounter strange problems after adding a new enum value not handled by the match statement. |
-| Law of Demeter                                                                               | The object knows too much. It is coupled to the dependencies of another object, which creates additional coupling and makes code harder to change. Making code easy to change is an objective, but not needing to change code is an even greater objective. (Remember the *open-closed principle*)                                                                                                 |
-| Reuse of local variable                                                                      | Introduce a new variable instead of reusing a variable for a different purpose. That new variable can be named appropriately to describe its purpose.                                                                                              |
+| Chain of instance of checks                                                                  | This issue indicates a chain of conditionals in favor of object-oriented design. Use the _replace conditionals with polymorphism_ refactoring technique to solve this issue.                                                                        |
+| Feature envy                                                                                 | Use the _don't ask, tell principle_ from the previous chapter to solve this issue.                                                                                                                                                                  |
+| Use of concrete classes                                                                      | Use the _program against interfaces_ principle from the previous chapter to solve this issue.                                                                                                                                                       |
+| Assignment to a function argument                                                            | Don't modify function arguments but introduce a new variable. You can avoid this issue in Java by declaring function parameters as _final_.                                                                                                         |
+ | Commented-out code                                                                           | Remove the commented-out code. If you need that piece of code in the future, it is available in the version control system forever.                                                                                                                 |
+| Const correctness                                                                            | Make variables and parameters const or final whenever possible to achieve immutability and avoid accidental modifications                                                                                                                           |
+| Nested switch statement                                                                      | Use switch statements mainly only in factories. Do not nest them.                                                                                                                                                                                   |
+ | Nested conditional expression                                                                | Conditional expression (?:) should not be nested because it greatly hinders the code readability.                                                                                                                                                   |
+ | Overly complex boolean expression                                                            | Split the boolean expression into parts and introduce constants to store the parts and the final expression                                                                                                                                         |
+ | Expression can be simplified                                                                 | This can be refactored automatically by the IDE.                                                                                                                                                                                                    |
+ | Switch statement without default branch                                                      | Always introduce a default branch and throw an exception from there. Otherwise, when you are using a switch statement with an enum, you might encounter strange problems after adding a new enum value that is not handled by the switch statement. |
+| Law of Demeter                                                                               | The object knows too much. It is coupled to the dependencies of another object, which creates additional coupling and makes code harder to change.                                                                                                  |
+ | Reuse of local variable                                                                      | Instead of reusing a variable for a different purpose, introduce a new variable. That new variable can be named appropriately to describe its purpose.                                                                                              |
 | Scope of variable is too broad                                                               | Introduce a variable only just before it is needed.                                                                                                                                                                                                 |
-| Protected field                                                                              | Subclasses can modify the protected state of the superclass without the superclass being able to control that. This is an indication of breaking the encapsulation and should be avoided.                                                           |
-| Breaking the encapsulation: Return of modifiable/mutable field                               | Use the *don't leak modifiable internal state outside an object principle* from the previous chapter to solve this issue.                                                                                                                           |
-| Breaking the encapsulation: Assignment from a method parameter to a modifiable/mutable field | Use the *don't assign from a method parameter to a modifiable field principle* from the previous chapter to solve this issue.                                                                                                                       |
-| Non-constant public field                                                                    | Anyone can modify a public field. This breaks the encapsulation and should be avoided.                                                                                                                                                              |
-| Overly broad except-block                                                                    | This can indicate a wrong design. Don't catch the language's base exception class if you should only catch your application's base error class, for example. Read more about handling exceptions in the next section.                               |
+ | Protected field                                                                              | Subclasses can modify the protected state of the superclass without the superclass being able to control that. This is an indication of breaking the encapsulation and should be avoided.                                                           |
+ | Breaking the encapsulation: Return of modifiable/mutable field                               | Use the _don't leak modifiable internal state outside an object principle_ from the previous chapter to solve this issue.                                                                                                                           |
+ | Breaking the encapsulation: Assignment from a method parameter to a modifiable/mutable field | Use the _don't assign from a method parameter to a modifiable field principle_ from the previous chapter to solve this issue.                                                                                                                       |
+ | Non-constant public field                                                                    | Anyone can modify a public field. This breaks the encapsulation and should be avoided.                                                                                                                                                              |
+ | Overly broad catch-block                                                                     | This can indicate a wrong design. Don't catch the language's base exception class if you should only catch your application's base error class, for example. Read more about handling exceptions in the next section.                               |
 
 ## Error/Exception Handling Principle
 
