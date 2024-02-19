@@ -311,34 +311,34 @@ const [height, , depth] = heightWidthAndDepth;
 Object variables refer to an instance of a class. Class names are nouns written in CapWords, like
 *Person*, *CheckingAccount*, or *Task*. Object variable names should contain the related class name: a *person* object of
 the *Person* class, an *account* object of the *Account* class, etc. You can freely decorate the object’s name, for example, with
-an adjective: *completed_task*. Including the class name or at least a significant part of it at the end of the variable name is useful because looking at the end of the variable name tells what kind of object is in question.
+an adjective: *completedTask*. Including the class name or at least a significant part of it at the end of the variable name is useful because looking at the end of the variable name tells what kind of object is in question.
 
 Do not add an article `a` or `an` to an object variable's name. This is redundant because you usually know if it is
-a question about an object variable when you follow all the naming conventions presented in this book. An article can also hinder
-the readability (due to added underscores):
+a question about an object variable when you follow all the naming conventions presented in this book.
 
-```python
-write_to(a_buffer, a_message)
+```java
+// Not so good
+writeTo(aBuffer, aMessage)
 
-# versus
+// Better
 write(message, buffer)
 ```
 
-Sometimes, you might want to name an object variable so that the name of its class is implicit, for example:
+Sometimes you might want to name an object variable so that the name of its class is implicit, for example:
 
-```python
-# The class of the function parameters, 'Location', is implicit
-drive(from=home, to=destination)
+```java
+// The class of the function parameters, 'Location', is implicit
+drive(home, destination);
 ```
 
 In the above example, the classes of `home` and `destination` objects are not explicit. In most cases, it is preferable to make the class name
 explicit in the variable name when it does not make the variable name too long. This is because of the variable type deduction.
-The types of variables are not necessarily visible in the code, so the
-variable name should communicate the type of a variable. Below is an example where the types of function parameters are explicit.
+The types of variables are not necessarily visible in the code, so the type of a variable should be communicated by the
+variable name. Below is an example where the types of function parameters are explicit.<div class="sourceCodeWithoutLabel">
 
-```python
-# The class of the function parameters, 'Location', is now explicit
-drive(from=home_location, to=dest_location)
+```java
+// The class of the function parameters, 'Location', is now explicit
+drive(homeLocation, destLocation);
 ```
 
 ### Naming Optional Variables

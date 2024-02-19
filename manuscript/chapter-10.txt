@@ -576,7 +576,7 @@ jobs:
 24) Update the Docker image tag in the *values.yaml* file
 25) Lint the Helm chart and perform static code analysis for it
 26) Upload the static code analysis report to the GitHub repository and perform git user configuration for the next step
-27) Package the Helm chart and publish it to GitHub Pages
+27) Package the Helm chart and publish it to GitHub Pages. There exists an alternative method: the newest version of the *helm* tool allows you to publish a Helm chart using the `helm push` command
 
 Some of the above steps are parallelizable, but a GitHub Actions workflow does not currently support parallel steps in
 a job. In *Jenkins*, you can easily parallelize stages using a *parallel* block.
