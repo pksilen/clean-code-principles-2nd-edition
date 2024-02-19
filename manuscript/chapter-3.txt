@@ -2550,65 +2550,72 @@ Below is a Python example with a negated boolean expression in the if-statement 
 Notice how difficult the boolean expression reads: `host_mount_folder is not None`. It is a double-negative statement
 and thus can be difficult to read.
 
+<div class="sourceCodeWithoutLabel">
+
 ```python
 import os
 
 
-def get_behave_test_folder(relative_test_folder: str = ''):
-    host_mount_folder = os.environ.get("HOST_MOUNT_FOLDER")
+def get_behave_test_folder(relative_test_folder = ""):
+  host_mount_folder = os.environ.get("HOST_MOUNT_FOLDER")
 
-    if host_mount_folder is not None:
-        final_host_mount_folder = host_mount_folder
-        if host_mount_folder.startswith('/mnt/c/'):
-            final_host_mount_folder = host_mount_folder.replace(
-                '/mnt/c/', '/c/', 1
-            )
-        behave_test_folder = (
-            final_host_mount_folder + '/' + relative_test_folder
-        )
-    else:
-        behave_test_folder = os.getcwd()
+  if host_mount_folder is not None:
+    final_host_mount_folder = host_mount_folder
+    if host_mount_folder.startswith("/mnt/c/"):
+      final_host_mount_folder = host_mount_folder.replace("/mnt/c/", \
+                                                          "/c/", 1)
 
-    return behave_test_folder
+    behave_test_folder = final_host_mount_folder + "/" + \
+                         relative_test_folder
+  else:
+    behave_test_folder = os.getcwd()
+
+  return behave_test_folder
 ```
 
 Let's refactor the above code so that the if and else statements are inverted:
 
-```python
-def get_behave_test_folder(relative_test_folder: str = ''):
-    host_mount_folder = os.environ.get("HOST_MOUNT_FOLDER")
+```
+def get_behave_test_folder(relative_test_folder = ""):
+  host_mount_folder = os.environ.get("HOST_MOUNT_FOLDER")
 
-    if host_mount_folder is None:
-        behave_test_folder = os.getcwd()
-    else:
-        final_host_mount_folder = host_mount_folder
-        if host_mount_folder.startswith('/mnt/c/'):
-            final_host_mount_folder = host_mount_folder.replace(
-                '/mnt/c/', '/c/', 1
-            )
-        behave_test_folder = (
-            final_host_mount_folder + '/' + relative_test_folder
-        )
+  if host_mount_folder is None:
+    behave_test_folder = os.getcwd()
+  else:
+    final_host_mount_folder = host_mount_folder
+    if host_mount_folder.startswith("/mnt/c/"):
+      final_host_mount_folder = host_mount_folder.replace("/mnt/c/", \
+                                                          "/c/", 1)
+    behave_test_folder = final_host_mount_folder + "/" + \
+                         relative_test_folder
 
-    return behave_test_folder
+  return behave_test_folder
 ```
 
-Below is another example:
+Below is another example in C++:
 
-```python
-if name != 'some name':
-    # Do thing 1 ...
-else:
-    # Do thing 2 ...
+```cpp
+if (somePointer != nullptr)
+{
+  // Do thing 1
+}
+else
+{
+  // Do thing 2
+}
 ```
 
-We should not have a negation in the condition of the if-statement. Let's refactor the above example:
+We should not have a negation in the if-statement's condition. Let's refactor the above example:
 
-```python
-if name == 'some name':
-    # Do thing 2 ...
-else:
-    # Do thing 1 ...
+```cpp
+if (somePointer == nullptr)
+{
+  // Do thing 2
+}
+else
+{
+  // Do thing 1
+}
 ```
 
 ### Creating Rich Object
@@ -2617,65 +2624,82 @@ An object can be a so-called [anemic object](https://en.wikipedia.org/wiki/Anemi
 The object class might only contain attributes and getters and setters for them, making it a kind of data class only.
 Sometimes, this is okay if there is no business
 logic related to the object, but many times, there exists some business logic, but that logic is not implemented in the anemic object
-class itself but in other places in the code. This kind of software "design" (a better term is lack of design) is deemed to be problematic when you need to change the anemic object class. You might need to make changes to various unrelated places in the code. Making all these changes is manual and error-prone work.
+class itself but in other places in the code. This kind of software "design" (a better term is lack of design) is deemed to be problematic
+when you need to change the anemic object class. You might need to make changes to various unrelated places in the code. Making all these changes is manual and error-prone work.
 Making those changes is called [shotgun surgery](https://en.wikipedia.org/wiki/Shotgun_surgery). What you should do is make an anemic object a rich object.
 This is done by moving behavior from other classes to the anemic class, making it a rich class. A rich class typically has attributes and behavior but
 it lacks getters and setters to enforce proper encapsulation of the object state.
 
 Let's have an example of a anemic class:
 
-```python
-class Rectangle:
-    def __init__(self, width: float, height: float):
-        self.__width = width
-        self.__height = height
+```java
+public class Rectangle {
+  private float width;
+  private float height;
 
-    @property
-    def width(self) -> float:
-        return self.__width
+  public Rectangle(final float width, final float height) {
+    this.width = width;
+    this.height = height;
+  }
 
-    @property
-    def height(self) -> float:
-        return self.__height
-
-    @width.setter
-    def width(self, width: float) -> None:
-        self.__width = width
-
-    @height.setter
-    def height(self, height: float) -> None:
-        self.__height = height
+  public float getWidth() {
+    return width;
+  }
 
 
-class Drawer:
-    # ...
+  public float getHeight() {
+    return height;
+  }
 
-    def draw_rectangle(rectangle: Rectangle) -> None:
-        # ...
+  public void setWidth(final float width) {
+    this.width = width;
+  }
 
-class Calculator:
-    # ...
+  public void setHeigh(final float height) {
+    this.height = height;
+  }
+}
 
-    def calc_rect_area(rectangle: Rectangle) -> float:
-        # ...
 
-    def calc_rect_perimeter(rectangle: Rectangle) -> float:
-        # ...
+public class Drawer {
+  // Possible other methods ...
 
-class Sizer:
-    # ...
+  public void drawRectangle(final Rectangle rectangle) {
+    // ...
+  }
+}
 
-    def increase_rect_width(
-        rectangle: Rectangle,
-        percentage: float
-    ) -> None:
-        # ...
 
-     def increase_rect_height(
-        rectangle: Rectangle,
-        percentage: float
-    ) -> None:
-        # ...
+public class Calculator {
+  # Possible other methods
+
+  public float calcRectArea(final Rectangle rectangle) {
+    // ...
+  }
+
+  public float calcRectPerimeter(final Rectangle rectangle) {
+    // ...
+  }
+}
+
+public class Sizer {
+  // Possible other methods
+
+  public void increaseRectWidth(
+    final Rectangle rectangle,
+    final float percentage
+  ) {
+    // ...
+  }
+
+
+ public void increaseRectHeight(
+    final Rectangle rectangle,
+    final float percentage
+ ) {
+   // ...
+ }
+}
 ```
 
 What we should do is to make the `Rectangle` objects rich objects by moving functionality from various classes
