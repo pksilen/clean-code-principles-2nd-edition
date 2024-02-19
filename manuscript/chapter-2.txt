@@ -7835,170 +7835,167 @@ System.out.print(ast.evaluate());
 > ***The state pattern lets an object change its behavior depending on its current state.***
 
 Developers don't often treat an object's state as an object but as an enumerated value (enum), for example.
-Below is an example where we have defined a `UserStory` class representing a user story that can be
+Below is a Java example where we have defined a `UserStory` class representing a user story that can be
 rendered on screen. An enum value represents the state of a `UserStory` object.
 
-```python
-from enum import Enum
-from typing import Protocol
+```java
+public enum UserStoryState {
+  TODO, IN_DEVELOPMENT, IN_VERIFICATION, READY_FOR_REVIEW, DONE
+}
 
 
-class UserStoryState(Enum):
-    TODO = 1
-    IN_DEVELOPMENT = 2
-    IN_VERIFICATION = 3
-    READY_FOR_REVIEW = 4
-    DONE = 5
+public class UserStory {
+  private String name;
+  private UserStoryState state = UserStoryState.TODO;
+  // Other properties...
 
+  public UserStory(final String name, ...) {
+    this.name = name;
+    // ...
+  }
 
-class Icon(Protocol):
-    # ...
+  public void setState(
+    final UserStoryState newState
+  ) {
+    state = newState;
+  }
 
+  public void render() {
+    final var icon = switch(state) {
+      case TODO -> new TodoIcon();
+      case IN_DEVELOPMENT -> new InDevelopmentIcon();
+      case IN_VERIFICATION -> new InVerificationIcon();
+      case READY_FOR_REVIEW -> new ReadyForReviewIcon();
+      case DONE -> new DoneIcon();
+      default -> throw new IllegalArgumentException(...);
+    };
 
-class TodoIcon(Icon):
-    # ...
-
-
-# Define rest of icons ...
-
-
-class UserStory:
-    def __init__(self, name: str):
-        self.__name = name
-        self.__state = UserStoryState.TODO
-
-    def set_state(self, state: UserStoryState) -> None:
-        self.__state = state
-
-    def render(self) -> None:
-        match self.__state:
-            case UserStoryState.TODO:
-                icon = TodoIcon()
-            case UserStoryState.IN_DEVELOPMENT:
-                icon = InDevelopmentIcon()
-            case UserStoryState.IN_VERIFICATION:
-                icon = InVerificationIcon()
-            case UserStoryState.READY_FOR_REVIEW:
-                icon = ReadyForReviewIcon()
-            case UserStoryState.DONE:
-                icon = DoneIcon()
-            case _:
-                raise ValueError('Invalid user story state')
-
-        # Draw a UI element on screen representing the user story
-        # using the above assigned 'icon'
+    // Draw a UI elements on screen representing the user story
+    // using the given 'icon'
+  }
+}
 ```
 
-The above solution is not an object-oriented one. We should replace the conditionals (match-case statement) with a polymorphic design.
+The above solution is not an object-oriented one. We should replace the conditionals (switch-case statement) with a polymorphic design.
 This can be done by introducing state objects. In the state pattern, the state of an object is represented with an object instead of an enum value.
 Below is the above code modified to use the state pattern:
 
-```
-from typing import Protocol
 
-# Import Icon classes ...
-
-
-class UserStoryState(Protocol):
-    @property
-    def icon(self) -> Icon:
-        pass
+```java
+public interface UserStoryState {
+  Icon getIcon();
+}
 
 
-class TodoUserStoryState(UserStoryState):
-    @property
-    def icon(self) -> Icon:
-        return TodoIcon()
+public class TodoUserStoryState implements UserStoryState {
+  public Icon getIcon() {
+    return new TodoIcon();
+  }
+}
 
 
-class InDevelopmentUserStoryState(UserStoryState):
-    @property
-    def icon(self) -> Icon:
-        return InDevelopmentIcon()
+public class InDevelopmentUserStoryState
+         implements UserStoryState {
+  public Icon getIcon() {
+    return new InDevelopmentIcon();
+  }
+}
 
 
-class InVerificationUserStoryState(UserStoryState):
-    @property
-    def icon(self) -> Icon:
-        return InVerificationIcon()
+public class InVerificationUserStoryState
+         implements UserStoryState {
+  public Icon getIcon() {
+    return new InVerificationIcon();
+  }
+}
 
 
-class ReadyForReviewUserStoryState(UserStoryState):
-    @property
-    def icon(self) -> Icon:
-        return ReadyForReviewIcon()
+public class ReadyForReviewUserStoryState
+         implements UserStoryState {
+  public Icon getIcon() {
+    return new ReadyForReviewIcon();
+  }
+}
 
 
-class DoneUserStoryState(UserStoryState):
-    @property
-    def icon(self) -> Icon:
-        return DoneIcon()
+public class DoneUserStoryState
+         implements UserStoryState {
+  public Icon getIcon() {
+    return new DoneIcon();
+  }
+}
 
 
-class UserStory:
-    def __init__(self, name: str):
-        self.__name = name
-        self.__state = TodoUserStoryState()
+public class UserStory {
+  private String name;
+  private UserStoryState state = new TodoUserStoryState();
+  // Other properties...
 
-    def set_state(self, state: UserStoryState) -> None:
-        self.__state = state
+  public UserStory(final String name, ...) {
+    this.name = name;
+    // ...
+  }
 
-    def render(self) -> None:
-        icon = self.__state.icon
-        # Draw a UI element on screen representing
-        # the user story using the given 'icon'
+  public void setState(
+    final UserStoryState newState
+  ) {
+    state = newState;
+  }
+
+  public void render() {
+    final Icon icon = state.getIcon();
+    // Draw a UI element on screen representing
+    // the user story using the given 'icon'
+  }
+}
 ```
 
 Let's have another example with an `Order` class. An order can have a state, like paid, packaged, delivered, etc.
-Below, we implement the order states as classes:
-
-```python
-from typing import Protocol
-
-from Customer import Customer
-from EmailService import EmailService
+Below we implement the order states as classes:
 
 
-class OrderState(Protocol):
-    def create_message(self, order_id: str) -> str:
-        pass
+```java
+public interface OrderState {
+  String getMessage(String orderId);
+}
 
 
-class PaidOrderState(OrderState):
-    def create_message(self, order_id: str) -> str:
-        return f'Order {order_id} is successfully paid'
+public class PaidOrderState implements OrderState {
+  public String getMessage(final String orderId) {
+    return "Order " + orderId + " is successfully paid";
+  }
+}
 
 
-class DeliveredOrderState(OrderState):
-    def create_message(self, order_id: str) -> str:
-        return f'Order {order_id} is delivered'
+public class DeliveredOrderState implements OrderState {
+  public String getMessage(final String orderId) {
+    return "Order " + orderId + " is delivered";
+  }
+}
 
 
-# Implement the rest of possible order states ...
+// Implement the rest of possible order states here...
 
 
-class Order:
-    def __init__(self, id_: str, state: OrderState, customer: Customer):
-        self.__id = id_
-        self.__state = state
-        self.__customer = customer
+public class Order {
+  private String id;
+  private OrderState state;
+  private Customer customer;
 
-    @property
-    def customer_email_address(self) -> str:
-        return self.__customer.email_address
+  // ...
 
-    @property
-    def state_message(self) -> str:
-        return self.__state.create_message(self.__id)
+  public String getCustomerEmailAddress() {
+    return customer.getEmailAddress();
+  }
+
+  public String getStateMessage() {
+    return state.getMessage(id);
+  }
+}
 
 
-email_service = EmailService(...)
-order = Order(...)
-
-email_service.send_email(
-    order.customer_email_address,
-    order.state_message
-)
+emailService.sendEmail(order.getCustomerEmailAddress(),
+                       order.getStateMessage());
 ```
 
 #### Mediator Pattern
