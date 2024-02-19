@@ -369,60 +369,26 @@ const priceWithTax = addTax(priceWithoutTax);
 
 ### Naming Function Variables (Callbacks)
 
-Callback functions are supplied to other functions to be called at some point. If a callback function returns a value,
+Callback functions are functions supplied to other functions to be called at some point. If a callback function returns a value,
 it can be named according to the returned value, but it should still contain a verb.
 If the callback function does not return a value, you should name the callback function like any other function:
-Indicating what the function does.
+Indicating what the function does. Suppose you have a variable storing a function object, like a Java `Function` instance. In that case, you need to name the variable according to the rules for an object variable, i.e., the variable name should be a noun. For example, if you have a Java `Function` object currently named `map`, you should correct the name to be a noun, like `mapper`.
 
-```python
-from functools import reduce
+```js
+const doubled = value => 2 * value;
+const squared = value => value * value;
+const isEven = nbr => (nbr % 2) === 0;
+const values = [1, 2, 3, 4, 5]
+const doubledValues = values.map(doubled);
+const squaredValues = values.map(squared);
+const evenValues = values.filter(isEven);
 
-def doubled(number: int | float):
-    return 2 * number
+const strings = [" string1", "string2 "];
+const trimmed = str => str.trim();
+const trimmedStrings = strings.map(trimmed);
 
-
-def squared(number: int | float):
-    return number**2
-
-
-def is_even(number: int | float):
-    return number % 2 == 0
-
-
-values = [1, 2, 3, 4, 5]
-doubled_values = [doubled(value) for value in values]
-doubled_values2 = list(map(doubled, values))
-squared_values = [squared(value) for value in values]
-squared_values2 = list(map(squared, values))
-even_values = [value for value in values if is_even(value)]
-even_values2 = list(filter(is_even, values))
-
-
-def trimmed(string: str):
-    return string.strip()
-
-
-strings = [" string1", "string2 "]
-trimmed_strings = [trimmed(string) for string in strings]
-trimmed_strings2 = list(map(trimmed, strings))
-
-def sum(accum_sum: int | float, number: int | float) -> int | float:
-    return accum_sum + number
-
-sum_of_values = reduce(sum, values, 0)
-```
-
-If the callback function is very simple and short, like the *doubled* and *squared* functions are, we can inline them
-in Python list/set/dict comprehensions and generator expressions, making them a bit shorter:
-
-```python
-doubled_values = [2 * value for value in values]
-squared_values = [value**2 for value in values]
-distinct_values = {value for value in values}
-value_to_squared_value = {value: value**2 for value in values}
-generator_of_doubled_values = (2 * value for value in values)
-first_doubled_value = generator_of_doubled_values.__next__()
-tuple_of_doubled_values = tuple(generator_of_doubled_values)
+const sumOfValues = (sum, value) => sum + value;
+values.reduce(sumOfValues, 0);
 ```
 
 Let's have a quick detour with an example written in Clojure:
