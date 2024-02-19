@@ -7736,27 +7736,27 @@ Let's make the test pass:
 
 ```java
 class Parser:
-    // ...
+  // ...
 
-    Expression parse(final String sentence) throws ParseError {
-      final var tokens = sentence.split("\\+");
-      final var leftLiteral = parseLiteral(tokens[0].trim());
+  Expression parse(final String sentence) throws ParseError {
+    final var tokens = sentence.split("\\+");
+    final var leftLiteral = parseLiteral(tokens[0].trim());
 
-      if (tokens.length == 1) {
-        return leftLiteral;
-      } else if (tokens.length == 2){
-        final var rightLiteral = parseLiteral(tokens[1].trim());
-        return new AddExpression(leftLiteral, rightLiteral);
-      } else {
-        final var restOfTokens = Arrays
-            .stream(tokens, 1, tokens.length)
-            .toArray(String[]::new);
+    if (tokens.length == 1) {
+      return leftLiteral;
+    } else if (tokens.length == 2){
+      final var rightLiteral = parseLiteral(tokens[1].trim());
+      return new AddExpression(leftLiteral, rightLiteral);
+    } else {
+      final var restOfSentence = Arrays
+          .stream(tokens, 1, tokens.length)
+          .collect(Collectors.joining("+"));
 
-        return new AddExpression(leftLiteral, parse(String.join("+", restOfTokens)));
-       }
+      return new AddExpression(leftLiteral, parse(restOfSentence));
     }
+  }
 
-    // ...
+  // ...
 ```
 
 The final four tests also pass:
