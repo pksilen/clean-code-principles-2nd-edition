@@ -1235,11 +1235,11 @@ a user should not adhere to them because they are internal details subject to ch
 ### Name Things Properly
 
 When you name things like a function poorly, you might end up attaching a comment to the function. To avoid writing comments, it is imperative to focus on naming things correctly. When following the _single responsibility principle_
-and the _uniform naming principle_, it should be easier to name things correctly and avoid comments. Below is an example of
+and the _uniform naming principle_, it should be easier to name things correctly and avoid comments. Below is a C++ example of
 a function with a comment:
 
-_MessageBuffer.h_
-```
+{title: MessageBuffer.h}
+```cpp
 class MessageBuffer
 {
 public:
@@ -1251,8 +1251,8 @@ public:
 
 If we drop the comment, we will have the following code:
 
-_MessageBuffer.h_
-```
+{title: MessageBuffer.h}
+```cpp
 class MessageBuffer
 {
 public:
@@ -1266,8 +1266,8 @@ nothing is communicated about returning `false`. We can only assume it is some e
 
 In addition to removing the comment, we should give a better name for the function and rename it as follows:
 
-_MessageBuffer.h_
-```
+{title: MessageBuffer.h}
+```cpp
 class MessageBuffer
 {
 public:
@@ -1283,23 +1283,22 @@ buffer is full. This will give the function caller sufficient information about 
 probably wait a while so that the buffer reader has enough time to read messages from the buffer
 and free up some space.
 
-
-Below is a real-life example of C++ code where the comment and the function name do not match. Don't worry, you don't
-need to understand C++ to understand the example.
+Below is a real-life example of C++ code where the comment and the function name do not match.
 
 ```cpp
-    /**
-     * @brief Add new counter or get existing, if same labels used already.
-     * @param counterName Name of the counter
-     * @param help Help text added for counter, if new countername
-     * @param labels Specific labels for counter.
-     * @return counter pointer used when increasing counter, or nullptr
-     *         if metrics not initialized or invalid name or labels
-    */
-    static prometheus::Counter* addCounter(
-        std::string counterName,
-        std::string help,
-        const std::map<std::string, std::string>& labels);
+  /**
+   * @brief Add new counter or get existing, if same labels used already.
+   * @param counterName Name of the counter
+   * @param help Help text added for counter, if new countername
+   * @param labels Specific labels for counter.
+   * @return counter pointer used when increasing counter, or nullptr
+   *         if metrics not initialized or invalid name or labels
+  */
+  static prometheus::Counter* addCounter(
+    std::string counterName,
+    std::string help,
+    const std::map<std::string, std::string>& labels
+  );
 ```
 
 In the above example, the function name tells it adds a counter, but the comment says it adds or gets an existing counter.
