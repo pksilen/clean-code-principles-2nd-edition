@@ -187,47 +187,47 @@ sonar.shouldBreakBuildOnQualityGateFailure = true
 
 ### Naming String Variables
 
-String variables are prevalent, and many things are intrinsically strings, like *name*, *title*, *city*, *country*, or *topic*.
+String variables are prevalent, and many things are intrinsically strings, like _name_, _title_, _city_, _country_, or _topic_.
 When you need to store numerical data in a string variable, tell the code reader clearly that it is a question about a number in
-string format, and use a variable name in the following format: *&lt;someValue&gt;_string* or *&lt;someValue&gt;_as_string*. It makes
-the code more prominent and easier to understand. For example:
+string format, and use a variable name in the following format: _&lt;someValue&gt;String_ or _&lt;someValue&gt;AsString_. It makes
+the code more prominent and easier to understand. For example in JavaScript:
 
-```python
-try:
-    year = int(year_as_string)
-except ValueError:
-    # ...
+```js
+const year = parseInt(yearAsString, 10);
 ```
 
-If you have a variable that could be confused with an object variable, like `schema` (could be confused with an instance of `Schema` class), but it is a string,
-add *string* to the end of the variable name, e.g., `schema_string`. Here is an example:
+If you have a string variable that could be confused with an object variable, like `schema` (could be confused with an instance of `Schema` class), but it is a string,
+add *string* to the end of the variable name, e.g., `schemaString`. Here is an example:
 
-```python
-schema = schema_parser.parse(schema_string)
+```java
+final var schema = schemaParser.parse(schemaString);
 ```
 
 ### Naming Enum Variables
 
-Name enum variables with the same name as the enum type. For example, a `CarType` enum variable should be named `car_type`.
+Name enum variables with the same name as the enum type. E.g., a `CarType` enum variable should be named `carType`.
 If the name of an enum type is very generic, like `Result`, you might benefit from declaring an enum variable with some
 detail added to the variable name. Below is an example of a very generic enum type name:
 
-```python
-# Returns enum type 'Result'
-result = pulsar_client.create_producer(...)
+{title: "PulsarProducer.cpp"}
+```cpp
+// Returns enum type 'Result'
+const auto result = pulsar::createProducer(...);
 
-if result == Result.Ok:
-    # ...
+if (result == Result.Ok) {
+  // ...
+}
 ```
 
 Let's add some detail and context to the `result` variable name:
 
-```python
-producer_create_result = pulsar_client.create_producer(...)
+{title: "PulsarProducer.cpp"}
+```cpp
+const auto producerCreationResult = pulsar::createProducer(...);
 
-if producer_create_result == Result.Ok:
-    # ...
-```
+if (producerCreationResult == Result.Ok) {
+  // ...
+}
 
 ### Naming Collection (List and Set) Variables
 
