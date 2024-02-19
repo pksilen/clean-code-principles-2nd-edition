@@ -1650,53 +1650,84 @@ It is now easy to add more exit codes with descriptive names later if needed.
 
 ### Extract Function
 
-If you are planning to write a comment above a piece of code, you should extract that piece of code to a new function.
-You don't need to write that comment when you extract a well-named function. The name
+If you are planning to write a comment above a piece of code, you should extract that piece of code to a new function. When you extract a well-named function, you don't need to write that comment. The name
 of the newly extracted function serves as documentation. Below is an example with some commented code:
 
-```python
-from Message import Message
+{title: "MessageBuffer.cpp"}
+```cpp
+void MessageBuffer::writeFitting(
+  std::deque<std::shared_ptr<Message>>& messages
+) {
+  if (m_messages.size() + messages.size() <= m_maxBufferSize)
+  {
+    // All messages fit in buffer
+    m_messages.insert(m_messages.end(),
+                      messages.begin(),
+                      messages.end());
 
+    messages.clear();
+  }
+  else
+  {
+    // All messages do not fit, write only messages that fit
+    const auto messagesEnd = messages.begin() +
+                             m_maxBufferSize -
+                             m_messages.size();
 
-class MessageBuffer:
-    def write_fitting(self, messages: list[Message]) -> None:
-        if len(self.__messages) + len(messages) <= self.__max_length:
-            # All messages fit in buffer
-            self.__messages.extend(messages)
-            messages.clear()
-        else:
-            # All messages do not fit, write only messages that fit
-            nbr_of_msgs_that_fit = self.__max_length - len(messages)
-            self.__messages.extend(messages[:nbr_of_msgs_that_fit])
-            del messages[:nbr_of_msgs_that_fit]
+    m_messages.insert(m_messages.end(),
+                      messages.begin(),
+                      messagesEnd);
+
+    messages.erase(messages.begin(), messagesEnd);
+  }
+}
 ```
 
 Here is the same code with comments refactored out by extracting two new methods:
 
-```python
-from Message import Message
+{title: "MessageBuffer.cpp"}
+```cpp
+void MessageBuffer::writeFitting(
+  std::deque<std::shared_ptr<Message>>& messages
+) {
+  const bool allMessagesFit = m_messages.size() +
+                              messages.size() <= m_maxBufferSize;
 
+  if (allMessagesFit)
+  {
+    writeAll(messages)
+  }
+  else
+  {
+    writeOnlyFitting(messages);
+  }
+}
 
-class MessageBuffer:
-    def write_fitting(self, messages: list[Message]) -> None:
-        all_messages_fit = (
-            len(self.__messages) + len(messages) <= self.__max_length
-        )
+void MessageBuffer::writeAll(
+  std::deque<std::shared_ptr<Message>>& messages
+) {
+  m_messages.insert(m_messages.end(),
+                    messages.begin(),
+                    messages.end());
 
-        if all_messages_fit:
-            self.__write_all(messages)
-        else:
-            self.__write_only_fitting(messages)
+  messages.clear();
+}
 
-    def __write_all(self, messages: list[Message]) -> None:
-        self.__messages.extend(messages)
-        messages.clear()
+void MessageBuffer::writeOnlyFitting(
+  std::deque<std::shared_ptr<Message>>& messages
+) {
+  const auto messageCountThatFit = m_maxBufferSize -
+                                   m_messages.size();
 
-    def __write_only_fitting(self, messages: list[Message]) -> None:
-        nbr_of_msgs_that_fit = self.__max_length - len(messages)
-        self.__messages.extend(messages[:nbr_of_msgs_that_fit])
-        del messages[:nbr_of_msgs_that_fit]
+  const auto messagesEnd = messages.begin() +
+                           messageCountThatFit;
 
+  m_messages.insert(m_messages.end(),
+                    messages.begin(),
+                    messagesEnd);
+
+  messages.erase(messages.begin(), messagesEnd);
+}
 ```
 
 ### Avoid Comments for Regular Expression
