@@ -2162,7 +2162,9 @@ Below is a list of the most common [code smells](https://en.wikipedia.org/wiki/C
 
 There are other refactoring techniques, but the ones explained here are the most relevant and valuable. You can
 find other refactoring techniques in *Martin Fowler*'s book *Refactoring*. Some of the refactorings presented in that book
-are pretty self-evident for experienced OOP practitioners; others are also handled in this book but scattered around and described as part of different principles and patterns, and some refactorings are primarily for legacy code only. You don't need them when writing new code with appropriate linter settings active. One example of such a refactoring is "Remove Assignments to Parameters".
+are pretty self-evident for experienced OOP practitioners; others are also handled in this book but scattered around and
+described as part of different principles and patterns, and some refactorings are primarily for legacy code only.
+You don't need them when writing new code with appropriate linter settings active. One example of such a refactoring is "Remove Assignments to Parameters".
 You don't need that when writing new code because you should have a linting rule that disallows assignments to parameters.
 
 ### Rename
@@ -2189,36 +2191,43 @@ at the end of the function.
 ### Extract Class
 
 This refactoring technique is used to make a large class smaller. A large class contains several hundreds of
-lines of code or tens of methods. To make a class smaller, you need to extract one or more behavioral classes from it and use them in the original class. This refactoring technique allows you to use the *strategy pattern* described
+lines of code or tens of methods. To make a class smaller, you need to extract one or more behavioral classes from
+it and use them in the original class. This refactoring technique allows you to use the *strategy pattern* described
 in the previous chapter. Let's have a simple example with a `Bird` class, which we assume to be large:
 
-```python
-class Bird:
-    def move(self):
-        # This method uses the below helper methods
-        # ...
+```java
+public class Bird {
+  public void move() {
+    // This method uses the below helper methods
+  }
 
-    def make_sound(self):
-        # This method uses the below helper methods
-        # ...
+  public void makeSound() {
+    // This method uses the below helper methods
+  }
 
-    # Possibly some other public methods ...
+  // Possibly some other public methods ...
 
-    def __move_helper1(self):
-        # ...
+  private void moveHelper1() {
+    // ...
+  }
 
-    # ...
+  // ...
 
-    def __move_helper4(self):
-        # ...
+  private void moveHelper4() {
+    // ...
+  }
 
-    def make_sound_helper1(self):
-        # ...
 
-    # ...
+  private void makeSoundHelper1() {
+    // ...
+  }
 
-    def make_sound_helper4(self):
-        # ...
+  // ...
+
+  private void makeSoundHelper4() {
+    // ...
+  }
+}
 ```
 
 To make the above class smaller, we can extract two behavioral classes: `BirdMover` and `BirdSoundMaker`.
