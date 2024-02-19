@@ -1306,159 +1306,225 @@ The real problem is that once someone first reads the function name `addCounter`
 read the 'brief' in the comments because they immediately understand what the function does after reading its name: it should add a counter.
 We could improve the function's name and rename it to `addOrGetExistingCounter` as a solution.
 
-Below is a real-life example from a book that I once read:
+Below is a real-life Java example from a book that I once read:
 
-```python
-from typing import Protocol
+```java
+public interface Mediator {
+  // To register an employee
+  void register(Person person);
 
-from Person import Person
+  // To send a message from one employee to another employee
+  void connectEmployees(
+    Person fromPerson,
+    Person toPerson,
+    String msg
+  );
 
-
-class Mediator(Protocol):
-    # To register an employee
-    def register(self, person: Person) -> None:
-        pass
-
-    # To send a message from one employee to another employee
-    def connect_employees(
-        self,
-        from_person: Person,
-        to_person: Person,
-        msg: str
-    ) -> None:
-        pass
-
-    # To display currently registered members
-    def display_detail(self) -> None:
-        pass
+  // To display currently registered members
+  void displayDetail();
+}
 ```
 
 There are three functions in the above example, each of which has a problem.
 The first function is registering a person, but the comment says it is registering an employee. So, there is a mismatch
 between the comment and the code. In this case, I trust the code over the comment. The correction is to remove the comment
-because it does not bring any value. It only confuses.
+because it does not bring any value. It only causes confusion.
 
-The second function says in the comment that it sends a message from one employee to another. The function name speaks
+The second function says in the comment that it sends a message from one employee to another. The function name tells
 about connecting employees, but the parameters are persons. I assume that a part of the
-comment is correct: to send a message from someone to someone else. But once again, I trust the code over the comment and assume the message is sent from one person to another. We should remove the comment and rename the function.
+comment is correct: to send a message from someone to someone else. But once again, I trust the code
+more over the comment and assume the message is sent from one person to another. We should remove the comment and rename the function.
 
 In the third function, the comment adds information missing from the function name. The comment also
 discusses members, as other parts of the code speak about employees and persons. There are three different
-terms used: employee, person, and member. Just one term should be picked. Let's choose the term *person* and use it systematically.
+terms used: employee, person, and member. Just one term should be picked. Let's choose the term _person_ and use it systematically.
 
 Below is the refactored version without the comments:
 
-```python
-class Mediator(Protocol):
-    def register(self, person: Person) -> None:
-        pass
+```java
+public interface Mediator {
+  void register(Person person);
 
-    def send(message: str, sender: Person, recipient: Person) -> None:
-        pass
+  void send(
+    String message,
+    Person sender,
+    Person recipient
+  );
 
-    def display_details_of_registered_persons(self) -> None:
-        pass
+  void displayDetailsOfRegisteredPersons();
+}
 ```
 
 ### Single Return Of Named Value At The End Of Function
 
 > ***A function should have a single return statement and return a named value at the end of the function. This allows the code reader to infer the meaning of the return value by looking at the end of the function.***
 
-Consider the following example:
+This principle is relevant for return types that do not convey enough semantic meaning like a number or a string.
 
-```python
-from typing import Protocol
+Consider the following C++ example:
 
-from CounterFamily import CounterFamily
+{title: "Metrics.h"}
+```cpp
+class Metrics
+{
+public:
+  // ...
 
+  static uint32_t addCounter(
+    CounterFamily counterFamily,
+    const std::map<std::string, std::string>& labels
+  );
 
-class Metrics(Protocol):
-    # ...
+  static void incrementCounter(
+    uint32_t counterIndex,
+    size_t incrementAmount
+  );
 
-    def add_counter(
-        self,
-        counter_family: CounterFamily,
-        labels: dict[str, str]
-    ) -> int:
-        pass
-
-    def increment_counter(
-        self,
-        counter_index: int,
-        increment_amount: int
-    ) -> None:
-        pass
-
-    # def add_gauge ...
-    # def set_gauge ...
+  // addGauge...
+  // setGaugeValue...
+}
 ```
 
-What is the return value of the `add_counter` function? Someone might think a comment is needed to describe
-the return value because it is unclear what `int` means. Instead of writing a comment, we can introduce a named value
+What is the return value of the `addCounter` function? Someone might think a comment is needed to describe
+the return value because it is unclear what `uint32_t` means. Instead of writing a comment, we can introduce a named value
 (= variable/constant) to be returned from the function. The idea behind the named return value is that it communicates the semantics of the return
-value without the need for a comment. Below is the implementation for the `add_counter` function:
+value without the need for a comment. In C++, you jump from the function declaration to the function definition to see
+what the function returns. Below is the implementation for the `addCounter` function:
 
+{title: "Metrics.cpp"}
+```cpp
+uint32_t Metrics::addCounter(
+  const CounterFamily counterFamily,
+  const std::map<std::string, std::string>& labels)
+{
+  uint32_t counterIndex;
+
+  // Perform adding a counter here and
+  // set value for the 'counterIndex'
+
+  return counterIndex;
+}
 ```
-from typing import Protocol
 
-from CounterFamily import CounterFamily
-
-
-class Metrics(Protocol):
-    def add_counter(
-        self,
-        counter_family: CounterFamily,
-        labels: dict[str, str]
-    ) -> int:
-        # Perform adding a counter here and
-        # set value for the 'counter_index' variable
-        return counter_index
-```
-
-In the above implementation, we have a single return of a named value at the end of the function. All we have to do is look
-at the end of the function and spot the return statement, which should tell us the meaning of the mysterious `int` typed return value: It is a counter index. We can spot that the `increase_counter` function requires a `counter_index` argument, and this establishes a connection between calling the `add_counter` function first, storing the returned counter index, and
-later using that stored counter index in calls to the `increase_counter` function.
+In the above implementation, we have a single return of a named value at the end of the function. All we have to do is to look
+at the end of the function and spot the return statement, which should tell us the meaning of the mysterious `uint32_t`
+typed return value: It is a counter index. And we can spot that the `increaseCounter` function requires a `counterIndex` argument
+and this establishes a connection between calling the `addCounter` function first, storing the returned counter index, and
+later using that stored counter index in calls to the `increaseCounter` function.
 
 ### Return Type Aliasing
 
-In the previous example, there was the mysterious return value of type `int` in the `add_counter` function. We learned how
+In the previous example, there was the mysterious return value of type `uint32_t` in the `addCounter` function. We learned how
 introducing a named value returned at the end of the function helped to communicate the semantics of the return value. But there is
-an even better way to communicate the semantics of a return value. We can use type aliasing. Below is an example where
-we introduce a `CounterIndex` type alias for the `int` type:
+an even better way to communicate the semantics of a return value. Many languages like C++ and TypeScript offer type aliasing that
+can be used to communicate the return value semantics. Below is a C++ example where we introduce a `CounterIndex` type alias
+for the `uint32_t` type:
 
-```
-from typing import Protocol
+{title: "Metrics.h_"}
+```cpp
+class Metrics
+{
+public:
+  using CounterIndex = uint32_t;
 
-from CounterFamily import CounterFamily
+  // ...
 
+  static CounterIndex addCounter(
+    CounterFamily counterFamily,
+    const std::map<std::string, std::string>& labels
+  );
 
-CounterIndex = int
-
-class Metrics(Protocol):
-    # ...
-
-    def add_counter(
-        self,
-        counter_family: CounterFamily,
-        labels: dict[str, str]
-    ) -> CounterIndex:
-        pass
-
-    def increment_counter(
-        self,
-        counter_index: CounterIndex,
-        increment_amount: int
-    ) -> None:
-        pass
-
-    # def add_gauge ...
-    # def set_gauge_value ...
+  static void incrementCounter(
+    CounterIndex counterIndex,
+    size_t incrementAmount
+  );
+}
 ```
 
-We can improve the above metrics example more. First of all, we should avoid the primitive obsession. We should not be returning an index
-from the `add_counter` method, but we should rename the method as `create_counter` and return an instance of a `Counter` class from
-the method. Then we should make the example more object-oriented by moving the `increment_counter` method to the `Counter` class
-and renaming it just `increment`. Also, the name of the `Metrics` class should be changed to `MetricFactory`.
+And here is the same example in TypeScript:
+
+{title: "Metrics.ts"}
+```ts
+export type CounterIndex = number;
+
+export default class Metrics {
+  // ...
+
+ static addCounter(
+    counterFamily: CounterFamily,
+    labels: Record<string, string>
+  ): CounterIndex;
+
+  static incrementCounter(
+    counterIndex: CounterIndex,
+    incrementAmount: number
+  ): void;
+}
+```
+
+Some languages, like Java, don't have type aliases. Then you can introduce a wrapper class for the returned value. Here is the same example in Java:
+
+{title: "CounterIndex.java"}
+```
+public class CounterIndex {
+  private final int value;
+
+  public CounterIndex(final int value) {
+    this.value = value;
+  }
+
+  public int get() {
+    return value;
+  }
+}
+```
+
+{title: "Metrics.java"}
+```java
+public final class Metrics {
+  // ...
+
+  public static CounterIndex addCounter(
+    final CounterFamily counterFamily,
+    final Map<String, String> labels
+  ) {
+    // ...
+  }
+
+  public static void incrementCounter(
+    CounterIndex counterIndex,
+    double incrementAmount
+  ) {
+    // ...
+  }
+}
+```
+
+We can improve the above example. The `CounterIndex` class could be derived from a generic `Value` class:
+
+```java
+public class Value<T> {
+  private final T value;
+
+  public Value(final T value) {
+    this.value = value;
+  }
+
+  public T get() {
+    return value;
+  }
+}
+
+public class CounterIndex extends Value<Integer> {
+  // ...
+}
+```
+
+We can improve the above metrics example a lot. First, we should avoid the primitive type obsession. We should not be returning an index
+from the `addCounter` method, but we should rename the method as `createCounter` and return an instance of a `Counter` class from
+the method. Then we should make the example more object-oriented by moving the `incrementCounter` method to the `Counter` class
+and naming it just `increment`. Also, the name of the `Metrics` class should be changed to `MetricFactory`. And finally,
+we should make the `MetricFactory` class a singleton instead of containing static methods.
 
 ### Extract Constant for Boolean Expression
 
