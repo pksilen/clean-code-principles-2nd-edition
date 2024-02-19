@@ -1735,8 +1735,8 @@ void MessageBuffer::writeOnlyFitting(
 When you have a complex regular expression, you might be tempted to attach a comment to it to explain the meaning
 of it. But there is an alternative way. You can split the complex regular expression into well-named parts and construct the final regular expression from those well-named parts. For example, suppose you must create a regular expression to validate phone numbers in the international format. In that case, you can split the regular expression into
 the following parts: plus sign, country code, area code, and the rest of the phone number (local number). You can define
-the regular expression using the parts: `intl_phone_nbr_reg_expr = plus_sign + country_code + area_code +
-local_number`
+the regular expression using the parts: `intlPhoneNbrRegExpr = plusSign + countryCode + areaCode +
+localNumber`.
 
 ### Avoiding Comments in Bash Shell Scripts
 
