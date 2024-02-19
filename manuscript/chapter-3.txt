@@ -81,77 +81,72 @@ If the unit of a variable is not self-evident, add information about the unit to
 ### Naming Boolean Variables
 
 Boolean variables can have only one of two values: true or false. The name of a boolean variable should form a statement where the answer is
-true or false, or yes or no. Typical boolean variable naming patterns are: *is_&lt;something&gt;*, *has_&lt;something&gt;*, *did_&lt;something&gt;*,
-*should_&lt;something&gt;*, *can_&lt;something&gt;, or *will_&lt;something&gt;*. Some examples of variable names following the above patterns are
-*is_disabled*, *has_errors*, *did_update*, *should_update*, and *will_update*.
+true or false, or yes or no. Typical boolean variable naming patterns are: *is&lt;something&gt;*, *has&lt;something&gt;*, *did&lt;something&gt;*,
+*should&lt;something&gt;*, *can&lt;something&gt;, or *will&lt;something&gt;*. Some examples of variable names following the above patterns are
+*isDisabled*, *hasErrors*, *didUpdate*, *shouldUpdate*, and *willUpdate*.
 
 The verb in the boolean variable name does not have to be at the beginning. It can and should be in the middle if it makes the code read better.
 Boolean variables are often used in if-statements where changing the word order in the variable name can make the code read
 better. Remember that, at best, code reads like beautiful prose and is read more often than written.
 
-Below is a code snippet where we have a boolean variable named `is_pool_full`:
+Below is a C++ code snippet where we have a boolean variable named `isPoolFull`:
 
-```python
-# ...
-
-is_pool_full = len(self.__pooled_messages) >= 200
-if is_pool_full:
-    # ...
-else:
-    # ...
+```cpp
+if (const bool isPoolFull = m_pooledMessages.size() >= 200U;
+      isPoolFull)
+{
+  // ...
+}
+else
+{
+  // ...
+}
 ```
 
-We can change the variable name to `pool_is_full` to make the if-statement read more fluently. In the below example, the if-statement
-reads "if pool_is_full" instead of "if is_pool_full":
+We can change the variable name to `poolIsFfull` to make the if-statement read more fluently. In the below example, the if-statement
+reads "if poolIsFull" instead of "if isPoolFull":
 
-```python
-# ...
-
-pool_is_full = len(self.__pooled_messages) >= 200
-if pool_is_full:
-    # ...
-else:
-    # ...
+```cpp
+if (const bool poolIsFull = m_pooledMessages.size() >= 200U;
+      poolIsFull)
+{
+  // ...
 ```
 
-Don't use boolean variable names in the form of *&lt;passive-verb&gt;_something*, like *inserted_field*, because this can confuse the reader.
+Don't use boolean variable names in the form of *&lt;passive-verb&gt;Something*, like *insertedField*, because this can confuse the reader.
 It is unclear if the variable name is a noun (a field that was inserted) that names an object or a boolean statement.
-Instead, use either *did_insert_field* or *field_was_inserted*.
+Instead, use either *didInsertField* or *fieldWasInserted*.
 
-Below is an example of the incorrect naming of a variable used to store a function return value. The `drop_redundant_tables` function
-returns a boolean. Someone might think the `tables_dropped` variable means a list of dropped table names. So, the name of the variable is obscure and should be changed.
+Below is a Go language example of the incorrect naming of a variable used to store a function return value. Someone might think
+that `tablesDropped` means a list of dropped table names. So, the name of the variable is obscure and should be changed.
 
-```python
-tables_dropped = drop_redundant_tables(
-    prefix,
-    vms_data,
-    config.database,
-    hive_client,
-    logger
-)
-
-if tables_dropped:
-    # ...
+```go
+tablesDropped := dropRedundantTables(prefix,
+                                     vmsdata,
+                                     cfg.HiveDatabase,
+                                     hiveClient,
+                                     logger)
+if tablesDropped {
+  // ...
+}
 ```
 
 Below is the above example modified so that the variable name is changed to indicate a boolean statement:
 
-```python
-tables_were_dropped = drop_redundant_tables(
-    prefix,
-    vms_data,
-    config.database,
-    hive_client,
-    logger
-)
-
-if tables_were_dropped:
-    # ...
+```go
+tablesWereDropped := dropRedundantTables(prefix,
+                                         vmsdata,
+                                         cfg.HiveDatabase,
+                                         hiveClient,
+                                         logger)
+if tablesWereDropped {
+  // ...
+}
 ```
 
-You could have used a variable named `did_drop_tables`, but the `tables_were_dropped` makes the if-statement more readable.
-If the return value of the `drop_redundant_tables` function were a list of dropped table names, I would name the
-return value receiving variable as `dropped_table_names`.
+You could have used a variable named `didDropTables`, but the `tablesWereDropped` makes the if-statement more readable.
+If the return value of the `dropRedundantTables` function were a list of dropped table names, I would name the
+return value receiving variable as `droppedTableNames`.
 
 When you read code containing a negated boolean variable, it usually reads terrible, for example:
 
