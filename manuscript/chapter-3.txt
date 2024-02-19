@@ -379,8 +379,11 @@ const doubled = value => 2 * value;
 const squared = value => value * value;
 const isEven = nbr => (nbr % 2) === 0;
 const values = [1, 2, 3, 4, 5]
+
+// You can imagine an implicit "to" preposition after the map function name
 const doubledValues = values.map(doubled);
 const squaredValues = values.map(squared);
+
 const evenValues = values.filter(isEven);
 
 const strings = [" string1", "string2 "];
@@ -388,6 +391,7 @@ const trimmed = str => str.trim();
 const trimmedStrings = strings.map(trimmed);
 
 const sumOfValues = (sum, value) => sum + value;
+// You can imagine an implicit "to" preposition after the reduce function name
 values.reduce(sumOfValues, 0);
 ```
 
