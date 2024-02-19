@@ -343,20 +343,28 @@ drive(homeLocation, destLocation);
 
 ### Naming Optional Variables
 
-If you are using the `Optional[T]` class (presented earlier in this book), name variables of this type using the following pattern: *maybe_&lt;something&gt;*:
+How to name optional variables depends on the programming language and how the optional types are implemented. An optional
+variable name should be prefixed with _maybe_ in languages where you need to unwrap the possible value from an optional object.
 
-```python
-maybe_logged_in_user.if_present(lambda logged_in_user: logged_in_user.logout())
-current_user = maybe_logged_in_user.or_else(guest_user)
+In Java, when using Optional&lt;T&gt;, name variables of this type using the following pattern: _maybe&lt;Something&gt;_:
+
+```java
+maybeLoggedInUser.ifPresent(loggedInUser -> loggedInUser.logout());
+final User currentUser = maybeLoggedInUser.orElse(guestUser);
 ```
 
-When you create optional types using a type union, you don’t need any prefixes in optional variable names. In the below example, the `discount` parameter is optional:
+In TypeScript and other languages where optional types are created using type unions, you don’t need any prefixes
+in optional variable names. In the below example, the `discount` parameter is optional, and its type is `number | undefined`:
 
-```python
-def add_tax(price: float, discount: int | None = None) -> float:
-    return 1.2 * (price - (0 if discount is None else discount))
+```ts
+function addTax(
+  price: number,
+  discount?: number
+): number {
+  return 1.2 * (price — (discount ?? 0));
+}
 
-price_with_tax = add_tax(price_without_tax)
+const priceWithTax = addTax(priceWithoutTax);
 ```
 
 ### Naming Function Variables (Callbacks)
