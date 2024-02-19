@@ -2705,26 +2705,36 @@ public class Sizer {
 What we should do is to make the `Rectangle` objects rich objects by moving functionality from various classes
 into the `Rectangle class` and removing the getters and setters:
 
-```python
-class Rectangle:
-    def __init__(self, width: float, height: float):
-        self.__width = width
-        self.__height = height
+```java
+public class Rectangle {
+  private float width;
+  private float height;
 
-    def draw(self) -> None:
-        # Implement drawing here ...
+  public Rectangle(final float width, final float height) {
+    this.width = width;
+    this.height = height;
+  }
 
-    def calculate_area(self) -> float:
-        # Calculate area here ...
+  public void draw() {
+    // Implement drawing here ...
+  }
 
-    def calculate_perimeter(self) -> float:
-        # Calculate perimeter here ...
+  public float calculateArea() {
+    // Calculate area here ...
+  }
 
-    def increase_width(self, percentage: float) -> None:
-        # Increase width here ...
+  public float calculatePerimeter() {
+    // Calculate perimeter here ...
+  }
 
-    def increase_height(self, percentage: float) -> None:
-        # Increase height here ...
+  public void increaseWidth(final float percentage) {
+    // Increase width here ...
+  }
+
+  public void increaseHeight(final float percentage) {
+    // Increase height here ...
+  }
+}
 ```
 
 Let's imagine that the methods added to the `Rectangle` class are large, and the whole class becomes too large.
@@ -2732,45 +2742,48 @@ In that case, we can use the *bridge pattern* and refactor the classes as shown 
 with attached behaviour and we do not need any getters or setters because we are not passing the `self` to any outside
 object of the `Rectangle` class.
 
-```python
-class Drawer:
-    # ...
+```java
+public interface Drawer {
+  void drawRectangle(final float width, final float height);
 
-    def draw_rectangle(self, width: float, height: float) -> None:
-        pass
-
-
-class Calculator:
-    # ...
-
-    def calc_rect_area(self, width: float, height: float) -> float:
-        pass
-
-    def calc_rect_perimeter(self, width: float, height: float) -> float:
-        pass
+  // Possible other methods ...
+}
 
 
-class Sizer:
-    # ...
+public interface Calculator {
+  float calcRectArea(final float width, final float height);
+  float calcRectPerimeter(final float width, final float height);
 
-    def increase(self, length: float, percentage: float) -> float:
-        pass
+  // Possible other methods ...
+}
+
+public interface Sizer {
+  float increase(final float length final float percentage);
+
+  // Possible other methods ...
+}
 
 
-class Rectangle:
-    def __init__(
-        self,
-        width: float,
-        height: float,
-        drawer: Drawer,
-        calculator: Calculator,
-        sizer: Sizer,
-    ):
-        self.__width = width
-        self.__height = height
-        self.__drawer = drawer
-        self.__calculator = calculator
-        self.__sizer = sizer
+public class Rectangle {
+  private float width;
+  private float height;
+  private final Drawer drawer;
+  private final Calculator calculator;
+  private final Sizer sizer;
+
+  public Rectangle(
+    final float width,
+    final float height,
+    final Drawer drawer,
+    final Calculator calculator,
+    final Sizer sizer
+  ) {
+    this.width = width;
+    this.height = height;
+    this.drawer = drawer;
+    this.calculator = calculator;
+    this.sizer = sizer;
+  }
 
     def draw(self) -> None:
         self.__drawer.draw_rectangle(self.__width, self.__height)
@@ -2790,6 +2803,7 @@ class Rectangle:
 
     def increase_height(self, percentage: float) -> None:
         self.__height = self.__sizer.increase(self.__height, percentage)
+}
 ```
 
 You can see from the above code that we no longer need to perform *shotgun surgery* if we need to change the `Rectangle` class. For example, let's say that our rectangles should always have a height double the width. We can refactor the `Rectangle` class to the following:
