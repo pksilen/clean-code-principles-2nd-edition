@@ -2655,7 +2655,7 @@ public class Rectangle {
     this.width = width;
   }
 
-  public void setHeigh(final float height) {
+  public void setHeight(final float height) {
     this.height = height;
   }
 }
@@ -2671,7 +2671,7 @@ public class Drawer {
 
 
 public class Calculator {
-  # Possible other methods
+  // Possible other methods
 
   public float calcRectArea(final Rectangle rectangle) {
     // ...
