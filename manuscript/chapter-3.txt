@@ -1738,6 +1738,48 @@ the following parts: plus sign, country code, area code, and the rest of the pho
 the regular expression using the parts: `intlPhoneNbrRegExpr = plusSign + countryCode + areaCode +
 localNumber`.
 
+### Name Anonymous Function
+
+Anonymous functions are common in functional programming, e.g., when using
+algorithms like _forEach_, _map_, _filter_, and _reduce_. When an anonymous function is long or complex, you should give it a descriptive name and split it into multiple functions
+if it is too long. This way, you can eliminate comments.
+
+In the below TypeScript example, we have an anonymous function with a comment:
+
+```ts
+// ...
+
+fs.watchFile('/etc/config/LOG_LEVEL', () => {
+  // Update new log level
+  try {
+    const newLogLevel = fs.readFileSync('/etc/config/LOG_LEVEL',
+                                        'utf-8'}).trim();
+    tryValidateLogLevel(newLogLevel);
+    process.env.LOG_LEVEL = newLogLevel;
+  } catch (error) {
+    // ...
+  }
+});
+```
+
+We can refactor the above example so that the comment is removed and
+the anonymous function is given a name:
+
+```ts
+function updateNewLogLevel() {
+  try {
+    const newLogLevel = fs.readFileSync('/etc/config/LOG_LEVEL',
+                                        'utf-8'}).trim();
+    tryValidateLogLevel(newLogLevel);
+    process.env.LOG_LEVEL = newLogLevel;
+  } catch (error) {
+    // ...
+  }
+}
+
+fs.watchFile('/etc/config/LOG_LEVEL', updateNewLogLevel);
+```
+
 ### Avoiding Comments in Bash Shell Scripts
 
 Many programmers, myself included, don't enjoy the mysterious syntax of Linux shell commands and scripts.
@@ -1828,184 +1870,183 @@ configFileLongestLineLength = $(getFileLongestLineLength $configFilePathName)
 
 A single return statement with a named value at the end of a function clearly communicates the return value semantics
 if the return value type does not directly communicate it. For example, if you return a value of a primitive
-type like an integer or boolean from a function, what the return value means is not necessarily 100% clear. But when you return a named value at the end of the
+type like an integer or boolean from a function, it is not necessarily 100% clear what the return value means. But when you return a named value at the end of the
 function, the name of the returned variable communicates the semantics.
 
 You might think that being unable to return a value in the middle of a function would make
-the function less readable because of lots of nested if statements. This is possible, but one should remember that
-a function should be small. Aim to have a maximum of 5-9 lines of statements
-in a single function. Following that rule, you never have *a hell of nested if-statements* inside
+the function less readable because of lots of nested if-statements. This is possible, but one should remember that a function should be small. Aim to have a maximum of 5-9 lines of statements
+in a single function. Following that rule, you never have _a hell of nested if-statements_ inside
 a single function.
 
 Having a single return statement at the end of a function makes refactoring the function easier. You can use automated
 refactoring tools provided by your IDE. It is always harder to extract a new function from code containing
-a return statement. The same applies to loops with a *break* or *continue* statement. It is easier to refactor code
+a return statement. The same is true for loops with a _break_ or _continue_ statement. It is easier to refactor code
 inside a loop that does not contain a break or continue statement.
 
-In some cases, returning a single value at the end of a function makes the code more straightforward and requires fewer lines.
+In some cases, returning a single value at the end of a function makes the code more straightforward and requires fewer lines of code.
+
 Below is an example of a function with two return locations:
 
-```python
-from threading import Thread
+{title: "TransformThread.cpp"}
+```cpp
+bool TransformThread::transform(
+  const std::shared_ptr<InputMessage>& inputMessage
+) {
+  auto outputMessage = m_outputMessagePool->acquireMessage();
+  bool messageIsFilteredIn;
 
-from InputMessage import InputMessage
+  const bool messageWasTransformed =
+    m_messageTransformer->transform(inputMessage,
+                                   outputMessage,
+                                   messageIsFilteredIn);
 
+  if (messageWasTransformed && messageIsFilteredIn)
+  {
+    m_outputMessages.push_back(outputMessage);
+  }
+  else
+  {
+    m_outputMessagePool->returnMessage(outputMessage);
 
-class TransformThread(Thread):
-    # ...
+    if (!messageWasTransformed)
+    {
+        return false;
+    }
+  }
 
-    def transform(self, input_message: InputMessage) -> bool:
-        output_message = self.__output_message_pool.acquire_message()
-
-       (
-           msg_was_transformed,
-           msg_is_filtered_in,
-       ) = self.__message_transformer.transform(
-           input_message, output_message
-       )
-
-        if msg_was_transformed and msg_is_filtered_in:
-            self.__output_messages.append(output_message)
-        else:
-            self.__output_message_pool.return_message(output_message)
-            if not msg_was_transformed:
-                return False
-
-        return True
+  return true;
+}
 ```
 
 When analyzing the above function, we notice that it transforms an input message into an output message.
-We can conclude that the function returns *True* on successful message transformation. We can shorten the function by refactoring
-it to contain only one return statement. After refactoring, it is also 100% clear what the function return value means.
+We can conclude that the function returns _true_ on successful message transformation. We can shorten the function by refactoring
+it to contain only one return statement. After refactoring, it is 100% clear what the function return value means.
 
-```python
-from threading import Thread
+{title: "TransformThread.cpp"}
+```cpp
+bool TransformThread::transform(
+  const std::shared_ptr<InputMessage>& inputMessage
+) {
+  auto outputMessage = m_outputMessagePool->acquireMessage();
+  bool messageIsFilteredIn;
 
-from InputMessage import InputMessage
+  const bool messageWasTransformed =
+      m_messageTransformer->transform(inputMessage,
+                                      outputMessage,
+                                      messageIsFilteredIn);
 
+  if (messageWasTransformed && messageIsFilteredIn)
+  {
+    m_outputMessages.push_back(outputMessage);
+  }
+  else
+  {
+    m_outputMessagePool->return(outputMessage);
+  }
 
-class TransformThread(Thread):
-    # ...
-
-    def transform(self, input_message: InputMessage) -> bool:
-        output_message = self.__output_message_pool.acquire_message()
-
-        (
-            msg_was_transformed,
-            msg_is_filtered_in,
-        ) = self.__message_transformer.transform(
-            input_message, output_message
-        )
-
-        if msg_was_transformed and msg_is_filtered_in:
-            self.__output_messages.append(output_message)
-        else:
-            self.__output_message_pool.return_message(output_message)
-
-        return msg_was_transformed
+  return messageWasTransformed;
+}
 ```
 
-As an exception to this rule, you can have multiple return statements in a function when the function has an optimal length (max 5-9 statements)
-and would become too long if it is refactored to contain a single return statement. Additionally, it is required that
-the semantic meaning of the return value is evident from the function name or the return type of the function. Below is
-an example of a function with multiple return statements. It is also evident from the function name what the return value means.
-Also, the length of the function is optimal: seven statements.
+As an exception to this rule, you can have multiple return statements in a function when the function has optimal length and would become too long if it is refactored to contain a single return statement. Additionally, it is required that the semantic meaning of the return value is clear from the function name or the return type of the function. Below is an example of a function with multiple return statements. It is also clear
+from the function name what the return value means. Also, the length of the function is optimal: seven statements.
 
-```python
-from typing import Protocol, TypeVar
+```ts
+private areEqual(
+  iterator: MyIterator<T>,
+  anotherIterator: MyIterator<T>
+): boolean {
+  while (iterator.hasNextElement()) {
+    if (anotherIterator.hasNextElement()) {
+      if (iterator.getNextElement() !==
+          anotherIterator.getNextElement()) {
+       return false;
+      }
+    } else {
+      return false;
+    }
+  }
 
-T = TypeVar('T')
-
-
-class MyIterator(Protocol[T]):
-    def has_next_item(self) -> bool:
-        pass
-
-    def get_next_item(self) -> T:
-        pass
-
-def are_equal(
-    iterator: MyIterator[T],
-    another_iterator: MyIterator[T]
-) -> bool:
-    while iterator.has_next_item():
-        if another_iterator.has_next_item():
-            if (
-                iterator.get_next_item()
-                != another_iterator.get_next_item()
-            ):
-                return False
-        else:
-            return False
-
-    return True
+  return true;
+}
 ```
 
-If we refactored the above code to contain a single return statement, the code, as shown below, would become too long (10 statements) to
-fit in one optimal-sized function. In this case, we should prefer the above code over the below code.
+If we refactored the above code to contain a single return statement, the code would become too long (10 statements) to fit in one function, as shown below. In this case, we should prefer the above code over the below code.
 
-```python
-def are_equal(
-    iterator: MyIterator[T],
-    another_iterator: MyIterator[T]
-) -> bool:
-    iters_are_equal = True
+```ts
+private areEqual(
+  iterator: MyIterator<T>,
+  anotherIterator: MyIterator<T>
+): boolean {
+  let areEqual = true;
 
-    while iterator.has_next_item():
-        if another_iterator.has_next_item():
-            if (
-                iterator.get_next_item()
-                != another_iterator.get_next_item()
-            ):
-                iters_are_equal = False
-                break
-        else:
-            iters_are_equal = False
-            break
+  while (iterator.hasNextElement()) {
+    if (anotherIterator.hasNextElement()) {
+      if (iterator.getNextElement() !==
+          anotherIterator.getNextElement()) {
+       areEqual = false;
+       break;
+      }
+    } else {
+      areEqual = false;
+      break;
+    }
+  }
 
-    return iters_are_equal
+  return areEqual;
+}
 ```
 
 As the second exception to this rule, you can use multiple return locations in a factory because you know
 from the factory name what type of objects it creates. Below is an example factory with multiple return statements:
 
-```python
-from enum import Enum
 
+```cpp
+enum class CarType
+{
+  Audi,
+  Bmw,
+  MercedesBenz
+};
 
-class CarType(Enum):
-    AUDI = 1
-    BMW = 2
-    MERCEDES_BENZ = 3
+class Car
+{
+  // ...
+};
 
+class Audi : public Car
+{
+  // ...
+};
 
-class Car:
-    # ...
+class Bmw : public Car
+{
+  // ...
+};
 
+class MercedesBenz : public Car
+{
+  // ...
+};
 
-class Audi(Car):
-    #...
-
-
-class Bmw(Car):
-    # ...
-
-
-class MercedesBenz(Car):
-    # ...
-
-
-class CarFactory:
-    def create_car(self, car_type: CarType) -> Car:
-        match car_type:
-            case CarType.AUDI:
-                return Audi()
-            case CarType.BWM:
-                return Bmw()
-            case CarType.MERCEDES_BENZ:
-                return MercedesBenz()
-            case _:
-                raise ValueError('Invalid car type')
+class CarFactory
+{
+public:
+  std::shared_ptr<Car> createCar(const CarType carType)
+  {
+    switch(carType)
+    {
+      case CarType::Audi:
+        return std::make_shared<Audi>();
+      case CarType::Bmw:
+        return std::make_shared<Bmw>();
+      case CarType::MercedesBenz:
+        return std::make_shared<MercedesBenz>();
+      default:
+        throw std::invalid_argument("Unknown car type");
+    }
+  }
+};
 ```
 
 ## Use Type Annotations for Production Code Principle
