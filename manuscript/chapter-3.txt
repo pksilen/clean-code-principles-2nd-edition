@@ -150,24 +150,26 @@ return value receiving variable as `droppedTableNames`.
 
 When you read code containing a negated boolean variable, it usually reads terrible, for example:
 
-```python
-app_was_started = app.start()
+```java
+final var appWasStarted = app.start();
 
-if not app_was_started:
-    # ...
+if (!appWasStarted) {
+  // ...
+}
 ```
 
 To improve the readability, you can mentally move the `not` word to the correct place to make the sentence
-read like proper English. For example: *if app was not started*
+read like proper English. For example: *if appWas not Started*
 
 The other option is to negate the variable. That is done by negating both sides of the assignment by adding
 `not` on both sides of the assignment operator. Here is an example:
 
-```python
-app_was_not_started = not app.start()
+```java
+final var appWasNotStarted = !app.start();
 
-if app_was_not_started:
-    # ...
+if (appWasNotStarted) {
+  // ...
+}
 ```
 
 Below is a real-life example where a boolean property is named wrong:
