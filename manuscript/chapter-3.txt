@@ -40,8 +40,8 @@ Let's have another example with a variable named `loyaltyBonusPercentage`. You c
 
 If a variable name is less than 20 characters long, you don't need to shorten it. If you have several variables named in
 a similar wording and one or more of them needs abbreviating, you can use that abbreviation in all the variable names for
-consistency. For example, if you have variables `configuration_file` and `configuration_file_parser`, you
-can abbreviate the both to `config_file` and `config_file_parser`.
+consistency. For example, if you have variables `configurationFile` and `configurationFilePparser`, you
+can abbreviate the both to `configFile` and `configFileParser`.
 
 In the following sections, naming conventions for different types of variables are proposed.
 
