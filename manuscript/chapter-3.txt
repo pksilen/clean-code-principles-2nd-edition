@@ -31,12 +31,12 @@ actual variable type. But when the variable's name tells its type, it does not m
 
 If a variable name is 20 or more characters long, consider making it shorter. Try to abbreviate
 one or more words in the variable name, but only use meaningful and well-known abbreviations. If such abbreviations don't exist, then
-don't abbreviate at all. For example, if you have a variable named `environment_variable_name`, you should try to shorten it because
+don't abbreviate at all. For example, if you have a variable named `environmentVariableName`, you should try to shorten it because
 it is over 20 characters long. You can abbreviate *environment* to *environ* and *variable* to *var*, resulting in a variable
-name `environ_var_name` that is short enough. Both abbreviations `environ` and `var` are commonly used and well understood.
-Let's have another example with a variable named `loyalty_bonus_percentage`. You cannot abbreviate *loyalty*. You cannot abbreviate
+name `environVarName` that is short enough. Both abbreviations `environ` and `var` are commonly used and well understood.
+Let's have another example with a variable named `loyaltyBonusPercentage`. You cannot abbreviate *loyalty*. You cannot abbreviate
 *bonus*. But you can abbreviate *percentage* to *percent* or even *pct*. I would rather use *percent* instead of *pct*. Using
-*percent* makes the variable name shorter than 20 characters (underscores are not counted as variable name characters).
+*percent* makes the variable name shorter than 20 characters.
 
 If a variable name is less than 20 characters long, you don't need to shorten it. If you have several variables named in
 a similar wording and one or more of them needs abbreviating, you can use that abbreviation in all the variable names for
