@@ -1528,66 +1528,79 @@ we should make the `MetricFactory` class a singleton instead of containing stati
 
 ### Extract Constant for Boolean Expression
 
-By extracting a constant for a boolean expression, we can eliminate comments. Below is an example where a comment is written below an if-statement and its boolean expression:
+By extracting a constant for a boolean expression, we can eliminate comments. Below is an example where a comment is written
+below an if-statement and its boolean expression:
 
-```python
-from Message import Message
+{title: "MessageBuffer.cpp"}
+```cpp
+bool MessageBuffer::writeIfBufferNotFull(
+  const std::shared_ptr<Message>& message
+) {
+  bool messageWasWritten{false};
 
+  if (m_messages.size() < m_maxBufferSize)
+  {
+    // Buffer is not full
+    m_messages.push_back(message);
+    messageWasWritten = true;
+  }
 
-class MessageBuffer:
-    def write_if_buf_not_full(self, message: Message) -> bool:
-        message_was_written = False
-        if len(self.__messages) < self.__max_length:
-            # Buffer is not full
-            self.__messages.append(message)
-            message_was_written = True
-        return message_was_written
+  return messageWasWritten;
+}
 ```
 
 By introducing a constant to be used in the "buffer is full" check, we can get rid of the "Buffer is not full" comment:
 
-```python
-from Message import Message
+{title: "MessageBuffer.cpp"}
+```cpp
+bool MessageBuffer::writeIfBufferNotFull(
+  const std::shared_ptr<Message> message
+) {
+  bool messageWasWritten{false};
 
+  const bool bufferIsNotFull =
+    m_messages.size() < m_maxBufferSize;
 
-class MessageBuffer:
-    def write_if_buf_not_full(self, message: Message) -> bool:
-        message_was_written = False
-        buffer_is_not_full = len(self.__messages) < self.__max_length
-        if buffer_is_not_full:
-            self.__messages.append(message)
-            message_was_written = True
-        return message_was_written
+  if (bufferIsNotFull)
+  {
+    m_messages.push_back(message);
+    messageWasWritten = true;
+  }
+
+  return messageWasWritten;
+}
 ```
 
 When writing comparison expressions, remember to write the comparison so that it is fluent to read:
 
-```python
+```ts
 # Wrong, not fluent to read
-if 'John' == customer_name:
-    # ...
+if ('John' === customerName) {
+  // ...
+}
 
 # Correct
-if customer_name == 'John':
-    # ...
+if (customerName === 'John') {
+  // ...
+}
 
 # Wrong
-buffer_is_not_full = self.__max_length > len(self.__messages)
+bufferIsNotFull = maxLength > messages.length;
 
 # Correct
-buffer_is_not_full = len(self.__messages) < self.__max_length
+bufferIsNotFull = messages.length < maxLength;
 ```
 
 You should also have matching names for the variables being compared:
 
-```python
+```ts
 # Correct
-buffer_is_not_full = len(self.__messages) < self.__max_length
+bufferIsNotFull = messages.length < maxLength;
 
 # Incorrect
 # Left side of comparison speaks about length and
 # right side speaks about size
-buffer_is_not_full = len(self.__messages) < self.__max_size
+bufferIsNotFull = messages.length < maxSize;
 ```
 
 ### Extract Named Constant or Enumerated Type
