@@ -2305,113 +2305,123 @@ We can now modify the behavior of the `Bird` class using the *open-closed princi
 ### Extract Constant
 
 If you have a complex expression (boolean or numeric), assign the value of the expression to a constant.
-The name of the constant conveys information about the expression. Below is an example where we make the if-statements read better
+The name of the constant conveys information about the expression. Below is a JavaScript example where we make the if-statements read better
 by extracting expressions to constants:
 
-```python
-# ...
+```js
+// ...
 
-if (
-    data_source_selector_is_open
-    and measure_selector_is_open
-    and dimension_selector_is_open
-):
-    data_source_selector.style.height = f'{0.2 * available_height}px'
-    measure_selector.style.height =  f'{0.4 * available_height}px'
-    dimension_selector.style.height = f'{0.4 * availableHeight}px'
-elif (
-     not data_source_selector_is_open
-     and not measure_selector_is_open
-     and dimension_selector_is_open
-):
-    dimension_selector.style.height = f'{available_height}px'
+if (dataSourceSelectorIsOpen &&
+    measureSelectorIsOpen &&
+    dimensionSelectorIsOpen
+) {
+  dataSourceSelectorContentElem.style.height =
+    `${0.2 * availableHeight}px`;
+
+  measureSelectorContentElem.style.height =
+    `${0.4 * availableHeight}px`;
+
+  dimensionSelectorContentElem.style.height =
+    `${0.4 * availableHeight}px`;
+} else if (!dataSourceSelectorIsOpen &&
+           !measureSelectorIsOpen &&
+           dimensionSelectorIsOpen
+) {
+    dimensionSelectorContentElem.style.height
+      = `${availableHeight}px`;
+}
 ```
 
 Let's extract constants:
 
-```python
-# ...
+```js
+// ...
 
-all_selectors_are_open = (
-    data_source_selector_is_open
-    and measure_selector_is_open
-    and dimension_selector_is_open
-)
+const allSelectorsAreOpen = dataSourceSelectorIsOpen &&
+                            measureSelectorIsOpen &&
+                            dimensionSelectorIsOpen;
 
-only_dimension_selector_is_open = (
-    not data_source_selector_is_open
-    and not measure_selector_is_open
-    and dimension_selector_is_open
-)
+const onlyDimensionSelectorIsOpen =
+    !dataSourceSelectorIsOpen &&
+    !measureSelectorIsOpen &&
+    dimensionSelectorIsOpen;
 
-if all_selectors_are_open:
-    data_source_selector.style.height = f'{0.2 * available_height}px'
-    measure_selector.style.height =  f'{0.4 * available_height}px'
-    dimension_selector.style.height = f'{0.4 * availableHeight}px'
-elif only_dimension_selector_is_open:
-    dimension_selector.style.height = f'{available_height}px'
+if (allSelectorsAreOpen) {
+  dataSourceSelectorContentElem.style.height =
+    `${0.2 * availableHeight}px`;
+
+  measureSelectorContentElem.style.height =
+    `${0.4 * availableHeight}px`;
+
+  dimensionSelectorContentElem.style.height =
+    `${0.4 * availableHeight}px`;
+} else if (onlyDimensionSelectorIsOpen) {
+  dimensionSelectorContentElem.style.height =
+    `${availableHeight}px`;
+}
 ```
 
-Below is an example where we return a boolean expression:
+Below is an example in C++ where we return a boolean expression:
 
-```python
-class AvroFieldSchema:
-    # ...
 
-    def equals(self, other_field_schema: 'AvroFieldSchema') -> bool:
-        return (
-            self.__type == other_field_schema.type
-            and self.__name[self.__name.find('.') + 1 :]
-            == other_field_schema.name[
-                other_field_schema.name.find('.') + 1 :
-            ]
-        )
+```cpp
+bool AvroFieldSchema::equals(
+  const std::shared_ptr<AvroFieldSchema>& otherFieldSchema
+) const
+{
+  return m_type == otherFieldSchema->getType() &&
+         m_name.substr(m_name.find_first_of('.') + 1U) ==
+         otherFieldSchema->getName().substr(
+          otherFieldSchema->getName().find_first_of('.') + 1U);
+}
 ```
 
 It can be challenging to understand what the boolean expression means.
 We could improve the function by adding a comment: (We assume
 that each field name has a root namespace that cannot contain a dot character)
 
-```python
-class AvroFieldSchema:
-    # ...
-
-    def equals(self, other_field_schema: 'AvroFieldSchema') -> bool:
-        # Field schemas are equal if field types are equal and
-        # field names without the root namespace are equal
-        return (
-            self.__type == other_field_schema.type
-            and self.__name[self.__name.find('.') + 1 :]
-            == other_field_schema.name[
-                other_field_schema.name.find('.') + 1 :
-            ]
-        )
+```cpp
+bool AvroFieldSchema::equals(
+  const std::shared_ptr<AvroFieldSchema>& otherFieldSchema
+) const
+{
+  // Field schemas are equal if field types are equal and
+  // field names without the root namespace are equal
+  return m_type == otherFieldSchema->getType() &&
+         m_name.substr(m_name.find_first_of('.') + 1U) ==
+         otherFieldSchema->getName().substr(
+          otherFieldSchema->getName().find_first_of('.') + 1U);
+}
 ```
 
-But we should not write comments because comments are never 100% trustworthy. It is possible that a comment and the related code are not in synchrony: someone has changed the function without updating the comment or modified only the comment but
-did not change the function. Let's refactor the above example by removing the comment and extracting multiple constants.
+But we should not write comments because comments are never 100% trustworthy.
+It is possible that a comment and the related code are not in synchrony: someone has changed the function without updating the comment or modified only the comment but
+did not change the function.
+Let's refactor the above example by removing the comment and extracting multiple constants.
 The below function is longer than the original, but it is, of course, more readable. If you look
 at the last two statements of the method, you can understand in what case two field schemas
-are equal. It should be the compiler's job to make the longer version of the function below as performant as the original
+are equal. It should be the compiler's job to make the below longer version of the function as performant as the original
 function.
 
-```python
-class AvroFieldSchema:
-    # ...
+```cpp
+bool AvroFieldSchema::equals(
+  const std::shared_ptr<AvroFieldSchema>& otherFieldSchema
+) const
+{
+  const auto fieldNameWithoutRootNamespace =
+    m_name.substr(m_name.find_first_of('.') + 1U);
 
-    def equals(self, other_field_schema: 'AvroFieldSchema') -> bool:
-        name_without_root_ns = self.__name[self.__name.find('.') + 1 :]
+  const auto otherFieldName = otherFieldSchema->getName();
 
-        other_field_name_without_root_ns = other_field_schema.name[
-            other_field_schema.name.find('.') + 1 :
-        ]
+  const auto otherFieldNameWithoutRootNamespace =
+    otherFieldName.substr(otherFieldName.find_first_of('.') + 1U);
 
-        types_and_names_without_root_ns_are_equal = (
-            self.__type == other_field_schema.type
-            and name_without_root_ns == other_field_name_without_root_ns
-        )
+  const bool fieldTypesAndNamesWithoutRootNsAreEqual =
+    m_type == otherFieldSchema->getType() &&
+    fieldNameWithoutRootNamespace == otherFieldNameWithoutRootNamespace;
 
-        return types_and_names_without_root_ns_are_equal
+  return fieldTypesAndNamesWithoutRootNsAreEqual;
+}
 ```
 
 ### Replace Conditionals with Polymorphism
@@ -2425,46 +2435,48 @@ to different classes that implement a specific interface. This way, you can elim
 and replace them with polymorphic method calls. Crafting proper OOD helps in creating a software component with classes
 that have high cohesion. The functionality of the classes is no longer scattered around in the codebase.
 
-Below is an example of a non-object-oriented design:
+Below is a TypeScript example of non-object-oriented design:
 
-```python
-def do_something_with(chart: Chart):
-    if chart.type == 'column':
-        # do this ...
-    elif chart.type == 'pie':
-        # do that ...
-    elif chart.type == 'geographic-map':
-        # do a third thing ...
+```ts
+function doSomethingWith(chart: Chart) {
+  if (chart.getType() === 'column') {
+    // do this
+  } else if (chart.getType() === 'pie') {
+    // do that
+  } else if (chart.getType() === 'geographic-map') {
+    // do a third thing
+  }
+}
 ```
 
 Let's replace the above conditionals with polymorphism:
 
-```python
-from typing import Protocol
+```ts
+interface Chart {
+  doSomething(...): void;
+}
 
+class ColumnChart implements Chart {
+  doSomething(...): void {
+    // do this
+  }
+}
 
-class Chart(Protocol):
-    def do_something(self) -> None:
-        pass
+class PieChart implements Chart {
+  doSomething(...): void {
+    // do that
+  }
+}
 
+class GeographicMapChart implements Chart {
+  doSomething(...): void {
+    // do a third thing
+  }
+}
 
-class ColumnChart(Chart):
-    def do_something(self) -> None:
-        # do this ...
-
-
-class PieChart(Chart):
-    def do_something(self) -> None:
-        # do that ...
-
-
-class GeographicMapChart(Chart):
-    def do_something(self) -> None:
-        # do a third thing
-
-
-def do_something_with(chart: Chart):
-    chart.do_something()
+function doSomethingWith(chart: Chart) {
+  chart.doSomething();
+}
 ```
 
 Suppose you are implementing a data visualization application and have many places in your code where you check the chart type and need to introduce a new chart type.
@@ -2479,52 +2491,55 @@ If you have more than 5-7 parameters for a function, you should introduce a para
 the number of parameters to keep the function signature more readable. Below is an example constructor
 with too many parameters:
 
-```python
-class KafkaConsumer:
-    def __init__(
-        self,
-        brokers: list[str],
-        topics: list[str],
-        extra_config_entries: list[str],
-        tls_is_used: bool,
-        cert_should_be_verified: bool,
-        ca_file_path_name: str,
-        cert_file_path_name: str,
-        key_file_path_name: str
-   ):
-       # ...
+{title: "KafkaConsumer.java"}
+```java
+public class KafkaConsumer {
+  public KafkaConsumer(
+    final List<String> brokers,
+    final List<String> topics,
+    final List<String> extraConfigEntries,
+    final boolean tlsIsUsed,
+    final boolean certShouldBeVerified,
+    final String caFilePathName,
+    final String certFilePathName,
+    final String keyFilePathName)
+  {
+    // ...
+  }
+}
 ```
 
 Let's group the Transport Layer Security (TLS) related parameters to a parameter class named `TlsOptions`:
 
-```python
-class TlsOptions:
-    def __init__(
-        self,
-        tls_is_used: bool,
-        cert_should_be_verified: bool,
-        ca_file_path_name: str,
-        cert_file_path_name: str,
-        key_file_path_name: str
-    ):
-        # ...
+{title: "TlsOptions.java"}
+```java
+public class TlsOptions {
+  public TlsOptions(
+    final boolean tlsIsUsed,
+    final boolean certShouldBeVerified,
+    final String caFilePathName,
+    final String certFilePathName,
+    final String keyFilePathName
+  ) {
+    // ...
+  }
+}
 ```
 
 Now we can modify the `KafkaConsumer` constructor to utilize the `TlsOptions` parameter class:
 
-```python
-from TlsOptions import TlsOptions
-
-
-class KafkaConsumer:
-    def __init__(
-        self,
-        brokers: list[str],
-        topics: list[str],
-        extra_config_entries: list[str],
-        tls_options: TlsOptions
-   ):
-       # ...
+{title: "KafkaConsumer.java"}
+```java
+public class KafkaConsumer {
+  public KafkaConsumer(
+    final List<String> brokers,
+    final List<String> topics,
+    final List<String> extraConfigEntries,
+    final TlsOptions tlsOptions
+  ) {
+    // ...
+  }
+}
 ```
 
 ### Invert If-Statement

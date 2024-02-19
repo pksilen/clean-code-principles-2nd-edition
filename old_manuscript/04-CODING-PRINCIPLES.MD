@@ -2187,7 +2187,8 @@ function doSomethingWith(chart: Chart) {
 </div>
 
 Suppose you are implementing a data visualization application and have many places in your code where you check the chart type and need to introduce a new chart type.
-It could mean you must add a new _case_ or _else-if_ statement in many places in the code. This approach is very error-prone and is called _shotgun surgery_ because you need to find all the places in the codebase where code needs to be modified. What you should do is conduct proper object-oriented design and introduce a new chart class
+It could mean you must add a new _case_ or _else-if_ statement in many places in the code. This approach is very error-prone and is called _shotgun surgery_
+because you need to find all the places in the codebase where code needs to be modified. What you should do is conduct proper object-oriented design and introduce a new chart class
 containing the new functionality instead of introducing that new functionality by modifying code in multiple places.
 
 ### Introduce Parameter Object
