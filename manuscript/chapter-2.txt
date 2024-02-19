@@ -1598,9 +1598,29 @@ You can think of this principle as a prerequisite for using the *open-closed pri
 You should always program against an interface when the implementation can vary. On the other hand, you don't have to program against
 an interface when the implementation is fixed. This is usually the case with utility classes. For example, you can
 have a method for parsing an integer from a string. That is a method where implementation is fixed, and the method can be put
-as a static method in a final utility class. The method implementation is not expected to change in the future. But if we have
+as a static method in a final utility class:
+
+```java
+public final class ParseUtils {
+  private ParseUtils() {
+    // Utility class with static methods only
+    // should have a private constructor
+    // You should not be able to make instances of
+    // the utility class
+  }
+
+  static int parseInt(final String string) {
+    // ...
+  }
+
+  // Possible other methods ...
+}
+```
+
+The above method implementation is not expected to change in the future. But if we have
 a class for performing application configuration parsing, that functionality *can* change, and the *program
-against interfaces principle* should be applied.
+against interfaces principle* should be applied. We should create a `ConfigParser` interface and then provide one or more
+implementations in various implementation classes, like `XyzFormatConfigParser`, `JsonConfigParser`, or `YamlConfigParser`.
 
 The *program against interfaces principle* was presented by the *Gang of Four* in their book *Design Patterns* and
 can be seen as a generalization of the *dependency inversion principle* from the SOLID principles:
@@ -7699,7 +7719,7 @@ class ParserTests {
     // WHEN
     final var ast = parser.parse("2+5");
     final var ast2 = parser.parse(" 3  +   5 ");
-     final var ast3 = parser.parse("1 + 2 + 3");
+    final var ast3 = parser.parse("1 + 2 + 3");
 
     // THEN
     assertEquals(7, ast.evaluate());
