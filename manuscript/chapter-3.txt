@@ -3014,7 +3014,7 @@ from the `readFile` method name:
 
 ```java
 try {
-  final String fileContents = fileReader.readFile(...);
+  final var fileContents = fileReader.readFile(...);
 } catch (final FileReader.FileReadError error) {
   // Handle error
 }
@@ -3025,7 +3025,7 @@ clause. The below two examples have the same effect.
 
 ```java
 try {
-  final String configFileContents = fileReader.readFile(...);
+  final var configFileContents = fileReader.readFile(...);
   return configParser.parse(configFileContents);
 } catch (final FileReader.FileReadError | ConfigParser.ParseError error) {
   // Handle error situation
@@ -3034,24 +3034,38 @@ try {
 
 ```java
 try {
-  final String configFileContents = fileReader.readFile(...);
+  final var configFileContents = fileReader.readFile(...);
   return configParser.parse(configFileContents);
 } catch (final DataExporterError error) {
   // Handle error situation
 }
 ```
-</div>
 
-Don't catch the language's base exception class or another too-generic exception class because that will catch exceptions and all user-defined errors. It would catch exceptions like `MemoryError` or `ZeroDivisionError`, which is probably not what you want. So, do
+Don't catch the language's base exception class or some other too-generic exception class because that will catch, in addition
+to all user-defined errors, exceptions, like null pointer exceptions, which is probably not what you want. So, do
 not catch a too-generic exception class like this:
 
-```python
-try:
-    config_string = file_reader.read_file(...)
-    return config_parser.parse(config_string)
-except BaseException as error:
-    # Don't do this!
+```java
+try {
+  final var configFileContents = fileReader.readFile(...);
+  return configParser.parse(configFileContents);
+} catch (final Exception exception) {
+  // Do not use! Catches all exceptions
+}
 ```
+
+Also, do not catch the `Throwable` class in Java because it will also catch any fatal errors that are not meant to be caught:
+
+```java
+try {
+  final var configFileContents = fileReader.readFile(...);
+  return configParser.parse(configFileContents);
+} catch (final Throwable throwable) {
+  // Do not use! Catches everything including
+  // all exceptions and fatal errors
+}
+```
+</div>
 
 Catch all exceptions only in a special place(s) in your code, like in the main function or the main loop, like the loop in a web server
 processing HTTP requests or the main loop of a thread. Below is an example of correctly catching the language's base exception class in the main function.
