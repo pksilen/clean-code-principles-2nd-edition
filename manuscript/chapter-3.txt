@@ -3196,7 +3196,7 @@ a section about exceptions. But what if you don't scroll down? You might think t
 error. The `get` method documentation should be corrected to tell that the method can raise an error and contain a link to the section where
 possible errors are described.
 
-The above-described problem can be mitigated, at least on some level, when practicing *test-driven development* (TDD).
+The above-described problems can be mitigated, at least on some level, when practicing *test-driven development* (TDD).
 TDD will be described in the next chapter, which covers testing-related principles. In TDD, you define the tests before
 the implementation, forcing you to think about error scenarios and make tests for them. When you have tests
 for error scenarios, leaving those scenarios unhandled in the actual implementation code is impossible.
@@ -3205,61 +3205,55 @@ One great solution to the problem that error handling might be forgotten is to m
 
 > ***Use a 'try' prefix in a function name if the function can throw an error.***
 
-This is a straightforward rule. If a function can raise an error, name the function so that its name starts with `try`.
-This makes it clear to every caller that the function can raise an error, and the caller should be prepared
-for that. For the caller of the function, there are three alternatives to deal with a raised error:
+This is a straightforward rule. If a function can throw an error, name the function so that its name starts with `try`.
+This makes it clear to every caller that the function can throw an error, and the caller should be prepared
+for that. For the caller of the function, there are three alternatives to deal with a thrown error:
 
-1) Catch the base error class of the called function (or software component) and handle the error, e.g., catch `DataFetcher.FetchDataError` if you are calling a method named `try_fetch_data` in a class named `DataFetcher`.
-2) Catch the base error class of the called function (or software component) and raise a new error on a higher level of abstraction. You must also name the calling function with a `try` prefix.
+1) Catch the base error class of the called function (or software component) and handle the error, e.g., catch `DataFetcher.FetchDataError` if you are calling a method named `tryFetchData` in a class named `DataFetcher`.
+2) Catch the base error class of the called function (or software component) and throw a new error on a higher level of abstraction. You must also name the calling function with a `try` prefix.
 3) Don't catch errors. Let them propagate upwards in the call stack. You must also name the calling function with a `try` prefix.
 
 Here is an example of alternative 1:
 
-```python
-from Config import Config
-from ConfigParser import ConfigParser
-from DataFetcher import DataFetcher
-
-
-class ConfigFetcher:
-    def fetch_config(self, url: str) -> Config:
-        try:
-            config_str = self.__data_fetcher.try_fetch_data(url)
-            return self.__config_parser.try_parse(config_str)
-        except (
-            DataFetcher.FetchDataError,
-            ConfigParser.ParseError
-        ) as error:
-            # You could also catch errors in two different
-            # except blocks
-            # You could also catch the base error class 'DataExporterError'
-            # of the software component
+```java
+public class ConfigFetcher {
+  public Configuration fetchConfig(final String configUrl) {
+    try {
+      final var configDataStr = dataFetcher.tryFetchData(configUrl);
+      return configParser.tryParse(configDataStr);
+    } catch (final DataFetcher.FetchDataError | ConfigParser.ParseError error) {
+      // You could also catch DataFetchError and
+      // ConfigParseError in different catch clauses
+      // if their handling differs
+      // You could also catch the base error class DataExporterError
+      // of the software component
+    }
+  }
+}
 ```
 
 And here is an example of alternative 2:
 
-```python
-from Config import Config
-from ConfigParser import ConfigParser
-from DataFetcher import DataFetcher
+```java
+public class ConfigFetcher {
+  public static class FetchConfigError extends DataExporterError {
+    public FetchConfigError(final Exception error) {
+      super(error);
+    }
+  }
 
-
-class ConfigFetcher:
-    class FetchConfigError(DataExporterError):
-        pass
-
-    def try_fetch_config(self, url: str) -> Config:
-        try:
-            config_str = self.__data_fetcher.try_fetch_data(url)
-            return self.__config_parser.try_parse(config_str)
-        except (
-            DataFetcher.FetchDataError,
-            ConfigParser.ParseError
-        ) as error:
-            # Error on higher level of abstraction is raised
-            # This function must be named with the 'try' prefix
-            # to indicate that it can raise an error
-            raise self.FetchConfigError(error)
+  public Configuration tryFetchConfig(final String configUrl) {
+    try {
+      final var configDataStr = dataFetcher.tryFetchData(configUrl);
+      return configParser.tryParse(configDataStr);
+    } catch (final DataFetcher.FetchDataError | ConfigParser.ParseError error) {
+      // Error on higher level of abstraction is thrown
+      // This function must be named with the 'try' prefix
+      // to indicate that it can throw
+      throw new FetchConfigError(...);
+    }
+  }
+}
 ```
 
 And here is an example of alternative 3:
