@@ -9483,71 +9483,69 @@ to implement the behavior. In the above example, the `Cube` class clearly has th
 
 > ***A method on an object received from another object's method call should not be called.***
 
-The below statements are considered to break the law because of the chained method calls:
+The below statements are considered to break the law:
 
-```python
-user.get_account().get_balance()
-user.get_account().withdraw(...)
+```java
+user.getAccount().getBalance();
+user.getAccount().withdraw(...);
 ```
 
-The above statements can be corrected by moving functionality to a different class or by making
-the second object to act as a facade (remember the *facade pattern*) between the first and the third object.
+The above statements can be corrected either by moving functionality to a different class or by making
+the second object to act as a facade between the first and the third object.
 
 Below is an example of the latter solution, where we introduce two new methods in the `User` class and remove the
-`get_account` method:
+`getAccount` method:
 
-```python
-user.get_account_balance()
-user.withdraw_from_account(...)
+```java
+user.getAccountBalance();
+user.withdrawFromAccount(...);
 ```
 
 In the above example, the `User` class is a facade in front of the `Account` class that we should not
 access directly from our object.
 
-However, you should always check if the first solution alternative could be used instead. It makes the code more object-oriented and does not require creating additional methods.
+However, you should always check if the first solution alternative could be used instead. It makes the
+code more object-oriented and does not require creating additional methods.
 
-Below is an example that uses `User` and `SalesItem` entities and is not obeying the law of Demeter:
+Below is a Java example that uses `User` and `SalesItem` entities and is not obeying the law of Demeter:
 
-```python
-from SalesItem import SalesItem
-from User import User
+```java
+void purchase(final User user, final SalesItem salesItem) {
+  final var account = user.getAccount();
 
+  // Breaks the law
+  final var accountBalance = account.getBalance();
 
-def purchase(user: User, sales_item: SalesItem) -> None:
-    account = user.get_account()
+  final var salesItemPrice = salesItem.getPrice();
 
-    # Breaks the law
-    account_balance = account.get_balance()
+  if (accountBalance >= salesItemPrice) {
+    account.withdraw(salesItemPrice); // Breaks the law
+  }
 
-    sales_item_price = sales_item.get_price()
-
-    if account_balance >= sales_item_price:
-        # Breaks the law
-        account.withdraw(sales_item_price);
-
-    # ...
+  // ...
+}
 ```
 
 We can resolve the problem in the above example by moving the `purchase` method
 to the correct class, in this case, the `User` class:
 
-```
-from Account import Account
-from SalesItem import SalesItem
+```java
+class User {
+  private Account account;
 
+  // ...
 
-class User:
-    def __init__(self, account: Account):
-        self.__account = account
+  void purchase(final SalesItem salesItem) {
+    final var accountBalance = account.getBalance();
+    final var salesItemPrice = salesItem.getPrice();
 
-    def purchase(self, sales_item: SalesItem) -> None:
-        account_balance = self.__account.get_balance()
-        sales_item_price = sales_item.get_price()
+    if (accountBalance >= salesItemPrice) {
+      account.withdraw(salesItemPrice);
+    }
 
-        if account_balance >= sales_item_price:
-            self.__account.withdraw(sales_item_price)
-
-        # ...
+    // ...
+  }
+}
 ```
 
 Following the *law of Demeter* is a great way to reduce coupling in your software component. When you follow the
