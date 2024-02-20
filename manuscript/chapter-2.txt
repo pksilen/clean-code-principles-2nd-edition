@@ -9070,14 +9070,13 @@ using the `restoreState` method.
 > ***Visitor pattern allows adding functionality to a class (like adding new methods) without modifying the class.***
 > ***This is useful, for example, with library classes that you cannot modify.***
 
-First, let's have an example with classes that we can modify:
+First, let's have a Java example with classes that we can modify:
 
-<div class="sourceCodeWithoutLabel">
-
-```
+```java
 public interface Shape {
   void draw();
 }
+
 
 public class CircleShape implements Shape {
   private final int radius;
@@ -9092,6 +9091,7 @@ public class CircleShape implements Shape {
     return radius;
   }
 }
+
 
 public class RectangleShape implements Shape {
   private final int width;
@@ -9112,19 +9112,18 @@ public class RectangleShape implements Shape {
   }
 }
 ```
-</div>
 
 Let's assume we need to calculate the total area of shapes in a drawing. Currently, we are in a situation where
 we can modify the shape classes, so let's add `calculateArea` methods to the classes:
 
-<div class="sourceCodeWithoutLabel">
 
-```
+```java
 public interface Shape {
   // ...
 
   double calculateArea();
 }
+
 
 public class CircleShape implements Shape {
   // ...
@@ -9134,6 +9133,7 @@ public class CircleShape implements Shape {
   }
 }
 
+
 class RectangleShape implements Shape {
   // ...
 
@@ -9142,7 +9142,6 @@ class RectangleShape implements Shape {
   }
 }
 ```
-</div>
 
 Adding a new method to an existing class may be against the _open-closed principle_.
 In the above case, adding the `calculateArea` methods
@@ -9153,23 +9152,18 @@ we can agree that our example application is not multithreaded.
 Now we have the area calculation methods added, and we can use a common algorithm to calculate the total area of shapes
 in a drawing:
 
-<div class="sourceCodeWithoutLabel">
-
-```
+```java
 final var totalAreaOfShapes = drawing
   .getShapes()
   .stream()
   .reduce(0.0, (subTotalArea, shape) ->
      subTotalArea + shape.calculateArea(), Double::sum);
 ```
-</div>
 
 But what if the shape classes, without the area calculation capability, were in a 3rd party library that we cannot modify?
 We would have to do something like this:
 
-<div class="sourceCodeWithoutLabel">
-
-```
+```java
 final var totalAreaOfShapes = drawing
   .getShapes()
   .stream()
@@ -9190,7 +9184,6 @@ final var totalAreaOfShapes = drawing
     return subTotalArea + shapeArea;
   }, Double::sum);
 ```
-</div>
 
 The above solution is complicated and needs updating every time a new type of shape is introduced.
 The above example does not follow object-oriented design principles: it contains an if/else-if structure with `instanceof` checks.
@@ -9199,9 +9192,7 @@ We can use the visitor pattern to replace the above conditionals with polymorphi
 additional behavior to the shape classes. Then we introduce an `execute` method in the `Shape` interface. And in the shape classes, we implement the `execute` methods so that additional
 behavior provided by a concrete visitor can be executed:
 
-<div class="sourceCodeWithoutLabel">
-
-```
+```java
 // This is our visitor interface that
 // provides additional behaviour to the shape classes
 public interface ShapeBehavior {
@@ -9211,17 +9202,20 @@ public interface ShapeBehavior {
   // Add methods for possible other shape classes here...
 }
 
+
 public interface Shape {
   // ...
 
   Object execute(final ShapeBehavior behavior);
 }
 
+
 public class CircleShape implements Shape {
   public Object execute(final ShapeBehavior behavior) {
     return behavior.executeForCircle(this);
   }
 }
+
 
 public class RectangleShape implements Shape {
   public Object execute(final ShapeBehavior behavior) {
@@ -9229,15 +9223,11 @@ public class RectangleShape implements Shape {
   }
 }
 ```
-
-</div>
 
 Suppose that the shape classes were mutable and made thread-safe. We would have to define the `execute` methods with appropriate
 synchronization to make them also thread-safe:
 
-<div class="sourceCodeWithoutLabel">
-
-```
+```java
 public class CircleShape implements Shape {
   public synchronized Object execute(
     final ShapeBehavior behavior
@@ -9245,6 +9235,7 @@ public class CircleShape implements Shape {
     return behavior.executeForCircle(this);
   }
 }
+
 
 public class RectangleShape implements Shape {
   public synchronized Object execute(
@@ -9255,38 +9246,29 @@ public class RectangleShape implements Shape {
 }
 ```
 
-</div>
-
 Let's implement a concrete visitor for calculating areas of different shapes:
 
-<div class="sourceCodeWithoutLabel">
-
-```
+```java
 public class AreaCalculationShapeBehavior implements
                ShapeBehavior {
   public Object executeForCircle(final CircleShape circle) {
-    return (Double)(Math.PI *
-                    Math.pow(circle.getRadius(), 2));
+    return (Double)(Math.PI * Math.pow(circle.getRadius(), 2));
   }
 
   public Object executeForRectangle(
     final RectangleShape rectangle
   ) {
-    return (Double)(double)(rectangle.getWidth() *
-                            rectangle.getHeight());
+    return (Double)(double)(rectangle.getWidth() * rectangle.getHeight());
   }
 }
 ```
-</div>
 
 Now we can implement the calculation of shapes' total area using a common algorithm, and we get rid of the
 conditionals. We execute the `areaCalculation` behavior for each shape and convert the result of behavior execution
 to `Double`. Methods in a visitor usually return some common type like `Object`. This enables various
 operations to be performed. After executing a visitor, the return value should be cast to the right type.
 
-<div class="sourceCodeWithoutLabel">
-
-```
+```java
 final var areaCalculation = new AreaCalculationShapeBehavior();
 
 final var totalAreaOfShapes = drawing
@@ -9296,14 +9278,11 @@ final var totalAreaOfShapes = drawing
     subTotalArea + (Double)shape.execute(areaCalculation),
       Double::sum);
 ```
-</div>
 
 You can add more behavior to the shape classes by defining a new visitor. Let's define a
 `PerimeterCalculationShapeBehaviour` class:
 
-<div class="sourceCodeWithoutLabel">
-
-```
+```java
 public class PerimeterCalculationShapeBehavior
                implements ShapeBehavior {
   public Object executeForCircle(final CircleShape circle) {
@@ -9318,7 +9297,6 @@ public class PerimeterCalculationShapeBehavior
   }
 }
 ```
-</div>
 
 Notice that we did not need to use the _visitor_ term in our code examples. Adding the design pattern name to the names of
 software entities (class/function names, etc.) often does not bring any real benefit but makes the names longer. However, there are some design patterns,
@@ -9333,153 +9311,165 @@ If you develop a third-party library and want the behavior of its classes to be 
 Use the null object pattern to implement a class for null objects that don't do anything. A null object can be used in place of a real object that
 does something.
 
-Let's have an example with a `Shape` protocol:
+Let's have an example with a `Shape` interface:
 
-```python
-from typing import Protocol
-
-
-class Shape(Protocol):
-    def draw(self) -> None:
-        pass
+{title: "Shape.java"}
+```java
+public interface Shape {
+  void draw();
+}
 ```
 
-We can easily define a class for *null* shape objects:
+We can easily define a class for null shape objects:
 
-```python
-from Shape import Shape
-
-
-class NullShape(Shape):
-    def draw(self) -> None:
-        # Intentionally no operation
+{title: "NullShape.java"}
+```java
+public class NullShape implements Shape {
+  void draw() {
+    // Intentionally no operation
+  }
+}
 ```
 
-A *null* shape does not draw anything. We can use an instance of the `NullShape` class everywhere where a concrete implementation of the `Shape` protocol is wanted.
+We can use an instance of the `NullShape` class everywhere where a concrete implementation of the `Shape` interface is wanted.
 
-## Tell, Don't Ask Principle
+## Don't Ask, Tell Principle
 
-> ***Tell, don't ask principle states that you should *tell* another object what to do, and not ask about the other object's state and then do the work by yourself in your object.***
+> ***Don't ask, tell principle states that you should *tell* another object what to do, and not ask about the other object's state and then do the work by yourself in your object.***
 
-If your object asks many things from another object using, e.g., multiple getters, you might be guilty of the *feature envy* design smell.
+If your object asks many things from another object using, e.g., multiple getters, you might be guilty of the _feature envy_ design smell.
 Your object is envious of a feature that the other object should have.
 
 Let's have an example and define a cube shape class:
 
-```python
-from typing import Final, Protocol
+```java
+public interface ThreeDShape {
+  // ...
+}
 
+public class Cube3DShape implements ThreeDShape {
+  private final int width;
+  private final int height;
+  private final int depth;
 
-class ThreeDShape(Protocol):
-    # ...
+  // Constructor...
 
+  public int getWidth() {
+    return width;
+  }
 
-class Cube3DShape(ThreeDShape):
-    def __init__(self, width: int, height: int, depth: int):
-        self.__width: Final = width
-        self.__height: Final = height
-        self.__depth: Final = depth
+  public int getHeight() {
+    return height;
+  }
 
-    @property
-    def width(self, ) -> int:
-        return self.__width
-
-    @property
-    def height(self) -> int:
-        return self.__height
-
-    @property
-    def depth(self) -> int:
-        return self.__depth
+  public int getDepth() {
+    return depth;
+  }
+}
 ```
 
-Next, we define another class, `CubeUtils,` that contains a method for calculating the total volume of cubes:
+Next, we define another class, `CubeUtils`, that contains a method for calculating the total volume of cubes:
 
-```python
-from typing import final
+```java
+public class CubeUtils {
+  public int calculateTotalVolume(
+    final List<Cube3DShape> cubes
+  ) {
+    int totalVolume = 0;
 
-from Cube3DShape import Cube3DShape
+    for (final Cube3DShape cube : cubes) {
+      final var width = cube.getWidth();
+      final var height = cube.getHeight();
+      final var depth = cube.getDepth();
+      totalVolume += width * height * depth;
+    }
 
-
-@final
-class CubeUtils:
-    @staticmethod
-    def calculate_total_volume(cubes: list[Cube3DShape]) -> int:
-        total_volume = 0
-        for cube in cubes:
-            total_volume += cube.width * cube.height * cube.depth
-        return total_volume
+    return totalVolume;
+  }
+}
 ```
 
-In the `calculate_total_volume` method, we ask about a cube object's state three times. This is
-against the *tell, don't ask principle*. Our method is envious of the volume calculation feature
+In the `calculateTotalVolume` method, we ask three times about a cube object's state. This is
+against the _tell, don't ask principle_. Our method is envious of the volume calculation feature
 and wants to do it by itself rather than telling a `Cube3DShape` object to calculate its volume.
 
-Let's correct the above code so that it follows the *tell, don't ask principle*:
+Let's correct the above code so that it follows the _tell, don't ask principle_:
 
-```python
-from typing import Final, Protocol, final
+```java
+public interface ThreeDShape {
+  int calculateVolume();
+}
 
+public class Cube3DShape implements ThreeDShape {
+  private final int width;
+  private final int height;
+  private final int depth;
 
-class ThreeDShape(Protocol):
-    def calculate_volume(self) -> int:
-        pass
+  // Constructor
 
+  public int calculateVolume() {
+    return height * width * depth;
+  }
+}
 
-class Cube3DShape(ThreeDShape):
-    def __init__(self, width: int, height: int, depth: int):
-        self.__width: Final = width
-        self.__height: Final = height
-        self.__depth: Final = depth
+public class ThreeDShapeUtils {
+  public int calculateTotalVolume(
+    final List<ThreeDShape> threeDShapes
+  ) {
+    int totalVolume = 0;
 
-    def calculate_volume(self) -> int:
-        return self.__height * self.__width * self.__depth
+    for (final var threeDShape : threeDShapes) {
+      totalVolume += threeDShape.calculateVolume();
+    }
 
-
-@final
-class ThreeDShapeUtils:
-    @staticmethod
-    def calculate_total_volume(three_d_shapes: list[ThreeDShape]) -> int:
-        total_volume = 0
-        for three_d_shape in three_d_shapes:
-            total_volume += three_d_shape.calculate_volume()
-        return total_volume
+    return totalVolume;
+  }
+}
 ```
 
-Our `calculate_total_volume` method does not ask anything about a cube object. It just tells a cube object
-to calculate its volume. We also removed the *asking* methods (getters/properties) from the `Cube3DShape` class because
+Now our `calculateTotalVolume` method is not asking anything about a cube object. It just tells a cube object
+to calculate its volume. We also removed the _asking_ methods (getters) from the `Cube3DShape` class because
 they are no longer needed.
 
-Below is another example of asking instead of telling:
+Below is a C++ example of asking instead of telling:
 
-```python
-import time
+```cpp
+using namespace std::chrono_literals;
+using std::chrono::system_clock;
 
+void AnomalyDetectionEngine::runEngine()
+{
+  while (m_isRunning)
+  {
+    const auto now = system_clock::now();
 
-class AnomalyDetectionEngine:
-    def run(self) -> None:
-        while self.__is_running:
-            now = time.time()
+    if (m_anomalyDetector->shouldDetectAnomalies(now))
+    {
+      const auto anomalies = m_anomalyDetector->detectAnomalies();
+      // Do something with the detected anomalies
+    }
 
-            if self.__anomaly_detector.anomalies_should_be_detected(now):
-                anomalies = self.__anomaly_detector.detect_anomalies()
-                # Do something with the detected anomalies ...
-
-            time.sleep(1)
+    std::this_thread::sleep_for(1s);
+  }
+}
 ```
 
 In the above example, we ask the anomaly detector if we should detect anomalies now. Then, depending
-on the result, we call another method on the anomaly detector to detect anomalies. This could be simplified by making
-the `detect_anomalies` method to check if anomalies should be detected using the `anomalies_should_be_detected` method.
-Then, the `anomalies_should_be_detected` method can be made private, and we can simplify the above code as follows:
+on the result, we call another method on the anomaly detector to detect anomalies. This could be simplified by making the `detectAnomalies` method to check if anomalies should be detected using the `shouldDetectAnomalies` method. Then the `shouldDetectAnomalies` method can be made private, and we can simplify the above code as follows:
 
-```python
-class AnomalyDetectionEngine:
-    def run(self) -> None:
-        while self.__is_running:
-            anomalies = self.__anomaly_detector.detect_anomalies()
-            # Do something with the detected anomalies ...
-            time.sleep(1)
+
+```cpp
+using namespace std::chrono_literals;
+
+void AnomalyDetectionEngine::runEngine()
+{
+  while (m_isRunning)
+  {
+    const auto anomalies = m_anomalyDetector->detectAnomalies();
+    // Do something with the detected anomalies
+    std::this_thread::sleep_for(1s);
+  }
+}
 ```
 
 Following the *tell, don't ask principle* is a great way to reduce coupling in your software component. In the above example,
