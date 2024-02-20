@@ -2995,8 +2995,8 @@ public class FileReader {
 public class ConfigParser {
   // Base error class for the 'parse' method
   // Extends the base error class of the software component
-  static class ParseFileError extends DataExporterError {
-      public ParseFileError(final Exception error) {
+  static class ParseError extends DataExporterError {
+      public ParseError(final Exception error) {
         super(error);
       }
     }
@@ -3010,25 +3010,37 @@ public class ConfigParser {
 
 Following the previous rules makes catching errors in the code easy because you can infer the error class
 name from the called method name. In the below example, we can infer the `ReadFileError` error class name
-from the `read_file` method name:
+from the `readFile` method name:
 
-```python
-try:
-    file_contents = file_reader.read_file(...)
-except FileReader.ReadFileError as error:
-    # Handle error ...
+```java
+try {
+  final String fileContents = fileReader.readFile(...);
+} catch (final FileReader.FileReadError error) {
+  // Handle error
+}
 ```
 
-You can also catch all user-defined errors using the software component's base error class in the *except*
-clause.
+You can also catch all user-defined errors using the software component's base error class in the catch
+clause. The below two examples have the same effect.
 
-```python
-try:
-    config_string = file_reader.read_file(...)
-    return config_parser.parse(config_string)
-except DataExporterError as error:
-    # Handle error situation
+```java
+try {
+  final String configFileContents = fileReader.readFile(...);
+  return configParser.parse(configFileContents);
+} catch (final FileReader.FileReadError | ConfigParser.ParseError error) {
+  // Handle error situation
+}
 ```
+
+```java
+try {
+  final String configFileContents = fileReader.readFile(...);
+  return configParser.parse(configFileContents);
+} catch (final DataExporterError error) {
+  // Handle error situation
+}
+```
+</div>
 
 Don't catch the language's base exception class or another too-generic exception class because that will catch exceptions and all user-defined errors. It would catch exceptions like `MemoryError` or `ZeroDivisionError`, which is probably not what you want. So, do
 not catch a too-generic exception class like this:
