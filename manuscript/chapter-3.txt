@@ -3565,218 +3565,148 @@ interface MyCache<TKey, TValue> {
 }
 ```
 
-
 #### Returning an Error Object
 
-When you need to provide details about an error to the function caller, you can return an error object from the function:
+When you need to provide details about an error to a function caller, you can return an error object from the function:
 
-```python
-from dataclasses import dataclass
-
-
-@dataclass
-class BackendError:
-    http_status_code: int
-    error_code: int
-    message: str
+{title: "BackendError.ts"}
+```ts
+export type BackendError = {
+  statusCode: number;
+  errorCode: number;
+  message: string;
+};
 ```
 
 If a function does not return any value but can produce an error, you can return either an error object or
-*None*:
+_null_ in languages that have _null_ defined as a distinct type and the language supports type unions (e.g., TypeScript):
 
-```python
-from typing import Awaitable, TypeVar
-
-from BackendError import BackendError
-from Entity import Entity
-
-T = TypeVar('T', bound=Entity)
-
-
-class DataStore:
-    async def update_entity(
-        self,
-        id_: int,
-        entity: T
-    ) -> Awaitable[BackendError | None]:
-        # ...
+{title: "DataStore.ts"}
+```ts
+export interface DataStore {
+  updateEntity<T extends Entity>(...):
+    Promise<BackendError | null>;
+}
 ```
 
-Alternatively, return an optional error, as shown below. (The `Optional` class was defined
-in the previous chapter)
+Alternatively, return an optional error. Below is an example in Java:
 
-```python
-from typing import Awaitable, TypeError
-
-from BackendError import BackendError
-from Entity import Entity
-from Optional import Optional
-
-T = TypeVar('T', bound=Entity)
+```java
+import lombok.experimental.Value;
 
 
-class DataStore:
-    async def update*entity(
-        self,
-        id*: int,
-        entity: T
-    ) -> Awaitable[Optional[BackendError]]:
-        # ...
+@Value
+public class BackendError {
+  int statusCode;
+  int errorCode;
+  String message;
+}
+
+
+public interface DataStore {
+  <T extends Entity> Optional<BackendError> updateEntity(...);
+}
 ```
 
 Suppose a function needs to return a value or an error. In that case, you can use a 2-tuple (i.e., a pair) type, where
-the first value in the tuple is the actual value or *None* in case of an error and the second value
-in the tuple is an error object or *None* value in case of a successful operation. Below is an example.
+the first value in the tuple is the actual value or _null_ in case of an error and the second value
+in the tuple is an error object or _null_ value in case of a successful operation. Below are examples
+in TypeScript and Java. In the Java example, you, of course, need to return optionals instead of nulls.
 
-```python
-from typing import Awaitable, TypeVar, Union
-
-from BackendError import BackendError
-from Entity import Entity
-
-T = TypeVar('T', bound=Entity)
-
-
-class DataStore:
-    async def create_entity(
-        self,
-        entity: T
-    ) ->  Awaitable[Union[(T, None), (None, BackendError)]]:
-        # ...
+{title: "DataStore.ts"}
+```ts
+export class DataStore {
+  createEntity<T extends Entity>(...):
+    Promise<[T, null] | [null, BackendError]>;
+}
 ```
 
-If we want to make our method more functional, we should return an `Either` type from it, but Python does not have that.
-Either type contains one of two values, either a left value or a right value. The `Either` type can be defined as follows.
-(The `Optional` class was defined in the previous chapter).
+{title: "DataStore.java"}
+```java
+import org.javatuples.Pair;
 
-```python
-from collections.abc import Callable
-from typing import Any, TypeVar, Generic
-
-from Optional import Optional
-
-TLeft = TypeVar('TLeft')
-TRight = TypeVar('TRight')
-T = TypeVar('T')
-U = TypeVar('U')
-
-
-class PrivateConstructor(type):
-    def __call__(
-        cls: type[T],
-        *args: tuple[Any, ...],
-        **kwargs: dict[str, Any]
-     ):
-        raise TypeError('Constructor is private')
-
-    def _create(
-        cls: type[T],
-        *args: tuple[Any, ...],
-        **kwargs: dict[str, Any]
-    ) -> T:
-        return super().__call__(*args, **kwargs)
-
-
-class Either(Generic[TLeft, TRight], metaclass=PrivateConstructor):
-    def __init__(
-        self,
-        maybe_left_value: Optional[TLeft],
-        maybe_right_value: Optional[TRight]
-    ):
-        self.__maybe_left_value = maybe_left_value
-        self.__maybe_right_value = maybe_right_value
-
-    @classmethod
-    def with_left(cls, value: TLeft) -> 'Either[TLeft, TRight]':
-        return cls._create(Optional.of(value), Optional.empty())
-
-    @classmethod
-    def with_right(cls, value: TRight) -> 'Either[TLeft, TRight]':
-        return cls._create(Optional.empty(), Optional.of(value))
-
-    def has_left_value(self) -> bool:
-        return self.__maybe_left_value.is_present()
-
-    def has_right_value(self) -> bool:
-            return self.__maybe_right_value.is_present()
-
-    def map_left(
-        self,
-        to_value: Callable[[TLeft], U]
-    ) -> 'Either[U, TRight]':
-        return Either._create(
-            self.__maybe_left_value.map(to_value),
-            self.__maybe_right_value
-        )
-
-    def map_right(
-        self,
-        to_value: Callable[[TRight], U]
-    ) -> 'Either[TLeft, U]':
-        return Either._create(
-            self.__maybe_left_value,
-            self.__maybe_right_value.map(to_value)
-        )
-
-    def map(
-        self,
-        left_to_value: Callable[[TLeft], U],
-        right_to_value: Callable[[TRight], U]
-    ) -> U:
-        return self.__maybe_left_value.map(left_to_value).or_else_get(
-            lambda: self.__maybe_right_value.map(right_to_value).try_get()
-        )
-
-    def apply(
-        self,
-        consume_left_value: Callable[[TLeft], None],
-        consume_right_value: Callable[[TRight], None]
-    ) -> None:
-        self.__maybe_left_value.if_present(consume_left_value)
-        self.__maybe_right_value.if_present(consume_right_value)
+public interface DataStore {
+  <T extends Entity> Pair<Optional<T>, Optional<BackendError>>
+  createEntity(...);
+}
 ```
 
-Below are some examples of how to use the `Either` class:
+The above Java example is cumbersome to use, and the type definition looks long.
+We should use an `Either` type here, but Java does not have that. Either type contains one of two values, either
+a left value or a right value. The left value is the value returned by the function when the operation is successful, and the right value
+is an error. The `Either` type can be defined as follows:
 
-```python
-class Error(Exception):
-    pass
+{title: "Either.java"}
+```
+public class Either<L, R>
+{
+  private final Optional<L> maybeLeftValue;
+  private final Optional<R> maybeRightValue;
 
+  private Either(
+    final Optional<L> maybeLeftValue,
+    final Optional<R> maybeRightValue
+  ) {
+    this.maybeLeftValue = maybeLeftValue;
+    this.maybeRightValue = maybeRightValue;
+  }
 
-int_or_error: Either[int, Error] = Either.with_left(3)
-int_or_error2: Either[int, Error] = Either.with_right(Error())
+  public static <L, R> Either<L, R> withLeft(
+    final L value
+  ) {
+    return new Either<>(Optional.of(value), Optional.empty());
+  }
 
-print(int_or_error.has_left_value()) # Prints True
-print(int_or_error2.has_right_value()) # Prints True
-print(
-    int_or_error.map_left(lambda number: number * 2).has_left_value()
-)
-# Prints True
+  public static <L, R> Either<L, R> withRight(
+    final R value
+  ) {
+    return new Either<>(Optional.empty(), Optional.of(value));
+  }
 
-print(int_or_error.map(lambda number: number * 2, lambda error: 0))
-# Prints 6
+  public boolean hasLeftValue() {
+    return maybeLeftValue.isPresent();
+  }
 
-print(int_or_error2.map(lambda number: number * 2, lambda error: 0))
-# Prints 0
+  public <T> Either<T, R> mapLeft(
+    Function<? super L, ? extends T> mapper
+  ) {
+    return new Either<>(maybeLeftValue.map(mapper),
+                        maybeRightValue);
+  }
+
+  public <T> Either<L, T> mapRight(
+    Function<? super R, ? extends T> mapper)
+  {
+      return new Either<>(maybeLeftValue,
+                          maybeRightValue.map(mapper));
+  }
+
+  public <T> T map(
+    Function<? super L, ? extends T> leftValueMapper,
+    Function<? super R, ? extends T> rightValueMapper)
+  {
+    return maybeLeftValue.<T>map(leftValueMapper)
+      .orElseGet(() ->
+        maybeRightValue.map(rightValueMapper).get());
+  }
+
+  public void apply(
+    Consumer<? super L> leftValueConsumer,
+    Consumer<? super R> rightValueConsumer
+  ) {
+    maybeLeftValue.ifPresent(leftValueConsumer);
+    maybeRightValue.ifPresent(rightValueConsumer);
+  }
+}
 ```
 
-Now, we can use the new `Either` type and rewrite the example as follows:
+Now we can use the new `Either` type and rewrite the example as follows:
 
-```python
-from typing import Awaitable, TypeVar
-
-from BackendError import BackendError
-from Entity import Entity
-
-T = TypeVar('T', bound=Entity)
-
-
-class DataStore:
-    async def create_entity(
-        self,
-        entity: T
-    ) ->  Awaitable[Either[T, BackendError]]:
-        # ...
+{title: "DataStore.java"}
+```java
+public interface DataStore {
+  <T extends Entity> Either<T, BackendError> createEntity(...);
+}
 ```
 
 #### Adapt to Wanted Error Handling Mechanism
