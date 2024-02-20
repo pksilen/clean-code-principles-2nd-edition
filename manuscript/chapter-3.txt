@@ -4152,6 +4152,47 @@ One solution is to add an error handler callback parameter to the stream factory
 error handling is needed, a _null_ value could be given for the callback. This way, a developer creating a stream can't forget to
 supply an error handler function.
 
+## Don't Pass or Return Null Principle
+
+This principle is for languages like Java and C++ that don't implement null values as separate types.
+TypeScript implements nulls as distinct types when the _strictNullChecks_ configuration parameter is set to true (in tsconfig.json),
+and you should always set it to true. So, this principle does not apply to TypeScript.
+
+The null value is the misguided invention of British computer scientist _Tony Hoare_ who coined his invention
+of null references as a *billion-dollar mistake*. The reason is quite evident because we all have done it: forgetting to handle a null value. And when we don't handle a null value, we pass it to other functions that never expect to be called with a null value. Eventually, this will lead
+to a null value exception thrown somewhere in the code.
+
+When you return a value from a function, never return a null value. You should return an optional value
+instead. In the below example, we are returning an optional value for a key in a map because there can be no value
+associated with a particular key in the map.
+
+```java
+// BAD!
+public class Map<K, V> {
+  public V get(final K key) {
+    if (...) {
+      // ...
+    } else {
+      return null;
+    }
+  }
+}
+
+
+// GOOD!
+public class Map<K, V> {
+  public Optional<V> get(final K key) {
+    // ...
+  }
+}
+```
+
+When you pass arguments to a function, never pass a null value. The called function usually never expects
+to be called with null arguments. Suppose a function expects an argument that can be missing. In that case, the function can define a
+default value for that argument (possible in C++ and JavaScript/TypeScript, but not in Java), or an overloaded
+function can be defined where the optional argument is not present. A function can also be defined so that an argument
+has an optional type, but you should prefer an optional parameter or an overloaded version of the function.
+
 ## Avoid Off-By-One Errors Principle
 
 Off-by-one errors usually result from the fact that collections in programming languages are indexed with
