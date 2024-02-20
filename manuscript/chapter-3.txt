@@ -3312,29 +3312,28 @@ except ...
     # ...
 ```
 
-To make the try-prefix convention even better, a linting rule that enforces the correct naming of error-raising functions could be developed.
-The rule should force the function name to have a *try* prefix if the function raises or propagates errors. A function propagates errors
+To make the try-prefix convention even better, a linting rule that enforces the correct naming of error-throwing functions could be developed.
+The rule should force the function name to have a *try* prefix if the function throws or propagates errors. A function propagates errors
 when it calls an error-raising (try-prefixed) method outside a try-except block.
 
-You can also create a library that has try-prefixed functions that wrap error-raising functions that don't follow the try-prefix rule:
+You can also create a library that has try-prefixed functions that wrap error-throwing functions that don't follow the try-prefix rule:
 
-```python
-import json
+{title: "JsonParser.js"}
+```js
+export default class JsonParser {
+  static ParseError = class extends Error {
+  }
 
-
-class JsonParser:
-    class ParseError(Exception):
-        pass
-
-    @staticmethod
-    def try_parse(json_string: str, **kwargs):
-        try:
-            return json.loads(json_string, **kwargs)
-        except json.JSONDecodeError as error:
-            raise JsonParser.ParseError(error)
+ static tryParse(json, reviver) {
+  try {
+    return JSON.parse(json, reviver);
+  } catch(error) {
+    throw new JsonParser.ParseError(error);
+  }
+}
 ```
 
-Now, if you use the `JsonParser`'s `try_parse` method, you can easily infer the class name of the possibly raised errors without the
+Now, if you use the `JsonParser`'s `tryParse` method, you can easily infer the class name of the possibly raised errors without the
 need to consult any documentation.
 
 When using a web framework, the framework usually provides an error-handling mechanism. The framework catches all possible errors and exceptions when
@@ -3346,7 +3345,7 @@ you provide your own error handler instead of using the default one, so you get 
 It is usually a good practice to document the error handling mechanism used in the software component's documentation.
 
 The best way to avoid forgetting to handle errors is to practice rigorous *test-driven development* (TDD) described
-in the next chapter. Another great way to not forget to handle errors is to walk through the code line by line and check
+in the next chapter. Another great way to not forget to handle errors is to walk through the final code line by line and check
 if the particular line can produce an error. If it can produce an error, what kind of error, and are there multiple
 errors the line can produce? Let's have an example with the following code (we focus only on possible
 errors, not what the function does):
@@ -3384,7 +3383,9 @@ error on connection failure, for example. Can it produce other errors? It can pr
 
 It can also produce an error response, e.g., an internal server error.
 Our code does not handle that currently, which is why we should add the following line after the `requests.get` method call:
-`oidc_config_response.raise_for_status()`, which will raise an `HttpError` if the response status code is >= 400. The third line can raise a `JSONDecodeError` if the response is not valid JSON. The fourth line can raise a `KeyError` because it is possible that the key `jwks_uri` does not exist in the response JSON. The fifth line can raise an `IndexError` because the list returned
+`oidc_config_response.raise_for_status()`, which will raise an `HttpError` if the response status code is >= 400.
+The third line can raise a `JSONDecodeError` if the response is not valid JSON. The fourth line can raise a `KeyError` because it is possible that the key `jwks_uri` does not exist in the response JSON.
+The fifth line can raise an `IndexError` because the list returned
 by the `split` does not necessarily have an element at index one. Also, the sixth line can raise an error when
 the JWKS client cannot connect to the IAM system or the JWT is invalid. The second last line can raise an `InvalidTokenError` when the JWT is invalid.
 In summary, all the lines in the above code can produce at least one kind of error except the first and last lines.
@@ -3419,7 +3420,7 @@ class JwtAuthorizer:
             return jwt_claims
         except (
             # RequestException is the base error for all errors
-            # in the requests library
+            # in the 'requests' library
             requests.RequestException,
             KeyError,
             IndexError,
