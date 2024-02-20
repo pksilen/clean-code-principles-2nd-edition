@@ -8034,399 +8034,903 @@ called the presenter. I use the more generic term *controller* in all examples, 
 between a view and a model. A presenter-type controller object has a reference to a view object and a model object. A view object
 commands the presenter to perform actions on the model. The model object asks the presenter to update the view object.
 
-Let's have a simple todo application as an example. First, we implement the `Todo` class, which is part of the model.
+In the past, making desktop UI applications using Java Swing as the UI layer was popular. Let's have
+a simple todo application as an example:
 
-{title: "Todo.py"}
-```python
-class Todo:
-    def __init__(self, id_: int, name: str, is_done: bool):
-        self.__id = id_
-        self.__name = name
-        self.__is_done = is_done
+First, we implement the `Todo` class, which is part of the model.
 
-    @property
-    def id(self) -> int:
-        return self.__id
+{title: "Todo.java"}
+```java
+public class Todo {
+  private int id;
+  private String name;
+  private boolean isDone;
 
-    @id.setter
-    def id(self, id_: int) -> None:
-        self.__id = id
+  // Constructor...
 
-    @property
-    def name(self) -> str:
-        return self.__name
+  public int getId() {
+    return id;
+  }
 
-    @name.setter
-    def name(self, name: str) -> None:
-        self.__name = name
+  public void setId(final int id) {
+    this.id = id;
+  }
 
-    @property
-    def is_done(self) -> bool:
-        return self.__is_done
+  public String getName() {
+    return name;
+  }
 
-    @is_done.setter
-    def is_done(self, is_done: bool) -> None:
-        self.__is_done = is_done
+  public void setName(final String name) {
+    this.name = name;
+  }
+
+  public boolean isDone() {
+    return isDone;
+  }
+
+  public void setIsDone(final boolean isDone) {
+    this.isDone = isDone;
+  }
+}
 ```
 
-Next, we implement the protocol for the view layer:
+Next, we implement the view layer:
 
-{title: "TodoView.py"}
-```python
-from typing import Protocol
-
-from Todo import Todo
-
-
-class TodoView(Protocol):
-    def show_todos(self, todos: list[Todo]) -> None:
-        pass
-
-    def show_error_message(self, error_message: str) -> None:
-        pass
+{title: "TodoView.java"}
+```java
+public interface TodoView {
+  void show(List<Todo> todos);
+  void show(String message);
+}
 ```
 
-Below is the implementation of the view layer:
+{title: "TodoViewImpl.java"}
+```java
+public class TodoViewImpl implements TodoView {
+  private final TodoController controller;
 
-{title: "TodoViewImpl.py"}
-```python
-from typing import Final
+  public TodoViewImpl(final TodoController controller) {
+    this.controller = controller;
+    controller.setView(this);
+    controller.startFetchTodos();
+  }
 
-from Todo import Todo
-from TodoController import TodoController
-from TodoView import TodoView
+  public void show(final List<Todo> todos) {
+    // Update the view to show the given todos
+    // Add listener for each todo checkbox.
+    // Listener should call: controller.toggleTodoDone(todo.id)
+  }
 
-
-class TodoViewImpl(TodoView):
-    def __init__(self, controller: TodoController):
-        self.__controller: Final = controller
-        controller.view = self
-        controller.start_fetch_todos()
-
-    def show_todos(self, todos: list[Todo]) -> None:
-        # Update the view to show the given todos
-        # Add listener for each todo checkbox
-        # Listener calls: self.__controller.toggle_todo_done(todo.id)
-
-    def show_error_message(self, error_message: str) -> None:
-        # Update the view to show error message
+  public void show(final String errorMessage) {
+    // Update the view to show error message
+  }
+}
 ```
 
-Then, we implement a generic `Controller` class that acts as a base class for concrete controllers:
+Then we implement a generic `Controller` class that acts as a base class for concrete controllers:
 
-{title: "Controller.py"}
-```python
-from typing import Protocol, TypeVar
+{title: "Controller.java"}
+```java
+public class Controller<M, V> {
+  private M model;
+  private V view;
 
-TModel = TypeVar('TModel')
-TView = TypeVar('TView')
+  public M getModel() {
+    return model;
+  }
 
+  public void setModel(final M model) {
+    this.model = model;
+  }
 
-class Controller(Protocol[TModel, TView]):
-    def __init__(self):
-        self.__model: TModel | None = None
-        self.__view: TView | None = None
+  public V getView() {
+    return view;
+  }
 
-    @property
-    def model(self) -> TModel | None:
-        return self.__model
-
-    @model.setter
-    def model(self, model: TModel) -> None:
-        self.__model = model
-
-    @property
-    def view(self) -> TView | None:
-        return self.__view
-
-    @view.setter
-    def view(self, view: TView) -> None:
-        self.__view = view
+  public void setView(final V view) {
+    this.view = view;
+  }
+}
 ```
 
-The below `TodoControllerImpl` class implements two model-related actions, `start_fetch_todos` and `toggle_todo_done`, which
-delegate to the model layer. It also implements two view-related actions, `update_view_with_todos` and `update_view_with_error_message`,
-that delegate to the view layer.
+The below `TodoControllerImpl` class implements two actions, `startFetchTodos` and `toggleTodoDone`, which
+delegate to the model layer. It also implements two actions, `updateViewWith(todos)` and `updateViewWith(errorMessage)`, that delegate to the view layer.
+The latter two actions are executed in the Swing UI thread using `SwingUtilities.invokeLater`.
 
-{title: "TodoController.py"}
-```python
-from typing import Protocol
-
-from Todo import Todo
-
-
-class TodoController(Protocol):
-    async def start_fetch_todos(self) -> None:
-        pass
-
-    async def toggle_todo_done(self, id_: int) -> None:
-        pass
-
-    def update_view_with_todos(self, todos: list[Todo]) -> None:
-        pass
-
-    def update_view_with_error_message(self, error_message: str) -> None:
-        pass
+{title: "TodoController.java"}
+```java
+public interface TodoController {
+  void startFetchTodos();
+  void toggleTodoDone(final int id);
+  void updateViewWith(final List<Todo> todos);
+  void updateViewWith(final String errorMessage);
+}
 ```
 
-{title: "TodoControllerImpl.py"}
-```python
-from Controller import Controller
-from Todo import Todo
-from TodoController import TodoController
-from TodoModel import TodoModel
-from TodoView import TodoView
+{title: "TodoControllerImpl.java"}
+```java
+public class TodoControllerImpl
+         extends Controller<TodoModel, TodoView>
+         implements TodoController {
 
+  public void startFetchTodos() {
+    getModel().fetchTodos();
+  }
 
-class TodoControllerImpl(Controller[TodoModel, TodoView], TodoController):
-    async def start_fetch_todos(self) -> None:
-        if self.model is not None:
-            await self.model.fetch_todos()
+  public void toggleTodoDone(final int id) {
+    getModel().toggleTodoDone(id);
+  }
 
-    async def toggle_todo_done(self, id_: int) -> None:
-        if self.model is not None:
-            await self.model.toggle_todo_done(id_)
+  public void updateViewWith(final List<Todo> todos) {
+    SwingUtilities.invokeLater(() ->
+      getView().show(todos));
+  }
 
-    def update_view_with_todos(self, todos: list[Todo]) -> None:
-        if self.view is not None:
-            self.view.show_todos(todos)
-
-    def update_view_with_error_message(self, error_message: str) -> None:
-        if self.view is not None:
-            self.view.show_error_message(error_message)
+  public void updateViewWith(final String errorMessage) {
+    SwingUtilities.invokeLater(() ->
+      getView().show(errorMessage));
+  }
+}
 ```
 
-The below `TodoModelImpl` class implements the fetching of todos (`fetch_todos`) using the supplied `todo_service`.
-The `todo_service` accesses the backend to read todos from a database, for example. The `TodoService` protocol is a counterpart for the same protocol in the backend API software component.
+The below `TodoModelImpl` class implements the fetching of todos (`fetchTodos`) using the supplied `todoService`.
+The `todoService` accesses the backend to read todos from a database, for example.
 When todos are successfully fetched, the controller is told to update the view. If fetching
 of the todos fails, the view is updated to show an error. Toggling a todo done is implemented
-using the `todo_service` and its `try_update_todo` method.
+using the `todoService` and its `updateTodo` method.
 
-{title: "TodoService.py"}
-```python
-from collections.abc import Awaitable
-from typing import Protocol
-
-from Todo import Todo
-
-
-class TodoService(Protocol):
-    class Error(Exception):
-        # ...
-
-    async def try_get_todos(self) -> Awaitable[list[Todo]]:
-        pass
-
-    async def try_update_todo(self, todo: Todo) -> None:
-        pass
+{title: "TodoService.java"}
+```java
+public interface TodoService {
+  public List<Todo> getTodos();
+  public void updateTodo(Todo todo);
+}
 ```
 
-{title: "TodoModel.py"}
-```python
-from typing import Protocol
-
-class TodoModel(Protocol):
-    async def fetch_todos(self) -> None:
-        pass
-
-    async def toggle_todo_done(self, id_: int) -> None:
-        pass
+{title: TodoModel.java}
+```java
+public interface TodoModel {
+  public void fetchTodos();
+  public void toggleTodoDone(int id);
+}
 ```
 
-{title: "TodoModelImpl.py"}
-```python
-from typing import Final
+{title: "TodoModelImpl.java"}
+```java
+public class TodoModelImpl implements TodoModel {
+  private final TodoController controller;
+  private final TodoService todoService;
+  private List<Todo> todos = new ArrayList<>();
 
-from Todo import Todo
-from TodoController import TodoController
-from TodoModel import TodoModel
-from TodoService import TodoService
+  public TodoModelImpl(
+    final TodoController controller,
+    final TodoService todoService
+  ) {
+    this.controller = controller;
+    controller.setModel(this);
+    this.todoService = todoService;
+  }
 
+  public void fetchTodos() {
+    CompletableFuture
+      .supplyAsync(todoService::getTodos)
+      .thenAccept(todos -> {
+        this.todos = todos;
+        controller.updateViewWith(todos);
+      })
+      .exceptionally((error) -> {
+        controller.updateViewWith(error.getMessage());
+        return null;
+      });
+  }
 
-class TodoModelImpl(TodoModel):
-    __todos: list[Todo]
+  public void toggleTodoDone(final int id) {
+    todos.stream()
+      .filter(todo -> todo.getId() == id)
+      .findAny()
+      .ifPresent(todo -> {
+          todo.setIsDone(!todo.isDone());
 
-    def __init__(
-        self, controller: TodoController, todo_service: TodoService
-    ):
-        self.__controller: Final = controller
-        controller.model = self
-        self.__todo_service: Final = todo_service
-        self.__todos = []
-
-    async def fetch_todos(self) -> None:
-        try:
-            self.__todos = await self.__todo_service.try_get_todos()
-        except TodoService.Error as error:
-            self.__controller.update_view_with_error_message(error.message)
-        else:
-            self.__controller.update_view_with_todos(self.__todos)
-
-    async def toggle_todo_done(self, id_: int) -> None:
-        found_todos = [todo for todo in self.__todos if todo.id == id_]
-        todo = found_todos[0] if found_todos else None
-
-        if todo:
-            todo.is_done = not todo.is_done
-
-            try:
-                await self.__todo_service.try_update_todo(todo)
-            except TodoService.Error as error:
-                self.__controller.update_view_with_error_message(
-                    error.message
-                )
+          CompletableFuture
+            .runAsync(() ->
+              todoService.updateTodo(todo))
+            .exceptionally((error) -> {
+              controller.updateViewWith(error.getMessage());
+              return null;
+            });
+      });
+  }
+}
 ```
 
-Let's make an exception to having all examples in Python and implement the above example using [Web Components](https://developer.mozilla.org/en-US/docs/Web/API/Web_components).
-If you are not a full-stack Python developer, you can skip the rest of this section because it will be frontend-related
-TypeScript code. The web component view should extend the `HTMLElement` class.
+Let's have the same example using [Web Components](https://developer.mozilla.org/en-US/docs/Web/API/Web_components). The web component view should extend the `HTMLElement` class.
 The `connectedCallback` method of the view will be called on the component mount. It starts fetching todos.
 The `showTodos` method renders the given todos as HTML elements. It also adds event listeners for
-the *Mark done* buttons. The `showError` method updates the inner HTML of the view to show an error
+the _Mark done_ buttons. The `showError` method updates the inner HTML of the view to show an error
 message.
 
-{format: ts}
-![Todo.ts](resources/chapter2/code/mediator_web_component/Todo.ts)
+{title: "Todo.ts"}
+```ts
+export type Todo = {
+  id: number;
+  name: string;
+  isDone: boolean;
+};
+```
 
-{format: ts}
-![TodoView.ts](resources/chapter2/code/mediator_web_component/TodoView.ts)
+{title: "TodoView.ts"}
+```ts
+interface TodoView {
+  showTodos(todos: Todo[]): void;
+  showError(errorMessage: string): void;
+}
+```
 
-{format: ts}
-![TodoViewImpl.ts](resources/chapter2/code/mediator_web_component/TodoViewImpl.ts)
+{title: "TodoViewImpl.ts"}
+```ts
+import controller from './todoController';
+import { Todo } from './Todo';
 
-We can use the same controller and model APIs for this Web Component example as in the Python example.
-We need to convert the Python code to the respective TypeScript code:
+export default class TodoViewImpl
+         extends HTMLElement implements TodoView {
+  constructor() {
+    super();
+    controller.setView(this);
+  }
 
-{format: ts}
-![Controller.ts](resources/chapter2/code/mediator_web_component/Controller.ts)
+  connectedCallback() {
+    controller.startFetchTodos();
+    this.innerHTML = '<div>Loading todos...</div>';
+  }
 
-{format: ts}
-![TodoController.ts](resources/chapter2/code/mediator_web_component/TodoController.ts)
+  showTodos(todos: Todo[]) {
+    const todoElements = todos.map(({ id, name, isDone }) => `
+      <li id="todo-${id}">
+        ${id}&nbsp;${name}&nbsp;
+        ${isDone ? '' : '<button>Mark done</button>'}
+      </li>
+    `);
 
-{format: ts}
-![todoController.ts](resources/chapter2/code/mediator_web_component/_todoController.ts)
+    this.innerHTML = `<ul>${todoElements}</ul>`;
 
-{format: ts}
-![TodoService.ts](resources/chapter2/code/mediator_web_component/TodoService.ts)
+    todos.map(({ id }) => this
+      .querySelector(`#todo-${id} button`)?
+      .addEventListener('click',
+                        () => controller.toggleTodoDone(id)));
+  }
 
-{format: ts}
-![TodoModel.ts](resources/chapter2/code/mediator_web_component/TodoModel.ts)
+  showError(errorMessage: string) {
+    this.innerHTML = `
+      <div>
+        Failure: ${errorMessage}
+      </div>
+    `;
+  }
+}
+```
 
-{format: ts}
-![TodoModelImpl.ts](resources/chapter2/code/mediator_web_component/TodoModelImpl.ts)
+We can use the same controller and model APIs for this web component example as in the Java Swing example. We just need to convert the Java code to TypeScript code:
+
+{title: "Controller.ts"}
+```ts
+export default class Controller<M, V> {
+  private model: M | undefined;
+  private view: V | undefined;
+
+  getModel(): M | undefined {
+    return this.model;
+  }
+
+  setModel(model: M): void {
+    this.model = model;
+  }
+
+  getView(): V | undefined {
+    return this.view;
+  }
+
+  setView(view: V): void {
+    this.view = view;
+  }
+}
+```
+
+{title: "TodoController.ts"}
+```ts
+import { Todo } from "./Todo";
+
+export interface TodoController {
+  startFetchTodos(): void;
+  toggleTodoDone(id: number): void;
+  updateViewWithTodos(todos: Todo[]): void;
+  updateViewWithError(message: string): void;
+}
+```
+
+{title: "todoController.ts"}
+```ts
+import TodoView from './TodoView';
+import Controller from "./Controller";
+import { TodoController } from './TodoController';
+import { Todo } from "./Todo";
+import TodoModel from './TodoModel';
+
+class TodoControllerImpl
+         extends Controller<TodoModel, TodoView>
+         implements TodoController {
+
+  startFetchTodos(): void {
+    this.getModel()?.fetchTodos();
+  }
+
+  toggleTodoDone(id: number): void {
+    this.getModel()?.toggleTodoDone(id);
+  }
+
+  updateViewWithTodos(todos: Todo[]): void {
+    this.getView()?.showTodos(todos);
+  }
+
+  updateViewWithError(message: string): void {
+    this.getView()?.showError(message);
+  }
+}
+
+const controller = new TodoControllerImpl();
+export default controller;
+```
+
+{title: "TodoService.ts"}
+```ts
+export interface TodoService {
+  getTodos(): Promise<Todo[]>;
+  updateTodo(todo: Todo): Promise<void>;
+}
+```
+
+{title: "TodoModel.ts"}
+```ts
+export interface TodoModel {
+  fetchTodos(): void;
+  toggleTodoDone(id: number): void;
+}
+```
+
+{title: "TodoModelImpl.ts"}
+```ts
+import controller, { TodoController } from './todoController';
+import { TodoModel } from './TodoModel';
+import { Todo } from "./Todo";
+
+export default class TodoModelImpl implements TodoModel {
+  private todos: Todo[] = [];
+
+  constructor(
+    private readonly controller: TodoController,
+    private readonly todoService: TodoService
+  ) {
+    controller.setModel(this);
+  }
+
+  fetchTodos(): void {
+    this.todoService.getTodos()
+      .then((todos) => {
+        this.todos = todos;
+        controller.updateViewWithTodos(todos);
+      })
+      .catch((error) =>
+        controller.updateViewWithError(error.message));
+  }
+
+  toggleTodoDone(id: number): void {
+    const foundTodo = this.todos.find(todo => todo.id === id);
+
+    if (foundTodo) {
+      foundTodo.isDone = !foundTodo.isDone;
+      this.todoService
+          .updateTodo(foundTodo)
+          .catch((error: any) =>
+            controller.updateViewWithError(error.message));
+    }
+  }
+}
+```
 
 We could use the above-defined controller and model as such with a React view component:
 
-{format: ts, type: code}
-![ReactTodoView.tsx](resources/chapter2/code/mediator_web_component/ReactTodoView.tsx)
+{title: "ReactTodoView.tsx"}
+```tsx
+// ...
+import controller from './todoController';
+
+// ...
+
+export default class ReactTodoView
+        extends Component<Props, State>
+        implements TodoView {
+
+  constructor(props: Props) {
+    super(props);
+    controller.setView(this);
+
+    this.state = {
+      todos: []
+    }
+  }
+
+  componentDidMount() {
+    controller.startFetchTodos();
+  }
+
+  showTodos(todos: Todo[]) {
+    this.setState({ ...this.state, todos });
+  }
+
+  showError(errorMessage: string) {
+     this.setState({ ...this.state, errorMessage });
+  }
+
+  render() {
+    // Render todos from 'this.state.todos' here
+    // Or show 'this.state.errorMessage' here
+  }
+}
+```
 
 If you have multiple views using the same controller, you can derive your controller from the below-defined `MultiViewController` class:
 
-{format: ts}
-![MultiViewController.ts](resources/chapter2/code/mediator_web_component/MultiViewController.ts)
+{title: "MultiViewController.ts"}
+```ts
+export default class MultiViewController<M, V> {
+  private model: M | undefined;
+  private views: V[] = [];
+
+  getModel(): M | undefined {
+    return this.model;
+  }
+
+  setModel(model: M): void {
+    this.model = model;
+  }
+
+  getViews(): V[]  {
+    return this.views;
+  }
+
+  addView(view: V): void {
+    this.views.push(view);
+  }
+}
+```
 
 Let's say we want to have two views for todos, one for the actual todos and one viewing the todo count.
 We need to modify the controller slightly to support multiple views:
 
-{format: ts}
-![TodoControllerImpl.ts](resources/chapter2/code/mediator_multi_view/TodoControllerImpl.ts)
+{title: "todoController.ts"}
+```ts
+import TodoView from './TodoView';
+import MultiViewController from './MultiViewController';
+import { Todo } from "./Todo";
+import { TodoController } from './TodoController';
+import TodoModel from './TodoModel';
+
+class TodoControllerImpl
+         extends MultiViewController<TodoModel, TodoView>
+         implement TodoController {
+  startFetchTodos(): void {
+    this.getModel()?.fetchTodos();
+  }
+
+  toggleTodoDone(id: number): void {
+    this.getModel()?.toggleTodoDone(id);
+  }
+
+  updateViewsWithTodos(todos: Todo[]): void {
+    this.getViews().forEach(view => view.showTodos(todos));
+  }
+
+  updateViewWithError(message: string): void {
+    this.getViews().forEach(view => view.showError(message));
+  }
+}
+
+const controller = new TodoController();
+export default controller;
+```
 
 Many modern UI frameworks and state management libraries implement a specialization of the MVC pattern called,
 Model-View-ViewModel (MVVM). In the MVVM pattern, the controller is called the view model. I use the more
-generic term *controller* in the below example, though. The main difference between the view model and the presenter
+generic term _controller_ in the below example, though. The main difference between the view model and the presenter
 in the MVP pattern is that in the MVP pattern, the presenter has a reference to the view, but the view model does not.
 The view model provides bindings between the view's events and actions in the model. This can happen so that the view model
-adds action dispatcher functions as properties of the view. In the other direction, the view model
-maps the model's state to the properties of the view. For example, when using React and Redux, you can connect the view to the model
+adds action dispatcher functions as properties of the view. And in the other direction, the view model
+maps the model's state to the properties of the view. When using React and Redux, for example, you can connect the view to the model
 using the `mapDispatchToProps` function and connect the model to the view using the `mapStateToProps` function.
 These two mapping functions form the view model (or the controller) that binds the view and model together.
 
 Let's first implement the todo example with React and Redux and later show how the React view can be replaced
-with an Angular view without modifying the controller or the model layer.
+with an Angular view without any modification to the controller or the model layer. Note that the code for some classes
+is not listed below. You can assume those classes are the same as defined in _command/action pattern_ examples.
 
 Let's implement a list view for todos:
 
-{format: ts, type: code}
-![TodosListView.tsx](resources/chapter2/code/mediator_react_redux/TodosListView.tsx)
+{title: "TodosListView.tsx"}
+```
+import { connect } from 'react-redux';
+import { useEffect } from "react";
+import { controller, ActionDispatchers, State }
+  from './todosController';
 
-Below is the base class `AbstractAction` for Redux actions and the base class `Controller` for controllers:
+type Props = ActionDispatchers & State;
 
-{format: ts}
-![AbstractAction.ts](resources/chapter2/code/mediator_react_redux/AbstractAction.ts)
+function TodosListView({
+  toggleTodoDone,
+  startFetchTodos,
+  todos
+}: Props) {
+  useEffect(() => {
+    startFetchTodos();
+  }, [startFetchTodos]);
 
-{format: ts}
-![Controller.ts](resources/chapter2/code/mediator_react_redux/Controller.ts)
+  const todoElements = todos.map(({ id, name, isDone }) => (
+    <li key={id}>
+      {id}&nbsp;
+      {name}&nbsp;
+      {isDone
+        ? undefined
+        : <button onClick={() => toggleTodoDone(id)}>
+            Mark done
+          </button>
+      }
+    </li>
+  ));
+
+  return <ul>{todoElements}</ul>;
+}
+
+// Here we connect the view to the model using the controller
+export default connect(
+  controller.getState,
+  () => controller.actionDispatchers
+)(TodosListView);
+```
+
+Below is the base class for controllers:
+
+{title: "Controller.ts"}
+```ts
+import AbstractAction from "./AbstractAction";
+
+export type ReduxDispatch =
+ (reduxActionObject: { type: AbstractAction<any> }) => void;
+
+export default class Controller {
+  protected readonly dispatch:
+    (action: AbstractAction<any>) => void;
+
+  constructor(reduxDispatch: ReduxDispatch) {
+    this.dispatch = (action: AbstractAction<any>) =>
+      reduxDispatch({ type: action });
+  }
+}
+```
 
 Below is the controller for todos:
 
-{format: ts}
-![todosController.ts](resources/chapter2/code/mediator_react_redux/todosController.ts)
+{title: "todosController.ts"}
+```ts
+import store from './store';
+import { AppState } from "./AppState";
+import ToggleDoneTodoAction from "./ToggleDoneTodoAction";
+import StartFetchTodosAction from "./StartFetchTodosAction";
+import Controller from "./Controller";
+
+class TodosController extends Controller {
+  readonly actionDispatchers = {
+    toggleTodoDone: (id: number) =>
+      this.dispatch(new ToggleDoneTodoAction(id)),
+
+    startFetchTodos: () =>
+      this.dispatch(new StartFetchTodosAction())
+  }
+
+  getState(appState: AppState) {
+    return {
+      todos: appState.todosState.todos,
+    }
+  }
+}
+
+export const controller = new TodosController(store.dispatch);
+export type State = ReturnType<typeof controller.getState>;
+export type ActionDispatchers = typeof controller.actionDispatchers;
+```
 
 In the development phase, we can use the following temporary
 implementation of the `StartFetchTodosAction` class:
 
-{format: ts}
-![initialTodosState.ts](resources/chapter2/code/mediator_react_redux/initialTodosState.ts)
+{title: "StartFetchTodosAction.ts"}
+```ts
+import { TodoState } from "./TodoState";
+import AbstractTodoAction from "./AbstractTodoAction";
 
-{format: ts}
-![AbstractTodoAction.ts](resources/chapter2/code/mediator_react_redux/AbstractTodoAction.ts)
-
-{format: ts}
-![StartFetchTodosAction.ts](resources/chapter2/code/mediator_react_redux/StartFetchTodosAction.ts)
-
-{format: ts}
-![MarkDoneTodoAction.ts](resources/chapter2/code/mediator_react_redux/MarkDoneTodoAction.ts)
+export default class StartFetchTodosAction extends
+                       AbstractTodoAction {
+  perform(state: TodoState): TodoState {
+    return {
+      todos: [
+        {
+          id: 1,
+          name: "Todo 1",
+          isDone: false,
+        },
+        {
+          id: 2,
+          name: "Todo 2",
+          isDone: false,
+        },
+      ],
+    };
+  }
+}
+```
 
 Now we can introduce a new view for todos, a `TodosTableView` which can utilize the same controller as the
 `TodosListView`.
 
-{format: ts, type: code}
-![TodosTableView.tsx](resources/chapter2/code/mediator_react_redux/TodosTableView.tsx)
+{title: "TodosTableView.tsx"}
+```tsx
+import { connect } from 'react-redux';
+import { useEffect } from "react";
+import { controller, ActionDispatchers, State }
+  from './todosController';
+
+type Props = ActionDispatchers & State;
+
+function TodosListView({
+  toggleTodoDone,
+  startFetchTodos,
+  todos
+}: Props) {
+  useEffect(() => {
+    startFetchTodos();
+  }, [startFetchTodos]);
+
+  const todoElements = todos.map(({ id, isDone, name }) => (
+    <tr key={id}>
+      <td>{id}</td>
+      <td>{name}</td>
+        <td>
+          <input
+            type="checkbox"
+            checked={isDone}
+            onChange={() => toggleTodoDone(id)}
+          />
+        </td>
+    </tr>
+  ));
+
+  return <table><tbody>{todoElements}</tbody></table>;
+}
+
+export default connect(
+  controller.getState,
+  () => controller.actionDispatchers
+)(TodosListView);
+```
 
 We can notice some duplication in the `TodosListView` and `TodosTableView` components.
 For example, both are using the same effect. We can create a `TodosView` for which we can give
 as parameter the type of a single todo view, either a list item or a table row view:
 
-{format: ts, type: code}
-![TodosView.tsx](resources/chapter2/code/mediator_react_redux/TodosView.tsx)
+{title: "TodosView.tsx"}
+```tsx
+import { useEffect } from "react";
+import { connect } from "react-redux";
+import ListItemTodoView from './ListItemTodoView';
+import TableRowTodoView from './TableRowTodoView';
+import { controller, ActionDispatchers, State }
+  from './todosController';
+
+type Props = ActionDispatchers & State & {
+    TodoView: typeof ListItemTodoView | typeof TableRowTodoView;
+};
+
+function TodosView({
+  toggleTodoDone,
+  startFetchTodos,
+  todos,
+  TodoView
+}: Props) {
+  useEffect(() => {
+    startFetchTodos()
+  }, [startFetchTodos]);
+
+  const todoViews = todos.map((todo) =>
+    <TodoView
+      key={todo.id}
+      todo={todo}
+      toggleTodoDone={toggleTodoDone}
+    />
+  );
+
+  return TodoView === ListItemTodoView
+      ? <ul>{todoViews}</ul>
+      : <table><tbody>{todoViews}</tbody></table>;
+}
+
+export default connect(
+  controller.getState,
+  () => controller.actionDispatchers
+)(TodosView);
+```
 
 Below is the view for showing a single todo as a list item:
 
-{format: ts}
-![TodoViewProps.ts](resources/chapter2/code/mediator_react_redux/TodoViewProps.ts)
+{title: "TodoViewProps.ts"}
+```ts
+import { Todo } from "./Todo";
 
-{format: ts, type: code}
-![ListItemTodoView.tsx](resources/chapter2/code/mediator_react_redux/ListItemTodoView.tsx)
+export type TodoViewProps = {
+  toggleTodoDone: (id: number) => void,
+  todo: Todo
+}
+```
+
+{title: "ListItemTodoView.tsx"}
+```tsx
+import { TodoViewProps } from './TodoViewProps';
+
+export default function ListItemTodoView({
+  toggleTodoDone,
+  todo: { id, name, isDone }
+}: TodoViewProps) {
+  return (
+    <li>
+      {id}&nbsp;
+      {name}&nbsp;
+      { isDone ?
+        undefined :
+        <button onClick={() => toggleTodoDone(id)}>
+          Mark done
+        </button> }
+    </li>
+  );
+}
+```
 
 Below is the view for showing a single todo as a table row:
 
-{format: ts, type: code}
-![TableRowTodoView.tsx](resources/chapter2/code/mediator_react_redux/TableRowTodoView.tsx)
+{title: "TableRowTodoView.tsx"}
+```tsx
+import { TodoViewProps } from './TodoViewProps';
 
-![Frontend MVC Architecture with Redux](resources/chapter2/images/03-07.png)
+export default function TableRowTodoView({
+  toggleTodoDone,
+  todo: { id, name, isDone }
+}: TodoViewProps) {
+  return (
+    <tr>
+      <td>{id}</td>
+      <td>{name}</td>
+      <td>
+        <input
+          type="checkbox"
+          checked={isDone}
+          onChange={() => toggleTodoDone(id)}
+        />
+      </td>
+    </tr>);
+}
+```
 
-![Frontend MVC Architecture with Redux + Backend](resources/chapter2/images/03-08.png)
+![Figure 3.9 Frontend MVC Architecture with Redux](images/03-07.png)
 
-In many cases, you should not store the state in a view, even if the state is for that particular view only. Instead, when you store it in the model, it brings the following benefits:
+![Figure 3.10 Frontend MVC Architecture with Redux + Backend](images/03-08.png)
+
+In most cases, you should not store state in a view even if the state is for that particular view only. Instead, when you store it in the model, it brings
+the following benefits:
 
 - Possibility to easily persist state either in the browser or in the backend
 - Possibility to easily implement undo-actions
 - State can be easily shared with another view(s) later if needed
 - Migrating views to use a different view technology is more straightforward
-- Easier debugging of state-related problems, e.g., using the [Redux DevTools](https://github.com/reduxjs/redux-devtools) browser extension
+- Easier debugging of state-related problems, e.g., using the Redux DevTools browser extension
 
 We can also change the view implementation from React to Angular without modifying the controller
-or model layer. This can be done, for example, using the [@angular-redux2/store](https://www.npmjs.com/package/@angular-redux2/store) library.
+or model layer. This can be done, for example, using the _@angular-redux2/store_ library.
 Below is a todos table view implemented as an Angular component:
 
-{format: ts}
-![todos-table-view.component.ts](resources/chapter2/code/mediator_react_redux/todos-table-view.component.ts)
+{title: "todos-table-view.component.ts"}
+```ts
+import { Component, OnInit } from "@angular/core";
+import { NgRedux, Select } from '@angular-redux2/store';
+import { Observable } from "rxjs";
+import { controller } from './todosController';
+import { TodoState } from "./TodoState";
+import { AppState } from "./AppState";
 
-{format: ts}
-![app.component.ts](resources/chapter2/code/mediator_react_redux/app.component.ts)
+const { startFetchTodos,
+        toggleTodoDone } = controller.actionDispatchers;
 
-{format: ts}
-![app.module.ts](resources/chapter2/code/mediator_react_redux/app.module.ts)
+@Component({
+  selector: 'todos-table-view',
+  template: `
+    <table>
+      <tr *ngFor="let todo of (todoState | async)?.todos">
+        <td>{{ todo.id }}</td>
+        <td>{{ todo.name }}</td>
+        <td>
+          <input
+            type="checkbox"
+            [checked]="todo.isDone"
+            (change)="toggleTodoDone(todo.id)"
+          />
+        </td>
+      </tr>
+    </table>
+  `
+})
+export class TodosTableView implements OnInit {
+  @Select(controller.getState) todoState: Observable<TodoState>;
+
+  constructor(private ngRedux: NgRedux<AppState>) {}
+
+  ngOnInit(): void {
+    startFetchTodos();
+  }
+
+  toggleTodoDone(id: number) {
+    toggleTodoDone(id);
+  }
+}
+```
+
+{title: "app.component.ts"}
+```ts
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-root',
+  template: `
+  <div>
+    <todos-table-view></todos-table-view>
+  </div>`,
+  styleUrls: ['./app.component.css']
+})
+export class AppComponent {
+  title = 'angular-test';
+}
+```
+
+{title: "app.module.ts"}
+```ts
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import { NgReduxModule, NgRedux } from '@angular-redux2/store';
+
+import { AppComponent } from './app.component';
+import store from './store';
+import { AppState } from "./AppState";
+import { TodosTableView } from "./todos-table-view.component";
+
+@NgModule({
+  declarations: [
+    AppComponent, TodosTableView
+  ],
+  imports: [
+    BrowserModule,
+    NgReduxModule
+  ],
+  providers: [],
+  bootstrap: [AppComponent]
+})
+export class AppModule {
+  constructor(ngRedux: NgRedux<AppState>) {
+    ngRedux.provideStore(store);
+  }
+}
+```
 
 #### Template Method Pattern
 
