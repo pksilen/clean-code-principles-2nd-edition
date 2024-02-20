@@ -3742,76 +3742,139 @@ public interface DataStore {
 
 #### Adapt to Wanted Error Handling Mechanism
 
-You can adapt to a desired error-handling mechanism by creating an adapter class. For example, if a library has an error-raising method,
-you can create an adapter class with a method returning an optional value. The below `Url` class has a `try_create_url`
-factory method that can raise an error:
+You can adapt to a desired error-handling mechanism by creating an adapter method. For example, if a library has a throwing method,
+you can create an adapter method returning an optional value or error object. Below is a `tryCreate`
+factory method in a `VInt` class that can throw:
 
-```python
-class Url:
-    # ...
+{title: "VInt.ts"}
+```ts
+class VInt {
+  // ...
 
-    class CreateUrlError(Exception):
-        pass
+  private constructor(...) {
+    // ...
+  }
 
-    @classmethod
-    def try_create_url(
-        cls,
-        scheme: str,
-        host: str,
-        port: int,
-        path: str,
-        query: str
-    ) -> 'Url':
-        # ...
-        # Potentially raise a CreateUrlError here ...
+  // this will throw if invalid 'value' is given
+  // that doesn't match the 'validationSpec'
+  static tryCreate<VSpec extends string>(
+    validationSpec: IntValidationSpec<VSpec>,
+    value: number
+  ): VInt<VSpec> | never {
+    // constructor can throw
+    return new VInt(validationSpec, value);
+  }
+
+  // ...
+}
 ```
 
-We can create a `UrlFactory` adapter class with a non-error-raising method, `create_url`.
+We can create a `VIntFactory` class with an adapter method for the `tryCreate` factory method in the `VInt` class.
+The `VIntFactory` class offers a non-throwing `create` method:
 
-```python
-from Url import Url
-
-
-class UrlFactory:
-    def create_url(
-        self,
-        scheme: str,
-        host: str,
-        port: int,
-        path: str,
-        query: str
-    ) -> Url | None:
-        try:
-            return Url.try_create_url(scheme, host, port, path, query)
-        except Url.CreateUrlError:
-            return None
+{title: "VIntFactory.ts"}
+```ts
+class VIntFactory {
+  static create<VSpec extends string>(
+    validationSpec: IntValidationSpec<VSpec>,
+    value: number
+  ): VInt<VSpec> | null {
+    try {
+      return VInt.tryCreate(validationSpec, value);
+    } catch {
+      return null;
+    }
+  }
+}
 ```
 
-If the code using the `UrlFactory` is interested in the error details,
-we can also create a method that does not raise an error but returns either a value or an error:
+We can also create a method that does not throw but returns either a value or an error:
 
-```python
-from typing import Union
+{title: "VIntFactory.ts"}
+```ts
+class VIntFactory {
+  static createOrError<VSpec extends string>(
+    validationSpec: IntValidationSpec<VSpec>,
+    value: number
+  ): [VInt<VSpec>, null] | [null, Error] {
+    try {
+      return [VInt.tryCreate(validationSpec, value), null];
+    } catch (error) {
+      return [null, error as Error];
+    }
+  }
+}
+```
 
-from Url import Url
+We can also introduce a simplified version of the `Either` type for TypeScript:
 
+{title: "Either.ts"}
+```
+export type Either<L, R> = [L, null] | [null, R];
+```
 
-class UrlFactory:
-    def create_url_or_error(
-        self,
-        scheme: str,
-        host: str,
-        port: int,
-        path: str,
-        query: str
-    ) -> Union[(Url, None), (None, Url.CreateUrlError)]:
-        try:
-            return (
-                Url.try_create_url(scheme, host, port, path, query),
-                None,
-            )
-        except Url.CreateUrlError as error:
-            return None, error
+Now we can rewrite the above example like this:
+
+{title: "VIntFactory.ts"}
+```ts
+class VIntFactory {
+  static createOrError<VSpec extends string>(
+    validationSpec: IntValidationSpec<VSpec>,
+    value: number
+  ): Either<VInt<VSpec>, Error> {
+    try {
+      return [VInt.tryCreate(validationSpec, value), null];
+    } catch (error) {
+      return [null, error as Error];
+    }
+  }
+}
+```
+
+#### Asynchronous Function Error Handling
+
+Asynchronous functions are functions that usually can fail. They often execute I/O operations like file or
+network I/O. For a failable asynchronous operation, you must remember to handle the failure case. For this reason, it is
+suggested to name a failable asynchronous operation using the same _try_ prefix used in function names that can throw.
+Below are two examples of handling an asynchronous operation failure in JavaScript/TypeScript:
+
+```js
+tryMakeHttpRequest(url).then((value) => {
+  // success
+}, (error) => {
+  // Handle error
+});
+```
+
+```js
+tryMakeHttpRequest(url).then((value) => {
+  // success
+}).error((error) => {
+  // Handle error
+});
+```
+
+As you can see from the above examples, it is easy to forget to add the error handling.
+It would be better if there was a `thenOrCatch` method in the `Promise` class that accepted the following kind of callback:
+
+```js
+tryMakeHttpRequest(url).thenOrCatch(([value, error]) => {
+  // Now it is harder to forget to handle an error
+  // Check 'error' before using the 'value'
+});
+```
+
+You can make asynchronous function calls synchronous. In JavaScript/TypeScript, this can be done
+using the `async` and `await` keywords. A failable asynchronous operation made synchronous can throw. Below is the same example as above made synchronous:
+
+```js
+async function fetchData() {
+  try {
+    await tryMakeHttpRequest(url);
+  } catch {
+    // Handle error
+  }
+}
 ```
 
 #### Functional Exception Handling
