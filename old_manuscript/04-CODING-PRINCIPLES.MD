@@ -3055,6 +3055,30 @@ public class Either<L, R>
 }
 ```
 
+Below are some examples of how to use the `Either` class:
+
+```java
+class Error extends RuntimeException {
+}
+
+
+final var intOrError = Either<Integer, Error>.with_left(3);
+final var intOrError2 = Either<Integer, Error>.with_right(new Error());
+
+print(int_or_error.has_left_value()) # Prints True
+print(int_or_error2.has_right_value()) # Prints True
+print(
+    int_or_error.map_left(lambda number: number * 2).has_left_value()
+)
+# Prints True
+
+print(int_or_error.map(lambda number: number * 2, lambda error: 0))
+# Prints 6
+
+print(int_or_error2.map(lambda number: number * 2, lambda error: 0))
+# Prints 0
+```
+
 Now we can use the new `Either` type and rewrite the example as follows:
 
 _DataStore.java_
