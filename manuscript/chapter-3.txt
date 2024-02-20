@@ -2910,12 +2910,12 @@ to analyze Helm chart files, and _Hadolint_ is a tool for analyzing _Dockerfiles
 
 ## Error/Exception Handling Principle
 
-Python and many other languages like C++, Java, and JavaScript/TypeScript have an exception-handling mechanism that can
+Many languages like C++, Java, and JavaScript/TypeScript have an exception-handling mechanism that can
 handle errors and exceptional situations. First of all, I want to make a clear distinction between these two words:
 
 > ***An error can happen, and one should be prepared for it. An exception is something that should never happen.***
 
-You define errors in your code and raise them in your functions. For example, if you try to write to
+You define errors in your code and throw them in your functions. For example, if you try to write to
 a file, you must be prepared for the error that the disk is full, or if you are reading a file, you must be prepared
 for the error that the file does not exist (anymore).
 
@@ -2925,10 +2925,10 @@ who can then retry the operation using
 a different file name, for example.
 
 You usually don't need to define your own exceptions in your application, but the system
-raises built-in exceptions in *exceptional situations*, like when a programming error is encountered.
-An exception can be raised, for example, when memory is low, and memory
+throws built-in exceptions in *exceptional situations*, like when a programming error is encountered.
+An exception can be thrown, for example, when memory is low, and memory
 allocation cannot be performed, or when a programming error results in an array index out of bounds or
-an object does not have a specific attribute. When an exception is raised, the program cannot continue executing
+a null pointer access. When an exception is thrown, the program cannot continue executing
 normally and might need to terminate. This is why many exceptions can be categorized as unrecoverable errors. In some cases,
 it is possible to recover from exceptions. Suppose a web service encounters an exception while handling an HTTP request. In that case,
 you can terminate the handling of the current request, return an error response to the client, and continue handling further
@@ -2938,11 +2938,11 @@ Should it terminate the process or perhaps do something else?
 
 Errors define situations where the execution of a function fails for some reason. Typical examples of errors are
 a file not found error, an error in sending an HTTP request to a remote service, or a failure to parse a configuration
-file. Suppose a function can raise an error. The function caller can decide how to handle the error depending on the error. With transient errors, like
+file. Suppose a function can throw an error. The function caller can decide how to handle the error depending on the error. With transient errors, like
 a failing network request, the function caller can wait a while and call the function again. Or, the function caller
 can use a default value. For example, if a function tries to
 load a configuration file that does not exist, it can use some default configuration instead. In some cases,
-the function caller cannot do anything but leave the error unhandled or expect the error but raise
+the function caller cannot do anything but leave the error unhandled or catch the error but throw
 another error at a higher level of abstraction. Suppose a function tries to load a configuration file, but the loading fails, and no
 default configuration exists. In that case, the function cannot do anything but pass the error to its caller. Eventually,
 this error bubbles up in the call stack, and the whole process is terminated due to the inability to
