@@ -10044,164 +10044,186 @@ first read its configuration and then decide what objects are created for the ap
 dependency injection is crucial for unit tests, too. When executing a unit test using DI, you can inject mock
 dependencies into the tested code instead of using the standard dependencies of the application.
 
-Below is an example of using the *singleton pattern* without dependency injection:
+Below is a C++ example of using the singleton pattern without dependency injection:
 
-```python
-from enum import Enum
+{title: "main.cpp"}
+```cpp
+int main()
+{
+  Logger::initialize();
 
-from Logger import Logger
+  Logger::writeLogEntry(LogLevel::Info,
+                        std::source_location::current(),
+                        "Starting application");
 
-
-class LogLevel(Enum):
-    ERROR = 1
-    WARN = 2
-    INFO = 3
-    DEBUG = 4
-    TRACE = 5
-
-
-class StdOutLogger(Logger):
-    @staticmethod
-    def log(log_level: LogLevel, message: str) -> None:
-        # Log to standard output
-
-
-class Application:
-    def run(self):
-        StdOutLogger.log(LogLevel.INFO, 'Starting application')
-        # ...
+  // ...
+}
 ```
 
-In the above example, we use a static method of the hard-coded `StdOutLogger` class. It is difficult to change the logger later (assuming the static log method is used in many places in the codebase).
+A developer must remember to call the `initialize` method before calling any other method on the `Logger` class. This kind of coupling
+between methods should be avoided. Also, it is hard to unit test the static methods of the `Logger` class.
 
-We should refactor the above code not to use a static method but use dependency injection instead:
+We should refactor the above code to use dependency injection:
 
-{title: "Logger.py"}
-```python
-from enum import Enum
-from typing import Protocol
+{title: "main.cpp"}
+```cpp
+int main()
+{
+  DependencyInjectorFactory::createDependencyInjector(...)
+    ->injectDependencies();
 
+  Logger::getInstance()->writeLogEntry(
+    LogLevel::Info,
+    std::source_location::current(),
+    "Starting application"
+  );
 
-class LogLevel(Enum):
-    ERROR = 1
-    WARN = 2
-    INFO = 3
-    DEBUG = 4
-    TRACE = 5
-
-
-class Logger(Protocol):
-    def log(self, log_level: LogLevel, message: str) -> None:
-        pass
+  // ...
+}
 ```
 
-{title: "StdOutLogger.py"}
+{title: "Singleton.h"}
 ```
-from Logger import Logger, LogLevel
+template<typename T>
+class Singleton
+{
+public:
+  Singleton() = default;
 
+  virtual ~Singleton()
+  {
+    m_instance.reset();
+  };
 
-class StdOutLogger(Logger):
-    def log(self, log_level: LogLevel, message: str) -> None:
-        # Log to standard output
-```
+  static inline std::shared_ptr<T>& getInstance()
+  {
+    return m_instance;
+  }
 
-{title: "Application.py"}
-```python
-from dependency_injector.wiring import Provide, inject
-from Logger import Logger
-from LogLevel import LogLevel
+  static void setInstance(const std::shared_ptr<T>& instance)
+  {
+    m_instance = instance;
+  }
 
-
-class Application:
-    @inject
-    def __init__(self, logger: Logger = Provide['logger']):
-        self.__logger = logger
-
-    def run(self):
-        self.__logger.log(LogLevel.INFO, 'Starting application')
-        # ...
-```
-
-Then we need to define the DI container:
-
-{title: "DiContainer.py"}
-```python
-from dependency_injector import containers, providers
-from StdOutLogger import StdOutLogger
-
-
-class DiContainer(containers.DeclarativeContainer):
-    wiring_config = containers.WiringConfiguration(
-        modules=['Application']
-    )
-
-    logger = providers.Singleton(StdOutLogger)
+private:
+  static inline std::shared_ptr<T> m_instance;
+};
 ```
 
-Now, changing the code to use a different logger is easy. Let's say we want to log into a file instead of the standard output.
-We can introduce a new class for the file-based logger (following the *open-closed principle*)
-
-{title: "FileLogger.py"}
-```python
-from typing import Final
-
-from Logger import Logger, LogLevel
-
-
-class FileLogger(Logger):
-    def __init__(self, log_file_directory: str):
-        self.__log_file_directory: Final = log_file_directory
-
-    def log(self, log_level: LogLevel, message: str):
-        # Log to a file in self.__log_file_directory
+{title: "Logger.h"}
+```cpp
+class Logger : public Singleton<Logger>
+{
+public:
+  virtual void writeLogEntry(...) = 0;
+};
 ```
 
-Then, we can change the DI container to use the file-based logger instead of the `StdOutLogger`:
-
-{title: "DiContainer.py"}
-```python
-import os
-
-from dependency_injector import containers, providers
-from FileLogger import FileLogger
-
-
-class DiContainer(containers.DeclarativeContainer):
-    wiring_config = containers.WiringConfiguration(modules=['Application'])
-
-    logger = providers.Singleton(
-        FileLogger, os.environ.get('LOG_FILE_DIRECTORY', '/var/log')
-    )
+{title: "StdOutLogger.h"}
+```cpp
+class StdOutLogger : public Logger
+{
+public:
+  void writeLogEntry(...) override
+  {
+    // Write the log entry
+    // to the standard output
+  }
+};
 ```
 
-We can also change the logging behavior dynamically based on the environment where the application is running:
-
-{title: "DiContainer.py"}
-```python
-import os
-
-from dependency_injector import containers, providers
-from FileLogger import FileLogger
-from StdOutLogger import StdOutLogger
-
-
-class DiContainer(containers.DeclarativeContainer):
-    wiring_config = containers.WiringConfiguration(modules=['Application'])
-
-    if os.environ.get('LOG_DESTINATION') == 'file':
-        logger = providers.Singleton(
-            FileLogger, os.environ.get('LOG_FILE_DIRECTORY', '/var/log')
-        )
-    else:
-        logger = providers.Singleton(StdOutLogger)
+{title: "DependencyInjectorFactory.h"}
+```cpp
+class DependencyInjectorFactory {
+public:
+  static std::shared_ptr<DependencyInjector>
+  createDependencyInjector(...)
+  {
+    // You can use a switch-case here to create
+    // different kinds of dependency injectors
+    // that inject different kinds of dependencies
+    return std::make_shared<DefaultDependencyInjector>();
+  }
+}
 ```
+
+{title: "DependencyInjector.h"}
+```cpp
+class DependencyInjector {
+public:
+  virtual ~DependencyInjector = default;
+  virtual void injectDependencies() = 0;
+}
+```
+
+{title: "DefaultDependencyInjector.h"}
+```cpp
+class DefaultDependencyInjector : public DependencyInjector {
+public:
+  void injectDependencies() override;
+}
+```
+
+{title: "DefaultDependencyInjector.cpp"}
+```cpp
+void DefaultDependencyInjector::injectDependencies()
+{
+  // Inject other dependencies...
+
+  Logger::setInstance(
+    std::make_shared<StdOutLogger>()
+  );
+}
+```
+
+Let's introduce a new kind of logger:
+
+{title: "FileLogger.h"}
+```cpp
+class FileLogger : public Logger
+{
+public:
+  void writeLogEntry(...) override
+  {
+    // Write the log entry
+    // to a file
+  }
+};
+```
+
+We could modify the default dependency injector to choose a logger implementation dynamically
+based on an environment variable value:
+
+{title: "DefaultDependencyInjector.cpp"}
+```cpp
+void DefaultDependencyInjector::injectDependencies()
+{
+  // Inject other dependencies...
+
+
+  const auto maybeLogDestination = std::getenv("LOG_DESTINATION");
+  const auto logDestination =
+    maybeLogDestination == null ? std::string{} : std::string{maybeLogDestination};
+
+  if (logDestination == "file")
+  {
+    Logger::setInstance(std::make_shared<FileLogger>());
+  }
+  else
+  {
+    Logger::setInstance(std::make_shared<StdOutLogger>());
+  }
+}
+```
+
 
 If you have a very simple microservice with few dependencies, you might think dependency injection is an overkill.
-One thing that is sure in software development is change. Change is inevitable, and you cannot predict the future. For example, your microservice may start growing larger. Introducing DI in a late phase of a project might require
+One thing that is sure in software development is change. Change is inevitable, and you cannot predict the future.
+For example, your microservice may start growing larger. Introducing DI in a late phase of a project might require
 substantial refactoring. Therefore, consider using DI in all non-trivial applications from
 the beginning.
 
-For all full-stack Python developers, below is a TypeScript example of a *data-visualization-web-client* where the [noicejs](https://github.com/ssube/noicejs) NPM library is used for
+Below is a TypeScript example of a *data-visualization-web-client* where the [noicejs](https://github.com/ssube/noicejs) NPM library is used for
 dependency injection. This library resembles the famous [Google Guice](https://github.com/google/guice) library. Below is a `FakeServicesModule` class
 that configures dependencies for different backend services that the web client uses.
 As you can notice, all the services are configured to use fake implementations because this DI module is used when
