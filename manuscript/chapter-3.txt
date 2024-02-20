@@ -2979,7 +2979,7 @@ public class DataExporterError extends RuntimeException {
 public class FileReader {
   // Base error class for the 'readFile' method
   // Extends the base error class of the software component
-  static class ReadFileError extends DataExporterError {
+  public static class ReadFileError extends DataExporterError {
     public ReadFileError(final Exception error) {
       super(error);
     }
@@ -2995,7 +2995,7 @@ public class FileReader {
 public class ConfigParser {
   // Base error class for the 'parse' method
   // Extends the base error class of the software component
-  static class ParseError extends DataExporterError {
+  public static class ParseError extends DataExporterError {
       public ParseError(final Exception error) {
         super(error);
       }
@@ -3106,37 +3106,48 @@ could be raised in the `fetchConfig` function:
 When classes for these new errors are implemented, they must extend the function's base error class, in this case, the `FetchConfigError` class.
 Below are the error classes defined:
 
-```python
-from Config import Config
-From DataExporterError import DataExporterError
+```java
+public class ConfigFetcher {
+  // Base error class for 'fetchConfig' method
+  // Extends the base error class of the software component
+  public static class FetchConfigError extends DataExporterError {
+    public FetchConfigError(final Exception error) {
+      super(error);
+    }
+  }
+
+  // An additional error for 'fetchConfig' method
+  // Extends the base error class of the method
+  public static class MalformedUrlError extends FetchConfigError {
+    public MalformedUrlError(final Exception error) {
+      super(error);
+    }
+  }
 
 
-class ConfigFetcher:
-    # Base error class for 'fetch_config' method
-    # Extends the base error class of the software component
-    class FetchConfigError(DataExporterError):
-        pass
+  // An additional error for 'fetchConfig' method
+  // Extends the base error class of the method
+  public static class ServerNotFoundError extends FetchConfigError {
+    public ServerNotFoundError(final Exception error) {
+      super(error);
+    }
+  }
 
-    # An additional error for 'fetch_config' method
-    # Extends the base error class of the method
-    class MalformedUrlError(FetchConfigError):
-        pass
+  // An additional error for 'fetch_config' method
+  // Extends the base error class of the method
+  public static class ConnectionTimeoutError extends FetchConfigError {
+    public ConnectionTimeoutError(final Exception error) {
+      super(error);
+    }
+  }
 
-    # An additional error for 'fetch_config' method
-    # Extends the base error class of the method
-    class ServerNotFoundError(FetchConfigError):
-        pass
-
-    # An additional error for 'fetch_config' method
-    # Extends the base error class of the method
-    class ConnectionTimeoutError(FetchConfigError):
-        pass
-
-    def fetch_config(self, url: str) -> Config:
-        # ...
-        # raise self.MalformedUrlError()
-        # raise self.ServerNotFoundError()
-        # raise self.ConnectionTimeoutError()
+  public Config fetchConfig(final String url) {
+    // ...
+    // throw new MalformedUrlError(...)
+    // throw new ServerNotFoundError(...)
+    // throw new ConnectionTimeoutError(...)
+  }
+}
 ```
 
 You can enhance your code at any time to handle different errors raised from the `fetch_config` method differently.
