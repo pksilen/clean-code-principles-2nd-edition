@@ -4200,39 +4200,50 @@ zero-based indexes. Zero-based indexing is unnatural for human beings but excell
 should be designed with humans in mind. People never speak about getting the zeroth value of an array.
 We speak of getting the first value in the array. As the null value was called a
 billion-dollar mistake, I would call the zero-based indexing another billion-dollar mistake. Let's hope
-that someday we get a programming language with one-based indexing! But then we must unlearn the zero-based indexing habit... And that's another problem!
+that someday we get a programming language with one-based indexing! But then we must unlearn the zero-based indexing habit...and that's another problem.
 
-In some languages, you can create for-loops with a loop counter.
 Below are two examples of programming errors in JavaScript that are easy to make if you are not careful enough:
 
 ```js
-for (let index = 0; index <= values.length; index++) {
+for (let index = 0; index <= array.length; index++) {
   // ...
 }
 
-for (let index = 0; index < values.length - 1; index++) {
+for (let index = 0; index < array.length - 1; index++) {
   // ...
 }
 ```
 
 In the first example, there should be '&lt;' instead of '&lt;=', and in the latter example, there should
-be '&lt;=' instead of '&lt;'. Fortunately, the above mistakes can be avoided in Python:
+be '&lt;=' instead of '&lt;'. Fortunately, the above mistakes can be avoided using modern programming language
+constructs like Java's enhanced for-loop or C++'s range-based for-loop or functional programming.
 
-```python
-for value in values:
-  # ...
+Below are two examples of avoiding off-by-one errors in Java:
+
+```java
+for (final var value : values) {
+  // ...
+}
+
+values.stream().forEach(value -> ...);
 ```
 
-In Python's `range` function, you must remember it starts from zero, and the end of the range is exclusive.
-You will have an off-by-one error if you assume the start to be one or
-the end of the range is inclusive. The off-by-one errors are caused by the fact that, given a range, people assume it is inclusive at both ends by default. So, a `range(6)` gives values from 0 to 5, not from 1 to 6. And `range(1, 6)`
-gives values from 1 to 5, not from 1 to 6. The same thing is with slices, e.g. `values[:6]` starts from index 0 and
-ends at index 5. If you want a slice that is all but the last item, you can use negative indexing: `values[:-1]` gives values except the last one. Using -1 is much safer than using `values[:len(values) - 1]`, which might produce
-an off-by-one error if you forget the -1. And similarly using `values[:-2]` is less error-prone than using `values[:len(values) - 2]`.
-You can also use negative indexing, e.g., to get the last value with `values[-1]` instead of `values[len(values) - 1]`.
-A negative index is a one-based index starting from the end of a list.
+Some languages, like JavaScript, offer a nice way to access an array's last element(s). Instead of writing
+`array[array.length - 1]`, you can write `array.at(-1)`. And similarly, `array[array.length - 2]` is the same as
+`array.at(-2)`. You can think that a negative index is a one-based index starting from the end of an array.
 
-Additionally, unit tests are your friend when trying to spot off-by-one errors. So remember to write unit tests for the edge cases, too.
+Let's consider the description of JavaScript's `slice` method:
+
+> The slice() method returns a shallow copy of a portion of an array into a new array object
+> selected from start index to end index (end not included).
+
+The problem here is the 'end not included' part. Many people, by default, think that if given a range,
+it is inclusive, but in the case of the `slice` method, it is inclusive at the beginning and exclusive at the end:
+`[start, end[`. This kind of function definition that is against first assumptions can easily cause off-by-one errors.
+It would be better if the `slice` method by default works with an inclusive range `[start, end]`.
+
+Additionally, unit tests are your friend when trying to spot off-by-one errors. So remember to write
+unit tests for the edge cases, too.
 
 ## Be Critical When Googling or Using Generative AI Principle
 
