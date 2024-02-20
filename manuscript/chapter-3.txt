@@ -3879,238 +3879,204 @@ async function fetchData() {
 
 #### Functional Exception Handling
 
-The below `Failable` class can be used in functional error handling. A `Failable` object represents either
-a value of type `T` or an instance of the `Exception` class, i.e., `Failable[T]` is the same as `Either[T, Exception]`
+The below `Failable<T>` class can be used in functional error handling. A `Failable<T>` object represents either
+a value of type `T` or an instance of the `RuntimeException` class.
 
-```python
-from collections.abc import Callable
-from typing import Any, Generic, TypeVar
+{title: "Failable.java"}
+```java
+public class Failable<T> {
+  private final Either<T, RuntimeException> valueOrError;
 
-from Either import Either
+  private Failable(
+    final Either<T, RuntimeException> valueOrError
+  ) {
+    this.valueOrError = valueOrError;
+  }
 
-T = TypeVar('T')
+  public static <T> Failable<T> withValue(
+    final T value
+  ) {
+    return new Failable<>(Either.withLeft(value));
+  }
 
+  public static <T> Failable<T> withError(
+    final RuntimeException error
+  ) {
+    return new Failable<>(Either.withRight(error));
+  }
 
-class PrivateConstructor(type):
-    def __call__(
-        cls: type[T],
-        *args: tuple[Any, ...],
-        **kwargs: dict[str, Any]
-     ):
-        raise TypeError('Constructor is private')
+  public T orThrow(
+    final Class<? extends RuntimeException> ErrorClass
+  ) {
+    return valueOrError.map(
+      (value) -> value,
+      (error) -> {
+          try {
+            throw (RuntimeException)ErrorClass
+              .getConstructor(String.class)
+              .newInstance(error.getMessage());
+          } catch (InvocationTargetException |
+                   InstantiationException |
+                   IllegalAccessException |
+                   IllegalArgumentException |
+                   NoSuchMethodException exception) {
+            throw new RuntimeException(exception);
+          }
+      });
+  }
 
-    def _create(
-        cls: type[T],
-        *args: tuple[Any, ...],
-        **kwargs: dict[str, Any]
-    ) -> T:
-        return super().__call__(*args, **kwargs)
+  public T orElse(final T otherValue) {
+    return valueOrError.map(value -> value,
+                            error -> otherValue);
+  }
 
+  public <U> Failable<U> mapValue(
+    final Function<? super T, ? extends U> mapper
+  ) {
+    return new Failable<>(valueOrError.mapLeft(mapper));
+  }
 
-TError = TypeVar('TError', bound=Exception)
-U = TypeVar('U')
+  public Failable<T> mapError(
+    final Function<? super RuntimeException,
+                   ? extends RuntimeException> mapper
+  ) {
+    if (valueOrError.hasLeftValue()) {
+      final var error =
+        new RuntimeException(mapper
+          .apply(new RuntimeException(""))
+          .getMessage());
 
-
-class Failable(Generic[T], metaclass=PrivateConstructor):
-    def __init__(self, value_or_error: Either[T, Exception]):
-        self.__value_or_error = value_or_error
-
-    @classmethod
-    def with_value(cls, value: T) -> 'Failable[T]':
-        return cls._create(Either.with_left(value))
-
-    @classmethod
-    def with_error(cls, error: Exception) -> 'Failable[T]':
-        return cls._create(Either.with_right(error))
-
-    def or_raise(self, error_cls: type[TError]) -> T:
-        return self.__value_or_error.map(
-            lambda value: value,
-            lambda error: self.__raise(error_cls(error))
-        )
-
-    def or_else(self, other_value: T) -> T:
-        return self.__value_or_error.map(
-            lambda value: value,
-            lambda error: other_value
-        )
-
-    def map_value(
-        self,
-        to_value: Callable[[T], U]
-    ) -> 'Failable[U]':
-        return Failable._create(self.__value_or_error.map_left(to_value))
-
-    def map_error(
-        self,
-        to_error: Callable[[Exception], Exception]
-    ) -> 'Failable[T]':
-        if self.__value_or_error.has_left_value():
-            error = to_error(Exception())
-            return Failable.with_error(error)
-        else:
-            return Failable._create(
-                self.__value_or_error.map_right(to_error)
-            )
-
-    def __raise(self, error: Exception) -> None:
-            raise error
+      return Failable.withError(error);
+    } else {
+      return new Failable<>(valueOrError.mapRight(mapper));
+    }
+  }
+}
 ```
 
-In the below example, the `read_config` method returns a `Failable[Configuration]`. The `try_initialize` method either obtains an instance of
-`Configuration` or raises an error of type `Application.InitializeError`.
+In the below example, the `readConfig` method returns a `Failable<Configuration>`. The `tryInitialize` function either obtains an instance of
+`Configuration` or throws an error of type `InitializationError`.
 
-```python
-from DataExporterError import DataExporterError
-
-
-class Application:
-    # ...
-
-    class InitializeError(DataExporterError):
-        pass
-
-    def try_initialize(self) -> None:
-        configuration = self.__config_reader \
-            .read_config(...) \
-            .or_raise(self.InitializeError)
+```java
+public void tryInitialize() {
+  final var configuration = configReader
+    .readConfig(...)
+    .orThrow(InitializationError.class);
+}
 ```
 
 The benefit of the above functional approach is that it is shorter than an entire try-catch block. The above functional approach is also as understandable as a try-catch block.
-Remember that one should write the shortest, most understandable code. When a method returns a `Failable` instance, you don't have to name the method
-with the *try* prefix because the method does not raise an error. The call to the `or_raise` method on `Failable` converts the functional code back to imperative.
+Remember that you should write the shortest, most understandable code. When a method returns a failable, you don't have to name the method
+with the _try_ prefix because the method does not throw.
 
-You can also use other methods of the `Failable` class. For example, a default value can be returned with the `or_else` method:
+You can also use other methods of the `Failable` class. For example, a default value can be returned with the `orElse` method:
 
-```try
-from DefaultConfig import DefaultConfig
-
-
-class Application:
-    # ...
-
-    def initialize(self) -> None:
-        configuration = self.__config_reader.read_config(...).or_else(
-            DefaultConfig()
-        )
+```java
+public void initialize() {
+  final var configuration = configReader
+    .readConfig(...)
+    .orElse(new DefaultConfiguration());
+}
 ```
 
-You can also transform multiple imperative error-raising statements into functional, failable statements. For example, instead of writing:
+You can also transform multiple imperative failable statements into functional failable statements. For example, instead of writing:
 
-```python
-from DataExporterError import DataExporterError
-
-
-class Application:
-    # ...
-
-    class InitializeError(DataExporterError):
-        pass
-
-    def try_initialize(self) -> None:
-        try:
-            config_json = self.__data_fetcher.try_fetch_data(
-                self.__config_url
-            )
-
-            configuration = self.__config_parser.try_parse(config_json)
-        except DataExporterError as error:
-            raise self.InitializeError(error)
+```java
+public void tryInitialize() {
+  try {
+    final var configDataStr = dataFetcher.tryFetchData(configUrl);
+    final var configuration = configParser.tryParse(configDataStr);
+  } catch (final DataExporterError error) {
+    throw new InitializationError(error.getMessage());
+  }
+}
 ```
 
 You can write:
 
-```python
-from DataExporterError import DataExporterError
+```java
+public void tryInitialize() {
+  try {
+    final var configuration = dataFetcher
+      .fetchData(configUrl)
+      .mapValue(configParser::parse)
+      .orThrow(InitializationError.class);
+}
+```
+</div>
+
+It is error-prone to use failable imperative code together with functional programming constructs.
+Let's assume we have the below TypeScript code that reads and parses multiple configuration files to
+a single configuration object:
 
 
-class Application:
-    # ...
-
-    class InitializeError(DataExporterError):
-        pass
-
-    def try_initialize(self) -> None:
-        configuration = (
-           self.__data_fetcher.fetch_data(self.__config_url)
-           .map_value(self.__config_parser.parse)
-           .or_raise(self.InitializeError)
-       )
+```ts
+configFilePathNames
+  .reduce((accumulatedConfig, configFilePathName) => {
+    const configJson = fs.readFileSync(configFilePathName, 'utf-8');
+    const configuration = JSON.parse(configJson);
+    return { ...accumulatedConfig, ...configuration };
+}, {});
 ```
 
-The above functional code is shorter than the same imperative code, but it is slightly less readable, for which reason
-you might want to use the imperative approach instead of the functional approach.
+In the above example, it is easy to forget to handle errors because the throwability of the `reduce` function
+depends on the supplied callback function. We cannot use the try-prefix anywhere in the above example.
+What we can do is the following:
 
-It can be error-prone to use error-raising imperative code together with functional programming constructs.
-For example, let's assume we have the below code that reads and parses multiple configuration files to
-a single configuration object using a functional programming construct `reduce`. We have named the config reading function
-`try_read_config` with the try-prefix because it can raise an error. When we use the `reduce` function, we must remember to surround it
-with a try-except block because the `reduce` function will call the `try_read_config` function that can throw.
+```ts
+function tryReadConfig(
+  accumulatedConfig: Record<string, unknown>,
+  configFilePathName: string
+) {
+  const configJson = fs.readFileSync(configFilePathName, 'utf-8');
+  const configuration = JSON.parse(configJson);
+  return { ...accumulatedConfig, ...configuration };
+}
 
-```python
-import json
-from functools import reduce
-from typing import Any
-
-
-def try_read_config(
-    accumulated_config: dict[str, Any],
-    config_file_path_name: str
-):
-    with open(config_file_path_name) as config_file:
-        config_json = config_file.read()
-
-    config = json.loads(config_json)
-    return accumulated_config | config
-
-
-def get_config(config_file_path_names: list[str]) -> dict[str, Any]:
-    try:
-        return reduce(try_read_config, config_file_path_names, {})
-    except:
-        # ...
+export function getConfig(
+  configFilePathNames: string[]
+): Record<string, unknown> {
+  try {
+    return configFilePathNames.reduce(tryReadConfig, {});
+  } catch (error) {
+    // ...
+  }
+}
 ```
 
-We could turn the above example more functional by making the `get_config` function return a `Failable` instance:
+We have now added the try-prefix, but the code could read better.
+A better alternative is to use a functional programming construct, `Failable<T>`, to return a failable configuration. The `Failable<T>` class implementation in
+TypeScript is not presented here, but it can be implemented similarly
+to Java. Below is an example of using the `Failable<T>` class:
 
-```python
-import json
-from functools import reduce
-from typing import Any
+```ts
+function accumulatedConfigOrError(
+  accumulatedConfigOrError: Failable<Record<string, unknown>>,
+  configFilePathName: string
+): Failable<Record<string, unknown>> {
+  try {
+    const configJson = fs.readFileSync(configFilePathName, 'utf-8');
+    const config = JSON.parse(configJson);
 
-from Failable import Failable
+    return accumulatedConfigOrError.mapValue(accumulatedConfig =>
+      ({ ...accumulatedConfig, ...config }));
+  } catch (error: any) {
+    return accumulatedConfigOrError.mapError(accumulatedError =>
+      new Error(`${accumulatedError.message}\n${error.message}`)
+    );
+  }
+}
 
-
-def to_config_or_error(
-    accum_config_or_error: Failable[dict[str, Any]],
-    config_file_path_name: str
-) -> Failable[dict[str, Any]]:
-    try:
-       with open(config_file_path_name) as config_file:
-               config_json = config_file.read()
-
-       config = json.loads(config_json)
-
-       return accum_config_or_error.map_value(
-            lambda accum_config: accum_config | config
-        )
-    except (OSError, json.JSONDecodeError) as error:
-        return accum_config_or_error.map_error(
-            lambda accum_error: RuntimeError(
-                f'{str(accum_error)}\n{config_file_path_name}: {str(error)}'
-            )
-        )
-
-
-def get_config(
-    config_file_path_names: list[str]
-) -> Failable[dict[str, Any]]:
-    return reduce(
-        to_config_or_error,
-        config_file_path_names,
-        Failable.with_value({})
-    )
+export function getConfig(
+  configFilePathNames: string[]
+): Failable<Record<string, unknown>> {
+  return configFilePathNames.reduce(
+    accumulatedConfigOrError,
+    Failable.withValue({})
+  );
+}
 ```
+
 
 If we have a *config1.json* file with the following contents:
 
