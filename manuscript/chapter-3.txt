@@ -2961,8 +2961,8 @@ For each function that can throw an error, define a base error class
 at the same abstraction level as the function. That error class should extend the software component's base error class. For example,
 if you have a `parse(configStr)` method in the `ConfigParser` class, define a base error class for the function inside the class with the name `ParseError`,
 i.e., `ConfigParser.ParseError`. If you have a `readFile` method in the `FileReader` class, define a base error class in the `FileReader` class
-with the name `ReadFileError`, i.e., `FileReader.ReadFileError`. If all the methods in a class can raise the same error, it is enough to define
-only one error at the class level. For example, if you have a `HttpClient` class where all methods like `get`, `post`, `put` etc., can raise
+with the name `ReadFileError`, i.e., `FileReader.ReadFileError`. If all the methods in a class can throw the same error, it is enough to define
+only one error at the class level. For example, if you have a `HttpClient` class where all methods like `get`, `post`, `put` etc., can throw
 an error, you can only define a single `Error` error class in the `HttpClient` class.
 
 Below is a Java example of errors defined for the data exporter microservice:
@@ -3085,7 +3085,7 @@ public static void main(final String[] args) {
 }
 ```
 
-Using the above-described rules, you can make your code future-proof or forward-compatible so that adding new errors to be raised in a function
+Using the above-described rules, you can make your code future-proof or forward-compatible so that adding new errors to be thrown from a function
 in the future is possible. Let's say that you are using a `fetchConfig` function like this:
 
 ```java
@@ -3097,7 +3097,7 @@ try {
 ```
 
 Your code should still work if a new type of error is raised in the `fetchConfig` function. Let's say that the following new errors
-could be raised in the `fetchConfig` function:
+could be thrown from the `fetchConfig` function:
 
 - Malformed URL error
 - Server not found error
@@ -3150,33 +3150,34 @@ public class ConfigFetcher {
 }
 ```
 
-You can enhance your code at any time to handle different errors raised from the `fetch_config` method differently.
+You can enhance your code at any time to handle different errors thrown from the `fetch_config` method differently.
 For example, you might want to handle a `ConnectionTimeoutError` so that the function will wait a while and then retry the
 operation because the error is usually transient:
 
-```python
-try:
-    configuration = config_fetcher.fetch_config(url)
-except ConfigFetcher.ConnectionTimeoutError as error):
-    # Retry after a while
-except ConfigFetcher.MalformedUrlError as error:
-    # Inform caller that URL should be checked
-except ConfigFetcher.ServerNotFoundError as error:
-    # Inform caller that URL host/port cannot be reached
-except ConfigFetcher.FetchConfigError as error:
-    # Handle possible other error situations
-    # This will catch any error that could be raised
-    # in 'fetch_config' method now and in the future
+```java
+try {
+  final var configuration = configFetcher.fetchConfig(url);
+} catch (final ConfigFetcher.ConnectionTimeoutError error) {
+  // Retry after a while
+} catch (final ConfigFetcher.MalformedUrlError error) {
+  // Inform caller that URL should be checked
+} catch (final ConfigFetcher.ServerNotFoundError error) {
+  // Inform caller that URL host/port cannot be reached
+} catch (final ConfigFetcher.FetchConfigError error) {
+  // Handle possible other error situations
+  // This will catch any error that could be raised
+  // in 'fetchConfig' method now and in the future
+}
 ```
 
-In the above examples, we handled raised errors correctly, but you can easily forget to handle a raised error.
-This is because nothing in the function signature tells you whether the function can raise an error. The only way to find out
+In the above examples, we handled thrown errors correctly, but you can easily forget to handle a thrown error.
+This is because nothing in the function signature tells you whether the function can throw an error. The only way to find out
 is to check the documentation (if available) or investigate the source code (if available). This is one of the biggest problems
-regarding exception handling because you must know and remember that a function can raise an error, and you must remember to catch and handle errors.
+regarding exception handling because you must know and remember that a function can throw an error, and you must remember to catch and handle errors.
 You don't always want to handle an error immediately, but still, you must be aware that the error will bubble up in the call stack and should be
 dealt with eventually somewhere in the code.
 
-Below is an example extracted from the documentation of the popular *requests* library:
+Below is an example extracted from the documentation of the popular Python *requests* library:
 
 ```python
 import requests
@@ -3200,9 +3201,9 @@ TDD will be described in the next chapter, which covers testing-related principl
 the implementation, forcing you to think about error scenarios and make tests for them. When you have tests
 for error scenarios, leaving those scenarios unhandled in the actual implementation code is impossible.
 
-One great solution to the problem that error handling might be forgotten is to make raising errors more explicit:
+One great solution to the problem that error handling might be forgotten is to make throwing errors more explicit:
 
-> ***Use a 'try' prefix in a function name if the function can raise an error.***
+> ***Use a 'try' prefix in a function name if the function can throw an error.***
 
 This is a straightforward rule. If a function can raise an error, name the function so that its name starts with `try`.
 This makes it clear to every caller that the function can raise an error, and the caller should be prepared
