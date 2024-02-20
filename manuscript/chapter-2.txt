@@ -10216,7 +10216,6 @@ void DefaultDependencyInjector::injectDependencies()
 }
 ```
 
-
 If you have a very simple microservice with few dependencies, you might think dependency injection is an overkill.
 One thing that is sure in software development is change. Change is inevitable, and you cannot predict the future.
 For example, your microservice may start growing larger. Introducing DI in a late phase of a project might require
@@ -10456,132 +10455,145 @@ export default class Controller {
 
 > ***At the class level, when you spot duplicated code in two different classes implementing the same interface, you should create a new base class to accommodate the common functionality and let the classes extend the new base class.***
 
-Below is an `AvroBinaryKafkaInputMessage` class that implements the `InputMessage` protocol:
+Below is an `AvroBinaryKafkaInputMessage` class that implements the `InputMessage` interface:
 
-{title: "InputMessage.py"}
-```python
-from typing import Protocol
+{title: "InputMessage.h"}
+```cpp
+class InputMessage
+{
+public:
+  virtual ~InputMessage() = default;
 
-from DecodedMessage import DecodedMessage
-from Schema import Schema
+  virtual uint32_t tryDecodeSchemaId() const = 0;
 
-
-class InputMessage(Protocol):
-    def try_decode_schema_id(self) -> int:
-        pass
-
-    def try_decode(self, schema: Schema) -> DecodedMessage:
-        pass
+  virtual std::shared_ptr<DecodedMessage>
+  tryDecodeMessage(const std::shared_ptr<Schema>& schema)
+  const = 0;
+};
 ```
 
-{title: "AvroBinaryKafkaInputMessage.py"}
-```python
-from typing import Final
+{title: "AvroBinaryKafkaInputMessage.h"}
 
-from DecodedMessage import DecodedMessage
-from InputMessage import InputMessage
-from KafkaMessage import KafkaMessage
-from Schema import Schema
+```cpp
+class AvroBinaryKafkaInputMessage : public InputMessage
+{
+public:
+  AvroBinaryKafkaInputMessage(
+    std::unique_ptr<RdKafka::Message> kafkaMessage
+  ) : m_kafkaMessage(std::move(kafkaMessage))
+  {}
 
+  uint32_t tryDecodeSchemaId() const override;
 
-class AvroBinaryKafkaInputMessage(InputMessage):
-    def __init__(self, kafka_message: KafkaMessage):
-        self.__kafka_message: Final = kafka_message
+  std::shared_ptr<DecodedMessage>
+  tryDecodeMessage(const std::shared_ptr<Schema>& schema)
+  const override;
 
-    def try_decode_schema_id(self) -> int:
-        # Try decode schema id from the beginning of
-        # the Avro binary Kafka message
+private:
+  std::unique_ptr<RdKafka::Message> m_kafkaMessage;
+};
 
-    def try_decode(self, schema: Schema) -> DecodedMessage:
-        return schema.try_decode_message(
-            self.__kafka_message.payload,
-            self.__kafka_message.length
-        )
+uint32_t AvroBinaryKafkaInputMessage::tryDecodeSchemaId() const
+{
+  // Try decode schema id from the beginning of
+  // the Avro binary Kafka message
+}
+
+std::shared_ptr<DecodedMessage>
+AvroBinaryKafkaInputMessage::tryDecodeMessage(
+  const std::shared_ptr<Schema>& schema
+) const
+{
+  return schema->tryDecodeMessage(m_kafkaMessage->payload(),
+                                  m_kafkaMessage->len());
+}
 ```
 
-If we wanted to introduce a new Kafka input message class for JSON, CSV, or XML format, we could create a class like the `AvroBinaryKafkaInputMessage` class.
-But then we could notice the code duplication in the
-`try_decode` method. We can notice that the `try_decode` method is the same regardless of the input message source and format.
-According to this principle, we should move the duplicate code to a common base class, `AbstractInputMessage`. We could make
-the `try_decode` method a template method according to the *template method pattern* and create abstract methods for getting the message data and
+If we wanted to introduce a new Kafka input message class for JSON, CSV, or XML format, we could create a class like the `AvroBinaryKafkaInputMessage` class. But then we can notice the duplication of code in the
+`tryDecodeMessage` method. We can notice that the `tryDecodeMessage` method is the same regardless of the input message source and format.
+According to this principle, we should move the duplicate code to a common base class, `BaseInputMessage`. We could make
+the `tryDecodeMessage` method a template method according to the _template method pattern_ and create abstract methods for getting the message data and
 its length:
 
-{title: "AbstractInputMessage.py"}
-```python
-from abc import abstractmethod
-from typing import final
+{title: "BaseInputMessage.h"}
+```cpp
+class BaseInputMessage : public InputMessage
+{
+public:
+  std::shared_ptr<DecodedMessage>
+  tryDecodeMessage(const std::shared_ptr<Schema>& schema)
+  const final;
 
-from DecodedMessage import DecodedMessage
-from InputMessage import InputMessage
-from Schema import Schema
+protected:
+  // Abstract methods
+  virtual uint8_t* getData() const = 0;
+  virtual size_t getLengthInBytes() const = 0;
+};
 
-
-class AbstractInputMessage(InputMessage):
-    @abstractmethod
-    def try_decode_schema_id(self) -> int:
-        pass
-
-    # Template method
-    @final
-    def try_decode(self, schema: Schema) -> DecodedMessage:
-        return schema.try_decode_message(
-            self._get_data(),
-            self._get_length()
-        )
-
-    @abstractmethod
-        def _get_data(self) -> bytearray:
-            pass
-
-    @abstractmethod
-        def _get_length(self) -> int:
-            pass
+// This is a template method
+// 'getData' and 'getLengthInBytes' will be
+// implemented in subclasses
+std::shared_ptr<DecodedMessage>
+BaseInputMessage::tryDecodeMessage(
+  const std::shared_ptr<Schema>& schema
+) const
+{
+  return schema->tryDecodeMessage(getData(), getLengthInBytes());
+}
 ```
 
-Next, we should refactor the `AvroBinaryKafkaInputMessage` class to extend the new `AbstractInputMessage` class and implement
-the `_get_data` and `_get_length` methods.
+Next, we should refactor the `AvroBinaryKafkaInputMessage` class to extend the new `BaseInputMessage` class and implement the `getData` and `getLengthInBytes` methods.
 But we can realize these two methods are the same for all Kafka input message data formats.
 We should not implement those two methods in the `AvroBinaryKafkaInputMessage` class because
 we would need to implement them as duplicates if we needed to add a Kafka input message class for another data format.
 Once again, we can utilize this principle and create a new base class for Kafka input messages:
 
-{title: "AbstractKafkaInputMessage.py"}
-```python
-from abc import abstractmethod
-from typing import Final
+{title: "KafkaInputMessage.h"}
+```cpp
+class KafkaInputMessage : public BaseInputMessage
+{
+public:
+  KafkaInputMessage(
+    std::unique_ptr<RdKafka::Message> kafkaMessage
+  ) : m_kafkaMessage(std::move(kafkaMessage))
+  {}
 
-from AbstractInputMessage import AbstractInputMessage
-from KafkaMessage import KafkaMessage
+protected:
+  uint8_t* getData() const final;
+  size_t getLengthInBytes() const final;
 
+private:
+  std::unique_ptr<RdKafka::Message> m_kafkaMessage;
+};
 
-class AbstractKafkaInputMessage(AbstractInputMessage):
-    def __init__(self, kafka_message: KafkaMessage):
-        self.__kafka_message: Final = kafka_message
+uint8_t* KafkaInputMessage::getData() const
+{
+  return std::bit_cast<uint8_t*>(m_kafkaMessage->payload());
+}
 
-    @abstractmethod
-    def try_decode_schema_id(self) -> int:
-        pass
-
-    def _get_data(self) -> bytearray:
-        return self.__kafka_message.payload
-
-    def _get_length(self) -> int:
-        return self.__kafka_message.length
+size_t KafkaInputMessage::getLengthInBytes() const
+{
+  return m_kafkaMessage->len();
+}
 ```
 
 Finally, we can refactor the `AvroBinaryKafkaInputMessage` class to contain no duplicated code:
 
-{title: "AvroBinaryKafkaInputMessage.py"}
-```python
-from AbstractKafkaInputMessage import AbstractKafkaInputMessage
+{title: "AvroBinaryKafkaInputMessage.h"}
+```cpp
+class AvroBinaryKafkaInputMessage : public KafkaInputMessage
+{
+public:
+  uint32_t tryDecodeSchemaId() const final;
+};
 
-
-class AvroBinaryKafkaInputMessage(AbstractKafkaInputMessage):
-    def try_decode_schema_id(self) -> int:
-        # Try decode the schema id from the beginning of
-        # the Avro binary Kafka message
-        # Use base class _get_data() and _get_length()
-        # methods to achieve that
+uint32_t AvroBinaryKafkaInputMessage::tryDecodeSchemaId() const
+{
+  // Try decode the schema id from the beginning of
+  // the Avro binary Kafka message
+  // Use base class getData() and getDataLengthInBytes()
+  // methods to achieve that
+}
 ```
 
 ## Inheritance in Cascading Style Sheets (CSS)
