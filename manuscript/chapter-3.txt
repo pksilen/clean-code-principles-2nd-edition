@@ -4378,7 +4378,8 @@ always a cheap operation O(1).
 
 Adding and removing elements at the ends of a deque are cheap (O(1))
 operations because the deque is implemented as a doubly linked list. The drawback of the deque is that randomly
-accessing an element at a specific index is slow (O(n)).
+accessing an element at a specific index is slow (O(n)). To implement deques, you can use the `std::deque` class in
+C++ and the `ArrayDeque` class in Java.
 
 ### Stack (LIFO Queue)
 
