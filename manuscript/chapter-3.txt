@@ -4267,15 +4267,16 @@ and error handling is described only in later parts of the documentation.
 This can cause problems if you copy-paste code from the "happy path" example and forget to add error handling.
 For this reason, open-source library authors should give production-quality examples early in the documentation.
 
-Regarding generative AI, e.g., ChatGPT, I have a couple of experiences. I asked ChatGPT to generate simple Django code.
+Regarding generative AI, e.g., ChatGPT, I have a couple of experiences. I asked ChatGPT to generate simple Python Django code.
 The generated code was about 95% correct, but it did not work. The problem was that ChatGPT forgot to provide code
 for generating the database tables (makemigrations, migrate). If you are inexperienced with the Django framework, that
 problem might be challenging to solve. In that case, continue the discussion with ChatGPT and ask it to solve the problem for you.
 
-My other experiment with ChatGPT was to generate GraphQL server code using the *Ariadne* library.
+My other experiment with ChatGPT was to generate GraphQL server code using the Python *Ariadne* library.
 The ChatGPT-generated code was for an old version of Ariadne and did not work correctly with a newer version of the
 Ariadne library. (Notice that the data used to train ChatGPT contains more older than newer data. ChatGPT could not
-prioritize the less and newer data over the older and more data.) It also generated some lines of code in the wrong order, which made the GraphQL API not work at all.
+prioritize the less and newer data over the older and more data.) It also generated some lines of code in the wrong order,
+which made the GraphQL API not work at all.
 It took quite a lot of debugging for such a small program to find out what was wrong:
 The executable schema was created before the query resolver. It should have been created only after defining the
 resolver.
