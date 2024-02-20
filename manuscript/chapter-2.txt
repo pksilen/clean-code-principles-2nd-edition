@@ -8938,71 +8938,59 @@ export class AppModule {
 > ***implementation of that method. The template method contains one or more calls to abstract methods implemented in the subclasses.***
 
 In the below example, the `AbstractDrawing` class contains a template method, `draw`. This method includes a call to
-the `_get_shape_renderer` method,
+the `getShapeRenderer` method,
 an abstract method implemented in the subclasses of the `AbstractDrawing` class. The `draw` method is a template method,
-and a subclass defines how to draw a single shape. The template method should always be marked as final using the `@final` decorator.
-The subclasses should never override it. They should implement the abstract methods.
+and a subclass defines how to draw a single shape.
 
-```python
-from abc import abstractmethod
-from typing import Final, Protocol
-
-from Shape import Shape
-from ShapeRenderer import ShapeRenderer
+```java
+public interface Drawing {
+  ShapeRenderer getShapeRenderer();
+  void draw();
+}
 
 
-class Drawing(Protocol):
-    def draw(self) -> None:
-        pass
+public abstract class AbstractDrawing implements Drawing {
+  private final List<Shape> shapes;
 
+  public AbstractDrawing(final List<Shape> shapes) {
+    this.shapes = shapes;
+  }
 
-class AbstractDrawing(Drawing):
-    def __init__(self, shapes: list[Shape]):
-        self.__shapes: Final = shapes
+  public final void draw() {
+    for (final Shape shape: shapes) {
+      shape.render(getShapeRenderer());
+    }
+  }
 
-    @final
-    def draw(self) -> None:
-        for shape in self.__shapes:
-            shape.render(self._get_shape_renderer())
-
-    @abstractmethod
-        def _get_shape_renderer(self) -> ShapeRenderer:
-            pass
+  protected abstract ShapeRenderer getShapeRenderer();
+}
 ```
 
 We can now implement two subclasses of the `AbstractDrawing` class, which define the final behavior of
-the templated `draw` method.
+the templated `draw` method. We mark the template method `draw` as `final` because subclasses should not override it. It is best practice to declare a template method as final. They
+should only provide an implementation for the abstract `getShapeRenderer` method.
 
-```python
-from typing import Final
+```java
+public class RasterDrawing extends AbstractDrawing {
+  public RasterDrawing(final List<Shape> shapes) {
+    super(shapes);
+  }
 
-from AbstractDrawing import AbstractDrawing
-from Canvas import Canvas
-from RasterShapeRenderer import RasterShapeRenderer
-from Shape import Shape
-from ShapeRenderer import ShapeRenderer
-from SvgElement import SvgElement
-from VectorShapeRenderer import VectorShapeRenderer
-
-
-class RasterDrawing(AbstractDrawing):
-    def __init__(self, shapes: list[Shape]):
-        super().__init__(shapes)
-        canvas = Canvas()
-        self.__shape_renderer: Final = RasterShapeRenderer(canvas)
-
-    def _get_shape_renderer(self) -> ShapeRenderer:
-        return self.__shape_renderer
+  protected ShapeRenderer getShapeRenderer() {
+    return new RasterShapeRenderer(new Canvas());
+  }
+}
 
 
-class VectorDrawing(AbstractDrawing):
-    def __init__(self, shapes: list[Shape]):
-        super().__init__(shapes)
-        svg_root = SvgElement()
-        self.__shape_renderer: Final = VectorShapeRenderer(svg_root)
+public class VectorDrawing extends AbstractDrawing {
+  public VectorDrawing(final List<Shape> shapes) {
+    super(shapes);
+  }
 
-    def _get_shape_renderer(self) -> ShapeRenderer:
-        return self.__shape_renderer
+  protected ShapeRenderer getShapeRenderer() {
+    return new VectorShapeRenderer(new SvgElement());
+  }
+}
 ```
 
 Template method pattern is useful to avoid code duplication in case two subclasses have methods with almost identical behavior. In that case, make that common functionality a template method in a common superclass and refine that template

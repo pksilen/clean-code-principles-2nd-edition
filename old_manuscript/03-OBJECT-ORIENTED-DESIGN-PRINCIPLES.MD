@@ -7367,13 +7367,13 @@ public abstract class AbstractDrawing implements Drawing {
     this.shapes = shapes;
   }
 
-  public abstract ShapeRenderer getShapeRenderer();
-
   public final void draw() {
     for (final Shape shape: shapes) {
       shape.render(getShapeRenderer());
     }
   }
+  
+  protected abstract ShapeRenderer getShapeRenderer();
 }
 ```
 </div>
@@ -7395,7 +7395,7 @@ public class RasterDrawing extends AbstractDrawing {
     super(shapes);
   }
 
-  public ShapeRenderer getShapeRenderer() {
+  protected ShapeRenderer getShapeRenderer() {
     return shapeRenderer;
   }
 }
@@ -7410,7 +7410,7 @@ public class VectorDrawing extends AbstractDrawing {
     super(shapes);
   }
 
-  public ShapeRenderer getShapeRenderer() {
+  protected ShapeRenderer getShapeRenderer() {
     return shapeRenderer;
   }
 }
