@@ -4119,7 +4119,9 @@ Let's also try to provide a non-existing configuration file *config3.json*:
 const configFilePathNames = ['config1.json', 'config3.json'];
 constmaybeConfig = getConfig(configFilePathNames);
 console.log(maybeConfig.orThrow(Error));
-// Throws an error
+// Throws an error with a two-line message saying config1.json content
+// cannot be parsed due to invalid JSON and config3.json file cannot
+// be read because it does not exists.
 ```
 
 ## Avoid Off-By-One Errors Principle
