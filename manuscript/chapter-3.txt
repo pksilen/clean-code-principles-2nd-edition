@@ -3666,6 +3666,10 @@ public class Either<L, R> {
     return maybeLeftValue.isPresent();
   }
 
+  public boolean hasRightValue() {
+    return maybeRightValue.isPresent();
+  }
+
   public <T> Either<T, R> mapLeft(
     Function<? super L, ? extends T> mapper
   ) {
