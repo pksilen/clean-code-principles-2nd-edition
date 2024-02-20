@@ -3067,33 +3067,37 @@ try {
 ```
 </div>
 
-Catch all exceptions only in a special place(s) in your code, like in the main function or the main loop, like the loop in a web server
+Catch all exceptions only in special places in your code, like in the main function or the main loop, like the loop in a web service
 processing HTTP requests or the main loop of a thread. Below is an example of correctly catching the language's base exception class in the main function.
 When you catch an unrecoverable exception in the main function, log it and exit the process with an appropriate error code. When you catch an
 unrecoverable error in a main loop, log it and continue the loop if possible.
 
-```python
-try:
-    application.run(...)
-except BaseException as exception:
-    logger.log(exception)
-    sys.exit(1)
-else:
-    sys.exit(0)
+```java
+public static void main(final String[] args) {
+  // ...
+
+   try {
+     application.run(...);
+   } catch (final Exception exception) {
+     logger.log(exception);
+     System.exit(1);
+   }
+}
 ```
 
 Using the above-described rules, you can make your code future-proof or forward-compatible so that adding new errors to be raised in a function
-in the future is possible. Let's say that you are using a `fetch_config` function like this:
+in the future is possible. Let's say that you are using a `fetchConfig` function like this:
 
-```python
-try:
-    configuration = config_fetcher.fetch_config(url)
-except ConfigFetcher.FetchConfigError as error:
-    # Handle error ...
+```java
+try {
+  final var configuration = configFetcher.fetchConfig(url);
+} catch(final ConfigFetcher.FetchConfigError error) {
+  // Handle error ...
+}
 ```
 
-Your code should still work if a new type of error is raised in the `fetch_config` function. Let's say that the following new errors
-could be raised in the `fetch_config` function:
+Your code should still work if a new type of error is raised in the `fetchConfig` function. Let's say that the following new errors
+could be raised in the `fetchConfig` function:
 
 - Malformed URL error
 - Server not found error
