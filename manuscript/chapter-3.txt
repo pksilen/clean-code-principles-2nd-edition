@@ -3638,8 +3638,7 @@ is an error. The `Either` type can be defined as follows:
 
 {title: "Either.java"}
 ```
-public class Either<L, R>
-{
+public class Either<L, R> {
   private final Optional<L> maybeLeftValue;
   private final Optional<R> maybeRightValue;
 
@@ -3706,28 +3705,26 @@ Below are some examples of how to use the `Either` class:
 class Error extends RuntimeException {
 }
 
-
-final var intOrError = Either<Integer, Error>.with_left(3);
-final var intOrError2 = Either<Integer, Error>.with_right(new Error());
+final Either<Integer, Error> intOrError = Either.withLeft(3);
+final Either<Integer, Error> intOrError2 = Either.withRight(new Error());
 
 System.out.println(intOrError.hasLeftValue()); // Prints true
 System.out.println(intOrError2.hasRightValue()); // Prints true
 
 // Prints true
 System.out.println(
-  intOrError.mapLeft((number) -> number * 2).hasLeftValue();
-)
+  intOrError.mapLeft(number -> number * 2).hasLeftValue()
+);
 
 // Prints 6
 System.out.println(
-  intOrError.map((number) -> number * 2, (error) -> 0)
-)
-
+  intOrError.<Integer>map(number -> number * 2, error -> 0)
+);
 
 // Prints 0
 System.out.println(
-  intOrRrror2.map((number) -> number * 2, (error) -> 0)
-)
+  intOrError2.<Integer>map(number -> number * 2, error -> 0)
+);
 ```
 
 
