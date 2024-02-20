@@ -3288,14 +3288,14 @@ public class DataExporter {
 ```
 
 If we go back to the *requests* library usage example, the error-raising methods `requests.get` and `Response.json`
-could be renamed to `requests.try_get` and `Response.try_parse_json`. That would make the earlier example look like
+could be renamed to `requests.try_get` and `Response.try_parse_body_json`. That would make the earlier example look like
 the following:
 
 ```python
 import requests
 
-r = requests.try_get('https://api.github.com/events')
-r.try_parse_json()
+response = requests.try_get('https://api.github.com/events')
+response.try_parse_body_json()
 # [{'repository': {'open_issues': 0, 'url': 'https://github.com/...
 ```
 
@@ -3305,8 +3305,8 @@ Now, we can see that the two methods can raise an error. It is easier to remembe
 import requests
 
 try:
-    r = requests.try_get('https://api.github.com/events')
-    r.try_parse_json()
+    response = requests.try_get('https://api.github.com/events')
+    response.try_parse_body_json()
     # [{'repository': {'open_issues': 0, 'url': 'https://github.com/...
 except ...
     # ...
