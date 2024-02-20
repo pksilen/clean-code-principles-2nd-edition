@@ -3731,7 +3731,6 @@ System.out.println(
 );
 ```
 
-
 Now we can use the new `Either` type and rewrite the example as follows:
 
 {title: "DataStore.java"}
