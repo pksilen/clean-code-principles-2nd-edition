@@ -4124,6 +4124,34 @@ console.log(maybeConfig.orThrow(Error));
 // be read because it does not exists.
 ```
 
+#### Stream Error Handling
+
+Handling errors for a stream is also something that can be easily forgotten. Streams are usually used for I/O operations that can fail.
+You should be prepared for error handling when using a stream. In JavaScript/TypeScript,
+an error handler for a stream can be registered using the stream's `on` method in the following way: `stream.on('error', () => { ... })`.
+
+Below is an example of using a stream:
+
+```js
+// ...
+
+const writeStream = fs.createWriteStream(filePathName);
+
+this.writeStream.on('error', (error) => {
+   // Handle errors
+});
+
+writeStream.write(...);
+// More writes...
+
+writeStream.close();
+```
+
+How could we improve developer experience with streams, so that error handling is not forgotten?
+One solution is to add an error handler callback parameter to the stream factory method. This callback will be called upon an error. If no
+error handling is needed, a _null_ value could be given for the callback. This way, a developer creating a stream can't forget to
+supply an error handler function.
+
 ## Avoid Off-By-One Errors Principle
 
 Off-by-one errors usually result from the fact that collections in programming languages are indexed with
