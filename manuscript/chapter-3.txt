@@ -2965,34 +2965,47 @@ with the name `ReadFileError`, i.e., `FileReader.ReadFileError`. If all the meth
 only one error at the class level. For example, if you have a `HttpClient` class where all methods like `get`, `post`, `put` etc., can raise
 an error, you can only define a single `Error` error class in the `HttpClient` class.
 
-Below is an example of errors defined for the data exporter microservice:
+Below is a Java example of errors defined for the data exporter microservice:
 
-```python
-# Base error class for the software component
-class DataExporterError(Exception):
-    pass
-
-
-class FileReader:
-    # Base error class for the 'read_file' method
-    # Extends the base error class of the software component
-    class ReadFileError(DataExporterError):
-        pass
-
-    def read_file(self, file_path_name: str):
-        # ...
-        # raise self.ReadFileError()
+```java
+// Base error class for the software component
+public class DataExporterError extends RuntimeException {
+  public DataExporterError(final Exception error) {
+    super(error);
+  }
+}
 
 
-class ConfigParser:
-    # Base error class for the 'parse' method
-    # Extends the base error class of the software component
-    class ParserError(DataExporterError):
-        pass
+public class FileReader {
+  // Base error class for the 'readFile' method
+  // Extends the base error class of the software component
+  static class ReadFileError extends DataExporterError {
+    public ReadFileError(final Exception error) {
+      super(error);
+    }
+  }
 
-    def parse(self, config_str: str):
-        # ...
-        # raise self.ParseError()
+  void readFile(final String pathName) {
+    // ...
+    // throw new ReadFileError(...);
+  }
+}
+
+
+public class ConfigParser {
+  // Base error class for the 'parse' method
+  // Extends the base error class of the software component
+  static class ParseFileError extends DataExporterError {
+      public ParseFileError(final Exception error) {
+        super(error);
+      }
+    }
+
+  void parse(final String configStr) {
+  // ...
+  // throw new ParseError(...)
+  }
+}
 ```
 
 Following the previous rules makes catching errors in the code easy because you can infer the error class
