@@ -3219,8 +3219,8 @@ Here is an example of alternative 1:
 public class ConfigFetcher {
   public Configuration fetchConfig(final String configUrl) {
     try {
-      final var configDataStr = dataFetcher.tryFetchData(configUrl);
-      return configParser.tryParse(configDataStr);
+      final var configStr = dataFetcher.tryFetchData(configUrl);
+      return configParser.tryParse(configStr);
     } catch (final DataFetcher.FetchDataError | ConfigParser.ParseError error) {
       // You could also catch DataFetchError and
       // ConfigParseError in different catch clauses
@@ -3244,8 +3244,8 @@ public class ConfigFetcher {
 
   public Configuration tryFetchConfig(final String configUrl) {
     try {
-      final var configDataStr = dataFetcher.tryFetchData(configUrl);
-      return configParser.tryParse(configDataStr);
+      final var configStr = dataFetcher.tryFetchData(configUrl);
+      return configParser.tryParse(configStr);
     } catch (final DataFetcher.FetchDataError | ConfigParser.ParseError error) {
       // Error on higher level of abstraction is thrown
       // This function must be named with the 'try' prefix
@@ -3258,35 +3258,33 @@ public class ConfigFetcher {
 
 And here is an example of alternative 3:
 
-```python
-from Config import Config
-
-
-class ConfigFetcher:
-    def try_fetch_config(self, url: str) -> Config:
-        # No try-except, all raised errors from both try_fetch_data
-        # and try_parse method calls propagate
-        # to the caller and
-        # this function must be named with the 'try' prefix
-        # to indicate that it can raise an error
-        config_str = self.__data_fetcher.try_fetch_data(url)
-        return self.__config_parser.try_parse(config_str)
+```java
+public class ConfigFetcher {
+  public Configuration tryFetchConfig(final String configUrl) {
+    // No try-except, all raised errors from both try_fetch_data
+    // and try_parse method calls propagate
+    // to the caller and
+    // this function must be named with the 'try' prefix
+    // to indicate that it can raise an error
+    final var configStr = dataFetcher.tryFetchData(configUrl);
+    return configParser.tryParse(configStr);
+  }
+}
 ```
 
-```python
-from DataExporterError import DataExporterError
-
-
-class DataExporter:
-    def initialize(self) -> None:
-        try:
-            config = self.__config_fetcher.try_fetch_config(url)
-        except DataExporterError as error:
-            # In this case you must catch the base error class of
-            # the software component (DataExporterError), because
-            # you don't know what errors try_fetch_config can
-            # raise, because no FetchConfigError class
-            # has been defined in the ConfigFetcher class
+```java
+public class DataExporter {
+  public void initialize() {
+    try {
+      final var config = configFetcher.tryFetchConfig(url);
+    } catch (final DataExporterError error) {
+      // In this case you must catch the base error class of
+      // the software component (DataExporterError), because
+      // you don't know what errors tryFetchConfig can
+      // raise, because no FetchConfigError class
+      // has been defined in the ConfigFetcher class
+  }
+}
 ```
 
 If we go back to the *requests* library usage example, the error-raising methods `requests.get` and `Response.json`
