@@ -4097,11 +4097,11 @@ and we have a *config2.json* file with the following contents:
 
 Then, we can run the following code:
 
-```python
-config_file_path_names = ['config1.json', 'config2.json']
-maybeConfig = get_config(config_file_path_names)
-print(maybeConfig.or_raise(RuntimeError))
-# Prints {'foo': 1, 'bar': 2, 'xyz': 3}
+```ts
+const configFilePathNames = ['config1.json', 'config2.json'];
+const maybeConfig = getConfig(configFilePathNames);
+console.log(maybeConfig.orThrow(Error));
+// Prints {'foo': 1, 'bar': 2, 'xyz': 3}
 ```
 
 Let's introduce an error (a missing comma after the first property) in the *config1.json* file:
@@ -4115,13 +4115,11 @@ Let's introduce an error (a missing comma after the first property) in the *conf
 
 Let's also try to provide a non-existing configuration file *config3.json*:
 
-```python
-config_file_path_names = ['config1.json', 'config3.json']
-maybeConfig = get_config(config_file_path_names)
-print(maybeConfig.or_raise(RuntimeError))
-# Raises a RuntimeError with the following message:
-# config1.json: Expecting ',' delimiter: line 3 column 3 (char 16)
-# config3.json: [Errno 2] No such file or directory: 'config3.json'
+```ts
+const configFilePathNames = ['config1.json', 'config3.json'];
+constmaybeConfig = getConfig(configFilePathNames);
+console.log(maybeConfig.orThrow(Error));
+// Throws an error
 ```
 
 ## Avoid Off-By-One Errors Principle
