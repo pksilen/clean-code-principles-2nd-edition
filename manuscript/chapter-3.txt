@@ -2951,13 +2951,16 @@ the application cannot do anything but exit.
 
 When defining error classes, define a base error class for your software component. You can name the base error class according to the name of the software component.
 For example, for the data exporter
-microservice, you can define a `DataExporterError` (or `DataExporterServiceError`) base error class. For *common-utils-lib*, you can define `CommonUtilsError` (or `CommonUtilsLibError`), and for *sales-item-service*, you can define `SalesItemServiceError`.
-The popular [requests](https://requests.readthedocs.io/en/latest/) library implements this convention.
+microservice, you can define a `DataExporterError` (or `DataExporterServiceError`) base error class. For *common-utils-lib*,
+you can define `CommonUtilsError` (or `CommonUtilsLibError`), and for *sales-item-service*, you can define `SalesItemServiceError`.
+The popular Python [requests](https://requests.readthedocs.io/en/latest/) library implements this convention.
 It defines a `requests.RequestException,` which is the base class for all other errors the library methods can raise.
 Many other Python libraries also define a common base error class.
 
-For each function that can raise an error, define a base error class
-at the same abstraction level as the function. That error class should extend the software component's base error class. For example, if you have a `parse(config_str)` function in the `ConfigParser` class, define a base error class for the function inside the class with the name `ParseError`, i.e., `ConfigParser.ParseError`. If you have a `read_file` function in the `FileReader` class, define a base error class in the `FileReader` class
+For each function that can throw an error, define a base error class
+at the same abstraction level as the function. That error class should extend the software component's base error class. For example,
+if you have a `parse(configStr)` method in the `ConfigParser` class, define a base error class for the function inside the class with the name `ParseError`,
+i.e., `ConfigParser.ParseError`. If you have a `readFile` method in the `FileReader` class, define a base error class in the `FileReader` class
 with the name `ReadFileError`, i.e., `FileReader.ReadFileError`. If all the methods in a class can raise the same error, it is enough to define
 only one error at the class level. For example, if you have a `HttpClient` class where all methods like `get`, `post`, `put` etc., can raise
 an error, you can only define a single `Error` error class in the `HttpClient` class.
