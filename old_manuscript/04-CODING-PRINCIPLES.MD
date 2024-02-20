@@ -2798,7 +2798,7 @@ it is unnecessary to prefix the function name with the _try_ prefix. Below is an
 
 ```
 public class DataExporterError extends Exception {
-  public DataExporterError(final String message) {
+  public DataExporterError(final  message) {
     super(message);
   }
 }

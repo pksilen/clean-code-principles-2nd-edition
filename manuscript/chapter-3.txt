@@ -3090,7 +3090,7 @@ in the future is possible. Let's say that you are using a `fetchConfig` function
 
 ```java
 try {
-  final var configuration = configFetcher.fetchConfig(url);
+  final var config = configFetcher.fetchConfig(url);
 } catch(final ConfigFetcher.FetchConfigError error) {
   // Handle error ...
 }
@@ -3156,7 +3156,7 @@ operation because the error is usually transient:
 
 ```java
 try {
-  final var configuration = configFetcher.fetchConfig(url);
+  final var config = configFetcher.fetchConfig(url);
 } catch (final ConfigFetcher.ConnectionTimeoutError error) {
   // Retry after a while
 } catch (final ConfigFetcher.MalformedUrlError error) {
@@ -3219,8 +3219,8 @@ Here is an example of alternative 1:
 public class ConfigFetcher {
   public Configuration fetchConfig(final String configUrl) {
     try {
-      final var configStr = dataFetcher.tryFetchData(configUrl);
-      return configParser.tryParse(configStr);
+      final var configString = dataFetcher.tryFetchData(configUrl);
+      return configParser.tryParse(configString);
     } catch (final DataFetcher.FetchDataError | ConfigParser.ParseError error) {
       // You could also catch DataFetchError and
       // ConfigParseError in different catch clauses
@@ -3244,8 +3244,8 @@ public class ConfigFetcher {
 
   public Configuration tryFetchConfig(final String configUrl) {
     try {
-      final var configStr = dataFetcher.tryFetchData(configUrl);
-      return configParser.tryParse(configStr);
+      final var configString = dataFetcher.tryFetchData(configUrl);
+      return configParser.tryParse(configString);
     } catch (final DataFetcher.FetchDataError | ConfigParser.ParseError error) {
       // Error on higher level of abstraction is thrown
       // This function must be named with the 'try' prefix
@@ -3266,8 +3266,8 @@ public class ConfigFetcher {
     // to the caller and
     // this function must be named with the 'try' prefix
     // to indicate that it can raise an error
-    final var configStr = dataFetcher.tryFetchData(configUrl);
-    return configParser.tryParse(configStr);
+    final var configString = dataFetcher.tryFetchData(configUrl);
+    return configParser.tryParse(configString);
   }
 }
 ```
@@ -3433,29 +3433,111 @@ class JwtAuthorizer:
 
 Make yourself a habit of walking through the code of a function line by line once you think it is ready to find out if you have accidentally missed handling some error.
 
+### Handling Checked Exceptions in Java
+
+You can use checked exceptions in Java when defining your software component's errors. Using checked exceptions helps you to remember to handle errors or let them propagate upwards in the call stack.
+
+When using Java's checked exceptions, define the software component's base error class to extend the `Exception` class instead of the `RuntimeException` class. When a function throws a checked exception,
+it is unnecessary to prefix the function name with the _try_ prefix. Below is an example of defining checked exceptions:
+
+```java
+public class DataExporterError extends Exception {
+  public DataExporterError(final Exception error) {
+    super(error);
+  }
+}
+
+public class DataFetcher {
+  public class FetchDataError extends DataExporterError {
+    public FetchDataError(final Exception error) {
+      super(error);
+    }
+  }
+
+  public String fetchData(...) throws FetchDataError {
+    // ...
+  }
+}
+
+public class ConfigParser {
+  public class ParseError extends DataExporterError {
+    public ParseError(final Exception error) {
+      super(error);
+    }
+  }
+
+  public Configuration parse(...) throws ParseError {
+    // ...
+  }
+}
+
+public class DataExporter {
+  public class InitializeError extends DataExporterError {
+    public InitializeError(final Exception error) {
+      super(error);
+    }
+  }
+
+  public void initialize(...) throws InitializeError {
+    try {
+      final var configString = dataFetcher.fetchData(configUrl);
+      final var config = configParser.parse(configString);
+
+      // ...
+    } catch (
+      final DataFetcher.FetchDataError | ConfigParser.ParseError error
+    ) {
+      throw new InitializationError(error);
+    }
+  }
+}
+```
+
+Later, it is possible to modify the implementation of the `parse` function to throw other
+errors that derive from the `ParseError` class. This kind of change does not require
+modifications to other parts of the codebase.
+
+On higher levels of the software component code, you can also use the base error class of the software component in the
+`throws` clause to propagate errors upwards in the call stack:
+
+```
+public class DataExporter {
+  public void initialize(...) throws DataExporterError {
+    final var configString = dataFetcher.fetchData(configUrl);
+    final var config = configParser.parse(configDataString);
+
+    // ...
+  }
+}
+```
+
 ### Returning Errors
 
-As an alternative to raising errors, it is possible to
+As an alternative to throwing errors, it is possible to
 communicate erroneous behavior to the function caller using a return value. Using an exception-handling mechanism
 provides some advantages over returning errors. When a function can return an error, you must always check
 for the error right after the function call. This can cause the code to contain nested if-statements, which hinders code readability.
 The exception-handling mechanism allows you to propagate an error
 to a higher level in the call stack. You can also execute multiple function calls that can fail inside
-a single `try` block and provide a single error handler in the `except` block.
+a single `try` block and provide a single error handler in the `catch` block. Some languages do not provide an exception-handling mechanism meaning you must return errors from functions. In
+languages like C++, you can optimize mission-critical code by returning error values or indicators instead of throwing exceptions.
 
 #### Returning Failure Indicator
 
 You can return a failure indicator from a failable function when the function does not need to return any additional value.
 It is enough to return a failure indicator from the function when there is no need to return any specific error code or message.
 This can be because there is only one reason the function can fail, or function callers are not interested in error details.
-To return a failure indicator, return a boolean value from the function: *True* means a successful operation, and *False* indicates a failure:
+To return a failure indicator, return a boolean value from the function: _true_ means a successful operation, and _false_ indicates a failure:
 
-```python
-def perform_task(...) -> bool:
-    # Perform the task and set the value of
-    # the 'task_was_performed' variable
+```cpp
+bool performTask(...)
+{
+  bool taskWasPerformed;
 
-    return task_was_performed
+  // Perform the task and set the value of 'taskWasPerformed'
+
+  return taskWasPerformed;
+}
 ```
 
 #### Returning an Optional Value
@@ -3465,40 +3547,24 @@ why the function call can fail. In this case,
 return an optional value from the function. In the below example, getting a value from the cache can only fail when
 no value for a specific key is stored in the cache. We don't need to return any error code or message.
 
-```Python
-from typing import Protocol, TypeVar
-
-TKey = TypeVar('TKey')
-TValue = TypeVar('TValue')
-
-
-class Cache(Protocol[TKey, TValue]):
-    def add(self, key: TKey, value: TValue) -> None:
-        pass
-
-    def get(self, key: TKey) -> TValue | None:
-        pass
+{title: "Cache.java"}
+```java
+public interface Cache<TKey, TValue> {
+  void add(final TKey key, final TValue value);
+  Optional<TValue> get(final TKey key);
+}
 ```
 
-Or, if you want to use a more functional approach, return an `Optional` object. (The `Optional` class was defined
-in the previous chapter)
+In TypeScript, you can return an optional value using a type union:
 
-```python
-from typing import Protocol, TypeVar
-
-from Optional import Optional
-
-TKey = TypeVar('TKey')
-TValue = TypeVar('TValue')
-
-
-class Cache(Protocol[TKey, TValue]):
-    def add(self, key: TKey, value: TValue) -> None:
-        pass
-
-    def get(self, key: TKey) -> Optional[TValue]:
-        pass
+{title: "Cache.ts"}
+```ts
+interface MyCache<TKey, TValue> {
+  add(key: TKey, value: TValue): void;
+  get(key: TKey): TValue | null;
+}
 ```
+
 
 #### Returning an Error Object
 
