@@ -9556,394 +9556,345 @@ to the objects behind it.
 
 > ***Avoid primitive obsession by defining semantic types for function parameters and function return value.***
 
-Some of us have experienced a situation where we have supplied arguments to a function in the wrong order.
-This can be easy if the function, for example, takes two integer parameters, but you accidentally give those two integer parameters
+Some of us have experienced situations where we have supplied arguments to a function in the wrong order.
+This is easy if the function, for example, takes two integer parameters, but you accidentally give those two integer parameters
 in the wrong order. You don't get a compilation error.
 
 Another problem with primitive types as function arguments is that the argument values are not necessarily validated.
-You may have to implement the validation logic in your function. However, the validation should typically happen when reading untrusted input and only already validated values are supplied to other functions in the software component.
+You have to implement the validation logic in your function.
 
 Suppose you accept an integer parameter for a port number in a function.
 In that case, you might get any integer value as the parameter value,
 even though the valid port numbers are from 1 to 65535. Suppose you also had other functions in the same codebase
-accepting a port number as a parameter. In that case, you could do the same validation logic in multiple places and have
-duplicate code in your codebase.
+accepting a port number as a parameter. In that case, you could end up doing the same validation logic in multiple places and have
+thus duplicate code in your codebase.
 
-Let's have a simple example of using this principle:
+Let's have a simple Java example of using this principle:
 
-```python
-from Shape import Shape
+{title: "RectangleShape.java"}
+```java
+public class RectangleShape implements Shape {
+  private int width;
+  private int height;
 
-
-class RectangleShape(Shape):
-    def __init__(self, width: int, height: int):
-        self.__width = width
-        self.__height = height
+  public RectangleShape(final int width, final int height) {
+    this.width = width;
+    this.height = height;
+  }
+}
 ```
 
 In the above example, the constructor has two parameters with the same primitive type (int). It is possible
 to give `width` and `height` in the wrong order. But if we refactor the code to use objects instead of primitive
 values, we can make the likelihood of giving the arguments in the wrong order much smaller:
 
-```python
-from typing import TypeVar, Generic, Final
+```java
+public class Value<T> {
+  private final T value;
 
-from Shape import Shape
+  public Value(final T value) {
+    this.value = checkNotNull(value);
+  }
 
-T = TypeVar('T')
-
-
-class Value(Generic[T]):
-    def __init__(self, value: T):
-        self.__value: Final = value
-
-    @property
-    def value(self) -> T:
-        return self.__value
+  T get() {
+    return value;
+  }
+}
 
 
-class Width(Value[int]):
-    pass
+public class Width extends Value<Integer> {
+  public Width(final int width) {
+    super(width);
+  }
+}
 
 
-class Height(Value[int]):
-    pass
+public class Height extends Value<Integer> {
+  public Height(final int height) {
+    super(height);
+  }
+}
 
 
-class RectangleShape(Shape):
-  def __init__(self, width: Width, height: Height):
-          self.__width = width.value
-          self.__height = height.value
+public class RectangleShape implements Shape {
+  private final int width;
+  private final int height;
+
+  public RectangleShape(final Width width, final Height height) {
+    this.width = width.get();
+    this.height = height.get();
+  }
+}
 
 
-width = Width(20)
-height = Height(50)
+final var width = new Width(20);
+final var height = new Height(50);
 
-# OK
-rectangle = RectangleShape(width, height)
+// OK
+final Shape rectangle = new RectangleShape(width, height);
 
-# Does not pass type check, parameters are in wrong order
-rectangle2 = RectangleShape(height, width)
+// Does not compile, parameters are in wrong order
+final Shape rectangle2 = new RectangleShape(height, width);
 
-# Does not pass type check, first parameter is not a width
-rectangle3 = RectangleShape(height, height)
+// Does not compile, first parameter is not a width
+final Shape rectangle3 = new RectangleShape(height, height);
 
-# Does not pass type check, second parameter is not a height
-rectangle4 = RectangleShape(width, width)
+// Does not compile, second parameter is not a height
+final Shape rectangle4 = new RectangleShape(width, width);
 
-# Does not pass type check,
-# Width and Height objects must be used
-# instead of primitive types
-rectangle5 = RectangleShape(20, 50)
+// Does not compile, Width and Height objects must be used
+// instead of primitive types
+final Shape rectangle5 = new RectangleShape(20, 50);
 ```
 
 In the above example, `Width` and `Height` are simple data classes. They don't contain any behavior. You
-can use concrete data classes as function parameter types. There is no need to create an interface for a data class.
-So, the *program against interfaces* principle does not apply here.
-
-In Python, we have another way to safeguard against giving the same type of parameters in the wrong order: named
-parameters. Without the named parameters, the creation of a new rectangle would look like the following:
-
-```python
-rectangle = RectangleShape(20, 50)
-```
-
-In the above example, we must be sure that the first parameter is width and the second is height.
-When using named parameters, we don't have to remember the correct order of the parameters:
-
-```python
-rectangle = RectangleShape(width=20, height=50)
-rectangle2 = RectangleShape(height=50, width=20)
-```
+can use concrete data classes as function parameter types. There is no need to create an interface for a data class. So, the _program against interfaces_ principle does not apply here.
 
 Let's have another simple example where we have the following function signature:
 
-```python
-def do_something(namespaced_name: str, ...):
-    # ...
+```java
+public void doSomething(final String namespacedName, ...) {
+  // ...
+}
 ```
 
 The above function signature allows function callers to supply a non-namespaced name accidentally.
 By using a custom type for the namespaced name, we can formulate the above function signature to the following:
 
-```python
-from typing import Final
+```java
+public class NamespacedName {
+  private final String namespacedName;
 
+  public NamespacedName(
+    final String namespace,
+    final String name
+  ) {
+    this.namespacedName = namespace.isEmpty()
+                            ? name
+                            : (namespace + '.' + name);
+  }
 
-class NamespacedName:
-    def __init__(self, namespace: str, name: str):
-        self.__namespaced_name: Final = (
-            (namespace + '.' + name) if namespace else name
-        )
+  public String get() {
+    return this.namespacedName;
+  }
+}
 
-    def get(self) -> str:
-        return self.__namespaced_name
-
-
-def do_something(namespaced_name: NamespacedName, ...):
-    # ...
+public void doSomething(final NamespacedName namespacedName, ...) {
+  // ...
+}
 ```
 
 Let's have a more comprehensive example with an `HttpUrl` class. The class constructor has several parameters
 that should be validated upon creating an HTTP URL:
 
-```python
-from typing import Final
+{title: "HttpUrl.java"}
+```java
+public class HttpUrl {
+  private final String httpUrl;
 
-
-class HttpUrl:
-    def __init__(
-        self,
-        scheme: str,
-        host: str,
-        port: int,
-        path: str,
-        query: str
-    ):
-        self.__url_string: Final = (
-              scheme
-              + "://"
-              + host
-              + ":"
-              + str(port)
-              + path
-              + "?"
-              + query
-        )
+  public HttpUrl(
+    final String scheme,
+    final String host,
+    final int port,
+    final String path,
+    final String query
+  ) {
+    httpUrl = scheme +
+              "://" +
+              host +
+              ":" +
+              port +
+              path +
+              "?" +
+              query;
+  }
+}
 ```
 
 Let's introduce an abstract class for validated values:
 
-```
-from abc import abstractmethod
-from typing import Final, Generic, TypeVar
+{title: "AbstractValidatedValue.java"}
+```java
+public abstract class AbstractValidatedValue<T> {
+  protected final T value;
 
-from Optional import Optional
+  public AbstractValidatedValue(final T value) {
+    this.value = checkNotNull(value);
+  }
 
-T = TypeVar('T')
+  abstract boolean valueIsValid();
 
+  Optional<T> get() {
+    return valueIsValid()
+             ? Optional.of(value)
+             : Optional.empty();
+  }
 
-class AbstractValidatedValue(Generic[T]):
-    def __init__(self, value: T):
-        self._value: Final = value
-
-    def get(self) -> Optional[T]:
-        return (
-            Optional.of(self._value)
-            if self._is_valid()
-            else Optional.empty()
-        )
-
-    class GetError(Exception):
-        pass
-
-    def try_get(self) -> T:
-        if self._is_valid():
-            return self._value
-        else:
-            raise self.GetError('Invalid ' + self.__class__.__name__)
-
-    @abstractmethod
-        def _is_valid(self) -> bool:
-            pass
+  T tryGet() {
+    if (valueIsValid()) {
+      return value;
+    } else {
+      throw new ValidatedValueGetError(...);
+    }
+  }
+}
 ```
 
 Let's create a class for validated HTTP scheme objects:
 
-```python
-from functools import cache
+{title: "HttpScheme.java"}
+```java
+public class HttpScheme extends AbstractValidatedValue<String> {
+  public HttpScheme(final String value) {
+    super(value);
+  }
 
-from AbstractValidatedValue import AbstractValidatedValue
+  public boolean valueIsValid() {
+    // Because the AbstractValidatedValue<String> is immutable,
+    // if you had complex validation logic, you could cache
+    // the validation result and store it to a class attribute.
 
-
-class HttpScheme(AbstractValidatedValue[str]):
-    # Because instances are immutable, we can cache the validation result
-    # This would be especially beneficial in cases where
-    # the validation logic is complex and this method is
-    # called many times
-    @cache
-    def _is_valid(self) -> bool:
-        lowercase_value = self._value.lower()
-        return lowercase_value == 'https' or lowercase_value == 'http'
+    return "https".equalsIgnoreCase(value) ||
+           "http".equalsIgnoreCase(value);
+  }
+}
 ```
 
 Let's create a `Port` class (and similar classes for the host, path, and query should be created):
 
-```python
-from functools import cache
+```java
+public class Port extends AbstractValidatedValue<Integer> {
+  public Port(final Integer value) {
+    super(value);
+  }
 
-from AbstractValidatedValue import AbstractValidatedValue
+  public boolean valueIsValid() {
+    return value >= 1 && value <= 65535;
+  }
+}
 
-
-class Port(AbstractValidatedValue[int]):
-    # Because instances are immutable, we can cache the validation result
-    @cache
-    def _is_valid(self) -> bool:
-        return 1 <= self._value <= 65535
-
-
-# Implement Host class ...
-# Implement Path class ...
-# Implement Query class ...
+// public class Host ...
+// public class Path ...
+// public class Query ...
 ```
 
 Let's create a utility class, `OptionalUtils`, with a method for mapping a result for five optional values:
 
-```python
-from collections.abc import Callable
-from typing import TypeVar, final
-
-from Optional import Optional
-
-T = TypeVar('T')
-U = TypeVar('U')
-V = TypeVar('V')
-X = TypeVar('X')
-Y = TypeVar('Y')
-R = TypeVar('R')
+```java
+@FunctionalInterface
+public interface Mapper<T, U, V, X, Y, R> {
+  R map(T value,
+        U value2,
+        V value3,
+        X value4,
+        Y value5);
+}
 
 
-@final
-class OptionalUtils:
-    @staticmethod
-    def map_all(
-      opt1: Optional[T],
-      opt2: Optional[U],
-      opt3: Optional[V],
-      opt4: Optional[X],
-      opt5: Optional[Y],
-      mapper: Callable[[T, U, V, X, Y], R]
-  ) -> Optional[R]:
-        if (
-            opt1.is_present()
-            and opt2.is_present()
-            and opt3.is_present()
-            and opt4.is_present()
-            and opt5.is_present()
-         ):
-            return Optional.of(
-                map(
-                    opt1.try_get(),
-                    opt2.try_get(),
-                    opt3.try_get(),
-                    opt4.try_get(),
-                    opt5.try_get(),
-                )
-            )
-        else:
-            return Optional.empty()
+public final class OptionalUtils {
+  public static <T, U, V, X, Y, R> Optional<R>
+    mapAll(
+      final Optional<T> opt1,
+      final Optional<U> opt2,
+      final Optional<V> opt3,
+      final Optional<X> opt4,
+      final Optional<Y> opt5,
+      final Mapper<T, U, V, X, Y, R> mapper
+  ) {
+    if (opt1.isPresent() &&
+        opt2.isPresent() &&
+        opt3.isPresent() &&
+        opt4.isPresent() &&
+        opt5.isPresent()
+    ) {
+      return Optional.of(mapper.map(opt1.get(),
+                                    opt2.get(),
+                                    opt3.get(),
+                                    opt4.get(),
+                                    opt5.get()));
+    } else {
+      return Optional.empty();
+    }
+  }
+}
 ```
 
 Next, we can reimplement the `HttpUrl` class to contain two alternative factory methods for creating an HTTP URL:
 
-```python
-# Imports ...
+{title: "HttpUrl.java"}
+```java
+public class HttpUrl {
+  private final String httpUrl;
 
-T = TypeVar("T")
+  // Constructor is private because factory methods
+  // should be used to create instances of this class
+  private HttpUrl(final String httpUrl) {
+    this.httpUrl = httpUrl;
+  }
 
-class PrivateConstructor(type):
-    def __call__(
-        cls: type[T], *args: tuple[Any, ...], **kwargs: dict[str, Any]
-    ):
-        raise TypeError('Constructor is private')
+  // Factory method that returns an optional HttpUrl
+  public static Optional<HttpUrl> create(
+    final HttpScheme scheme,
+    final Host host,
+    final Port port,
+    final Path path,
+    final Query query
+  ) {
+    return OptionalUtils.mapAll(scheme.get(),
+                                host.get(),
+                                port.get(),
+                                path.get(),
+                                query.get(),
+            (schemeValue,
+             hostValue,
+             portValue,
+             pathValue,
+             queryValue) ->
+                    new HttpUrl(schemeValue +
+                                "://" +
+                                hostValue +
+                                ":" +
+                                portValue +
+                                pathValue +
+                                "?" +
+                                queryValue));
+  }
 
-    def _create(
-        cls: type[T], *args: tuple[Any, ...], **kwargs: dict[str, Any]
-    ) -> T:
-        return super().__call__(*args, **kwargs)
-
-
-class HttpUrl(metaclass=PrivateConstructor):
-    def __init__(self, url_string: str):
-        self.__url_string: Final = url_string
-
-    @property
-    def url_string(self) -> str:
-        return self.__url_string
-
-    # Factory method that returns an optional HttpUrl
-    @classmethod
-    def create(
-        cls,
-        scheme: HttpScheme,
-        host: Host,
-        port: Port,
-        path: Path,
-        query: Query
-    ) -> Optional['HttpUrl']:
-        return OptionalUtils.map_all(
-            scheme.get(),
-            host.get(),
-            port.get(),
-            path.get(),
-            query.get(),
-            lambda scheme_val, host_val, port_val, path_val, query_val: cls._create(
-                scheme_val
-                + '://'
-                + host_val
-                + ':'
-                + port_val
-                + path_val
-                + '?'
-                + query_val
-            )
-        )
-
-    class CreateError(Exception):
-        pass
-
-    # Factory method that returns a valid HttpUrl or
-    # raises an error
-    @classmethod
-    def try_create(
-        cls,
-        scheme: HttpScheme,
-        host: Host,
-        port: Port,
-        path: Path,
-        query: Query
-    ) -> 'HttpUrl':
-        try:
-            return cls._create(
-                scheme.try_get()
-                + '://'
-                + host.try_get()
-                + ':'
-                + str(port.try_get())
-                + path.try_get()
-                + '?'
-                + query.try_get()
-            )
-        except AbstractValidatedValue.GetError as error:
-            raise cls.CreateError(error)
-
-
-maybe_http_url = HttpUrl.create(
-    HttpScheme('https'),
-    Host('www.google.com'),
-    Port(443),
-    Path('/query'),
-    Query('search=jee')
-)
-
-# Prints https://www.google.com:443/query?search=jee
-print(maybe_http_url.try_get().url_string)
-
-# Raises an error: Invalid Port
-http_url2 = HttpUrl.try_create(
-    HttpScheme('https'),
-    Host('www.google.com'),
-    Port(443222),
-    Path('/query'),
-    Query('search=jee')
-)
+  // Factory method that returns a valid HttpUrl or
+  // throws an error
+  public static HttpUrl tryCreate(
+    final HttpScheme scheme,
+    final Host host,
+    final Port port,
+    final Path path,
+    final Query query
+  ) {
+    try {
+      return new HttpUrl(scheme.tryGet() +
+                          "://" +
+                          host.tryGet() +
+                          ":" +
+                          port.tryGet() +
+                          path.tryGet() +
+                          "?" +
+                          query.tryGet());
+    } catch (final ValidatedValueGetError error) {
+      throw new HttpUrlCreateError(error);
+    }
+  }
+}
 ```
 
 Notice how we did not hardcode the URL validation inside the `HttpUrl` class, but we created
 small validated value classes: `HttpScheme`, `Host`, `Port`, `Path`, and `Query`. These classes can be further utilized
-in other parts of the codebase if needed and can even be put into a shared validation library for broader usage.
+in other parts of the codebase if needed and can even be put into a common validation library for broader usage.
 
-An application typically receives unvalidated input data from the following external sources:
+For TypeScript, I have created a library called _validated-types_ for easily creating and using semantically validated types.
+The library is available at [https://github.com/pksilen/validated-types](https://github.com/pksilen/validated-types).
+The library's idea is to validate data when the data is received from the input. You can then pass already
+validated, strongly typed data to the rest of the functions in your software component.
+
+An application typically receives unvalidated input data from external sources in the following ways:
 
 - Reading command line arguments
 - Reading environment variables
@@ -9954,6 +9905,135 @@ An application typically receives unvalidated input data from the following exte
 
 Make sure that you validate any data received from the sources mentioned above. Use a ready-made validation library or
 create your own validation logic if needed. Validate the input immediately after receiving it from an untrustworthy source and only pass valid values to other functions in the codebase. In this way, other functions in the codebase can trust the input they receive, and they don't have to validate it again. If you pass unvalidated data freely around in your application, you may need to implement validation logic in every function, which is unreasonable.
+
+Below is an example of using the *validated-types* library to create a validated integer type that allows values between 1 and 10.
+The `VInt` generic type takes a type argument of string type, which defines the allowed value range in the following format:
+`<min-value>,<max-value>`
+
+```ts
+import { VInt } from 'validated-types';
+
+function useInt(int: VInt<'1,10'>) {
+  // The wrapped integer value can be accessed
+  // through the 'value' property
+  console.log(int.value);
+}
+
+const int: VInt<'1,10'> = VInt.tryCreate('1,10', 5);
+useInt(int); // prints to console: 5
+
+// Returns null, because 12 is not between 1 and 10
+const maybeInt: VInt<'1,10'> | null = VInt.create('1,10', 12);
+
+// Prints to console: 10
+useInt(maybeInt ?? VInt.tryCreate('1,10', 10));
+
+// Throws, because 500 is not between 1 and 10
+const int2: VInt<'1,10'> = VInt.tryCreate('1,10', 500);
+```
+
+The below example defines a `Url` type which contains six validations that validate a string matching the following criteria:
+
+- is at least one character long
+- is at most 1024 characters long
+- is a lowercase string
+- is a valid URL
+- URL starts with 'https'
+- URL ends with '.html'
+
+```ts
+import { SpecOf, VString } from 'validated-types';
+
+// First element in the VString type parameter array validates
+// a lowercase string between 1-1024 characters long
+
+// Second element in the VString type parameter array validates
+// an URL
+
+// Third element in the VString type parameter array validates
+// a string that starts with "https"
+
+// Fourth element in the VString type parameter array validates
+// a string that ends with ".html"
+
+type Url = VString<['1,1024,lowercase',
+                    'url',
+                    'startsWith,https',
+                    'endsWith,.html']>;
+
+const urlVSpec: VSpecOf<Url> = ['1,1024,lowercase',
+                                'url',
+                                'startsWith,https',
+                                'endsWith,.html'];
+
+function useUrl(url: Url) {
+  console.log(url.value);
+}
+
+const url: Url = VString.tryCreate(
+  urlVSpec,
+  'https://server.domain.com:8080/index.html'
+);
+
+// Prints to console: https://server.domain.com:8080/index.html
+useUrl(url);
+
+// 'maybeUrl' will be null
+const maybeUrl: Url | null = VString.create(urlVSpec,
+                                            'invalid URL');
+
+const defaultUrl: Url = VString.tryCreate(
+  urlVSpec,
+  'https://default.domain.com:8080/index.html'
+);
+
+// Prints to console: https://default.domain.com:8080/index.html
+useUrl(maybeUrl ?? defaultUrl);
+```
+
+If you don't need validation but would like to create a semantic type, you can
+use the `SemType` class from the _validated-types_ library:
+
+```ts
+import { SemType } from 'validated-types';
+
+// Defines a semantic boolean type with name 'isRecursiveCall'
+type IsRecursiveCall = SemType<boolean, 'isRecursiveCall'>
+
+// Defines a semantic boolean type with name 'isInternalCall'
+type IsInternalCall = SemType<boolean, 'isInternalCall'>;
+
+function myFunc(isRecursiveCall: IsRecursiveCall,
+                isInternalCall: IsInternalCall) {
+  // The value of a semantic type variable
+  // can be obtained from the 'value' property
+  console.log(isRecursiveCall.value);
+  console.log(isInternalCall.value);
+}
+
+const isRecursiveCall = false;
+const isInternalCall = true;
+
+// This will succeed
+myFunc(new SemType({ isRecursiveCall }),
+       new SemType({ isInternalCall }));
+
+// All the below myFunc calls will fail during
+// the compilation
+myFunc(new SemType({ isInternalCall }),
+       new SemType({ isRecursiveCall }));
+
+myFunc(true, true);
+
+myFunc(new SemType('isSomethingElse', true),
+       new SemType('isInternalCall', true));
+
+myFunc(new SemType('isRecursiveCall', false),
+       new SemType('isSomethingElse', true));
+
+myFunc(new SemType('isSomethingElse', true),
+       new SemType('isSomethingElse', true));
+```
 
 ## Dependency Injection (DI) Principle
 

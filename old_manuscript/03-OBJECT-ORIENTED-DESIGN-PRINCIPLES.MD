@@ -8377,7 +8377,10 @@ An application typically receives unvalidated input data from external sources i
 - Reading data from a socket (network input)
 - Receiving input from a user interface (UI)
 
-Below is an example of using the _validated-types_ library to create a validated integer type that allows values between 1 and 10.
+Make sure that you validate any data received from the sources mentioned above. Use a ready-made validation library or
+create your own validation logic if needed. Validate the input immediately after receiving it from an untrustworthy source and only pass valid values to other functions in the codebase. In this way, other functions in the codebase can trust the input they receive, and they don't have to validate it again. If you pass unvalidated data freely around in your application, you may need to implement validation logic in every function, which is unreasonable.
+
+Below is an example of using the [validated-types](https://github.com/pksilen/validated-types) library to create a validated integer type that allows values between 1 and 10.
 The `VInt` generic type takes a type argument of string type, which defines the allowed value range in the following format:
 `<min-value>,<max-value>`
 
