@@ -9000,68 +9000,70 @@ method behavior in the two subclasses.
 
 > ***The memento pattern can be used to save the internal state of an object to another object called the *memento* object.***
 
-Let's have an example with a `TextEditor` class. First, we define a `TextEditorState` protocol and its implementation.
-Then, we define a `TextEditorStateMemento` class for storing a memento of the text editor's state.
-
-```python
-from typing import Protocol
+Let's have a Java example with a `TextEditor` class. First, we define a `TextEditorState` interface and its implementation.
+Then we define a `TextEditorStateMemento` class for storing a memento of the text editor's state.
 
 
-class TextEditorState(Protocol):
-    def clone(self) -> 'TextEditorState':
-        pass
+```java
+public interface TextEditorState {
+  TextEditorState clone();
+}
 
 
-class TextEditorStateImpl(TextEditorState):
-    # Implement text editor state here ...
+public class TextEditorStateImpl implements TextEditorState {
+  // Implement text editor state here
+}
 
 
-class TextEditorStateMemento:
-    def __init__(self, state: TextEditorState):
-        self.__state = state.clone()
+public class TextEditorStateMemento {
+  private final TextEditorState state;
 
-    @property
-    def state(self) -> TextEditorState:
-        return self.__state
+  public TextEditorStateMemento(final TextEditorState state) {
+    this.state = state.clone();
+  }
+
+  public TextEditorState getState() {
+    return state;
+  }
+}
 ```
 
 The `TextEditor` class stores mementos of the text editor's state. It provides methods
 to save a state, restore a state, or restore the previous state:
 
-```python
-from typing import Final
+{title: "TextEditor.java"}
+```java
+class TextEditor {
+  private final List<TextEditorStateMemento> stateMementos =
+    new ArrayList<>(20);
 
-from TextEditorStateImpl import TextEditorStateImpl
-from TextEditorStateMemento import TextEditorStateMemento
+  private TextEditorState currentState;
+  private int currentVersion = 1;
 
+  public void saveState() {
+    stateMementos.add(new TextEditorStateMemento(currentState));
+    currentVersion += 1;
+  }
 
-class TextEditor:
-    def __init__(self):
-        self.__state_mementos: Final[list[TextEditorStateMemento]] = []
-        self.__current_state = TextEditorStateImpl(...)
-        self.__current_version = 1
+  public void restoreState(final int version) {
+    if (version >= 1 && version <= stateMementos.size()) {
+      currentState = stateMementos.get(version - 1).getState();
+      currentVersion += 1;
+    }
+  }
 
-    def save_state(self) -> None:
-        self.__state_mementos.append(
-            TextEditorStateMemento(self.__current_state)
-        )
-
-        self.__current_version += 1
-
-    def restore_state(self, version: int) -> None:
-        if 1 <= version <= len(self.__state_mementos):
-            self.__current_state = self.__state_mementos[version - 1].state
-            self.__current_version += 1
-
-    def restore_previous_state(self) -> None:
-        if self.__current_version > 1:
-            self.restore_state(self.__current_version - 1)
+  public void restorePreviousState() {
+    if (currentVersion > 1) {
+      restoreState(currentVersion - 1);
+    }
+  }
+}
 ```
 
 In the above example, we can add a memento
-for the text editor's state by calling the `save_state` method. We can recall the previous version
-of the text editor's state using the `restore_previous_state` method and any version of the text editor's state
-using the `restore_state` method.
+for the text editor's state by calling the `saveState` method. We can recall the previous version
+of the text editor's state with the `restorePreviousState` method, and we can recall any version of the text editor's state
+using the `restoreState` method.
 
 #### Visitor Pattern
 
@@ -9070,248 +9072,257 @@ using the `restore_state` method.
 
 First, let's have an example with classes that we can modify:
 
-```python
-from typing import Final, Protocol
+<div class="sourceCodeWithoutLabel">
 
-
-class Shape(Protocol):
-    def draw(self) -> None:
-        pass
-
-
-class CircleShape(Shape):
-    def __init__(self, radius: int):
-        self.__radius: Final = radius
-
-    def draw(self) -> None:
-        # Draw circle ...
-
-    @property
-    def radius(self) -> int:
-        return self.__radius
-
-
-class RectangleShape(Shape):
-    def __init__(self, width: int, height: int):
-        self.__width: Final = width
-        self.__height: Final = height
-
-    def draw(self) -> None:
-        # Draw rectangle ...
-
-    @property
-    def width(self) -> int:
-        return self.__width
-
-    @property
-    def height(self) -> int:
-        return self.__height
 ```
+public interface Shape {
+  void draw();
+}
+
+public class CircleShape implements Shape {
+  private final int radius;
+
+  // ...
+
+  public void draw() {
+    // ...
+  }
+
+  public int getRadius() {
+    return radius;
+  }
+}
+
+public class RectangleShape implements Shape {
+  private final int width;
+  private final int height;
+
+  // ...
+
+  public void draw() {
+    // ...
+  }
+
+  public int getWidth() {
+    return width;
+  }
+
+  public int getHeight() {
+    return height;
+  }
+}
+```
+</div>
 
 Let's assume we need to calculate the total area of shapes in a drawing. Currently, we are in a situation where
-we can modify the shape classes, so let's add `calculate_area` methods to the classes:
+we can modify the shape classes, so let's add `calculateArea` methods to the classes:
 
-```python
-import math
-from typing import Protocol
+<div class="sourceCodeWithoutLabel">
 
-
-class Shape(Protocol):
-    # ...
-
-    def calculate_area(self) -> float:
-        pass
-
-
-class CircleShape(Shape):
-    # ...
-
-    def calculate_area(self) -> float:
-        return math.pi * self.__radius**2
-
-
-class RectangleShape(Shape):
-    # ...
-
-    def calculate_area(self) -> float:
-        return self.__width * self.__height
 ```
+public interface Shape {
+  // ...
 
-Adding a new method to an existing class may be against the *open-closed principle*.
-In the above case, adding the `calculate_area` methods
-is safe because the shape classes are immutable. And even if they were not, adding the `calculate_area` methods would be safe because
-they are read-only, i.e., they don't modify the object's state. Also, we don't have to worry about thread safety if we agree that our example application is not multithreaded.
+  double calculateArea();
+}
 
-Now that we have the area calculation methods added, we can use a common algorithm to calculate the total area of shapes
+public class CircleShape implements Shape {
+  // ...
+
+  public double calculateArea() {
+    return Math.PI * radius * radius;
+  }
+}
+
+class RectangleShape implements Shape {
+  // ...
+
+  public double calculateArea() {
+    return width * height;
+  }
+}
+```
+</div>
+
+Adding a new method to an existing class may be against the _open-closed principle_.
+In the above case, adding the `calculateArea` methods
+is safe because the shape classes are immutable. And even if they were not, adding the `calculateArea` methods would be safe because
+they are read-only methods, i.e., they don't modify the object's state, and we don't have to worry about thread safety because
+we can agree that our example application is not multithreaded.
+
+Now we have the area calculation methods added, and we can use a common algorithm to calculate the total area of shapes
 in a drawing:
 
-```python
-from functools import reduce
+<div class="sourceCodeWithoutLabel">
 
-shapes = [CircleShape(1), RectangleShape(2, 2)]
-
-total_shapes_area = reduce(
-    lambda accum_shapes_area, shape: accum_shapes_area + shape.calculate_area(),
-    shapes,
-    0.0
-)
-
-print(total_shapes_area) # Prints 7.141592653589793
 ```
+final var totalAreaOfShapes = drawing
+  .getShapes()
+  .stream()
+  .reduce(0.0, (subTotalArea, shape) ->
+     subTotalArea + shape.calculateArea(), Double::sum);
+```
+</div>
 
 But what if the shape classes, without the area calculation capability, were in a 3rd party library that we cannot modify?
 We would have to do something like this:
 
-```python
-import math
-from functools import reduce
+<div class="sourceCodeWithoutLabel">
 
-def shapes_area(accum_shapes_area: float, shape: Shape) -> float:
-    if isinstance(shape, CircleShape):
-        shape_area = math.pi * shape.radius**2
-    elif isinstance (shape, RectangleShape):
-        shape_area = shape.width * shape.height
-    else:
-        raise ValueError('Invalid shape')
-
-    return accum_shapes_area + shape_area
-
-
-total_shapes_area = reduce(
-    shapes_area,
-    shapes,
-    0.0
-)
 ```
+final var totalAreaOfShapes = drawing
+  .getShapes()
+  .stream()
+  .reduce(0.0, (subTotalArea, shape) -> {
+    double shapeArea;
+
+    if (shape instanceof CircleShape) {
+      shapeArea = Math.PI *
+                  Math.pow(((CircleShape)shape).getRadius(), 2);
+    } else if (shape instanceof RectangleShape){
+      shapeArea = ((RectangleShape)shape).getWidth() *
+                  ((RectangleShape)shape).getHeight();
+    }
+    else {
+      throw new IllegalArgumentException("Invalid shape");
+    }
+
+    return subTotalArea + shapeArea;
+  }, Double::sum);
+```
+</div>
 
 The above solution is complicated and needs updating every time a new type of shape is introduced.
-The above example does not follow object-oriented design principles: it contains an if/elif structure with `isinstance` checks, called the *chain of instanceof checks* code smell.
+The above example does not follow object-oriented design principles: it contains an if/else-if structure with `instanceof` checks.
 
-We can use the visitor pattern to replace the above conditionals with polymorphism. First, we introduce a visitor protocol that can be used to provide
-additional behavior to the shape classes. Then, we introduce an `execute` method in the `Shape` protocol. In the shape classes,
-we implement the `execute` methods so that additional behavior provided by a concrete visitor can be executed:
+We can use the visitor pattern to replace the above conditionals with polymorphism. First, we introduce a visitor interface that can be used to provide
+additional behavior to the shape classes. Then we introduce an `execute` method in the `Shape` interface. And in the shape classes, we implement the `execute` methods so that additional
+behavior provided by a concrete visitor can be executed:
 
-```python
-from typing import Any, Final, Protocol
+<div class="sourceCodeWithoutLabel">
 
+```
+// This is our visitor interface that
+// provides additional behaviour to the shape classes
+public interface ShapeBehavior {
+  Object executeForCircle(final CircleShape circle);
+  Object executeForRectangle(final RectangleShape rectangle);
 
-# This is our visitor protocol that
-# provides additional behaviour to the shape classes
-class ShapeBehavior(Protocol):
-    def execute_for_circle(self, circle: 'CircleShape') -> Any:
-        pass
+  // Add methods for possible other shape classes here...
+}
 
-    def execute_for_rectangle(self, rectangle: 'RectangleShape') -> Any:
-        pass
+public interface Shape {
+  // ...
 
-    # Add methods for possible other shape classes here ...
+  Object execute(final ShapeBehavior behavior);
+}
 
+public class CircleShape implements Shape {
+  public Object execute(final ShapeBehavior behavior) {
+    return behavior.executeForCircle(this);
+  }
+}
 
-class Shape(Protocol):
-    # ...
-
-    def execute(self, behavior: ShapeBehavior) -> Any:
-        pass
-
-
-class CircleShape(Shape):
-    def __init__(self, radius: int):
-        self.__radius: Final = radius
-
-    @property
-    def radius(self) -> int:
-        return self.__radius
-
-    def execute(self, behavior: ShapeBehavior) -> Any:
-        return behavior.execute_for_circle(self)
-
-
-class RectangleShape(Shape):
-    def __init__(self, width: int, height: int):
-        self.__width: Final = width
-        self.__height: Final = height
-
-    @property
-    def width(self) -> int:
-        return self.__width
-
-    @property
-    def height(self) -> int:
-        return self.__height
-
-    def execute(self, behavior: ShapeBehavior) -> Any:
-        return behavior.execute_for_rectangle(self)
+public class RectangleShape implements Shape {
+  public Object execute(final ShapeBehavior behavior) {
+    return behavior.executeForRectangle(this);
+  }
+}
 ```
 
-Suppose our application is multithreaded and the shape classes were mutable and made thread-safe. We would have to define the `execute` methods with appropriate
+</div>
+
+Suppose that the shape classes were mutable and made thread-safe. We would have to define the `execute` methods with appropriate
 synchronization to make them also thread-safe:
 
-```python
-from threading import Lock
+<div class="sourceCodeWithoutLabel">
 
-
-class CircleShape(Shape):
-    # Constructor that initializes
-    # self.__lock = Lock()
-
-    def execute(self, behavior: ShapeBehaviour) -> Any:
-        with self.__lock:
-            return behavior.execute_for_circle(self)
-
-    # Rest of methods ...
-
-
-class RectangleShape(Shape):
-    # Constructor that initializes
-    # self.__lock = Lock()
-
-    def execute(self, behavior: ShapeBehaviour) -> Any:
-        with self.__lock:
-            return behavior.execute_for_rectangle(self)
-
-    # Rest of methods ...
 ```
+public class CircleShape implements Shape {
+  public synchronized Object execute(
+    final ShapeBehavior behavior
+  ) {
+    return behavior.executeForCircle(this);
+  }
+}
+
+public class RectangleShape implements Shape {
+  public synchronized Object execute(
+    final ShapeBehavior behavior
+  ) {
+    return behavior.executeForRectangle(this);
+  }
+}
+```
+
+</div>
 
 Let's implement a concrete visitor for calculating areas of different shapes:
 
-```python
-class AreaCalculationShapeBehavior(ShapeBehavior):
-    def execute_for_circle(self, circle: CircleShape) -> Any:
-        return math.pi * circle.radius**2
+<div class="sourceCodeWithoutLabel">
 
-    def execute_for_rectangle(self, rectangle: RectangleShape) -> Any:
-        return rectangle.width * rectangle.height
 ```
+public class AreaCalculationShapeBehavior implements
+               ShapeBehavior {
+  public Object executeForCircle(final CircleShape circle) {
+    return (Double)(Math.PI *
+                    Math.pow(circle.getRadius(), 2));
+  }
 
-Now, we can implement the calculation of shapes' total area by using a common algorithm, and we get rid of the
-conditionals. Below, we execute the `area_calculation` behavior for each shape.
-
-```python
-shapes = [CircleShape(1), RectangleShape(2, 2)]
-area_calculation = AreaCalculationShapeBehavior()
-
-total_shapes_area = reduce(
-    lambda accum_shapes_area, shape:
-        accum_shapes_area + shape.execute(area_calculation),
-    shapes,
-    0.0
-)
+  public Object executeForRectangle(
+    final RectangleShape rectangle
+  ) {
+    return (Double)(double)(rectangle.getWidth() *
+                            rectangle.getHeight());
+  }
+}
 ```
+</div>
+
+Now we can implement the calculation of shapes' total area using a common algorithm, and we get rid of the
+conditionals. We execute the `areaCalculation` behavior for each shape and convert the result of behavior execution
+to `Double`. Methods in a visitor usually return some common type like `Object`. This enables various
+operations to be performed. After executing a visitor, the return value should be cast to the right type.
+
+<div class="sourceCodeWithoutLabel">
+
+```
+final var areaCalculation = new AreaCalculationShapeBehavior();
+
+final var totalAreaOfShapes = drawing
+  .getShapes()
+  .stream()
+  .reduce(0.0, (subTotalArea, shape) ->
+    subTotalArea + (Double)shape.execute(areaCalculation),
+      Double::sum);
+```
+</div>
 
 You can add more behavior to the shape classes by defining a new visitor. Let's define a
 `PerimeterCalculationShapeBehaviour` class:
 
-```python
-class PerimeterCalculationShapeBehavior(ShapeBehavior):
-    def execute_for_circle(self, circle: CircleShape) -> Any:
-        return 2 * math.pi * circle.radius
+<div class="sourceCodeWithoutLabel">
 
-    def execute_for_rectangle(self, rectangle: RectangleShape) -> Any:
-        return 2 * rectangle.width + 2 * rectangle.height
 ```
+public class PerimeterCalculationShapeBehavior
+               implements ShapeBehavior {
+  public Object executeForCircle(final CircleShape circle) {
+    return (Double)(2 * Math.PI * circle.getRadius());
+  }
 
-Notice that we did not need to use the *visitor* term in our code examples. Adding the design pattern name to the names of
-software entities (class/function names, etc.) often does not bring any real benefit but makes the names longer. However, there are some design patterns, like the *factory pattern* and *builder pattern* where you always use the design pattern name in a class name.
+  public Object executeForRectangle(
+    final RectangleShape rectangle
+  ) {
+    return (Double)(double)(2 * rectangle.getWidth() +
+                            2 * rectangle.getHeight());
+  }
+}
+```
+</div>
+
+Notice that we did not need to use the _visitor_ term in our code examples. Adding the design pattern name to the names of
+software entities (class/function names, etc.) often does not bring any real benefit but makes the names longer. However, there are some design patterns,
+like the _factory pattern_ and _builder pattern_ where you always use the design pattern name in a class name.
 
 If you develop a third-party library and want the behavior of its classes to be extended by its users, you should make your library classes accept visitors who can perform additional behavior. Using the visitor pattern allows to add behavior to existing classes without modifying them, i.e., in accordance with the open-closed principle. However, there is one drawback to using the visitor pattern. You must create getters and setters for class attributes to allow visitors to add behavior. Adding getters and setters breaks the class encapsulation, as was discussed earlier in this chapter.
 
