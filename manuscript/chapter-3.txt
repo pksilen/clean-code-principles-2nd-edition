@@ -4324,13 +4324,14 @@ When choosing the right 3rd party component, you should take the following into 
 
 ## Use Appropriate Data Structure Principle
 
-Next, the main built-in Python data structures with their use cases will be presented.
+Next, the main built-in data structures with their use cases will be presented.
 
 ### List
 
 > *Use a list when you need an ordered collection or should be able to store the same item multiple times.*
 
-The implementation of a Python list is similar to C++'s `std::vector` or the `ArrayList` class in Java. Lists are mutable
+C++ has the `std::vector` class and Java has the `ArrayList` class. Java has also a `Vector` class, but it is advised
+to use `ArrayList` unless you need synchronization (vectors are synchronized). Lists are mutable
 and can contain duplicate elements. Each element can be accessed by its index in a performant way. If you need to add or remove
 elements at the beginning of the list, that is not a cheap operation because all existing elements in the list must be
 moved by one index to the right or left. Similarly, if you add an element to the end of a list and the allocated space for
@@ -4363,29 +4364,8 @@ duplicates from it, you can convert the list into a set: `set(my_list)`. Python 
 
 > *Use a string to store an immutable ordered collection of characters.*
 
-In Python, strings are lists of Unicode characters. Strings are always immutable. Accessing a character by its index is
+In JavaScript and Java, strings are immutable. In C++, you can mutate a `std::string`. Accessing a character by its index is
 always a cheap operation O(1).
-
-### Bytearray
-
-> *Use a byte array to store an ordered collection of values between 0 and 256.*
-
-A byte array is created with the `bytearray` constructor. Accessing a byte by its index is always a cheap operation O(1).
-Here are two examples of creating a byte array: `bytearray((255, 50, 20)` or `bytearray(b'\xFF\x32\x14')`.
-
-### Counter
-
-> *Use a counter to store counts for various elements.*
-
-A counter is a dictionary where elements are stored as keys, and their counts are stored as values. Counter objects
-differ from traditional dictionary objects when a value for a missing key is requested, value zero is returned instead
-of a `KeyError`.
-
-### OrderedDict
-
-> *Use the `OrderedDict` class if the dictionary needs to remember the insertion order of entries.*
-
-When you iterate over an `OrderedDict` object, you get the entries in the insertion order.
 
 ### Deque (Double Ended Queue)
 
