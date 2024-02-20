@@ -4363,7 +4363,7 @@ but you can use fixed size arrays. In C++, you can use `std::pair` and `std::tup
 Accessing a set by a value is cheap when the set is implemented as a hash table. On the contrary, if you have a list,
 the whole list may need to be gone through to find a specific value. If you have a list and want to remove
 duplicates from it, you can convert the list into a set. You can do that with the `HashSet` constructor in Java or
-with the `Set` constructor in JavaScript.
+with the `Set` constructor in JavaScript. The `unordered_set` and `ordered_set` classes provide set functionality in C++.
 
 ### String
 
