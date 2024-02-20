@@ -4330,35 +4330,40 @@ Next, the main built-in data structures with their use cases will be presented.
 
 > *Use a list when you need an ordered collection or should be able to store the same item multiple times.*
 
-C++ has the `std::vector` class and Java has the `ArrayList` class. Java has also a `Vector` class, but it is advised
+To implement lists, JavaScript has arrays, C++ has the `std::vector` class and Java has the `ArrayList` class.
+Java has also a `Vector` class, but it is advised
 to use `ArrayList` unless you need synchronization (vectors are synchronized). Lists are mutable
 and can contain duplicate elements. Each element can be accessed by its index in a performant way. If you need to add or remove
 elements at the beginning of the list, that is not a cheap operation because all existing elements in the list must be
 moved by one index to the right or left. Similarly, if you add an element to the end of a list and the allocated space for
 the list is full, new space for the list must be allocated, and the list elements must be copied to the newly allocated space.
 
-### Dictionary
+### Map
 
-> *Use a dictionary when you need quick access to a value by a key.*
+> *Use a map when you need quick access to a value by a key.*
 
-Python dictionary is similar to a `HashMap` in Java. Accessing a value by its key is always a cheap operation.
-You can iterate over a dictionary using one of the following methods: `keys()`, `values()`, or `items()`. Combining two
-dictionaries is easy with the unpacking operator (`{**dict1, **dict2}`) or with the merge operator (`dict1 | dict2`).
+To implement maps, you can use a plain object or the `Map` class in JavaScript, `HashMap` in Java and `std::ordered_map` or `std::unordered_map` in C++.
+Accessing a value by its key is always a cheap operation. In Java, you can use an `EnumMap`, if the map keys are of an enumerated type.
+For a synchronized map in Java, you can use `ConcurrentHashMap`.
+You can iterate over a JavaScript object using one of the following methods: `keys()`, `values()`, or `entries()`.
+You can iterate over a Java `Map` using one of the following methods: `keySet()`, `values()` or `entrySet()`.
 
 ### Tuple
 
-> *Use a tuple instead of a list when you need an immutable ordered collection.*
+> *Use a tuple for a fixed size ordered collection.*
 
-In a tuple, each element can be accessed by its index in a performant way. Like a list, a tuple can contain various
-type of elements and the same element multiple times.
+In a tuple, each element can be accessed by its index in a performant way. In TypeScript, you don't have tuples separately,
+but you can use fixed size arrays. In C++, you can use `std::pair` and `std::tuple`. In Java, you must use a library, like
+[javatuples](https://www.javatuples.org/index.html).
 
 ### Set
 
 > *Use a set when you don't need an ordered collection, and duplicate elements are not allowed.*
 
-Accessing a set by a value is cheap because Python sets are implemented as hash tables. On the contrary, if you have a list, the whole list may need to be gone through
-to find a specific value. If you have a list and want to remove
-duplicates from it, you can convert the list into a set: `set(my_list)`. Python also offers frozen sets with the `frozenset` constructor. These sets are immutable.
+Accessing a set by a value is cheap when the set is implemented as a hash table. On the contrary, if you have a list,
+the whole list may need to be gone through to find a specific value. If you have a list and want to remove
+duplicates from it, you can convert the list into a set. You can do that with the `HashSet` constructor in Java or
+with the `Set` constructor in JavaScript.
 
 ### String
 
@@ -4374,10 +4379,6 @@ always a cheap operation O(1).
 Adding and removing elements at the ends of a deque are cheap (O(1))
 operations because the deque is implemented as a doubly linked list. The drawback of the deque is that randomly
 accessing an element at a specific index is slow (O(n)).
-
-### Customized Built-In Collections
-
-> *If you need to customize the behavior of a built-in list, string, or dictionary, make your custom class extend one of the following classes: `UserList`, `UserString`, or `UserDict`.*
 
 ### Stack (LIFO Queue)
 
