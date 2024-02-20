@@ -4385,17 +4385,17 @@ C++ and the `ArrayDeque` class in Java.
 
 > *A stack can be implemented using a deque.*
 
-You can push an element into the stack with the deque's `append` method and pop an element out of the stack with the deque's `pop` method.
+You can push an element into the stack with the deque's push back method and pop an element out of the stack with the deque's pop back method.
 You can also implement a stack using a list, but operations can be slower sometimes, especially if the stack is large.
-When you implement a stack using a list, you use the `append` and `pop` methods like with a deque.
+C++ has a `std::stack` class that by default utilizes `std::deque` as the implementation of a stack. Java has also a `Stack` class,
+but that should not be used, but you should use the `ArrayDeque` class to implement a stack.
 
 ### Queue (FIFO Queue)
 
 > *A queue can be implemented using a deque.*
 
-You can add an element to a queue with the deque's `append` method and pop an element from the queue with the deque's `popleft` method.
+You can add an element to a queue with the deque's push back method and pop an element from the queue with the deque's pop front method.
 You can also implement a queue using a list, but operations can be slower sometimes, especially if the queue is large.
-When you implement a queue using a list, you use the `append` and `pop(0)` methods.
 
 ### Priority Queue
 
