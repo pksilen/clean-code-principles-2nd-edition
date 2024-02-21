@@ -4396,6 +4396,9 @@ but that should not be used, but you should use the `ArrayDeque` class to implem
 
 You can add an element to a queue with the deque's push back method and pop an element from the queue with the deque's pop front method.
 You can also implement a queue using a list, but operations can be slower sometimes, especially if the queue is large.
+C++ has a `std::queue` class that by default utilizes `std::deque` as the implementation of a queue. In Java, you can use
+`ArrayDeque` or a `LinkedList` to implement a queue. Java also provides concurrent blocking queues, like `ArrayBlockingQueue` that
+is useful to implement multithreaded applications with one or more producer and consumer threads.
 
 ### Priority Queue
 
