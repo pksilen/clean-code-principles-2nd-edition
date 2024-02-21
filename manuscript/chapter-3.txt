@@ -4428,11 +4428,14 @@ The following optimization patterns are described in this section:
 - Optimize busy loops only pattern
 - Remove unnecessary functionality pattern
 - Object pool pattern
-- Use optimal data structures pattern
 - Algorithm complexity reduction pattern
 - Cache function results pattern
 - Buffer file I/O pattern
 - Share identical objects, a.k.a flyweight pattern
+- Copy memory in chunks pattern (C++)
+- Replace virtual methods with non-virtual methods pattern (C++)
+- Inline methods pattern (C++)
+- Use unique pointer pattern (C++)
 
 #### Optimize Busy Loops Only Pattern
 
@@ -4480,14 +4483,10 @@ could be discarded. This would cause many objects to be made available for garba
 a short time. Garbage collection takes processor time, and if the garbage collector has a lot of garbage to collect,
 it can slow the application down for an unknown duration at unknown intervals.
 
-#### Use Optimal Data Structures Pattern
-
-If you are performing number crunching in your application, do not use the regular Python data structures, but
-find a suitable library, like [numpy](https://numpy.org/), that contains optimized data structures for a particular use case.
-
 #### Algorithm Complexity Reduction Pattern
 
-Choose an algorithm with reduced complexity as measured using the [Big-O notation](https://en.wikipedia.org/wiki/Big_O_notation). This usually boosts the performance. In the below example, we are using the find algorithm with a list:
+Choose an algorithm with reduced complexity as measured using the [Big-O notation](https://en.wikipedia.org/wiki/Big_O_notation). This usually boosts the performance.
+In the below Python example, we are using the find algorithm with a list:
 
 ```python
 values = [1, 2, 3, 4, 5, ..., 2000]
@@ -4495,7 +4494,7 @@ if 2000 in values:
     print("Value 2000 found")
 ```
 
-The above algorithm must traverse the list, which makes it slower compared to the find algorithm with a set:
+The above algorithm must traverse the list, which makes it slower (O(n)) compared to the find algorithm with a set (O(1)):
 
 ```python
 values = {1, 2, 3, 4, 5, ..., 2000}
@@ -4522,7 +4521,8 @@ the `values` anywhere an iterator is expected.
 
 #### Cache Function Results Pattern
 
-You can benefit from caching the function results if you have an expensive pure function that always returns the same result for the same input without any side effects. You can cache function results using the `@cache` or `@lru_cache` decorator. Here is an example:
+You can benefit from caching the function results if you have an expensive pure function that always returns the same result
+for the same input without any side effects. In Python, you can cache function results using the `@cache` or `@lru_cache` decorator. Here is an example:
 
 ```python
 from functools import lru_cache
@@ -4543,10 +4543,11 @@ print(make_expensive_calc(1))
 ```
 
 `@cache` is the same as `@lru_cache(maxsize=None)`, i.e., the cache does not have a maximum size limit.
+With a relative ease, you can implement a caching decorator in JavaScript/TypeScript.
 
 #### Buffer File I/O Pattern
 
-You can benefit from setting custom buffer sizes if you are reading/writing large files. The below examples set buffer sizes to 1MB:
+You can benefit from setting custom buffer sizes if you are reading/writing large files. The below Pyton examples set buffer sizes to 1MB:
 
 ```python
 with open('data.json', 'r', buffering=1_048_576) as data_file:
@@ -4564,3 +4565,42 @@ common properties to a new class and make the original objects reference a share
 new class. Now, your objects share a single common object, and possibly significantly less
 memory is consumed. This design pattern is called the *flyweight pattern* and was described in more detail
 in the earlier chapter.
+
+#### Copy Memory in Chunks Pattern (C++)
+
+If you have a contiguous memory chunk, copy it using
+`memcpy`. Don't copy memory byte by byte in a for-loop. The implementation of the `memcpy` function is optimized by a C++ compiler to produce machine code that optimally copies various sizes of memory chunks.
+Instead of copying a memory chunk byte by byte, it can, for example, copy memory as 64-bit values in a 64-bit operating system.
+
+In the data exporter microservice, there is the possibility that the input message format and output message format
+are the same, e.g., Avro binary. We can have a situation where an Avro record field can be copied as
+such from an input message to an output message without any transformation. In that case, decoding that record field is unnecessary
+functionality, and we can skip that. What we will do instead is copy a chunk of memory. An Avro record field can be relatively large, even 200 bytes consisting of 40 subfields. We can now skip the decoding
+and encoding of those 40 subfields. We simply copy 200 bytes from the input message to the output message.
+
+#### Replace Virtual Methods with Non-Virtual Methods Pattern (C++)
+
+If you are using a lot of calls to virtual functions in a busy loop, there will be some overhead
+in checking which virtual method to call due to dynamic dispatch. In C++, this is done using virtual tables
+(_vtables_) which are used to check which actual method will be called. The additional vtable check can negatively affect performance in busy loops if virtual methods are called frequently. For example, the data exporter microservice's busy can call an Avro binary decoding and encoding function 50000 times a second. We could optimize these calls
+by implementing Avro binary decoding functions as non-virtual (if previously declared as virtual functions).
+Non-virtual functions don't need to check the _vtable_, so the call to the function is direct.
+
+#### Inline Methods Pattern (C++)
+
+Suppose you have made the optimization of making a virtual method non-virtual. One more optimization could still be made if the method is small: inline the method. Inlining a method means that calls to the method are eliminated, and the code of the method is placed at the sites where the
+calls to the method are made. So, the method does not need to be called at all when it has been inlined.
+In the data exporter microservice, we made the Avro binary encoding and decoding functions non-virtual, and now we can make them
+also inlined to speed up the microservice. However, a C++ compiler can decide whether an inline function is really inlined or
+not. We cannot be 100% sure if the function is inlined. It's up to the compiler. When we define a function
+as an inline function with the C++'s `inline` keyword, we are just giving a hint to the compiler that the function
+should be inlined. Only non-virtual methods can be inlined. Virtual methods cannot be inlined because they require
+checking the _vtable_ to decide which method should be called.
+
+#### Use Unique Pointer Pattern (C++)
+
+If you are using shared pointers, they need to keep the reference count to the shared pointer up to date. In a busy loop, if you use a shared pointer, say a hundred thousand times a second, it starts to show
+a difference whether you use a shared pointer or a unique pointer (`std::unique_ptr`). A unique pointer has little to no overhead compared to
+a raw pointer. For this reason, there is no need to use a raw pointer in modern C++. It would not bring much to the table performance-wise. And if you use a raw pointer, you must remember to release the allocated memory associated with the raw pointer by yourself. If you don't need
+a pointed object to be shared by multiple other objects, you can optimize your code in busy loops by changing shared pointers
+to unique pointers. Unique pointers always have only one owner, and multiple objects cannot share them.
