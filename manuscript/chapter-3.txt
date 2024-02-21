@@ -4404,13 +4404,8 @@ is useful to implement multithreaded applications with one or more producer and 
 
 > *Use a priority queue to retrieve elements based on their priority.*
 
-You can implement a priority queue using the `PriorityQueue` class from the `queue` module. That class is also thread-safe.
+In C++, you can use the `std::priority_queue` class and in Java you can use `PriorityQueue` or `PriorityBlockingQueue`.
 
-### Synchronized Queues (LIFO/FIFO)
-
-> *Use a synchronized queue for implementing thread-safe multi-consumer, multi-producer queues.*
-
-Python provides two thread-safe queue implementations in the `queue` module: `Queue` and `LifoQueue`.
 
 ## Optimization Principle
 
