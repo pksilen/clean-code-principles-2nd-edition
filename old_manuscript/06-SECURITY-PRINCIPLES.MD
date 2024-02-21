@@ -779,15 +779,16 @@ import throwException from './throwException';
 
 export default class JwtAuthorizer implements
                        Authorizer {
-  private readonly oidcConfigurationEndpoint: string;
+  private readonly oidcConfigUrl: string;
   private readonly rolesClaimPath: string;
-  private readonly getUserIdBySubjectUrl: string;
+  private readonly getUsersUrl: string;
   private jwksClient: any;
 
   constructor() {
-    this.oidcConfigurationEndpoint =
-     process.env.OIDC_CONFIGURATION_ENDPOINT ??
-      throwException('OIDC_CONFIGURATION_ENDPOINT is not defined');
+    // OpenId Connect configuration endpoint in the IAM system
+    this.oidcConfigUrl =
+     process.env.OIDC_CONFIG_URL ??
+      throwException('OIDC_CONFIG_ENDPOINT is not defined');
       
     // With Keycloak you can use e.g., realm_access.roles
     this.rolesClaimPath = process.env.JWT_ROLES_CLAIM_PATH ??
@@ -795,9 +796,10 @@ export default class JwtAuthorizer implements
     
     // This is the URL where you can fetch the user id for a
     // specific 'sub' claim value in the access token
-    this.getUserIdBySubjectUrl =
-      process.env.GET_USER_ID_BY_SUBJECT_URL ??
-      throwException('GET_USER_ID_BY_SUBJECT_URL is not defined');
+    // For example: http://localhost:8082/user-service/users
+    this.getUsersUrl =
+      process.env.GET_USERS_URL ??
+      throwException('GET_USERS_URL is not defined');
   }
   
   async tryAuthorize(
@@ -807,10 +809,9 @@ export default class JwtAuthorizer implements
   }
   
   // Authorize a user for his/hers own resources only
-  // Note! For some IAM systems other than Keycloak,
-  // you might need to use 'uid'
-  // claim instead of 'sub' to get really unique user id
-  async tryAuthorizeForUserOwnResourcesOnly(
+  // If an entity with given id and user_id combination
+  // is not found, auth error is raised
+  async tryAuthorizeForSelf(
     userId: number,
     request: Request
   ): Promise<void> {
@@ -818,8 +819,7 @@ export default class JwtAuthorizer implements
       await this.tryGetClaims(request.headers.authorization);
 
     const response =
-      await fetch(this.getUserIdBySubjectUrl +
-                  `?sub=${claims.sub}`);
+      await fetch(this.getUserstUrl + `?sub=${claims.sub}&fields=id`);
     
     const userIdObject = await response.json();
 
@@ -849,12 +849,11 @@ export default class JwtAuthorizer implements
   private async tryGetClaims(
     authHeader: string | undefined
   ): Promise<any> {
-    const response = await fetch(this.oidcConfigurationEndpoint);
-    const oidcConfiguration = await response.json();
+    const response = await fetch(this.oidcConfigUrl);
+    const oidcConfig = await response.json();
 
     if (!this.jwksClient) {
-      this.jwksClient =
-        jwks({ jwksUri: oidcConfiguration.jwks_uri });
+      this.jwksClient = jwks({ jwksUri: oidcConfig.jwks_uri });
     }
 
     const jwt = authHeader?.split('Bearer ').pop();

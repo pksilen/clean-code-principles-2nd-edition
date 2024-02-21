@@ -487,159 +487,113 @@ implement authorization is to deny access to resources by default. For example, 
 
 Broken access control is number one in the [OWASP Top 10 for 2021](https://owasp.org/www-project-top-ten/). Remember to
 disallow users to create resources for other users. Also, you must disallow users to view, edit, or delete resources belonging to someone else
-(also known as [Insecure Direct Object Reference (IDOR) prevention](https://cheatsheetseries.owasp.org/cheatsheets/Insecure_Direct_Object_Reference_Prevention_Cheat_Sheet.html)). It is not enough to use universally unique ids (UUIDs) as ids for resources
+(also known as [Insecure Direct Object Reference (IDOR) prevention](https://cheatsheetseries.owasp.org/cheatsheets/Insecure_Direct_Object_Reference_Prevention_Cheat_Sheet.html)).
+It is not enough to use universally unique ids (UUIDs) as ids for resources
 instead of basic integers. This is because if an attacker can obtain a URL for an object with a UUID, he can access the
 object behind the URL because there is no access control in place.
 
-Below is a [JWT](https://jwt.io/)-based authorizer class that can be used in a FastAPI API service. We use the following
-additional libraries in the example: [python-benedict](https://pypi.org/project/python-benedict/) and [pyjwt](https://pyjwt.readthedocs.io/en/latest/index.html). The below example utilizes role-based access control (RBAC), but
+Below is a JWT-based authorizer class that can be used in a backend API service implemented with the Express framework.
+The below example utilizes role-based access control (RBAC), but
 there are more modern alternatives, including attribute-based access control (ABAC) and relationship-based access control (ReBAC).
 More information about those is available in [OWASP Authorization Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html)
 
-```python
-from typing import Protocol
+{title: "JwtAuthorizer.ts"}
+```ts
+import _ from 'lodash';
+import { decode, verify } from 'jsonwebtoken';
+import { fetch } from 'fetch-h2';
+import { Request } from 'express';
+import jwks from 'jwks-rsa';
+import throwException from './throwException';
 
-class Authorizer(Protocol):
-    # ...
-```
+export default class JwtAuthorizer implements
+                       Authorizer {
+  private readonly oidcConfigUrl: string;
+  private readonly rolesClaimPath: string;
+  private readonly getUsersUrl: string;
+  private jwksClient: any;
 
-{title: "jwt_authorizer.py"}
-```python
-import os
-from typing import Any, Final
-from collections.abc import Callable
+  constructor() {
+    // OpenId Connect configuration endpoint in the IAM system
+    this.oidcConfigUrl =
+     process.env.OIDC_CONFIG_URL ??
+      throwException('OIDC_CONFIG_ENDPOINT is not defined');
 
-import requests
-from Authorizer import Authorizer
-from benedict import benedict
-from fastapi import HTTPException, Request
-from jwt import PyJWKClient, PyJWKClientError, decode
-from jwt.exceptions import InvalidTokenError
+    // With Keycloak you can use e.g., realm_access.roles
+    this.rolesClaimPath = process.env.JWT_ROLES_CLAIM_PATH ??
+      throwException('JWT_ROLES_CLAIM_PATH is not defined')
 
+    // This is the URL where you can fetch the user id for a
+    // specific 'sub' claim value in the access token
+    // For example: http://localhost:8082/user-service/users
+    this.getUsersUrl =
+      process.env.GET_USERS_URL ??
+      throwException('GET_USERS_URL is not defined');
+  }
 
-class __JwtAuthorizer(Authorizer):
-    IAM_ERROR: Final = 'IAM error'
+  async tryAuthorize(
+    request: Request
+  ): Promise<void> {
+    await this.tryGetClaims(request.headers.authorization);
+  }
 
-    def __init__(self):
-        # OpenId Connect configuration endpoint in the IAM system
-        self.__oidc_config_url = os.environ['OIDC_CONFIG_URL']
-        self.__jwks_client = None
+  // Authorize a user for his/hers own resources only
+  // If an entity with given id and user_id combination
+  // is not found, auth error is raised
+  async tryAuthorizeForSelf(
+    userId: number,
+    request: Request
+  ): Promise<void> {
+    const claims =
+      await this.tryGetClaims(request.headers.authorization);
 
-        # With Keycloak you can use e.g., realm_access.roles
-        self.__roles_claim_path = os.environ['JWT_ROLES_CLAIM_PATH']
+    const usersResponse =
+      await fetch(this.getUsersUrl + `?sub=${claims.sub}&fields=id`);
 
-        # This is the URL where you can fetch the user id for a
-        # specific 'sub' claim value in the access token
-        # For example: http://localhost:8082/user-service/users
-        self.__get_users_url = os.environ['GET_USERS_URL']
+    const users = await response.json();
 
-    def authorize(self, request: Request) -> None:
-        self.__decode_jwt_claims(request.headers.get('Authorization'))
+    if (userId !== userIdObject.userId) {
+      throw new Error('...');
+    }
+  }
 
-    # Authorize a user to create a resource for self
-    # Checks that the supplied user_id is the same as the user_id
-    # of the user owning the JWT
-    # Note! For some IAM systems other than Keycloak,
-    # you might need to use 'uid'
-    # claim instead of 'sub' to get unique user id
-    def authorize_for_self(
-        self, user_id: int, request: Request
-    ) -> None:
-        jwt_user_id = self.__get_jwt_user_id(request)
-        user_is_authorized = user_id == jwt_user_id
-        if not user_is_authorized:
-            raise HTTPException(status_code=403, detail='Unauthorized')
+  async tryAuthorizeIfUserHasOneOfRoles(
+    allowedRoles: string[],
+    request: Request):
+  Promise<void> {
+    const claims =
+      await this.tryGetClaims(request.headers.authorization);
 
-    # Authorize a user for his/hers own resources only
-    # If an entity with given id and user_id combination
-    # is not found, auth error is raised
-    def authorize_for_user_own_resources_only(
-        self,
-        id: int,
-        get_entity_by_id_and_user_id: Callable[[int, int], Any],
-        request: Request
-    ) -> None:
-        jwt_user_id = self.__get_jwt_user_id(request)
+    const roles = _.get(claims, this.rolesClaimPath);
 
-        try:
-            get_entity_by_id_and_user_id(id, jwt_user_id)
-        except HTTPException as error:
-            if error.status_code == 404:
-                raise HTTPException(status_code=403, detail='Unauthorized')
-            # Log error details
-            raise HTTPException(status_code=500, detail=self.IAM_ERROR)
+    const isAuthorized =
+      allowedRoles.some((allowedRole) =>
+        roles.includes(allowedRole));
 
-    def authorize_if_user_has_one_of_roles(
-        self, allowed_roles: list[str], request: Request
-    ) -> None:
-        claims = self.__decode_jwt_claims(
-            request.headers.get('Authorization')
-        )
+    if (!isAuthorized) {
+      throw new Error('...');
+    }
+  }
 
-        try:
-            roles = benedict(claims)[self.__roles_claim_path]
-        except KeyError as error:
-            # Log error details
-            raise HTTPException(status_code=500, detail=self.IAM_ERROR)
+  private async tryGetClaims(
+    authHeader: string | undefined
+  ): Promise<any> {
+    const oidcConfigResponse = await fetch(this.oidcConfigUrl);
+    const oidcConfig = await oidcCongfigresponse.json();
 
-        user_is_authorized = any(
-            [True for role in roles if role in allowed_roles]
-        )
-        if not user_is_authorized:
-            raise HTTPException(status_code=403, detail='Unauthorized')
+    if (!this.jwksClient) {
+      this.jwksClient = jwks({ jwksUri: oidcConfig.jwks_uri });
+    }
 
-    def __decode_jwt_claims(
-        self, auth_header: str | None
-    ) -> dict[str, Any]:
-        if not auth_header:
-             raise HTTPException(status_code=401, detail='Unauthenticated')
+    const jwt = authHeader?.split('Bearer ').pop();
+    const decodedJwt = decode(jwt ?? '', { complete: true });
+    const kid = decodedJwt?.header?.kid;
+    const signingKey = await this.jwksClient.getSigningKey(kid);
+    return verify(jwt ?? '', signingKey.getPublicKey());
+  }
+}
 
-        try:
-            if not self.__jwks_client:
-                oidc_config_response = requests.get(self.__oidc_config_url)
-                oidc_config_response.raise_for_status()
-                oidc_config = oidc_config_response.json()
-                self.__jwks_client = PyJWKClient(oidc_config['jwks_uri'])
-
-            jwt = auth_header.split('Bearer ')[1]
-            signing_key = self.__jwks_client.get_signing_key_from_jwt(jwt)
-            jwt_claims = decode(jwt, signing_key.key, algorithms=['RS256'])
-        except (
-            requests.RequestException,
-            KeyError,
-            PyJWKClientError
-        ) as error:
-            # Log error details
-            raise HTTPException(status_code=500, detail=self.IAM_ERROR)
-        except (IndexError, InvalidTokenError):
-            raise HTTPException(status_code=403, detail='Unauthorized')
-
-        return jwt_claims
-
-    def __get_jwt_user_id(self, request: Request) -> int:
-        claims = self.__decode_jwt_claims(
-            request.headers.get('Authorization')
-        )
-
-        try:
-            sub_claim = claims['sub']
-            users_response = requests.get(
-                f'{self.__get_users_url}?sub={sub_claim}&fields=id'
-            )
-            users_response.raise_for_status()
-            # Response JSON is expected in the form [{ "id": 12345 }]
-            users = users_response.json()
-        except (KeyError, requests.RequestException) as error:
-            # Log error details
-            raise HTTPException(status_code=500, detail=self.IAM_ERROR)
-
-        try:
-            return users[0].id
-        except (IndexError, AttributeError):
-            raise HTTPException(status_code=403, detail='Unauthorized')
-
-
-authorizer = __JwtAuthorizer()
+export const authorizer = new JwtAuthorizer();
 ```
 
 Below is an example API service that utilizes the above-defined `JwtAuthorizer`:
