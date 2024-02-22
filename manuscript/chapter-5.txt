@@ -646,8 +646,8 @@ export const authorizer = new JwtAuthorizer();
 
 Below is an example API service that utilizes the above-defined `JwtAuthorizer`:
 
-{title: "app.ts"}
-```ts
+{title: "app.js"}
+```js
 import express, { Response, Request } from 'express';
 import cors from 'cors';
 import { authorizer } from './JwtAuthorizer';
@@ -656,28 +656,36 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-app.use((
-  error: Error,
-  request: Request,
-  response: Response,
-  next: any
-) => {
-  // Error handlerfor converting a thrown error
+app.use((error, request, response, next) => {
+  // Error handler for converting a thrown error
   // to an error response
   // Example of an error handler implementation
   // is given in API principles chapter
 });
 
-app.get('/api/sales-items', () => {
-  // No authorized needed
+app.get('/sales-item-service/sales-items', () => {
+  // No authorization needed
   // Send sales items
 });
 
-app.post('/api/messages', (request, response) => {
-  authorizer.tryAuthorize(request)
-    .then(() => {
-      // Create a message
-    }).catch(() => sendAuthError(request, response));
+app.post('/messaging-service/messages', (request, response) => {
+  authorizer.authorize(request.headers.authorization);
+  // Authorized user can create a message
+});
+
+app.get('/order-service/orders/:id', (request, response) => {
+    const userIdFromJwt = authorizer.getUserId(request.headers.authorization);
+    const id = request.params.id;
+
+    // Try get order using 'userIdFromJwt' as user id and 'id'
+    // as order id, e.g. orderService.getOrder(id, userIdFromJwt)
+    // It is important to notice that when trying to retrieve
+    // the order from database, both 'id' and 'userIdFromJwt'
+    // are used as query filters
+    // If the user is not allowed to access the resource
+    // 404 Not Found is returned from the service method
+    // This approach has the security benefit of not revealing
+    // to an attacker whether an order with 'id' exists or not
 });
 
 app.post('/api/orders', (request, response) => {
@@ -702,53 +710,7 @@ app.listen(3000);
 ```
 
 ```python
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
-from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from InputOrder import InputOrder
-from jwt_authorizer import authorizer
-from order_service import order_service
-# OrderUpdate is a DTO that should not have user_id attribute,
-# because it cannot be changed
-from OrderUpdate import OrderUpdate
-
-app = FastAPI()
-
-# Define a custom HTTPException handler that provides
-# admin logging and metrics update
-@app.exception_handler(StarletteHTTPException)
-async def http_exception_handler(
-    request: Request, error: StarletteHTTPException
-):
-    if error.status_code == 403:
-        # Audit log an unauthorized request
-
-    # Increment 'HTTP request failures' counter by one
-    # using the following metric labels: error.status_code, error.detail
-
-    return JSONResponse({'error: ': str(error.detail)}, status_code=error.status_code)
-
-@app.get('/sales-item-service/sales-items')
-async def get_sales_items():
-    # No authentication/authorization required
-    # Send sales items
-
-@app.post('/messaging-service/messages')
-async def create_message(request: Request):
-    authorizer.authorize(request)
-    # Authenticated user can create a message
-
-@app.get('/order-service/orders/{id}')
-async def get_order(id: int, request: Request):
-    authorizer.authorize_for_user_own_resources_only(
-        id,
-        order_service.get_order_by_id_and_user_id,
-        request
-    )
-
-    # Get order identified with 'id'
-    # and having user id of JWT's owner
 
 @app.post('/order-service/orders')
 async def create_order(order: InputOrder, request: Request):
