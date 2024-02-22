@@ -169,7 +169,7 @@ And when you refactor, the unit tests are on your side to prevent accidentally i
 #### Test-Driven Development (TDD)
 
 Test-driven development (TDD) is a software development process in which software requirements are formulated as
-(unit) test cases before the software is implemented. This is as opposed to the practice where software is
+(unit and integration) test cases before the software is implemented. This is as opposed to the practice where software is
 implemented first, and test cases are written only after that.
 
 The benefits of TDD are many:
@@ -178,13 +178,14 @@ The benefits of TDD are many:
 - No big upfront design, but emergent (and usually better) design because of constant refactoring
 - Existing tests make the developer feel confident when refactoring
 - Less cognitive load for the developer because only one scenario is implemented at a time
-- You automatically write unit-testable code
+- You automatically write testable code
 - You don't write unnecessary code because you only write code that makes the tests pass (you can follow the [YAGNI principle](https://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it))
 - Less need for debugging
 
 TDD aims to maximize the external and internal quality of the software. External quality is the quality the users see, e.g., a minimal number of bugs and correct features.
 Internal quality is what the developers see. If internal quality is low, it is more likely that a developer can introduce bugs (i.e., cause low external quality) to
-the software. High internal quality can be achieved with TDD. You have a comprehensive set of tests and a good design with low technical debt. It will be easy for a developer to maintain and develop such software further.
+the software. High internal quality can be achieved with TDD. You have a comprehensive set of tests and a good design with low technical debt.
+It will be easy for a developer to maintain and develop such software further.
 
 I have been in the industry for almost 30 years, and when I began coding, there were no automated tests or
 test-driven development. Only since around 2010 have I been writing automated unit tests. Due to this
