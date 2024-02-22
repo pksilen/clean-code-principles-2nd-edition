@@ -850,7 +850,13 @@ happens with TDD. You only consider implementation one scenario at a time, which
 will be removed/replaced when making a test for the next scenario pass. This is called *emergent design*.
 
 The above example is
-a bit contrived because we finally used the `find` method, which we could have done already in the first test case, but we didn't because we were supposed to write the simplest implementation to make the test pass. Consider the same example when no `find` method is available, and we must implement the `find` method functionality (looping through the characters, etc.) in the `contains` method ourselves. Then, all the tests start to make sense. Many of them are testing edge/corner cases that are important to test. If you are still in doubt, think about implementing the `contains` method in a language that does not have a for-in loop, but you must use character indexes. Then, you would finally understand the importance of testing the edge cases: reveal possible off-by-one errors, for example.
+a bit contrived because we finally used the `indexOf` method, which we could have done already in the first test case,
+but we didn't because we were supposed to write the simplest implementation to make the test pass.
+Consider the same example when no `indexOf` method is available, and we must implement the `indexOf` method functionality
+(looping through the characters, etc.) in the `contains` method ourselves. Then, all the tests start to make sense.
+Many of them are testing edge/corner cases that are important to test. If you are still in doubt, think about implementing
+the `contains` method in a language that does not have a range-based for-loop, but you must use character indexes.
+Then, you would finally understand the importance of testing the edge cases: reveal possible off-by-one errors, for example.
 
 When you encounter a bug, it is usually due to a missing scenario: An edge case is not considered, or implementation for a failure scenario or happy path is missing.
 To remedy the bug, you should practice TDD by adding a failing test for the missing scenario and then make the bug correction in the code to make the added test (and other tests) pass.
