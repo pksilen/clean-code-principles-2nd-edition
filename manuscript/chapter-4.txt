@@ -559,7 +559,7 @@ class MyStringTests {
   @Test
   void testContainsWhenStringsAreEqual() {
     // GIVEN
-    final var string = MyString("String");
+    final var string = new MyString("String");
     final var another_string = "String";
 
     // WHEN
@@ -590,20 +590,23 @@ public class MyString {
 
 Let's add a failing test for the second scenario:
 
-```pyhton
-class StringTests(unittest.TestCase):
-    # ...
+```java
+class MyStringTests {
+  // ...
 
-    def test_contains__when_both_strings_are_empty(self):
-        # GIVEN
-        string = MyString('')
-        another_string = ''
+  @Test
+  void testContainsWhenBbothStringsAreEmpty() {
+    // GIVEN
+    final var string = new MyString("");
+    final var anotherString = "";
 
-        # WHEN
-        string_contains_another_string = string.contains(another_string)
+    // WHEN
+    final var strContainsAnotherStr =
+      string.contains(anotherString);
 
-        # THEN
-        self.assertTrue(string_contains_another_string)
+    // THEN
+    assertTrue(strContainsAnotherStr);
+}
 ```
 
 We don't have to modify the implementation to make the above test pass.
