@@ -490,7 +490,6 @@ public class ConfigParserImpl extends ConfigParser {
 }
 ```
 
-We must also refactor the other unit tests to call `try_parse` instead of `parse`.
 We could continue the TDD cycle by adding new test cases for additional functionality if such existed.
 
 Before starting the TDD process, list all the requirements (scenarios) with bullet points so you don't forget any. The scenarios should cover all
