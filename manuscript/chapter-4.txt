@@ -555,17 +555,19 @@ case:
 Let's start with the first scenario:
 
 ```java
-class StringTests {
-  void test_contains__strings_are_equal(self):
-    # GIVEN
-    string = MyString('String')
-    another_string = 'String'
+class MyStringTests {
+  @Test
+  void testContainsWhenStringsAreEqual() {
+    // GIVEN
+    final var string = MyString("String")
+    final var another_string = "String"
 
-    # WHEN
-    string_contains_another_string = string.contains(another_string)
+    // WHEN
+    final var strContainsAnotherStr =
+      string.contains(anotherString);
 
-    # THEN
-    self.assertTrue(string_contains_another_string)
+    // THEN
+    assertTrue(strContainsAnotherStr);
 }
 ```
 
