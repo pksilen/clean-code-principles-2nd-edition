@@ -192,9 +192,11 @@ test-driven development. Only since around 2010 have I been writing automated un
 background, TDD has been quite difficult for me because there is something I have grown accustomed to: Implement
 the software first and then do the testing. I assume many of you have also learned it like that, which can make switching to TDD
 rather difficult. Little material exists that teaches topics using TDD. The internet is full of books, courses, videos, blogs, and
-other posts that don't teach you the proper way of development: TDD. The same applies to this book, also. I present code samples in the book but don't always use TDD because it would make everything complicated and more verbose.
+other posts that don't teach you the proper way of development: TDD. The same applies to this book, also. I present code samples in the book but don't always use
+TDD because it would make everything complicated and more verbose.
 We are constantly taught to program test-last!
-When asking people who have conducted TDD, they say the main benefit is that it reduces stress because you don't have to achieve multiple goals simultaneously, like designing the function and thinking of and implementing (and remembering to implement) all possible execution paths.
+When asking people who have conducted TDD, they say the main benefit is that it reduces stress because you don't have to achieve multiple goals simultaneously,
+like designing the function and thinking of and implementing (and remembering to implement) all possible execution paths.
 
 TDD can feel unnatural at the beginning. It can slow you down at first. You just have to keep practicing it systematically. In that way, you can start gradually seeing the benefits and
 build a habit of always using TDD. Later, you will notice that it begins to feel natural, and it does not slow you down anymore but brings you the many benefits depicted above. It can actually speed you up because less complex thinking (no big upfront design, safe refactoring) and debugging are needed.
