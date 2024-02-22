@@ -353,10 +353,10 @@ class ConfigParserTests {
 
   def testParseWhenSuccessful() {
     // GIVEN
-    final var configStr = "propName1=value1";
+    final var configString = "propName1=value1";
 
     // WHEN
-    final var config = configParser.parse(configStr);
+    final var config = configParser.parse(configString);
 
     # THEN
     assertEquals('value1', config.getPropertyValue('propName1'));
@@ -404,10 +404,10 @@ class ConfigParserTests {
 
   def testParseWhenSuccessful() {
     // GIVEN
-    final var configStr = "propName1=value1\npropName2=value2";
+    final var configString = "propName1=value1\npropName2=value2";
 
     // WHEN
-    final var config = configParser.parse(configStr);
+    final var config = configParser.parse(configString);
 
     # THEN
     assertEquals('value1', config.getPropertyValue('propName1'));
@@ -445,56 +445,49 @@ public class ConfigParserImpl implements ConfigParser {
 Now, the tests pass, and we can add new functionality. Let's add a test for the case when parsing fails.
 We can now repeat the TDD cycle from the beginning by creating a failing test first:
 
-```python
-import unittest
+```java
+class ConfigParserTests {
+  // ...
 
-from ConfigParser import ConfigParser
+  void testParseWhenParsingFails() {
+    // GIVEN
+    final var configString = 'invalid';
 
+    try {
+      // WHEN
+      configParser.parse(configString);
 
-class ConfigParserTests(unittest.TestCase):
-    # ...
-
-    def test_try_parse__when_parsing_fails(self):
-        # GIVEN
-        config_str = 'invalid'
-
-        try:
-            # WHEN
-            self.config_parser.try_parse(config_str)
-
-            # THEN
-            self.fail('ConfigParser.ParseError should have been raised')
-        except ConfigParser.ParseError:
-            # THEN error was successfully raised
+      // THEN
+      fail("ConfigParser.ParseError should have been raised");
+    except ConfigParser.ParseError:
+      // THEN error was successfully raised
+  }
+}
 ```
 
 Next, we should refactor the implementation to make the second test pass:
 
-```python
-from typing import Protocol
+```java
+public interface ConfigParser {
+  // We assume here that this code is part of Data exporter app
+  public static class ParseError extends DataExporterError {
+    // ...
+  }
 
-from Configuration import Configuration
-from DataExporterError import DataExporterError
+  Config parse(final String configString) throws ParseError;
+}
 
+public class ConfigParserImpl extends ConfigParser {
+  Config parse(final String configString) throws ParseError {
+    // Try parse configString and if successful
+    // assign config properties to 'maybePropNameToValue'
+    // variable
 
-class ConfigParser(Protocol):
-    class ParseError(DataExporterError):
-        pass
-
-    def try_parse(self, config_str: str) -> Configuration:
-        pass
-
-
-class ConfigParserImpl(ConfigParser):
-    def try_parse(self, config_str: str) -> Configuration:
-        # Try parse config_str and if successful
-        # assign config properties to 'prop_name_to_value'
-        # variable
-
-        if prop_name_to_value is None:
-            raise self.ParseError()
-        else:
-            return ConfigurationImpl(prop_name_to_value)
+    return maybePropNameToValue
+      .map(propNameToValue -> ConfigImpl::new)
+      .orElseThrow(ParseError::new);
+  }
+}
 ```
 
 We must also refactor the other unit tests to call `try_parse` instead of `parse`.
