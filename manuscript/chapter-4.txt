@@ -398,33 +398,28 @@ Let's write a test for a 'happy path' scenario where we have two properties. Thi
 implementation more generalized. We cannot use a constant anymore, and we should not use two constants with
 an if/else-statement because if we want to parse more than two properties, the approach using constants does not scale.
 
-```python
-import unittest
+```java
+class ConfigParserTests {
+  private final ConfigParser configParser = new ConfigParserImpl();
 
-from ConfigParserImpl import ConfigParserImpl
+  def testParseWhenSuccessful() {
+    // GIVEN
+    final var configStr = "propName1=value1\npropName2=value2";
 
+    // WHEN
+    final var config = configParser.parse(configStr);
 
-class ConfigParserTests(unittest.TestCase):
-    config_parser = ConfigParserImpl()
-
-    def test_parse__when_successful(self):
-        # GIVEN
-        config_str = 'propName1=value1\npropName2=value2'
-
-        # WHEN
-        config = self.config_parser.parse(config_str)
-
-        # THEN
-        self.assertEqual(config.get_property_value('propName1'), 'value1')
-        self.assertEqual(config.get_property_value('propName2'), 'value2')
+    # THEN
+    assertEquals('value1', config.getPropertyValue('propName1'));
+    assertEquals('value2', config.getPropertyValue('propName2'));
+  }
+}
 ```
 
 If we run all the tests, the new test will fail in the second assertion. Next,
 we shall write code to make the test cases pass:
 
-```python
-from typing import  Final
-
+```java
 class ConfigurationImpl(Configuration):
     def __init__(self, prop_name_to_value: dict[str, str]):
         self.__prop_name_to_value: Final = prop_name_to_value
