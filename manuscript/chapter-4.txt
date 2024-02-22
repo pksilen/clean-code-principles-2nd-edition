@@ -335,9 +335,9 @@ class CarTests {
 }
 ```
 
-Notice how well the test method now reads:
+Notice how well the `testAccelerate` test method now reads:
 
-> testAccelerate: When car accelerate, then assert speed is increased
+> When car accelerate[s], then assert speed is increased
 
 You can use the feature-based naming instead of the method-based naming convention if you want. I use the method-based naming convention in all unit tests in this book.
 
