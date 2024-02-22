@@ -497,6 +497,27 @@ The below example utilizes role-based access control (RBAC), but
 there are more modern alternatives, including attribute-based access control (ABAC) and relationship-based access control (ReBAC).
 More information about those is available in [OWASP Authorization Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html)
 
+{title: "Authorizer.ts"}
+```ts
+export default interface Authorizer {
+    // An example implementation for 'ApiError' class is given
+    // in API principles chapter
+    static UnauthenticatedError = class extends ApiError {
+      // ...
+    }
+
+    static UnauthorizedError = class extends ApiError {
+      // ...
+    }
+
+    static IamError = class extends ApiError {
+      // ...
+    }
+
+    authorize(authHeader: string): Promise<void>;
+}
+```
+
 {title: "JwtAuthorizer.ts"}
 ```ts
 import _ from 'lodash';
@@ -504,20 +525,21 @@ import { decode, verify } from 'jsonwebtoken';
 import { fetch } from 'fetch-h2';
 import { Request } from 'express';
 import jwks from 'jwks-rsa';
+import Authorizer from './Authorizer';
+import throwError from './throwError';
 import throwException from './throwException';
 
-export default class JwtAuthorizer implements
-                       Authorizer {
+export default class JwtAuthorizer implements Authorizer {
   private readonly oidcConfigUrl: string;
   private readonly rolesClaimPath: string;
   private readonly getUsersUrl: string;
   private jwksClient: any;
 
   constructor() {
-    // OpenId Connect configuration endpoint in the IAM system
+    // URL for OpenId Connect configuration endpoint in the IAM system
     this.oidcConfigUrl =
-     process.env.OIDC_CONFIG_URL ??
-      throwException('OIDC_CONFIG_ENDPOINT is not defined');
+      process.env.OIDC_CONFIG_URL ??
+        throwException('OIDC_CONFIG_URL is not defined');
 
     // With Keycloak you can use e.g., realm_access.roles
     this.rolesClaimPath = process.env.JWT_ROLES_CLAIM_PATH ??
@@ -528,68 +550,82 @@ export default class JwtAuthorizer implements
     // For example: http://localhost:8082/user-service/users
     this.getUsersUrl =
       process.env.GET_USERS_URL ??
-      throwException('GET_USERS_URL is not defined');
+        throwException('GET_USERS_URL is not defined');
   }
 
-  async tryAuthorize(
-    request: Request
-  ): Promise<void> {
-    await this.tryGetClaims(request.headers.authorization);
+  async authorize(authHeader: string | undefined): Promise<void> {
+    await this.decodeJwtClaims(authHeader);
   }
 
-  // Authorize a user for his/hers own resources only
-  // If an entity with given id and user_id combination
-  // is not found, auth error is raised
-  async tryAuthorizeForSelf(
+  // Authorize a user for him/herself
+  async authorizeForSelf(
     userId: number,
-    request: Request
+    authHeader: string | undefined
   ): Promise<void> {
-    const claims =
-      await this.tryGetClaims(request.headers.authorization);
+    const userIdInJwt = await this.getUserId(authHeader);
 
-    const usersResponse =
-      await fetch(this.getUsersUrl + `?sub=${claims.sub}&fields=id`);
-
-    const users = await response.json();
-
-    if (userId !== userIdObject.userId) {
-      throw new Error('...');
+    if (userId !== userIdInJwt) {
+      throw new UnauthorizedError();
     }
   }
 
-  async tryAuthorizeIfUserHasOneOfRoles(
+  async getUserId(self, authHeader: string | undefined): Promise<number> {
+    const claims = await this.decodeJwtClaims(authHeader);
+    const getUsersUrl = this.getUsersUrl + `?sub=${claims?.sub}&fields=id`
+
+    try {
+      const usersResponse = await fetch(getUsersUrl);
+      const users = await response.json();
+    } catch (error) {
+      // Log error details
+      throw new IamError();
+    }
+
+    return users?.[0]?.id ?? throwError(new UnauthorizedError());
+  }
+
+  async authorizeIfUserHasOneOfRoles(
     allowedRoles: string[],
-    request: Request):
-  Promise<void> {
-    const claims =
-      await this.tryGetClaims(request.headers.authorization);
+    authHeader: string | undefined
+  ): Promise<void> {
+    const claims = await this.decodeJwtClaims(authHeader);
+    const roles = _.get(claims, this.rolesClaimPath, []);
 
-    const roles = _.get(claims, this.rolesClaimPath);
-
-    const isAuthorized =
-      allowedRoles.some((allowedRole) =>
+    const isAuthorized = allowedRoles.some((allowedRole) =>
         roles.includes(allowedRole));
 
     if (!isAuthorized) {
-      throw new Error('...');
+      throw new UnauthorizedError();
     }
   }
 
-  private async tryGetClaims(
-    authHeader: string | undefined
-  ): Promise<any> {
-    const oidcConfigResponse = await fetch(this.oidcConfigUrl);
-    const oidcConfig = await oidcCongfigresponse.json();
-
-    if (!this.jwksClient) {
-      this.jwksClient = jwks({ jwksUri: oidcConfig.jwks_uri });
+  private async tryGetClaims(authHeader: string | undefined ): Promise<any> {
+    if (!authHeader) {
+      throw new UnauthenticatedError();
     }
 
-    const jwt = authHeader?.split('Bearer ').pop();
-    const decodedJwt = decode(jwt ?? '', { complete: true });
-    const kid = decodedJwt?.header?.kid;
-    const signingKey = await this.jwksClient.getSigningKey(kid);
-    return verify(jwt ?? '', signingKey.getPublicKey());
+    try {
+      const oidcConfigResponse = await fetch(this.oidcConfigUrl);
+      const oidcConfig = await oidcConfigResponse.json();
+    } catch (error) {
+      // Log error details
+      throw new IamError();
+    }
+
+    if (!this.jwksClient) {
+      this.jwksClient = jwks({ jwksUri: oidcConfig?.jwks_uri });
+    }
+
+    const jwt = authHeader?.split('Bearer ').pop() ?? '';
+
+    try {
+      const decodedJwt = decode(jwt, { complete: true });
+      const kid = decodedJwt?.header?.kid;
+      const signingKey = await this.jwksClient.getSigningKey(kid);
+      return verify(jwt, signingKey.getPublicKey());
+    } catch (error) {
+      throw new UnauthorizedError();
+    }
   }
 }
 
