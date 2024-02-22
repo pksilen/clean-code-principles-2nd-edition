@@ -119,6 +119,19 @@ If you have more than 5-6 expectations on mocks, you need to refactor the source
 
 Unit tests should test all the functionality of a public function: happy path(s),
 possible failure situations, security issues, and edge/corner cases so that each code line of the function is covered by at least one unit test.
+If a single line of code contains, e.g., a complex boolean statement, you might need several unit tests to cover all the sub-conditions in the boolean statement.
+For example:
+
+```java
+if (isEmpty() || !isInitialized()) {
+  // ...
+}
+```
+
+To fully cover the functionality of the above unit, you need to write three tests: one for the `isEmpty()` condition to be true,
+one for the `!isInitialized()` to be true and a test where the if-statement's condition is evaluated to false. If you use a test coverage tool, it will report about
+untested sub-conditions of boolean expressions. You should always use a test coverage tool.
+
 Security issues in functions are mostly related to the input the function gets. Is that input secure? If your function receives unvalidated
 input data from an end-user, that data must be validated against a possible attack by a malicious end-user.
 
@@ -144,8 +157,8 @@ dependencies should be mocked. A *mock* is something that mimics the behavior of
 will be described in more detail later in this section.
 
 Testing functions in isolation has two benefits. It makes tests faster. This is a real benefit because
-you can have a lot of unit tests, and you run them often, so the execution time of the unit tests must be as short as possible. Another benefit is that you don't need to set up external
-dependencies, like a database, a message broker, and other microservices, because you are mocking the functionality
+you can have a lot of unit tests, and you run them often, so the execution time of the unit tests must be as short as possible.
+Another benefit is that you don't need to set up external dependencies, like a database, a message broker, and other microservices, because you are mocking the functionality
 of the dependencies.
 
 Unit tests give you protection against introducing accidental bugs when refactoring code. Unit tests ensure that the implementation code meets the
