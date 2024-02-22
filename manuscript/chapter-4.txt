@@ -559,8 +559,8 @@ class MyStringTests {
   @Test
   void testContainsWhenStringsAreEqual() {
     // GIVEN
-    final var string = MyString("String")
-    final var another_string = "String"
+    final var string = MyString("String");
+    final var another_string = "String";
 
     // WHEN
     final var strContainsAnotherStr =
@@ -574,16 +574,18 @@ class MyStringTests {
 Next, we do as much implementation as is needed to make the above test pass. The simplest thing to do is to return
 a constant:
 
-```python
-from typing import Final
+```java
+public class MyString {
+  private final String value;
 
+  public MyString(final String value) {
+    this.value = value;
+  }
 
-class MyString:
-    def __init__(self, value: str):
-        self.__value: Final = value
-
-    def contains(self, another_string: str) -> bool:
-        return True
+  boolean contains(final String anotherString) {
+    return true;
+  }
+}
 ```
 
 Let's add a failing test for the second scenario:
