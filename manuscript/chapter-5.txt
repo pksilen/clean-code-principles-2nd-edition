@@ -514,7 +514,19 @@ export default interface Authorizer {
       // ...
     }
 
-    authorize(authHeader: string): Promise<void>;
+    authorize(authHeader: string | undefined): Promise<void>;
+
+    authorizeForSelf(
+      userId: number,
+      authHeader: string | undefined
+    ): Promise<void>;
+
+    authorizeIfUserHasOneOfRoles(
+      allowedRoles: string[],
+      authHeader: string | undefined
+    ): Promise<void>;
+
+    getUserId(self, authHeader: string | undefined): Promise<number>;
 }
 ```
 
@@ -569,21 +581,6 @@ export default class JwtAuthorizer implements Authorizer {
     }
   }
 
-  async getUserId(self, authHeader: string | undefined): Promise<number> {
-    const claims = await this.decodeJwtClaims(authHeader);
-    const getUsersUrl = this.getUsersUrl + `?sub=${claims?.sub}&fields=id`
-
-    try {
-      const usersResponse = await fetch(getUsersUrl);
-      const users = await response.json();
-    } catch (error) {
-      // Log error details
-      throw new IamError();
-    }
-
-    return users?.[0]?.id ?? throwError(new UnauthorizedError());
-  }
-
   async authorizeIfUserHasOneOfRoles(
     allowedRoles: string[],
     authHeader: string | undefined
@@ -597,6 +594,21 @@ export default class JwtAuthorizer implements Authorizer {
     if (!isAuthorized) {
       throw new UnauthorizedError();
     }
+  }
+
+  async getUserId(self, authHeader: string | undefined): Promise<number> {
+    const claims = await this.decodeJwtClaims(authHeader);
+    const getUsersUrl = this.getUsersUrl + `?sub=${claims?.sub}&fields=id`
+
+    try {
+     const usersResponse = await fetch(getUsersUrl);
+     const users = await response.json();
+    } catch (error) {
+      // Log error details
+      throw new IamError()
+    }
+
+    return users?.[0]?.id ?? throwError(new UnauthorizedError());
   }
 
   private async tryGetClaims(authHeader: string | undefined ): Promise<any> {
@@ -633,6 +645,61 @@ export const authorizer = new JwtAuthorizer();
 ```
 
 Below is an example API service that utilizes the above-defined `JwtAuthorizer`:
+
+{title: "app.ts"}
+```ts
+import express, { Response, Request } from 'express';
+import cors from 'cors';
+import { authorizer } from './JwtAuthorizer';
+
+const app = express();
+app.use(express.json());
+app.use(cors());
+
+app.use((
+  error: Error,
+  request: Request,
+  response: Response,
+  next: any
+) => {
+  // Error handlerfor converting a thrown error
+  // to an error response
+  // Example of an error handler implementation
+  // is given in API principles chapter
+});
+
+app.get('/api/sales-items', () => {
+  // No authorized needed
+  // Send sales items
+});
+
+app.post('/api/messages', (request, response) => {
+  authorizer.tryAuthorize(request)
+    .then(() => {
+      // Create a message
+    }).catch(() => sendAuthError(request, response));
+});
+
+app.post('/api/orders', (request, response) => {
+  authorizer
+    .tryAuthorizeForUserOwnResourcesOnly(request.body.userId,
+                                         request)
+    .then(() => {
+      // Create an order for the user,
+      // user cannot create orders for other users
+    }).catch(() => sendAuthError(request, response));
+});
+
+app.delete('/api/sales-items', (request, response) => {
+  authorizer
+    .tryAuthorizeIfUserHasOneOfRoles(['admin'], request)
+    .then(() => {
+      // Only admin user can delete all sales items
+    }).catch(() => sendAuthError(request, response));
+});
+
+app.listen(3000);
+```
 
 ```python
 from fastapi import FastAPI, Request
