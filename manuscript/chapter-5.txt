@@ -713,7 +713,9 @@ app.listen(3000);
 The authorization is separately coded inside each request handler in the above example. We could extract the authorization code
 from the request handler methods to decorators that can be used with the methods. The decorators could be implemented in a
 separate library, and they can accept any authorizer that implements the `Authorizer` protocol, not just the `JwtAuthorizer`.
-Below is a partial example how decorators could be used. The implementation of decorators is not shown here.
+Below is a partial example how decorators could be used. The implementation of decorators is not shown here, but if you are
+interested, you can find a Python implementation of the decorators in my other book: *Clean Code Principles And Patterns:
+Python Edition*.
 
 ```js
 // ...
@@ -730,6 +732,85 @@ app.post('/messaging-service/messages', (request, response) => {
 });
 
 // ...
+```
+
+Below is a simple example of implementing an OAuth2 resource server using Spring Boot. First, you need to add
+the OAuth2 resource server dependency:
+
+{title: "build.gradle"}
+```groovy
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+}
+```
+
+Next, you need to configure a JWT issuer URL. In the below example, we use a localhost Keycloak service.
+
+{title: "application.yml"}
+```yaml
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/master/
+```
+
+
+Then you will configure which API endpoints need to be authorized with a valid JWT.
+The below example requires requests to all API endpoints to contain a valid JWT.
+
+{title: "SecurityConfiguration.java"}
+```java
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+
+@Configuration
+public class SecurityConfiguration
+                extends WebSecurityConfigurerAdapter {
+  @Override
+  protected final void configure(
+    final HttpSecurity httpSecurity
+  ) throws Exception {
+    httpSecurity.authorizeRequests()
+      .antMatchers("/**")
+      .authenticated()
+      .and()
+      .oauth2ResourceServer()
+      .jwt();
+  }
+}
+```
+
+In a REST controller, you can inject the JWT using the `AuthenticationPrincipal` annotation to perform additional
+authorization in the controller methods:
+
+{title: "SalesItemController.java"}
+```java
+@RestController
+@RequestMapping(SalesItemController.API_ENDPOINT)
+@Slf4j
+public class SalesItemController {
+  public static final String API_ENDPOINT = "/salesitems";
+
+  @Autowired
+  private SalesItemService salesItemService;
+
+  @PostMapping
+  @ResponseStatus(HttpStatus.CREATED)
+  public final SalesItem createSalesItem(
+    @RequestBody final SalesItemArg salesItemArg,
+    @AuthenticationPrincipal final Jwt jwt
+  ) {
+    log.info("Username: {}",
+             jwt.getClaimAsString("preferred_username"));
+
+    // You can now use the "jwt" object to get a claim about
+    // user's roles and verify a needed role, for example.
+    return salesItemService.createSalesItem(salesItemArg);
+  }
+}
 ```
 
 ### Password Policy
@@ -752,7 +833,8 @@ You should require that passwords are strong and match the following criteria:
 - May not contain too many adjacent letters in the keyboard, e.g., a password containing "qwerty" should be denied
 - May not contain a black-listed word: black-list all commonly used, easy-to-guess passwords.
 
-Machine-to-machine (non-human-related) passwords (like database passwords) should be automatically generated separately for each production environment during the deployment. These passwords should be random and significantly longer than 12 characters.
+Machine-to-machine (non-human-related) passwords (like database passwords) should be automatically generated separately for each production environment during the deployment.
+These passwords should be random and significantly longer than 12 characters.
 
 ### Cryptography
 
@@ -788,7 +870,8 @@ used encryption key. When all existing data is encrypted with the new key, meani
 DoS prevention should happen at least in the following ways:
 
 - Establish request rate limiting for microservices. This can be done at the API gateway level or by the cloud provider
-- Use a [Captcha](https://en.wikipedia.org/wiki/CAPTCHA) to prevent non-human (robotic) users from performing potentially expensive operations like creating new resources or fetching large resources, like large files, for example
+- Use a [Captcha](https://en.wikipedia.org/wiki/CAPTCHA) to prevent non-human (robotic) users from performing potentially
+  expensive operations like creating new resources or fetching large resources, like large files, for example
 
 ### Database Security
 
@@ -814,7 +897,7 @@ DoS prevention should happen at least in the following ways:
 ### OS Command Injection Prevention
 
 You should not allow user-supplied data to be used when executing OS commands in a shell.
-For example, don't allow the following:
+For example in Python, don't allow the following:
 
 ```python
 import os
@@ -986,3 +1069,9 @@ Remember to validate nested objects also.
 - When storing an uploaded file on the server side, pay attention to the following:
     - Do not use a file name supplied by the user, but use a new filename to store the file on the server
     - Do not let the user choose the path where the uploaded file is stored on the server
+
+#### Validation Library Example
+
+Check _Appendix A_ for creating a TypeScript validation library using the _validated-types_ NPM library.
+The validation library can validate JavaScript objects, e.g., parsed JSON/YAML-format configuration, environment variables (process.env object), and input DTOs. The validation library accepts an object schema and validates an object according to the given schema and
+produces a strongly typed validated object.
