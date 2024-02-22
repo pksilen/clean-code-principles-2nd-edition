@@ -107,10 +107,15 @@ public class ConfigParser {
 }
 ```
 
-If you have a public function using many private methods, testing the public method can become complicated, and the test method becomes long, possibly with many expectations on mocks. It can be challenging to remember to test every scenario that exists in the public and related private methods.
+If you have a public function using many private methods, testing the public method can become complicated, and the test method becomes long,
+possibly with many expectations on mocks. It can be challenging to remember to test every scenario that exists in the public and related private methods.
 What you should do is refactor all or some private methods into public methods of one or more new classes (This is the *extract class* refactoring technique explained in the previous chapter).
 Then, the test method in the original class becomes shorter and more straightforward, with less expectation of mocks. This is an essential
-refactoring step that should not be forgotten. It helps keep both the source code and unit tests readable and well-organized. The unit test code must be the same high quality as the source. Unit test code should use type annotations and the same linter rules as the source code itself. The unit test code should not contain duplicate code. A unit test method should be a maximum of 5-9 statements long. Aim for a single assertion or put assertions in one well-named private method. If you have more than 5-6 expectations on mocks, you need to refactor the source code as described above to reduce the number of expectations and to make the test method shorter.
+refactoring step that should not be forgotten. It helps keep both the source code and unit tests readable and well-organized.
+The unit test code must be the same high quality as the source. Unit test code should use type annotations and the same linter rules as the source code itself.
+The unit test code should not contain duplicate code. A unit test method should be a maximum of 5-9 statements long.
+Aim for a single assertion or put assertions in one well-named private method.
+If you have more than 5-6 expectations on mocks, you need to refactor the source code as described above to reduce the number of expectations and to make the test method shorter.
 
 Unit tests should test all the functionality of a public function: happy path(s),
 possible failure situations, security issues, and edge/corner cases so that each code line of the function is covered by at least one unit test.
