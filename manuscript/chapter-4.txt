@@ -899,7 +899,7 @@ Let's first write a failing test case for the "happy path" scenario:
 ```java
 class ConfigParserTests {
   @Test
-  void testTryParseWhenSuccessful() {
+  void testParseWhenSuccessful() {
     // Happy path scenario, returns a 'Config' object
     fail();
 }
@@ -909,35 +909,49 @@ Next, let's write a failing test case for the other scenarios extracted from the
 
 ```java
 class ConfigParserTests {
-    // ...
+  // ...
 
-    def test_try_parse__when_json_parsing_fails(self):
-        # Failure scenario, should produce an error
-        self.fail()
+  @Test
+  void testParseWhenJsonParsingFails() {
+    // Failure scenario, should produce an error
+    fail();
+  }
 
-    def test_try_parse__when_mandatory_prop_is_missing(self):
-        # Failure scenario, should produce an error
-        self.fail()
+  @Test
+  void testParseWhenMandatoryPropIsMissing() {
+    // Failure scenario, should produce an error
+    fail();
+  }
 
-    def test_try_parse__when_optional_prop_is_missing(self):
-        # Should use default value
-        self.fail()
+  @Test
+  void testParseWhenOptionalPropIsMissing() {
+    // Should use default value
+    fail();
+  }
 
-    def test_try_parse__with_extra_props(self):
-        # Extra props should be discarded
-        self.fail()
+  @Test
+  void testParseWithExtraProps() {
+    // Extra props should be discarded
+    fail();
+  }
 
-    def test_try_parse__when_prop_has_invalid_type(self):
-        # Failure scenario, should produce an error
-        self.fail()
+  @Test
+  void testParseWhenPropHasInvalidType() {
+    // Failure scenario, should produce an error
+    fail();
+  }
 
-    def test_try_parse__when_integer_prop_out_of_range(self):
-        # Input validation security scenario, should produce an error
-        self.fail()
+  @Test
+  void testParseWhenIntegerPropOutOfRange() {
+    // Input validation security scenario, should produce an error
+    fail();
+  }
 
-    def test_try_parse__when_string_prop_too_long(self):
-        # Input validation security scenario, should produce an error
-        self.fail()
+  @Test
+  void testParseWhenStringPropTooLong() {
+    // Input validation security scenario, should produce an error
+    fail();
+  }
 }
 ```
 
