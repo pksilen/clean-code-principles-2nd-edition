@@ -493,7 +493,7 @@ public class ConfigParserImpl extends ConfigParser {
 We could continue the TDD cycle by adding new test cases for additional functionality if such existed.
 
 Before starting the TDD process, list all the requirements (scenarios) with bullet points so you don't forget any. The scenarios should cover all
-happy paths, edge cases, and failure/security scenarios. For example:
+happy paths, edge cases, and failure/security scenarios. For example for a single method, you might identify the following six scenarios:
 
 - Edge case scenarios
   - Scenario A
@@ -506,10 +506,15 @@ happy paths, edge cases, and failure/security scenarios. For example:
 - Success scenarios
   - Scenario F
 
-Listing all scenarios is an important step in order not to forget to test something because if you don't write a test for something, it's highly likely you won't implement it either. During the TDD process, you should
-add any missing scenarios to that list. Order the list so that the most specialized scenarios are listed first. Then, start the TDD process by following the ordered list. The most specialized scenarios are typically the easiest to implement, and this is why you should start with them. Specialized scenarios include edge cases and failure scenarios.
+Listing all scenarios is an important step in order not to forget to test something because if you don't write a test for something,
+it's highly likely you won't implement it either. During the TDD process, you should
+add any missing scenarios to that list. Always add it to the list immediately so that you don't forget it. Order the list so that the most specialized scenarios are listed first.
+Then, start the TDD process by following the ordered list. The most specialized scenarios are typically the easiest to implement,
+and this is why you should start with them. Specialized scenarios typically include edge cases and failure scenarios.
 
-In the simplest case, a specialized scenario can be implemented, for example, by returning a constant from a function. An example of a specialized scenario with a `List` class's `is_empty` method is when the list is empty after creating a new `List` object. Test that first, and only after that test a scenario where something is added to the list, and it is no longer empty.
+In the simplest case, a specialized scenario can be implemented, for example, by returning a constant from a function.
+An example of a specialized scenario with a `List` class's `isEmpty` method is when the list is empty after creating a new `List` object.
+Test that first, and only after that test a scenario where something is added to the list, and it is no longer empty.
 
 At the end of the list are the generalized scenarios that should make the function work with any input. To summarize, during the TDD process, you work from a specialized implementation towards a more generalized implementation.
 
