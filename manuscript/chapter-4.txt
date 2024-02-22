@@ -259,6 +259,7 @@ Here is another Java example:
 
 ```java
 class CarTests {
+  @Test
   void testAccelerate() {
     // GIVEN
     final var initialSpeed = ...
@@ -271,6 +272,7 @@ class CarTests {
     assertTrue(car.getSpeed() > initialSpeed);
   }
 
+  @Test
   void testDecelerate() {
     // GIVEN
     final var initialSpeed = ...
@@ -283,6 +285,7 @@ class CarTests {
     assertTrue(car.getSpeed() < initialSpeed);
   }
 
+  @Test
   void shouldIncreaseSpeedWhenAccelerates() {
     // GIVEN
     final var initialSpeed = ...
@@ -295,6 +298,7 @@ class CarTests {
     assertTrue(car.getSpeed() > initialSpeed);
   }
 
+  @Test
   void shouldDecreaseSpeedWhenDecelerates() {
     // GIVEN
     final var initialSpeed = ...
@@ -321,6 +325,7 @@ class CarTests {
     car = new Car(INITIAL_SPEED);
   }
 
+  @Test
   void testAccelerate() {
     // WHEN
     car.accelerate();
@@ -329,8 +334,8 @@ class CarTests {
     assertSpeedIsIncreased();
   }
 
-  private assertSpeedIsIncreased() {
-    assertTrue(car.getSpeed() > INITIAL_SPEED)
+  private void assertSpeedIsIncreased() {
+    assertTrue(car.getSpeed() > INITIAL_SPEED);
   }
 }
 ```
@@ -351,14 +356,15 @@ Let's first write a test for the simplest 'happy path' scenario of the specified
 class ConfigParserTests {
   private final ConfigParser configParser = new ConfigParserImpl();
 
-  def testParseWhenSuccessful() {
+  @Test
+  void testParseWhenSuccessful() {
     // GIVEN
     final var configString = "propName1=value1";
 
     // WHEN
     final var config = configParser.parse(configString);
 
-    # THEN
+    // THEN
     assertEquals('value1', config.getPropertyValue('propName1'));
   }
 }
@@ -402,6 +408,7 @@ an if/else-statement because if we want to parse more than two properties, the a
 class ConfigParserTests {
   private final ConfigParser configParser = new ConfigParserImpl();
 
+ @Test
   def testParseWhenSuccessful() {
     // GIVEN
     final var configString = "propName1=value1\npropName2=value2";
@@ -409,7 +416,7 @@ class ConfigParserTests {
     // WHEN
     final var config = configParser.parse(configString);
 
-    # THEN
+    // THEN
     assertEquals('value1', config.getPropertyValue('propName1'));
     assertEquals('value2', config.getPropertyValue('propName2'));
   }
@@ -449,6 +456,7 @@ We can now repeat the TDD cycle from the beginning by creating a failing test fi
 class ConfigParserTests {
   // ...
 
+  @Test
   void testParseWhenParsingFails() {
     // GIVEN
     final var configString = 'invalid';
@@ -547,17 +555,18 @@ case:
 Let's start with the first scenario:
 
 ```java
-class StringTests(unittest.TestCase):
-    def test_contains__strings_are_equal(self):
-        # GIVEN
-        string = MyString('String')
-        another_string = 'String'
+class StringTests {
+  void test_contains__strings_are_equal(self):
+    # GIVEN
+    string = MyString('String')
+    another_string = 'String'
 
-        # WHEN
-        string_contains_another_string = string.contains(another_string)
+    # WHEN
+    string_contains_another_string = string.contains(another_string)
 
-        # THEN
-        self.assertTrue(string_contains_another_string)
+    # THEN
+    self.assertTrue(string_contains_another_string)
+}
 ```
 
 Next, we do as much implementation as is needed to make the above test pass. The simplest thing to do is to return
