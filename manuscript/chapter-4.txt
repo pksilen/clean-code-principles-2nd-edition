@@ -369,28 +369,29 @@ we shall write the simplest possible code to make the test case both compile and
 *faking it*. We can fake it until we make it, which happens when we add a new test that forces us to eliminate the constant value and write more generalized code. The part of TDD where you add more
 tests to drive for a more generalized solution is called *triangulation*.
 
-```python
-from typing import Protocol, Final
+```java
+public interface Config {
+  String getPropertyValue(final String propertyName);
+}
 
 
-class Configuration(Protocol):
-    def get_property_value(self, property_name: str) -> str:
-        pass
+public class ConfigImpl implements Config {
+  public String getPropertyValue(final String propertyName) {
+    return "value1";
+  }
+}
 
 
-class ConfigurationImpl(Configuration):
-    def get_property_value(self, property_name: str) -> str | None:
-        return 'value1'
+public interface ConfigParser {
+  Config parse(final String configString);
+}
 
 
-class ConfigParser(Protocol):
-    def parse(self, config_str: str) -> Configuration:
-        pass
-
-
-class ConfigParserImpl(ConfigParser):
-    def parse(self, config_str: str) -> Configuration:
-        return ConfigurationImpl()
+public class ConfigParserImpl implements ConfigParser {
+  Config parse(final String configString) {
+    return new ConfigImpl();
+  }
+}
 ```
 
 Let's write a test for a 'happy path' scenario where we have two properties. This forces us to make the
