@@ -634,36 +634,43 @@ class MyStringTests {
 We don't have to modify the implementation to make the above test pass.
 Let's add a test for the fourth scenario:
 
-```pyhton
-class StringTests(unittest.TestCase):
-    # ...
+```java
+class MyStringTests {
+  // ...
 
-    def test_contains__when_string_is_empty(self):
-        # GIVEN
-        string = MyString('')
-        another_string = 'String'
+  @Test
+  void testContainsWhenStringsIsEmpty() {
+    // GIVEN
+    final var string = new MyString("");
+    final var anotherString = "String";
 
-        # WHEN
-        string_contains_another_string = string.contains(another_string)
+    // WHEN
+    final var strContainsAnotherStr =
+      string.contains(anotherString);
 
-        # THEN
-        self.assertFalse(string_contains_another_string)
+    // THEN
+    assertFalse(strContainsAnotherStr);
+}
 ```
 
 Let's modify the implementation to make the above (and earlier tests) to pass:
 
-```python
-from typing import Final
+```java
+public class MyString {
+  private final String value;
 
+  public MyString(final String value) {
+    this.value = value;
+  }
 
-class MyString:
-    def __init__(self, value: str):
-        self.__value: Final = value
+  boolean contains(final String anotherString) {
+    if (value.isEmpty() && !anotherString.isEmpty()) {
+      return false;
+    }
 
-    def contains(self, another_string: str) -> bool:
-        if not self.__value and another_string:
-            return False
-        return True
+    return true;
+  }
+}
 ```
 
 Let's add a test for the fifth scenario:
