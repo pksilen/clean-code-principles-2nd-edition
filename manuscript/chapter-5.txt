@@ -688,301 +688,49 @@ app.get('/order-service/orders/:id', (request, response) => {
     // to an attacker whether an order with 'id' exists or not
 });
 
-app.post('/api/orders', (request, response) => {
-  authorizer
-    .tryAuthorizeForUserOwnResourcesOnly(request.body.userId,
-                                         request)
-    .then(() => {
-      // Create an order for the user,
-      // user cannot create orders for other users
-    }).catch(() => sendAuthError(request, response));
+app.post('/order-service/orders', (request, response) => {
+  authorizer.authorizeForSelf(
+    request.body.userId,
+    request.headers.authorization
+  );
+
+  // Create an order for the user
+  // User cannot create orders for other users
 });
 
 app.delete('/api/sales-items', (request, response) => {
-  authorizer
-    .tryAuthorizeIfUserHasOneOfRoles(['admin'], request)
-    .then(() => {
-      // Only admin user can delete all sales items
-    }).catch(() => sendAuthError(request, response));
+  authorizer.authorizeIfUserHasOneOfRoles(
+    ['admin'],
+    request.headers.authorization
+  );
+
+  // Only admin user can delete all sales items
 });
 
 app.listen(3000);
 ```
 
-```python
-
-
-@app.post('/order-service/orders')
-async def create_order(order: InputOrder, request: Request):
-    authorizer.authorize_for_self(
-        order.user_id,
-        request
-    )
-
-    # Create an order for the user
-    # User cannot create orders for other users
-
-@app.put('/order-service/orders/{id}')
-async def update_order(id: int, order: OrderUpdate, request: Request):
-    authorizer.authorize_for_user_own_resources_only(
-        id,
-        order_service.get_order_by_id_and_user_id,
-        request
-    )
-
-    # Update an order identified with 'id'
-    # and user id of JWT's owner
-
-@app.delete('/order-service/orders/{id}')
-async def delete_order(id: int, request: Request):
-    authorizer.authorize_if_user_has_one_of_roles(
-        ['admin'], request
-    )
-
-    # Only admin user can delete an order
-```
-
 The authorization is separately coded inside each request handler in the above example. We could extract the authorization code
 from the request handler methods to decorators that can be used with the methods. The decorators could be implemented in a
-separate library, and they can accept any authorizer that implements the `Authorizer` protocol, not just the `JwtAuthorizer`:
+separate library, and they can accept any authorizer that implements the `Authorizer` protocol, not just the `JwtAuthorizer`.
+Below is a partial example how decorators could be used. The implementation of decorators is not shown here.
 
-```python
-from collections.abc import Callable
-from functools import wraps
-from typing import Any
+```js
+// ...
 
-from Authorizer import Authorizer
+@allowAnyUser
+app.get('/sales-item-service/sales-items', () => {
+  // Send sales items
+});
 
+@allowAuthorizedUser
+app.post('/messaging-service/messages', (request, response) => {
+  authorizer.authorize(request.headers.authorization);
+  // Authorized user can create a message
+});
 
-class AuthDecorException(Exception):
-    pass
-
-
-def allow_any_user(handle_request):
-    return handle_request
-
-
-def allow_authorized_user(authorizer: Authorizer):
-    def decorate(handle_request):
-        @wraps(handle_request)
-        async def wrapped_handle_request(*args, **kwargs):
-            try:
-                authorizer.authorize(kwargs['request'])
-            except KeyError:
-                raise AuthDecorException(
-                    "Request handler must accept 'request' parameter"
-                )
-            return await handle_request(*args, **kwargs)
-        return wrapped_handle_request
-    return decorate
-
-
-def allow_for_self(authorizer: Authorizer):
-    def decorate(handle_request):
-        @wraps(handle_request)
-        async def wrapped_handle_request(*args, **kwargs):
-            try:
-                user_id = (
-                    kwargs['user_id']
-                    if kwargs.get('user_id')
-                    else kwargs[
-                        [
-                            key
-                            for key in kwargs.keys()
-                            if key.endswith('dto')
-                        ][0]
-                    ].user_id
-                )
-                authorizer.authorize_for_user_own_resources_only(
-                    user_id, kwargs['request']
-                )
-            except (AttributeError, IndexError, KeyError):
-                raise AuthDecorException("""
-                    Request handler must accept 'request' parameter,
-                    'user_id' integer parameter or DTO parameter
-                    with name ending with 'dto'. DTO parameter
-                    must have attribute 'user_id'
-                    """)
-            return await handle_request(*args, **kwargs)
-        return wrapped_handle_request
-    return decorate
-
-
-def allow_for_user_own_resources_only(
-    authorizer: Authorizer,
-    get_entity_by_id_and_user_id: Callable[[int, int], Any]
-):
-    def decorate(handle_request):
-        @wraps(handle_request)
-        async def wrapped_handle_request(*args, **kwargs):
-            try:
-                authorizer.authorize_for_user_own_resources_only(
-                    kwargs['id'],
-                    get_entity_by_id_and_user_id,
-                    kwargs['request']
-                )
-            except (KeyError):
-                raise AuthDecorException(
-                    "Request handler must accept 'id' and 'request' parameters"
-                )
-            return await handle_request(*args, **kwargs)
-        return wrapped_handle_request
-    return decorate
-
-
-def allow_for_user_roles(roles: list[str], authorizer: Authorizer):
-    def decorate(handle_request):
-        @wraps(handle_request)
-        async def wrapped_handle_request(*args, **kwargs):
-            try:
-                authorizer.authorize_if_user_has_one_of_roles(
-                    roles, kwargs['request']
-                )
-            except KeyError:
-                raise AuthDecorException(
-                    "Request handler must accept 'request' parameter"
-                )
-            return await handle_request(*args, **kwargs)
-        return wrapped_handle_request
-    return decorate
+// ...
 ```
-
-In the above example, we implemented decorators that can take parameters. Those decorators have three levels of nested functions
-compared to non-parameterized ones with only two levels of nested functions. Standard decorators without parameters can be used in the following way:
-
-```python
-def my_decorator(func):
-    # ...
-
-@my_decorator
-def func():
-   # ...
-
-# The above is same as:
-
-my_decorated_func = my_decorator(func)
-```
-
-Decorators that take parameters can be used in the following way:
-
-```python
-def my_decorator(arg):
-    def decorate(func):
-        # ...
-    return decorate
-
-@my_decorator(some_arg)
-def func():
-   # ...
-
-# The above is the same as:
-
-my_decorated_func = my_decorator(some_arg)(func)
-```
-
-In the above authorization decorator example, we used the `@wraps` decorator from the `functools` module. This is because how FastAPI works with the request handler methods. If we did not use the `@wraps` decorator, we would get an error, which states that FastAPI is expecting `args` and `kwargs` parameters for a request handler. All the authorization decorators except the `@allow_any_user` decorator require that FastAPI
-request handlers accept a `request` argument. The `@allow_for_self` decorator also requires that a FastAPI request handler
-accepts either a `user_id` argument or a DTO argument with the argument name ending with the `dto` word. This DTO argument must be an object having a `user_id` attribute.
-
-Now, we can use the above-defined authorization decorators when defining the request handlers as follows:
-
-```python
-# Imports ...
-
-@app.get('/sales-item-service/sales-items')
-@allow_any_user
-async def get_sales_items():
-    # ...
-
-@app.post('/messaging-service/messages')
-@allow_authorized_user(authorizer)
-async def create_message(request: Request):
-    # ...
-
-@app.get('/order-service/orders/{id}')
-@allow_for_user_own_resources_only(
-    authorizer,
-    order_service.get_order_by_id_and_user_id
-)
-async def get_order(id: int, request: Request):
-    # ...
-
-@app.post('/order-service/orders')
-@allow_for_user_own_resources_only(authorizer)
-async def create_order(
-    order_dto: InputOrder, request: Request
-):
-    # ...
-
-@app.put('/order-service/orders/{id}')
-@allow_for_user_own_resources_only(
-    authorizer,
-    order_service.get_order_by_id_and_user_id
-)
-async def update_order(
-    id: int, order: OrderUpdate, request: Request
-):
-    # ...
-
-@app.delete('/order-service/orders/{id}')
-@allow_for_user_roles(['admin'], authorizer)
-async def delete_order(id: int, request: Request):
-    # ...
-```
-
-Next, we create a function to check that all request handlers in a microservice project contain
-an authorization decorator. This function should be called before starting the microservice. You can put this
-function and its call into a microservice starter project so that all new microservices created from the starter
-project automatically check for the presence of an authorization decorator in all request handlers.
-
-```python
-import os
-
-
-class AuthDecorNotSpecifiedException(Exception):
-    def __init__(self, file_name: str, line_number: int):
-        self.__file_name = file_name
-        self.__line_number = line_number
-
-    def __str__(self):
-        return f'Auth decorator not specified in file {self.__file_name} line {self.__line_number}'
-
-
-def ensure_request_handlers_have_auth*decor():
-    for path, *, file_names in os.walk('./'):
-        for file_name in file_names:
-            if file_name.endswith('.py'):
-                file_path_name = os.path.join(path, file_name)
-                with open(file_path_name) as file:
-                    lines = file.readlines()
-                prev_line = ''
-                for line_index, line in enumerate(lines):
-                    line = line.strip()
-                    if any(
-                        [
-                            prev_line.startswith(decorator)
-                            for decorator in [
-                                '@app.get',
-                                '@app.put',
-                                '@app.patch',
-                                '@app.post',
-                                '@app.delete',
-                            ]
-                        ]
-                    ):
-                        if not line.startswith('@allow_'):
-                            line_number = line_index + 1
-                            raise AuthDecorNotSpecifiedException(
-                                file_name, line_number
-                            )
-                    prev_line = line
-
-
-if os.environ.get('ENV') == 'DEVELOPMENT':
-    ensure_request_handlers_have_auth_decor()
-```
-
-The above code walks all Python files in the current directory and its subdirectories, reads their contents, and verifies that an authorization decorator (`@allow_xxx`) is present after the following decorators: `@app.get/put/patch/post/delete`.
 
 ### Password Policy
 
