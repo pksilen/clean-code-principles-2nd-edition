@@ -1000,18 +1000,18 @@ for various reasons, such as not possible or feasible. When you need to modify a
 
 Let's have an example where we change the configuration parser so that it should produce an error if the configuration
 contains extra properties. Now we have the specification of the change defined. Next, we need to modify the tests.
-We need to modify the `test_try_parse__with_extra_props` method as follows:
+We need to modify the `testParseWithExtraProps` method as follows:
 
-```python
-import unittest
+```java
+class ConfigParserTests {
+  // ...
 
-
-class ConfigParserTests(unittest.TestCase):
-    # ...
-
-    def test_try_parse__with_extra_props(self):
-        # Change this scenario so that an error
-        # is expected
+  @Test
+  void testParseWithExtraProps() {
+    // Change this scenario so that an error
+    // is expected
+  }
+}
 ```
 
 Next, we implement the wanted change and check that all tests pass.
@@ -1019,10 +1019,7 @@ Next, we implement the wanted change and check that all tests pass.
 Let's have another example where we change the configuration parser so that the configuration can be given
 in YAML in addition to JSON. We need to add the following failing unit tests:
 
-```python
-import unittest
-
-
+```java
 class ConfigParserTests(unittest.TestCase):
     # ...
 
