@@ -311,21 +311,33 @@ class CarTests {
 
 You could make the assertion even more readable by extracting a well-named method, for example:
 
-```python
-class CarTests(unittest.TestCase):
-    __initial_speed = ...
-    __car = Car(initial_speed)
+```java
+class CarTests {
+  private final int INITIAL_SPEED = ...
+  private Car car;
 
-    def test_accelerate(self):
-        # WHEN
-        self.__car.accelerate()
+  @BeforeEach
+  void setUp() {
+    car = new Car(INITIAL_SPEED);
+  }
 
-        # THEN
-        self.__assert_speed_is_increased()
+  void testAccelerate() {
+    // WHEN
+    car.accelerate();
 
-    def __assert_speed_is_increased(self):
-        self.assertGreater(self.__car.speed, self.__initial_speed)
+    // THEN
+    assertSpeedIsIncreased();
+  }
+
+  private assertSpeedIsIncreased() {
+    assertTrue(car.getSpeed() > INITIAL_SPEED)
+  }
+}
 ```
+
+Notice how well the test method now reads:
+
+> testAccelerate: When car accelerate, then assert speed is increased
 
 You can use the feature-based naming instead of the method-based naming convention if you want. I use the method-based naming convention in all unit tests in this book.
 
@@ -335,24 +347,21 @@ Let's continue with an example. Suppose there is the following user story in the
 
 Let's first write a test for the simplest 'happy path' scenario of the specified functionality: parsing a single property only.
 
-```python
-import unittest
+```java
+class ConfigParserTests {
+  private final ConfigParser configParser = new ConfigParserImpl();
 
-from ConfigParserImpl import ConfigParserImpl
+  def testParseWhenSuccessful() {
+    // GIVEN
+    final var configStr = "propName1=value1";
 
+    // WHEN
+    final var config = configParser.parse(configStr);
 
-class ConfigParserTests(unittest.TestCase):
-    config_parser = ConfigParserImpl()
-
-    def test_parse__when_successful(self):
-        # GIVEN
-        config_str = 'propName1=value1'
-
-        # WHEN
-        config = self.config_parser.parse(config_str)
-
-        # THEN
-        self.assertEqual(config.get_property_value('propName1'), 'value1')
+    # THEN
+    assertEquals('value1', config.getPropertyValue('propName1'));
+  }
+}
 ```
 
 If we run the test, we get a compilation error, meaning the test case we wrote won't pass. Next,
