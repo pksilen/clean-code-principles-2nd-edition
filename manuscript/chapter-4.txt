@@ -493,7 +493,7 @@ public class ConfigParserImpl extends ConfigParser {
 We could continue the TDD cycle by adding new test cases for additional functionality if such existed.
 
 Before starting the TDD process, list all the requirements (scenarios) with bullet points so you don't forget any. The scenarios should cover all
-happy paths, edge cases, and failure/security scenarios. For example for a single method, you might identify the following six scenarios:
+happy paths, edge cases, and failure/security scenarios. For example, for a single method, you might identify the following six scenarios:
 
 - Edge case scenarios
   - Scenario A
@@ -516,14 +516,17 @@ In the simplest case, a specialized scenario can be implemented, for example, by
 An example of a specialized scenario with a `List` class's `isEmpty` method is when the list is empty after creating a new `List` object.
 Test that first, and only after that test a scenario where something is added to the list, and it is no longer empty.
 
-At the end of the list are the generalized scenarios that should make the function work with any input. To summarize, during the TDD process, you work from a specialized implementation towards a more generalized implementation.
+At the end of the scenario list are the generalized scenarios that should make the function work with any input.
+To summarize, during the TDD process, you work from a specialized implementation towards a more generalized implementation.
 
-The drawback of TDD is that you cannot always be 100% sure if you have a generalized enough implementation. You can only be 100% sure that your implementation works with the input used in the tests, but you cannot be sure if any input works correctly. To ensure that, you would have to test all possible input values (like all integer values), which is typically unreasonable.
+The drawback of TDD is that you cannot always be 100% sure if you have a generalized enough implementation.
+You can only be 100% sure that your implementation works with the input used in the tests, but you cannot be sure if any input works correctly.
+To ensure that, you would have to test all possible input values (like all integer values), which is typically unreasonable.
 
-Let's have another TDD example with a function that has edge cases. We should implement a `contains` method for a string class (we assume here that the `in` operator does not exists). The method should
-do the following:
+Let's have another TDD example with a function that has edge cases. We should implement a `contains` method for a Java string class
+(we assume here that the Java String class's `contains` method does not exists). The method should do the following:
 
-> *The method takes a string argument, and if that string is found in the string the string object represents, then `True` is returned. Otherwise, `False` is returned.*
+> *The method takes a string argument, and if that string is found in the string the string object represents, then `true` is returned. Otherwise, `false` is returned.*
 
 There are several scenarios we might want to test to make sure that the function works correctly in every
 case:
@@ -543,10 +546,7 @@ case:
 
 Let's start with the first scenario:
 
-```python
-import unittest
-
-
+```java
 class StringTests(unittest.TestCase):
     def test_contains__strings_are_equal(self):
         # GIVEN
