@@ -233,7 +233,7 @@ You can `push` an item to the stack and `pop` an item from the stack. You can al
 These features have multiple scenarios: for example, how they behave if the stack is empty versus the stack with items in it.
 When you add features to a class, you should put them into new methods or, preferably, use the *open-closed principle* and put them in a totally new class.
 
-Below are two examples of test method names in a `StackTests` class. The first one contains the method name that is tested, and the second one is named after the feature:
+Below are two Java examples of test method names in a `StackTests` class. The first one contains the method name that is tested, and the second one is named after the feature:
 
 ```java
 class StackTests {
@@ -255,53 +255,54 @@ class StackTests {
 }
 ```
 
-Here is another example:
+Here is another Java example:
 
-```python
-class CarTests(unittest.TestCase):
-    def test_accelerate(self):
-        # GIVEN
-        initial_speed = ...
-        car = Car(initial_speed)
+```java
+class CarTests {
+  def test_accelerate(self):
+    # GIVEN
+    initial_speed = ...
+    car = Car(initial_speed)
 
-        # WHEN
-        car.accelerate()
+    # WHEN
+    car.accelerate()
 
-        # THEN
-        self.assertGreater(car.speed, initial_speed)
+    # THEN
+     self.assertGreater(car.speed, initial_speed)
 
-    def test_decelerate(self):
-        # GIVEN
-        initial_speed = ...
-        car = Car(initial_speed)
+  def test_decelerate(self):
+    # GIVEN
+    initial_speed = ...
+    car = Car(initial_speed)
 
-        # WHEN
-        car.accelerate()
+    # WHEN
+    car.accelerate()
 
-        # THEN
-        self.assertLess(car.speed, initial_speed)
+    # THEN
+    self.assertLess(car.speed, initial_speed)
 
-    def should_increase_speed_when_accelerates(self):
-        # GIVEN
-        initial_speed = ...
-        car = Car(initial_speed)
+  def should_increase_speed_when_accelerates(self):
+    # GIVEN
+    initial_speed = ...
+    car = Car(initial_speed)
 
-        # WHEN
-        car.accelerate()
+    # WHEN
+    car.accelerate()
 
-        # THEN
-        self.assertGreater(car.speed, initial_speed)
+    # THEN
+    self.assertGreater(car.speed, initial_speed)
 
-    def should_decrease_speed_when_decelerates(self):
-        # GIVEN
-        initial_speed = ...
-        car = Car(initial_speed)
+  def should_decrease_speed_when_decelerates(self):
+    # GIVEN
+    initial_speed = ...
+    car = Car(initial_speed)
 
-        # WHEN
-        car.accelerate()
+    # WHEN
+    car.accelerate()
 
-        # THEN
-        self.assertLess(car.speed, initial_speed)
+    # THEN
+    self.assertLess(car.speed, initial_speed)
+}
 ```
 
 You could make the assertion even more readable by extracting a well-named method, for example:
