@@ -199,7 +199,8 @@ When asking people who have conducted TDD, they say the main benefit is that it 
 like designing the function and thinking of and implementing (and remembering to implement) all possible execution paths.
 
 TDD can feel unnatural at the beginning. It can slow you down at first. You just have to keep practicing it systematically. In that way, you can start gradually seeing the benefits and
-build a habit of always using TDD. Later, you will notice that it begins to feel natural, and it does not slow you down anymore but brings you the many benefits depicted above. It can actually speed you up because less complex thinking (no big upfront design, safe refactoring) and debugging are needed.
+build a habit of always using TDD. Later, you will notice that it begins to feel natural, and it does not slow you down anymore but brings you the many benefits depicted above.
+It can actually speed you up because less complex thinking (no big upfront design, safe refactoring) and debugging are needed.
 
 The complete TDD cycle, as instructed by *Kent Beck* in his book *Test-Driven Development by Example* consists of the following steps:
 
@@ -210,33 +211,48 @@ The complete TDD cycle, as instructed by *Kent Beck* in his book *Test-Driven De
 5) Refactor as needed (Existing tests should ensure that anything won't break)
 6) Start again from the first step until all functionality is implemented, refactored, and tested
 
-Instead of TDD, you should use low-level behavior-driven development (BDD). We discuss BDD later in this chapter
+Instead of TDD, you should actually use low-level behavior-driven development (BDD). We discuss BDD later in this chapter
 when addressing integration testing. Low-level BDD extends TDD by more formally defining the low-level (function/unit-level) behavior. To use BDD,
 ensure the following in your unit tests:
 
 - Test method name tells the tested public function name (feature name) and the scenario that is tested in that particular test method
-- The test method body is organized into three sections: Given, When, and Then steps. This is basically the same thing as Arrange-Act-Assert, which is the suggested way to structure unit tests. In the Given/Arrange phase, you prepare everything for the test. In the Act/When phase, you perform an operation; in the Assert/Then phase, you make assertions about the operation result. Try to keep the assertion phase as simple as possible. The best is to have only a single assertion, but that is not always possible. You can also extract multiple assertions into a well-named private method and call that method from the test method in the assertion phase.
+- The test method body is organized into three sections: Given, When, and Then steps. This is basically the same thing as Arrange-Act-Assert,
+  which is the suggested way to structure unit tests. In the Given/Arrange phase, you prepare everything for the test.
+  In the Act/When phase, you perform an operation; in the Assert/Then phase, you make assertions about the operation result.
+  Try to keep the assertion phase as simple as possible. The best is to have only a single assertion, but that is not always possible.
+  You can also extract multiple assertions into a well-named private method and call that method from the test method in the assertion phase.
 
 Some TDD practitioners suggest you name a test method after the feature it is testing, including a description of the scenario and expected outcome.
-That approach can easily make the test method names too long and hard to read. You can always see the expected result by looking at the end of the test method, which should preferably contain only a single assertion. I also like to put test methods in a test class in the same order I have in the tested class. Also, the scenarios can be ordered from a more specialized scenario to a more generalized scenario (or vice versa). All this makes navigating between test methods a breeze. Also, there is not much difference between a class's features and its public methods. Each public method should implement a single feature only (remember the *single responsibility principle*). A single feature (method) consists of one or more scenarios. For example, a `Stack` has four features: You can `push` an item to the stack and `pop` an item from the stack. You can also ask if the stack `is_empty` or ask its `size`. These features have multiple scenarios: for example, how they behave if the stack is empty versus the stack with items in it. When you add features to a class, you should put them into new methods or, preferably, use the *open-closed principle* and put them in a totally new class.
+That approach can easily make the test method names too long and hard to read. You can always see the expected result by looking at the end of the test method,
+which should preferably contain only a single assertion. I also like to put test methods in a test class in the same order I have in the tested class.
+Also, the scenarios can be ordered from a more specialized scenario to a more generalized scenario (or vice versa).
+All this makes navigating between test methods a breeze. Also, there is not much difference between a class's features and its public methods.
+Each public method should implement a single feature only (remember the *single responsibility principle*).
+A single feature (method) consists of one or more scenarios. For example, a `Stack` class has four features:
+You can `push` an item to the stack and `pop` an item from the stack. You can also ask if the stack `isEmpty` or ask its `size`.
+These features have multiple scenarios: for example, how they behave if the stack is empty versus the stack with items in it.
+When you add features to a class, you should put them into new methods or, preferably, use the *open-closed principle* and put them in a totally new class.
 
 Below are two examples of test method names in a `StackTests` class. The first one contains the method name that is tested, and the second one is named after the feature:
 
-```python
-class StackTests(unittest.TestCase):
-    def test_pop__when_stack_is_empty(self):
-        # ...
+```java
+class StackTests {
+  @Test
+  void testPopWhenStackIsEmpty() {
+    // WHEN + THEN
+    assertThrows(...);
+  }
 
-        # WHEN + THEN
-        self.assertRaises(...)
 
-    # You can also use method name prefixed with 'it':
-    # it_should_raise_error_when_popping_item_from_empty_stack
-    def should_raise_error_when_popping_item_from_empty_stack(self):
-        # ...
-
-        # WHEN + THEN
-        self.assertRaises(...)
+  // You can also use method name prefixed with 'it':
+  // itShouldRaiseErrorWhenPoppingItemFromEmptyStack
+  // The 'it' means what is tested: a stack
+  @Test
+  def shouldRaiseErrorWhenPoppingItemFromEmptyStack {
+    // WHEN + THEN
+    assertThrows(...);
+  }
+}
 ```
 
 Here is another example:
