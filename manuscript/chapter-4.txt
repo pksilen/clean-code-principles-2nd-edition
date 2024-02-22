@@ -884,7 +884,9 @@ unimplemented and untested. This is what has happened to me, also. And it has ha
 could save me from those bugs, I started to take it seriously.
 
 You can conduct USDD as an alternative to TDD/BDD. In USDD,
-you first specify the unit (i.e., function). You extract all the needed tests from the function specification, including the "happy path" or "happy paths", edge cases, and failure/security scenarios. Then, you put a `fail` call in all the tests so as not to forget to implement them later. Additionally, you can add a comment on the expected result of a test. For example, in failure scenarios, you can write a comment
+you first specify the unit (i.e., function). You extract all the needed tests from the function specification, including
+the "happy path" or "happy paths", edge cases, and failure/security scenarios. Then, you put a `fail` call in all the tests so as not to forget to implement them later.
+Additionally, you can add a comment on the expected result of a test. For example, in failure scenarios, you can write a comment
 that tells what kind of error is expected to be raised, and in an edge case, you can put a comment that tells with the input of *x*, the output of *y* is
 expected. (Later, when the tests are implemented, the comments can be removed.)
 
@@ -894,24 +896,20 @@ Let's say that we have the following function specification:
 
 Let's first write a failing test case for the "happy path" scenario:
 
-```python
-import unittest
-
-
-class ConfigParserTests(unittest.TestCase):
-    def test_try_parse__when_successful(self):
-        # Happy path scenario, returns a 'Config' object
-        self.fail()
+```java
+class ConfigParserTests {
+  @Test
+  void testTryParseWhenSuccessful() {
+    // Happy path scenario, returns a 'Config' object
+    fail();
+}
 ```
 
 Next, let's write a failing test case for the other scenarios extracted from the above function specification:
 
-```python
-import unittest
-
-
-class ConfigParserTests(unittest.TestCase):
-    # ...
+```java
+class ConfigParserTests {
+    // ...
 
     def test_try_parse__when_json_parsing_fails(self):
         # Failure scenario, should produce an error
@@ -940,6 +938,7 @@ class ConfigParserTests(unittest.TestCase):
     def test_try_parse__when_string_prop_too_long(self):
         # Input validation security scenario, should produce an error
         self.fail()
+}
 ```
 
 Now, you have a high-level specification of the function in the form of scenarios. Next, you can continue with
