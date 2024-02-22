@@ -44,41 +44,67 @@ the function is expected to do in various scenarios, not how the function is imp
 you can easily refactor the function implementation, e.g., rewrite the private functions that the public function uses without
 modifying the related unit tests (or with minimal changes).
 
-Below is an example of a public function using a private function:
+Below is a JavaScript example:
 
-{format: python}
-![parse_config.py](resources/chapter4/code/parse_config.py)
+{title: "parseConfig.js"}
+```js
+import { doSomething } from 'other-module';
 
-In the above *parse_config.py* module, there is one public function, `parse_config`, and one private function, `__read_file`. In unit testing,
-you should test the public `parse_config` function in isolation and mock the `do_something` function, which is imported from another module.
-And you indirectly test the private `__read_file` function when testing the public `parse_config` function.
+function readFile(...) {
+  // ...
+}
 
-Below is the same example rewritten using classes. You test the class-based version in a similar way as the above version. You
-write unit tests for the public `parse_config` method only. Those tests will test the private `__read_file` method indirectly.
-You must supply a mock instance of the `OtherClass` class for the `ConfigParser` constructor.
+export default function parseConfig(...) {
+ // ...
+ // readFile(...)
+ // doSomething(...)
+ // ...
+}
 
-```python
-class OtherClass:
-    # ...
+In the above module, there is one public function, `parseConfig`, and one private function, `readFile`. In unit testing,
+you should test the public `parseConfig` function in isolation and mock the `doSomething` function, which is imported from another module.
+And you indirectly test the private `readFile` function when testing the public `parseConfig` function.
 
-    def do_something(self, ...) -> None:
-        # ...
+Below is the above example written in Java. You test the Java version in a similar way as the JavaScript version. You
+write unit tests for the public `parseConfig` method only. Those tests will test the private `readFile` function indirectly.
+You must supply a mock instance of the `OtherInterface` interface for the `ConfigParser` constructor. This is because you
+should not be testing dependencies of the `ConfigParser` class in the unit tests of the `ConfigParser` class.
+
+```java
+public interface OtherInterface {
+  void doSomething(...);
+}
 
 
-class ConfigParser:
-    def __init__(self, other_class: OtherClass):
-        self.__other_class = other_class
+public class OtherClass implements OtherInterface {
+ // ...
 
-    # ...
+ public void doSomething(...) {
+    // ...
+ }
+}
 
-    def parse_config(self, ...):
-        # ...
-        # self.__read_file(...)
-        # self.__other_class.do_something(...)
-        # ...
 
-    def __read_file(self, ...):
-        # ...
+public class ConfigParser {
+   private OtherInterface otherObject;
+
+   public ConfigParser(final OtherInterface otherObject) {
+      this.otherObject = otherObject;
+   }
+
+   // ...
+
+   public Configuration parseConfig(...) {
+      // ...
+      // readFile(...)
+      // otherClass.doSomething(...)
+      // ...
+   }
+
+   private String readFile(...) {
+      // ...
+   }
+}
 ```
 
 If you have a public function using many private methods, testing the public method can become complicated, and the test method becomes long, possibly with many expectations on mocks. It can be challenging to remember to test every scenario that exists in the public and related private methods.
