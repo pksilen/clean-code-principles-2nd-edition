@@ -248,7 +248,7 @@ class StackTests {
   // itShouldRaiseErrorWhenPoppingItemFromEmptyStack
   // The 'it' means what is tested: a stack
   @Test
-  def shouldRaiseErrorWhenPoppingItemFromEmptyStack {
+  void shouldRaiseErrorWhenPoppingItemFromEmptyStack() {
     // WHEN + THEN
     assertThrows(...);
   }
@@ -259,49 +259,53 @@ Here is another Java example:
 
 ```java
 class CarTests {
-  def test_accelerate(self):
-    # GIVEN
-    initial_speed = ...
-    car = Car(initial_speed)
+  void testAccelerate() {
+    // GIVEN
+    final var initialSpeed = ...
+    final var car = new Car(initialSpeed);
 
-    # WHEN
-    car.accelerate()
+    // WHEN
+    car.accelerate();
 
-    # THEN
-     self.assertGreater(car.speed, initial_speed)
+    // THEN
+    assertTrue(car.getSpeed() > initialSpeed);
+  }
 
-  def test_decelerate(self):
-    # GIVEN
-    initial_speed = ...
-    car = Car(initial_speed)
+  void testDecelerate() {
+    // GIVEN
+    final var initialSpeed = ...
+    final var car = new Car(initialSpeed);
 
-    # WHEN
-    car.accelerate()
+    // WHEN
+    car.decelerate();
 
-    # THEN
-    self.assertLess(car.speed, initial_speed)
+    // THEN
+    assertTrue(car.getSpeed() < initialSpeed);
+  }
 
-  def should_increase_speed_when_accelerates(self):
-    # GIVEN
-    initial_speed = ...
-    car = Car(initial_speed)
+  void shouldIncreaseSpeedWhenAccelerates() {
+    // GIVEN
+    final var initialSpeed = ...
+    final var car = new Car(initialSpeed);
 
-    # WHEN
-    car.accelerate()
+    // WHEN
+    car.accelerate();
 
-    # THEN
-    self.assertGreater(car.speed, initial_speed)
+    // THEN
+    assertTrue(car.getSpeed() > initialSpeed);
+  }
 
-  def should_decrease_speed_when_decelerates(self):
-    # GIVEN
-    initial_speed = ...
-    car = Car(initial_speed)
+  void shouldDecreaseSpeedWhenDecelerates() {
+    // GIVEN
+    final var initialSpeed = ...
+    final var car = new Car(initialSpeed);
 
-    # WHEN
-    car.accelerate()
+    // WHEN
+    car.decelerate();
 
-    # THEN
-    self.assertLess(car.speed, initial_speed)
+    // THEN
+    assertTrue(car.getSpeed() < initialSpeed);
+  }
 }
 ```
 
