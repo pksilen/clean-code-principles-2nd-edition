@@ -718,134 +718,131 @@ class MyStringTests {
 
 Let's add a test for the seventh scenario:
 
-```python
-class StringTests(unittest.TestCase):
-    # ...
+```java
+class MyStringTests {
+  // ...
 
-    def test_contains__when_arg_string_is_longer_than_other_string(self):
-        # GIVEN
-        string = MyString('String')
-        another_string = 'String111'
+  @Test
+  void testContainsWhenArgStringIsLongerThanOtherString() {
+    // GIVEN
+    final var string = new MyString("String");
+    final var anotherString = "String111";
 
-        # WHEN
-        string_contains_another_string = string.contains(another_string)
+    // WHEN
+    final var strContainsAnotherStr =
+      string.contains(anotherString);
 
-        # THEN
-        self.assertFalse(string_contains_another_string)
+    // THEN
+    assertFalse(strContainsAnotherStr);
+}
 ```
 
 Let's modify the implementation:
 
-```python
-from typing import Final
+```java
+public class MyString {
+  private final String value;
 
+  public MyString(final String value) {
+    this.value = value;
+  }
 
-class MyString:
-    def __init__(self, value: str):
-        self.__value: Final = value
+  boolean contains(final String anotherString) {
+    if (value.isEmpty() && !anotherString.isEmpty() ||
+        anotherString.length() > value.length()
+    ) {
+      return false;
+    }
 
-    def contains(self, another_string: str) -> bool:
-        if (
-            not self.__value
-            and another_string
-            or len(another_string) > len(self.__value)
-        ):
-            return False
-        return True
+    return true;
+  }
+}
 ```
 
 Let's add a test for the eigth scenario:
 
-```python
-class StringTests(unittest.TestCase):
-    # ...
+```java
+class MyStringTests {
+  // ...
 
-    def test_contains__when_arg_string_is_found_in_middle(self):
-        # GIVEN
-        string = MyString('String')
-        another_string = 'ri'
+  @Test
+  void testContainsWhenArgStringIsFoundInMiddle() {
+    // GIVEN
+    final var string = new MyString("String");
+    final var anotherString = "ri";
 
-        # WHEN
-        string_contains_another_string = string.contains(another_string)
+    // WHEN
+    final var strContainsAnotherStr =
+      string.contains(anotherString);
 
-        # THEN
-        self.assertTrue(string_contains_another_string)
+    // THEN
+    assertTrue(strContainsAnotherStr);
+}
 ```
 
 We don't have to modify the implementation to make the above test pass.
 Let's add the final test:
 
-```python
-class StringTests(unittest.TestCase):
-    # ...
+```java
+class MyStringTests {
+  // ...
 
-    def test_contains__when_arg_string_is_not_found(self):
-        # GIVEN
-        string = MyString('String')
-        another_string = 'aa'
+  @Test
+  void testContainsWhenArgStringIsNotFound() {
+    // GIVEN
+    final var string = new MyString("String");
+    final var anotherString = "aa";
 
-        # WHEN
-        string_contains_another_string = string.contains(another_string)
+    // WHEN
+    final var strContainsAnotherStr =
+      string.contains(anotherString);
 
-        # THEN
-        self.assertFalse(string_contains_another_string)
+    // THEN
+    assertFalse(strContainsAnotherStr);
+}
 ```
 
-Let's modify the implementation to make the above (and earlier tests) to pass:
+Let's modify the implementation to make the above (and, of course, earlier tests) to pass:
 
-```python
-from typing import Final
+```java
+public class MyString {
+  private final String value;
 
+  public MyString(final String value) {
+    this.value = value;
+  }
 
-class MyString:
-    def __init__(self, value: str):
-        self.__value: Final = value
+  boolean contains(final String anotherString) {
+    if (value.isEmpty() && !anotherString.isEmpty() ||
+        anotherString.length() > value.length() ||
+        value.indexOf(anotherString) == -1
+    ) {
+      return false;
+    }
 
-    def contains(self, another_string: str) -> bool:
-        if (
-            not self.__value
-            and another_string
-            or len(another_string) > len(self.__value)
-            or self.__value.find(another_string) == -1
-        ):
-            return False
-        return True
+    return true;
+  }
+}
 ```
-
-Let's add a test for the eigth scenario:
-
-```python
-class StringTests(unittest.TestCase):
-    # ...
-
-    def test_contains__when_arg_string_is_found_at_middle(self):
-        # GIVEN
-        string = MyString('String')
-        another_string = 'ri'
-
-        # WHEN
-        string_contains_another_string = string.contains(another_string)
-
-        # THEN
-        self.assertTrue(string_contains_another_string)
-```
-
-We don't have to modify the implementation to make the above test pass.
 
 Next, we should refactor. We can notice that the if-statement condition can be simplified to the following:
 
-```python
-from typing import Final
+```java
+public class MyString {
+  private final String value;
 
+  public MyString(final String value) {
+    this.value = value;
+  }
 
-class MyString:
-    def __init__(self, value: str):
-        self.__value: Final = value
+  boolean contains(final String anotherString) {
+    if (value.indexOf(anotherString) == -1) {
+      return false;
+    }
 
-    def contains(self, another_string: str) -> bool:
-        if self.__value.find(another_string) == -1:
-            return False
-        return True
+    return true;
+  }
+}
 ```
 
 You may have noticed that some refactoring was needed until we came up with the final solution. This is what
