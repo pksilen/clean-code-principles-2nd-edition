@@ -866,10 +866,13 @@ TDD, the following section presents an alternative to TDD that is still better t
 
 #### Unit Specification-Driven Development (USDD)
 
-For some of you, the above-described TDD cycle may sound cumbersome, or you may not be fully convinced about the benefits it brings. For this reason, I am presenting an alternative to TDD that you can use until you feel ready to try TDD out.
-The approach I am presenting is inferior to TDD but superior to the traditional "test-last" approach because it reduces the number of bugs by concentrating on the unit (function) specification before the implementation.
+For some of you, the above-described TDD cycle may sound cumbersome, or you may not be fully convinced about the benefits it brings.
+For this reason, I am presenting an alternative to TDD that you can use until you feel ready to try TDD out.
+The approach I am presenting is inferior to TDD but superior to the traditional "test-last" approach because it reduces
+the number of bugs by concentrating on the unit (function) specification before the implementation.
 There are clear benefits in specifying the function behavior beforehand. I call this approach *unit specification-driven development* (USDD).
-When function behavior is defined first, one is usually less likely to forget to test or implement something. The USDD approach forces you to consider the function specification: happy path(s), possible security issues, edge, and failure cases.
+When function behavior is defined first, one is usually less likely to forget to test or implement something.
+The USDD approach forces you to consider the function specification: happy path(s), possible security issues, edge, and failure cases.
 
 If you don't practice USDD and always do the implementation first, it is more likely you will forget an edge case or a particular
 failure/security scenario. When you don't practice USDD, you go straight to the implementation, and you tend to think about
