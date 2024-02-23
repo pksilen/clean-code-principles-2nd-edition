@@ -238,7 +238,7 @@ Below are two Java examples of test method names in a `StackTests` class. The fi
 ```java
 class StackTests {
   @Test
-  void testPopWhenStackIsEmpty() {
+  void testPop_whenStackIsEmpty() {
     // WHEN + THEN
     assertThrows(...);
   }
@@ -357,7 +357,7 @@ class ConfigParserTests {
   private final ConfigParser configParser = new ConfigParserImpl();
 
   @Test
-  void testParseWhenSuccessful() {
+  void testParse_whenSuccessful() {
     // GIVEN
     final var configString = "propName1=value1";
 
@@ -409,7 +409,7 @@ class ConfigParserTests {
   private final ConfigParser configParser = new ConfigParserImpl();
 
  @Test
-  def testParseWhenSuccessful() {
+  def testParse_whenSuccessful() {
     // GIVEN
     final var configString = "propName1=value1\npropName2=value2";
 
@@ -457,7 +457,7 @@ class ConfigParserTests {
   // ...
 
   @Test
-  void testParseWhenParsingFails() {
+  void testParse_whenParsingFails() {
     // GIVEN
     final var configString = 'invalid';
 
@@ -557,7 +557,7 @@ Let's start with the first scenario:
 ```java
 class MyStringTests {
   @Test
-  void testContainsWhenStringsAreEqual() {
+  void testContains_whenStringsAreEqual() {
     // GIVEN
     final var string = new MyString("String");
     final var another_string = "String";
@@ -595,7 +595,7 @@ class MyStringTests {
   // ...
 
   @Test
-  void testContainsWhenBothStringsAreEmpty() {
+  void testContains_whenBothStringsAreEmpty() {
     // GIVEN
     final var string = new MyString("");
     final var anotherString = "";
@@ -617,7 +617,7 @@ class MyStringTests {
   // ...
 
   @Test
-  void testContainsWhenArgumentStringsIsEmpty() {
+  void testContains_whenArgumentStringsIsEmpty() {
     // GIVEN
     final var string = new MyString("String");
     final var anotherString = "";
@@ -639,7 +639,7 @@ class MyStringTests {
   // ...
 
   @Test
-  void testContainsWhenStringsIsEmpty() {
+  void testContains_whenStringsIsEmpty() {
     // GIVEN
     final var string = new MyString("");
     final var anotherString = "String";
@@ -680,7 +680,7 @@ class MyStringTests {
   // ...
 
   @Test
-  void testContainsWhenArgStringIsFoundAtBegin() {
+  void testContains_whenArgStringIsFoundAtBegin() {
     // GIVEN
     final var string = new MyString("String");
     final var anotherString = "Str";
@@ -702,7 +702,7 @@ class MyStringTests {
   // ...
 
   @Test
-  void testContainsWhenArgStringIsFoundAtEnd() {
+  void testContains_whenArgStringIsFoundAtEnd() {
     // GIVEN
     final var string = new MyString("String");
     final var anotherString = "ng";
@@ -723,7 +723,7 @@ class MyStringTests {
   // ...
 
   @Test
-  void testContainsWhenArgStringIsLongerThanOtherString() {
+  void testContains_whenArgStringIsLongerThanOtherString() {
     // GIVEN
     final var string = new MyString("String");
     final var anotherString = "String111";
@@ -766,7 +766,7 @@ class MyStringTests {
   // ...
 
   @Test
-  void testContainsWhenArgStringIsFoundInMiddle() {
+  void testContains_whenArgStringIsFoundInMiddle() {
     // GIVEN
     final var string = new MyString("String");
     final var anotherString = "ri";
@@ -788,7 +788,7 @@ class MyStringTests {
   // ...
 
   @Test
-  void testContainsWhenArgStringIsNotFound() {
+  void testContains_whenArgStringIsNotFound() {
     // GIVEN
     final var string = new MyString("String");
     final var anotherString = "aa";
@@ -899,7 +899,7 @@ Let's first write a failing test case for the "happy path" scenario:
 ```java
 class ConfigParserTests {
   @Test
-  void testParseWhenSuccessful() {
+  void testParse_whenSuccessful() {
     // Happy path scenario, returns a 'Config' object
     fail();
 }
@@ -912,43 +912,43 @@ class ConfigParserTests {
   // ...
 
   @Test
-  void testParseWhenParsingFails() {
+  void testParse_whenParsingFails() {
     // Failure scenario, should produce an error
     fail();
   }
 
   @Test
-  void testParseWhenMandatoryPropIsMissing() {
+  void testParse_whenMandatoryPropIsMissing() {
     // Failure scenario, should produce an error
     fail();
   }
 
   @Test
-  void testParseWhenOptionalPropIsMissing() {
+  void testParse_whenOptionalPropIsMissing() {
     // Should use default value
     fail();
   }
 
   @Test
-  void testParseWithExtraProps() {
+  void testParse_withExtraProps() {
     // Extra props should be discarded
     fail();
   }
 
   @Test
-  void testParseWhenPropHasInvalidType() {
+  void testParse_whenPropHasInvalidType() {
     // Failure scenario, should produce an error
     fail();
   }
 
   @Test
-  void testParseWhenIntegerPropOutOfRange() {
+  void testParse_whenIntegerPropOutOfRange() {
     // Input validation security scenario, should produce an error
     fail();
   }
 
   @Test
-  void testParseWhenStringPropTooLong() {
+  void testParse_whenStringPropTooLong() {
     // Input validation security scenario, should produce an error
     fail();
   }
@@ -1007,7 +1007,7 @@ class ConfigParserTests {
   // ...
 
   @Test
-  void testParseWithExtraProps() {
+  void testParse_withExtraProps() {
     // Change this scenario so that an error
     // is expected
   }
@@ -1024,32 +1024,32 @@ class ConfigParserTests {
   // ...
 
   @Test
-  void testParseWhenYamlParsingSucceeds() {
+  void testParse_whenYamlParsingSucceeds() {
     fail();
   }
 
   @Test
-  void testParseWhenYamlParsingFails(self):
+  void testParse_whenYamlParsingFails(self):
     // Should produce an error
     fail();
 }
 ```
 
-We should also rename the following test methods: `testParseWhenSuccessful` and `testParseWhenParsingFails` to
-`testParseWhenJsonParsingSucceeds` and `testParseWhenJsonParsingFails`. Next, we
+We should also rename the following test methods: `testParse_whenSuccessful` and `testParse_whenParsingFails` to
+`testParse_whenJsonParsingSucceeds` and `testParse_whenJsonParsingFails`. Next, we
 implement the changes to the function, and lastly, we implement the two new tests. (Depending on the actual test implementation, you may
 or may not need to make small changes to JSON parsing-related tests to make them pass.)
 
 As the final example, let's make the following change: Configuration has no optional properties, but all properties are
-mandatory. This means that we can remove the following test: `testParseWhenOptionalPropIsMissing`. We also need
-to change the `testParseWhenMandatoryPropIsMissing` test:
+mandatory. This means that we can remove the following test: `testParse_whenOptionalPropIsMissing`. We also need
+to change the `testParse_whenMandatoryPropIsMissing` test:
 
 ```java
 class ConfigParserTests {
   // ...
 
   @Test
-  void testParseWhenMandatoryPropIsMissing() {
+  void testParse_whenMandatoryPropIsMissing() {
     // Change this scenario so that an error
     // is expected
   }
@@ -1073,7 +1073,8 @@ If you are naming your test methods according to the method they test, use the f
 For example, if the tested method is `tryParse`, the test method name should be `testParse`.
 There are usually several tests for a single function. All test method
 names should begin with *test&lt;function-name&gt;*, but the test method name should also contain a description
-of the specific scenario the test method tests, for example: `testParseWhenParsingFails`.
+of the specific scenario the test method tests, for example: `testParse_whenParsingFails`. The method name and
+the scenario should be separated by a single underscore to enhance readability.
 
 #### Mocking
 
