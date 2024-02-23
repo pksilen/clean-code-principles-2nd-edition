@@ -4123,21 +4123,20 @@ class BusDriversParserImplTests {
 
 Let's implement the `parse` method to make the above test pass:
 
-```python
-class BusDriversParser(Protocol):
-    def parse(self, bus_driver_specs: list[str]) -> list[BusDriver]:
-        pass
+```java
+public interface BusDriversParser(Protocol) {
+  List<BusDriver> parse(final List<String> busDriverSpecs);
+}
 
 
-class BusDriversParserImpl(Protocol):
-    def parse(self, bus_driver_specs: list[str]) -> list[BusDriver]:
-        return [
-            self.__get_bus_driver(bus_driver_spec)
-            for bus_driver_spec in bus_driver_specs
-        ]
-
-    def __get_bus_driver(self, bus_driver_spec: str) -> BusDriver:
-        return BusDriverImpl(CircularBusRoute([BusStopImpl()]), {Rumor()})
+public class BusDriversParserImpl implements BusDriversParser:
+  public List<BusDriver> parse(final List<String> busDriverSpecs) {
+    return busDriverSpecs.stream().map(busDriverSpec ->
+      new BusDriverImpl(
+        new CircularBusRoute(List.of(new BusStopImpl()), Set.of(new Rumor()))
+      )
+    ).toList();
+  }
 ```
 
 Let's create a test for a scenario where we have multiple drivers with one bus stop and one rumor each; both the bus stops
