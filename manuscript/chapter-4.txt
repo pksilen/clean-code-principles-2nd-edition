@@ -3659,26 +3659,31 @@ class BusDriverImplTests {
 }
 ```
 
-Let's implement the `BusDriverImpl` class to make the above test pass. Before that, we must add a test for the new `get_first_bus_stop` method in the `BusRouteImpl` class.
+Let's implement the `BusDriverImpl` class to make the above test pass. Before that, we must add a test for the new `getFirstBusStop` method in the `BusRouteImpl` class.
 
-```python
-class CircularBusRouteTests(unittest.TestCase):
-    def test_get_first_bus_stop(self):
-        # GIVEN
-        bus_stop_a = BusStopImpl()
-        bus_stop_b = BusStopImpl()
-        bus_route = CircularBusRoute([bus_stop_a, bus_stop_b])
+```java
+class CircularBusRouteTests {
+  // ...
 
-        # WHEN
-        first_bus_stop = bus_route.get_first_bus_stop()
+  @Test
+  void testGetFirstBusStop() {
+    // GIVEN
+    final var busStopA = new BusStopImpl();
+    final var busStopB = new BusStopImpl();
+    final var busRoute = new CircularBusRoute(List.of(bus_stop_a, bus_stop_b));
 
-        # THEN
-        self.assertEqual(first_bus_stop, bus_stop_a)
+    // WHEN
+    final var firstBusStop = busRoute.getFirstBusStop();
+
+    // THEN
+    assertEquals(busStopA, firstBusStop);
+  }
+}
 ```
 
 Let's modify the `CircularBusRoute` class to make the above test pass:
 
-```python
+```java
 class BusRoute(Protocol):
     # ...
 
