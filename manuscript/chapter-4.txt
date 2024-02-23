@@ -1112,9 +1112,7 @@ describe('ConfigParser', () => {
 ```
 
 #### Mocking
-
-Python has a `unittest.mock` library for mocking in unit tests. It allows you to replace parts of your [system under test](https://en.wikipedia.org/wiki/System_under_test)
-with mock objects and make assertions about how they have been used. Mocks are one form of *test doubles*. Test doubles are any kind of pretend objects used in place of real objects for testing purposes.
+Mocks are one form of *test doubles*. Test doubles are any kind of pretend objects used in place of real objects for testing purposes.
 The following kinds of test doubles can be identified:
 
 - *Fakes* are objects that have working implementations but are usually simplified versions (suitable for testing) of the real implementations.
@@ -1122,762 +1120,999 @@ The following kinds of test doubles can be identified:
 - *Spies* are stubs that record information based on how they were called.
 - *Mocks* are the most versatile test doubles. They are objects pre-programmed with expectations (e.g., what a method should return when it is called), and like spies, they record information based on how they were called, and those calls can be verified in the test. Mocks are probably the ones you use on a daily basis.
 
-The Python mocking library provides the following ways
-to mock:
+Let's have a small Spring Boot example of mocking dependencies in unit tests. We have a service class that
+contains public functions for which we want to write unit tests:
 
-- Patch class/object/attribute/method using `@patch`
-- Patch object attribute/method using `@patch.object`
-- Create a mock function with `Mock` constructor
-- Patch a dictionary
+{title: "SalesItemServiceImpl.java"}
+```java
+@Service
+public class SalesItemServiceImpl implements SalesItemService {
+  @Autowired
+  private SalesItemRepository salesItemRepository;
 
-Let's have examples that cover all four different ways of mocking. First, we will have a Kafka client that allows the creation of a topic on a Kafka broker. We want the topic creation to be idempotent, i.e., it does not do anything if the topic already exists.
-We will use the *unit specification driven development* (USDD) in this exercise by first specifying the functionality of the Kafka client as failing unit tests:
+  @AutoWired
+  private SalesItemFactory salesItemFactory;
 
-```python
-from unittest import TestCase
+  @Override
+  public final SalesItem createSalesItem(
+    final InputSalesItem inputSalesItem
+  ) {
+    return salesItemRepository.save(
+      salesItemFactory.createFrom(inputSalesItem));
+  }
 
-
-class KafkaClientTests(TestCase):
-    def test_try_create_topic__when_create_succeeds(self):
-        self.fail()
-
-    def test_try_create_topic__when_create_fails(self):
-        # Raise an error
-        self.fail()
-
-    def test_try_create_topic__when_topic_exists(self):
-        self.fail()
+  @Override
+  public final Iterable<SalesItem> getSalesItems() {
+    return salesItemRepository.findAll();
+  }
+}
 ```
 
-Next, we will write the implementation for the `KafkaClient` class:
+In the Spring Boot project, we need to define the following dependency in the `build.gradle` file:
 
-```python
-from confluent_kafka import KafkaError, KafkaException
-from confluent_kafka.admin import AdminClient
-from confluent_kafka.cimpl import NewTopic
-
-from DataExporterError import DataExporterError
-
-
-class KafkaClient:
-    def __init__(self, kafka_host: str):
-        self.__admin_client = AdminClient(
-            {'bootstrap.servers': kafka_host}
-        )
-
-    class CreateTopicError(DataExporterError):
-        pass
-
-    def try_create_topic(
-        self,
-        name: str,
-        num_partitions: int,
-        replication_factor: int,
-        retention_in_secs: int,
-        retention_in_gb: int
-    ):
-        topic = NewTopic(
-            name,
-            num_partitions,
-            replication_factor,
-            config={
-                'retention.ms': str(retention_in_secs * 1000),
-                'retention.bytes': str(retention_in_gb * pow(10, 9))
-            }
-        )
-
-        try:
-            topic_name_to_creation_future = (
-                self.__admin_client.create_topics([topic])
-            )
-
-            topic_name_to_creation_future[name].result()
-        except KafkaException as error:
-            if error.args[0].code() != KafkaError.TOPIC_ALREADY_EXISTS:
-                raise self.CreateTopicError(error)
+```groovy
+dependencies {
+  // Other dependencies ...
+  testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
 ```
 
-Let's implement the first test method to test the successful execution of the `try_create_topic` method:
+Now, we can create unit tests using JUnit, and we can use the [Mockito](https://site.mockito.org/) library for mocking. Looking at the above code, we can notice
+that the `SalesItemServiceImpl` service depends on a `SalesItemRepository`. According to the unit testing principle, we should mock
+that dependency. Similarly, we should also mock the `SalesItemFactory` dependency:
 
-```python
-from unittest import TestCase
-from unittest.mock import Mock, patch
+{title: "SalesItemServiceTests.java"}
+```java
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.springframework.boot.test.context.SpringBootTest;
 
-from KafkaClient import KafkaClient
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.refEq;
 
 
-class KafkaClientTests(TestCase):
-    @patch('asyncio.Future')
-    @patch('KafkaClient.NewTopic')
-    @patch('KafkaClient.AdminClient')
-    def test_try_create_topic__when_create_succeeds(
-        self,
-        admin_client_class_mock: Mock,
-        new_topic_class_mock: Mock,
-        future_class_mock: Mock,
-    ):
-        # GIVEN
-        admin_client_mock = admin_client_class_mock.return_value
-        topic_creation_future_mock = future_class_mock.return_value
+@SpringBootTest
+class SalesItemServiceTests {
+  private static final String SALES_ITEMS_NOT_EQUAL = "Sales items not equal";
 
-        admin_client_mock.create_topics.return_value = {
-            'test': topic_creation_future_mock
-        }
+  // Create sales item mock
+  @Mock
+  private SalesItem mockSalesItem;
 
-        kafka_client = KafkaClient('localhost:9092')
+  // Create input sales item mock
+  @Mock
+  private InputSalesItem mockInputSalesItem;
 
-        # WHEN
-        kafka_client.try_create_topic(
-            'test',
-            num_partitions=3,
-            replication_factor=2,
-            retention_in_secs=5 * 60,
-            retention_in_gb=100,
-        )
+  // Create mock implementation of
+  // SalesItemRepository interface
+  @Mock
+  private SalesItemRepository mockSalesItemRepository;
 
-        # THEN
-        admin_client_class_mock.assert_called_once_with(
-            {'bootstrap.servers': 'localhost:9092'}
-        )
+  // Create mock implementation of
+  // SalesItemFactory interface
+  @Mock
+  private SalesItemFactory mockSalesItemFactory;
 
-        new_topic_class_mock.assert_called_once_with(
-            'test',
-            3,
-            2,
-            config={
-                'retention.ms': str(5 * 60 * 1000),
-                'retention.bytes': str(100 * pow(10, 9)),
-            },
-        )
+  // Injects 'mockSalesItemRepository' and 'mockSalesItemFactory'
+  // mocks to 'salesItemService'
+  @InjectMocks
+  private SalesItemService salesItemService = new SalesItemServiceImpl();
 
-        admin_client_mock.create_topics.assert_called_once_with(
-            [new_topic_class_mock.return_value]
-        )
+  @Test
+  final void testCreateSalesItem() {
+    // GIVEN
+    // Instructs to return 'mockSalesItem' when
+    // salesItemFactoryMock's createFrom
+    // method is called with an argument that reference
+    // equals 'mockInputSalesItem'
+    Mockito
+      .when(salesItemFactoryMock.createFrom(refEq(mockInputSalesItem)))
+      .thenReturn(mockSalesItem);
 
-        topic_creation_future_mock.result.assert_called_once()
+    // Instructs to return 'mockSalesItem' when
+    // salesItemRepositoryMock's 'save' method is called
+    // with an argument that reference equals 'mockSalesItem'
+    Mockito
+      .when(salesItemRepositoryMock.save(refEq(mockSalesItem)))
+      .thenReturn(mockSalesItem);
+
+    // WHEN
+    final var salesItem = salesItemService.createSalesItem(mockInputSalesItem);
+
+    // THEN
+    assertEquals(mockSalesItem, salesItem, SALES_ITEMS_NOT_EQUAL);
+  }
+
+  @Test
+  final void testGetSalesItems() {
+    // GIVEN
+    // Instructs to return a list of containing one sales item
+    // 'mockSalesItem' when salesItemRepository's 'findAll'
+    // method is called
+    Mockito
+      .when(salesItemRepositoryMock.findAll())
+      .thenReturn(List.of(mockSalesItem));
+
+    // WHEN
+    final var salesItems = salesItemService.getSalesItems();
+
+    // THEN
+    final var iterator = salesItems.iterator();
+
+    assertEquals(iterator.next(), mockSalesItem, SALES_ITEMS_NOT_EQUAL);
+    assertFalse(iterator.hasNext());
+  }
+}
 ```
 
-In the above example, we use two classes, `AdminClient` and `NewTopic` from the [Confluent Kafka library](https://docs.confluent.io/kafka-clients/python/current/overview.html). We should not access these
-dependencies directly in our unit tests. So, we must mock them. This means we patch both `NewTopic` and `AdminClient` classes imported from the `KafkaClient`, which
-imports them from `confluent_kafka.cimpl` and `confluent_kafka.admin` respectively. The mocks are created using `@patch` decorators.
-We also mock the `asyncio.Future` class because `AdminClient.create_topics` returns a dict containing a `Future` instance.
-The mocked versions of the classes are supplied as arguments to the `test_try_create_topic__when_create_succeeds` method.
-We can access the mocked `AdminClient` and `Future` instances from the mocked classes using the `return_value` property. After executing the test, we need to verify calls to the mocks.
+Java has many testing frameworks and mocking libraries. Below is a small example from a JakartaEE
+microservice that uses TestNG and JMockit libraries for unit testing and mocking, respectively. In the below example, we are testing
+a couple of methods from a `ChartStore` class, which is responsible for handling the persistence of chart entities
+using Java Persistence API (JPA).
 
-Let's add another test for the case when the topic creation fails:
+_ChartStoreTests.java_
 
-```python
-from unittest import TestCase
-from unittest.mock import Mock, patch
+<code class="sourceCodeWithoutLabel">
 
-from confluent_kafka import KafkaError, KafkaException
-from KafkaClient import KafkaClient
+```
+import com.silensoft.conflated...DuplicateEntityError;
+import mockit.Expectations;
+import mockit.Injectable;
+import mockit.Mocked;
+import mockit.Tested;
+import mockit.Verifications;
+import org.testng.annotations.Test;
 
+import javax.persistence.EntityExistsException;
+import javax.persistence.EntityManager;
 
-class KafkaClientTests(TestCase):
-    @patch('asyncio.Future')
-    @patch('KafkaClient.NewTopic')
-    @patch('KafkaClient.AdminClient')
-    def test_try_create_topic__when_create_fails(
-        self,
-        admin_client_class_mock: Mock,
-        new_topic_class_mock: Mock,
-        future_class_mock: Mock,
-    ):
-        # GIVEN
-        kafka_client = KafkaClient('localhost:9092')
-        admin_client_mock = admin_client_class_mock.return_value
-        topic_creation_future_mock = future_class_mock.return_value
+import java.util.Collections;
+import java.util.List;
 
-        admin_client_mock.create_topics.return_value = {
-            'test': topic_creation_future_mock
-        }
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.fail;
 
-        topic_creation_future_mock.result.side_effect = KafkaException(KafkaError(1))
+public class ChartStoreTests {
+  // chartStore will contain an instance
+  // of ChartStoreImpl after @Tested
+  // annotation is processed
+  @Tested
+  private ChartStore chartStore;
 
-        # WHEN
-        try:
-            kafka_client.try_create_topic(
-                'test',
-                num_partitions=3,
-                replication_factor=2,
-                retention_in_secs=5 * 60,
-                retention_in_gb=100,
-            )
+  // @Injectable annotation creates a mock instance
+  // of EntityManager interface and then injects
+  // it where needed
+  // In this case, it will be injected to 'chartStore'
+  @Injectable
+  private EntityManager entityManager;
 
-            self.fail('KafkaClient.CreateTopicError should have been raised')
-        except KafkaClient.CreateTopicError:
-            pass
+  // Create a mock instance of Chart
+  // (does not inject anywhere)
+  @Mocked
+  private Chart chartMock;
 
-        # THEN
-        admin_client_class_mock.assert_called_once_with(
-            {'bootstrap.servers': 'localhost:9092'}
-        )
+  @Test
+  void testCreate() {
+    // WHEN
+    chartStore.create(chartMock);
 
-        new_topic_class_mock.assert_called_once_with(
-            'test',
-            3,
-            2,
-            config={
-                'retention.ms': str(5 * 60 * 1000),
-                'retention.bytes': str(100 * pow(10, 9)),
-            },
-        )
+    // THEN
+    // JMockit's verification block checks
+    // that below mock functions are called
+    new Verifications() {{
+      chartStore.getEntityManager().persist(chartMock);
+      chartStore.getEntityManager().flush();
+    }};
+  }
 
-        admin_client_mock.create_topics.assert_called_once_with(
-            [new_topic_class_mock.return_value]
-        )
+  @Test
+  void testCreate_whenChartAlreadyExists() {
+    // GIVEN
+    // JMockit's expectations block will define what mock methods
+    // calls are expected and also can specify
+    // the return value or result of the mock method call.
+    // Below the 'persist' mock method call will throw
+    // EntityExistsException
+    new Expectations() {{
+      chartStore.getEntityManager().persist(chartMock);
+      result = new EntityExistsException();
+    }};
+
+    try {
+      // WHEN
+      chartStore.create(chartMock);
+      fail("Expected exception, but it was not thrown");
+    } catch (final DuplicateEntityError error) {
+      // THEN successfully throws an error
+    }
+  }
+
+  @Test
+  void testGetChartById() {
+    // GIVEN
+    new Expectations() {{
+      chartStore.getEntityManager().find(Chart.class, 1L);
+      result = chartMock;
+    }};
+
+    // WHEN
+    final var chart = chartStore.getById(1L);
+
+    // THEN
+    assertEquals(chart, chartMock);
+  }
+}
 ```
 
-The key in the above test is to make the `Future` mock instance's `result` method raise a `KafkaException` as
-a side effect. Then, in the test code, we ensure that a `KafkaClient.CreateTopicError` is thrown. If not, we fail the test with
-a message telling us that a `KafkaClient.CreateTopicError` should have been raised.
+</code>
 
-The above two test methods contain duplicate code. We should also keep the test code clean. Let's refactor the test
-case to remove duplicated code. We introduce a `__set_up` method to set up the mocks and create the `KafkaClient` instance.
-We refactor the common mock call assertions into a separate private method used by
-both tests. The `@patch` decorators are moved for the whole test case class, meaning the unit test framework will patch each
-method starting with a *test* prefix.
+Let's have a unit testing example with JavaScript/TypeScript. We will write a unit test for the following
+function using the Jest library:
 
-```python
-from unittest import TestCase
-from unittest.mock import Mock, patch
+_fetchTodos.ts_
 
-from confluent_kafka import KafkaError, KafkaException
-from KafkaClient import KafkaClient
+<code class="sourceCodeWithoutLabel">
 
+```
+import store from '../../store/store';
+import todoService from '../services/todoService';
 
-@patch('asyncio.Future')
-@patch('KafkaClient.NewTopic')
-@patch('KafkaClient.AdminClient')
-class KafkaClientTests(TestCase):
-    def test_try_create_topic__when_create_succeeds(
-        self,
-        admin_client_class_mock: Mock,
-        new_topic_class_mock: Mock,
-        future_class_mock: Mock,
-    ):
-        # GIVEN
-        self.__set_up(admin_client_class_mock, future_class_mock)
+export default async function fetchTodos(): Promise<void> {
+  const { todosState } = store.getState();
+  todosState.isFetching = true;
+  try {
+    todosState.todos = await todoService.tryFetchTodos();
+    todosState.fetchingHasFailed = false;
+  } catch(error) {
+    todosState.fetchingHasFailed = true;
+  }
+  todosState.isFetching = false;
+}
+```
+</code>
 
-        # WHEN
-        self.kafka_client.try_create_topic('test', **self.topic_params)
+Below is the unit test case for the happy path scenario:
 
-        # THEN
-        self.__assert_mock_calls(
-            admin_client_class_mock, new_topic_class_mock
-        )
+_fetchTodos.test.ts_
+```
+import store from '../../store/store';
+import todoService from '../services/todoService';
+import fetchTodos from 'fetchTodos';
+// ...
 
-        self.topic_creation_future_mock.result.assert_called_once()
+// Mock both 'store' and 'todoService' objects
+jest.mock('../../store/store');
+jest.mock('../services/todoService');
 
-    def test_try_create_topic__when_create_fails(
-        self,
-        admin_client_class_mock: Mock,
-        new_topic_class_mock: Mock,
-        future_class_mock: Mock,
-    ):
-        # GIVEN
-        self.__set_up(admin_client_class_mock, future_class_mock)
-        self.topic_creation_future_mock.result.side_effect = KafkaException(KafkaError(1))
+describe('fetchTodos', async () => {
+  it('should fetch todos from todo service', async () => {
+    // GIVEN
+    const todosState = { todos: [] } as TodoState;
+    store.getState.mockReturnValue({ todosState });
 
-        # WHEN
-        try:
-            self.kafka_client.try_create_topic('test', **self.topic_params)
-            self.fail('KafkaClient.CreateTopicError should have been raised')
-        except KafkaClient.CreateTopicError:
-            pass
+    const todos = [{
+      id: 1,
+      name: 'todo',
+      isDone: false
+    }];
 
-        # THEN
-        self.__assert_mock_calls(
-            admin_client_class_mock, new_topic_class_mock
-        )
+    todoService.tryFetchTodos.mockResolvedValue(todos);
 
-     def __set_up(
-        self,
-        admin_client_class_mock: Mock,
-        future_class_mock: Mock,
-    ) -> None:
-        # GIVEN
-        self.admin_client_mock = admin_client_class_mock.return_value
-        self.topic_creation_future_mock = future_class_mock.return_value
+    // WHEN
+    await fetchTodos();
 
-        self.admin_client_mock.create_topics.return_value = {
-            'test': self.topic_creation_future_mock
-        }
-
-        self.topic_params = {
-            'num_partitions': 3,
-            'replication_factor': 2,
-            'retention_in_secs': 5 * 60,
-            'retention_in_gb': 100,
-        }
-
-        self.kafka_client = KafkaClient('localhost:9092')
-
-    def __assert_mock_calls(
-        self, admin_client_class_mock: Mock, new_topic_class_mock: Mock
-    ):
-        admin_client_class_mock.assert_called_once_with(
-            {'bootstrap.servers': 'localhost:9092'}
-        )
-
-        new_topic_class_mock.assert_called_once_with(
-            'test',
-            3,
-            2,
-            config={
-                'retention.ms': str(5 * 60 * 1000),
-                'retention.bytes': str(100 * pow(10, 9)),
-            },
-        )
-
-        self.admin_client_mock.create_topics.assert_called_once_with(
-            [new_topic_class_mock.return_value]
-        )
+    // THEN
+    expect(todosState.isFetching).toBe(false);
+    expect(todosState.fetchingHasFailed).toBe(false);
+    expect(todosState.todos).toBe(todos);
+  });
+});
 ```
 
-Let's add implementation for the final test method:
+In the above example, we used the `jest.mock` function to create mocked versions of the `store` and `todoService` modules.
+Another way to handle mocking with Jest is using `jest.fn()`, which creates a mocked function. Let's assume that the `fetchTodos` function is changed so
+that it takes a `store` and `todoService` as its arguments:
 
-```python
-@patch('asyncio.Future')
-@patch('KafkaClient.NewTopic')
-@patch('KafkaClient.AdminClient')
-class KafkaClientTests(TestCase):
-    # ...
+_fetchTodos.ts_
+```
+// ...
 
-    def test_try_create_topic__when_topic_exists(
-        self,
-        admin_client_class_mock: Mock,
-        new_topic_class_mock: Mock,
-        future_class_mock: Mock,
-    ):
-        # GIVEN
-        self.__set_up(admin_client_class_mock, future_class_mock)
-        self.topic_creation_future_mock.result.side_effect = (
-            KafkaException(KafkaError(KafkaError.TOPIC_ALREADY_EXISTS))
-        )
-
-        # WHEN
-        self.kafka_client.try_create_topic('test', **self.topic_params)
-
-        # THEN
-        self.__assert_mock_calls(
-            admin_client_class_mock, new_topic_class_mock
-        )
+export default async function fetchTodos(
+  store: Store,
+  todoService: TodoService
+): Promise<void> {
+  // Same code here as in earlier example...
+}
 ```
 
-In the above examples, we used `patch` to create mocks for classes. Let's have another example where we patch library
-methods directly. We should implement an HTTP client that fetches JSON data parsed to a dict from a URL.
-Let's utilize the USDD and list all possible scenarios for the HTTP client:
+Now the mocking would look like the following:
 
-- Successfully fetch and parse JSON data from the URL
-- Successfully fetch data from the URL, but parsing the data fails. An error should be raised.
-- Fetching data from the URL fails with an HTTP status code >=400. An error should be raised.
-- Not being able to connect to URL successfully (e.g., malformed URL, connection refused, connection timeout, etc.). An error should be raised.
+_fetchTodos.test.ts_
+```
+import fetchTodos from 'fetchTodos';
+// ...
 
-Let's write a test case with the following failing test methods:
+const store = {
+   getState: jest.fn()
+};
 
-```python
-from unittest import TestCase
+const todoService = {
+   tryFetchTodos: jest.fn();
+}
 
+describe('fetchTodos', async () => {
+  it('should fetch todos from todo service', async () => {
+    // GIVEN
+    // Same code as in earlier example...
 
-class HttpClientTests(TestCase):
-    def test_try_fetch_resource__when_fetch_succeeds(self):
-        self.fail()
+    // WHEN
+    await fetchTodos(store as any, todoService as any);
 
-    def test_try_fetch_resource__when_json_parse_fails(self):
-        # Should raise an error
-        self.fail()
-
-    def test_try_fetch_resource__when_response_has_error(self):
-        # Should raise an error
-        self.fail()
-
-    def test_try_fetch_resource__when_remote_connection_fails(self):
-        # Should raise an error
-        self.fail()
+    // THEN
+    // Same code as in earlier example...
+  });
+});
 ```
 
-Now we can implement the `HttpClient` class so that it provides the functionality specified by the above test
-methods.
+Let's have an example with C++ and Google Test unit testing framework. In C++, you can define a mock class
+by extending a pure virtual base class ("interface") and using Google Mock macros to define mocked methods.
+Below is the definition of a `detectedAnomalies` method that we want to unit test:
 
-```python
-from typing import Any
+_AnomalyDetectionEngine.h_
+```
+class AnomalyDetectionEngine
+{
+public:
+  virtual ~AnomalyDetectionEngine() = default;
 
-import requests
-
-
-class HttpClient:
-    # Replace the 'Exception' below with the base error
-    # class of the software component
-    class Error(Exception):
-        pass
-
-    def try_fetch_resource(self, url: str) -> dict[str, Any]:
-        try:
-            response = requests.get(url, timeout=60)
-            response.raise_for_status()
-            return response.json()
-        except requests.RequestException as error:
-            raise self.Error(error)
+  virtual void detectAnomalies() = 0;
+};
 ```
 
-If we didn't use USDD, we could have easily ended up with the following implementation, focusing solely on the
-happy path:
+_AnomalyDetectionEngineImpl.h_
+```
+#include <memory>
+#include "AnomalyDetectionEngine.h"
+#include "Configuration.h"
 
-```python
-from typing import Any
+class AnomalyDetectionEngineImpl :
+  public AnomalyDetectionEngine
+{
+public:
+  explicit AnomalyDetectionEngineImpl(
+    std::shared_ptr<Configuration> configuration
+  );
 
-import requests
+  void detectAnomalies() override;
 
+private:
+  void detectAnomalies(
+    const std::shared_ptr<AnomalyDetectionRule>& anomalyDetectionRule
+  );
 
-class HttpClient:
-    def fetch_resource(self, url: str) -> dict[str, Any]:
-        response = requests.get(url, timeout=60)
-        response.raise_for_status()
-        return response.json()
+  std::shared_ptr<Configuration> m_configuration;
+};
 ```
 
-The problem is that it is easy to forget to handle the errors possibly thrown from the `requests.get` and
-`Response.json` methods if we directly dive into the implementation. Using USDD forces us to stop before implementing anything and think about the possible
-error scenarios and edge cases in addition to the happy path scenario.
+_AnomalyDetectionEngineImpl.cpp_
+```
+#include <algorithm>
+#include <execution>
+#include "AnomalyDetectionEngineImpl.h"
 
-Let's implement the first test method:
+AnomalyDetectionEngineImpl::AnomalyDetectionEngineImpl(
+  std::shared_ptr<Configuration> configuration
+) : m_configuration(std::move(configuration))
+{}
 
-```python
-from unittest import TestCase
-from unittest.mock import Mock, patch
+void AnomalyDetectionEngineImpl::detectAnomalies()
+{
+  const auto anomalyDetectionRules =
+    m_configuration->getAnomalyDetectionRules();
 
-from HttpClient import HttpClient
+   std::for_each(std::execution::par,
+                 anomalyDetectionRules->cbegin(),
+                 anomalyDetectionRules->cend(),
+                 [this](const auto& anomalyDetectionRule)
+                 {
+                   detectAnomalies(anomalyDetectionRule);
+                 });
+}
 
-URL = 'https://localhost:8080/'
-DICT = {'test': 'test'}
+void AnomalyDetectionEngineImpl::detectAnomalies(
+  const std::shared_ptr<AnomalyDetectionRule>& anomalyDetectionRule
+)
+{
+  const auto anomalyIndicators = anomalyDetectionRule->detectAnomalies();
 
-
-class HttpClientTests(TestCase):
-    @patch('requests.Response.__new__')
-    @patch('requests.get')
-    def test_try_fetch_resource__when_fetch_succeeds(
-        self, requests_get_mock: Mock, response_mock: Mock
-    ):
-        # GIVEN
-        requests_get_mock.return_value = response_mock
-        response_mock.json.return_value = DICT
-
-        # WHEN
-        response_dict = HttpClient().try_fetch_resource(URL)
-
-        # THEN
-        requests_get_mock.assert_called_once_with(URL, timeout=60)
-        self.assertDictEqual(response_dict, DICT)
+  std::ranges::for_each(*anomalyIndicators,
+                        [](const auto& anomalyIndicator)
+                        {
+                          anomalyIndicator->publish();
+                        });
+}
 ```
 
-Let's implement the second test method:
+Let's create a `Configuration` class and a `ConfigurationMock` class for mocks:
 
-```python
-import json
-from unittest import TestCase
-from unittest.mock import Mock, patch
+_Configuration.h_
+```
+#include <memory>
+#include <vector>
+#include "AnomalyDetectionRule.h"
 
-import requests
-from HttpClient import HttpClient
+class Configuration
+{
+public:
+  virtual ~Configuration() = default;
 
-URL = 'https://localhost:8080/'
-DICT = {'test': 'test'}
-
-
-class HttpClientTests(TestCase):
-    @patch('requests.Response.__new__')
-    @patch('requests.get')
-    def test_try_fetch_resource__when_json_parse_fails(
-        self, requests_get_mock: Mock, response_mock: Mock
-    ):
-        # GIVEN
-        requests_get_mock.return_value = response_mock
-        response_mock.json.side_effect = requests.JSONDecodeError(
-            'JSON decode error', json.dumps(DICT), 1
-        )
-
-        # WHEN
-        try:
-            HttpClient().try_fetch_resource(URL)
-            self.fail('HttpClient.Error should have been raised')
-        except HttpClient.Error as error:
-            # THEN
-            self.assertIn('JSON decode error', str(error))
-
-        # THEN
-        requests_get_mock.assert_called_once_with(URL, timeout=60)
+  virtual std::shared_ptr<AnomalyDetectionRules>
+  getAnomalyDetectionRules() const = 0;
+};
 ```
 
-We once again have duplicated test code, and we must refactor the tests:
+_ConfigurationMock.h_
+```
+#include <gmock/gmock.h>
+#include "Configuration.h"
 
-```python
-import json
-from unittest import TestCase
-from unittest.mock import Mock, patch
-
-import requests
-from HttpClient import HttpClient
-
-URL = 'https://localhost:8080/'
-DICT = {'test': 'test'}
-
-
-@patch('requests.Response.__new__')
-@patch('requests.get')
-class HttpClientTests(TestCase):
-    def test_try_fetch_resource__when_fetch_succeeds(
-        self, requests_get_mock: Mock, response_mock: Mock
-    ):
-        # GIVEN
-        requests_get_mock.return_value = response_mock
-        response_mock.json.return_value = DICT
-
-        # WHEN
-        dict_ = HttpClient().try_fetch_resource(URL)
-
-        # THEN
-        requests_get_mock.assert_called_once_with(URL, timeout=60)
-        self.assertDictEqual(dict_, DICT)
-
-    def test_try_fetch_resource__when_json_parse_fails(
-        self, requests_get_mock: Mock, response_mock: Mock
-    ):
-        # GIVEN
-        requests_get_mock.return_value = response_mock
-        response_mock.json.side_effect = requests.JSONDecodeError(
-            'JSON decode error', json.dumps(DICT), 1
-        )
-
-        # WHEN
-        self.assertRaises(
-            HttpClient.Error, HttpClient().try_fetch_resource, URL
-        )
-
-        # THEN
-        requests_get_mock.assert_called_once_with(URL, timeout=60)
+class ConfigurationMock : public Configuration
+{
+public:
+  MOCK_METHOD(std::shared_ptr<AnomalyDetectionRules>,
+              getAnomalyDetectionRules, (), (const)
+  );
+};
 ```
 
-Let's add the final two test methods to complete the test case. I also changed to try-except blocks to use `assertRaises` method to showcase an alternative way to verify that a function call raises an error.
-Use the `assertRaises` method if possible because it shortens and simplifies the test code.
+Let's create an `AnomalyDetectionRule` class and a respective mock class, `AnomalyDetectionRuleMock`:
 
-```python
-import json
-from unittest import TestCase
-from unittest.mock import Mock, patch
+_AnomalyDetectionRule.h_
+```
+#include "AnomalyIndicator.h"
 
-import requests
-from HttpClient import HttpClient
+class AnomalyDetectionRule
+{
+public:
+  virtual ~AnomalyDetectionRule() = default;
 
-URL = 'https://localhost:8080/'
-DICT = {'test': 'test'}
+  virtual std::shared_ptr<AnomalyIndicators>
+  detectAnomalies() = 0;
+};
 
-
-@patch('requests.Response.__new__')
-@patch('requests.get')
-class HttpClientTests(TestCase):
-    # ...
-
-    def test_try_fetch_resource__when_response_has_error(
-        self, requests_get_mock: Mock, response_mock: Mock
-    ):
-        # GIVEN
-        requests_get_mock.return_value = response_mock
-        response_mock.raise_for_status.side_effect = requests.HTTPError()
-
-        # WHEN
-        self.assertRaises(
-            HttpClient.Error, HttpClient().try_fetch_resource, URL
-        )
-
-        # THEN
-        requests_get_mock.assert_called_once_with(URL, timeout=60)
-
-    def test_try_fetch_resource__when_remote_connection_fails(
-        self, requests_get_mock: Mock, response_mock: Mock
-    ):
-        # GIVEN
-        requests_get_mock.side_effect = requests.ConnectionError()
-
-        # WHEN
-        self.assertRaises(
-            HttpClient.Error, HttpClient().try_fetch_resource, URL
-        )
-
-        # THEN
-        requests_get_mock.assert_called_once_with(URL, timeout=60)
+using AnomalyDetectionRules =
+  std::vector<std::shared_ptr<AnomalyDetectionRule>>;
 ```
 
-Let's have an example where we use `@patch.dict`. Let's assume that we have the following code without unit tests:
+_AnomalyDetectionRuleMock.h_
+```
+#include <gmock/gmock.h>
+#include "AnomalyDetectionRule.h"
 
-```python
-import os
-import sys
-
-from KafkaClient import KafkaClient
-
-
-def get_environ_var(name: str) -> str:
-    return (
-        os.environ.get(name)
-        or f'Environment variable {name} is not defined'
-    )
-
-
-def main():
-    kafka_client = KafkaClient(get_environ_var('KAFKA_HOST'))
-
-    try:
-        kafka_client.try_create_topic(
-            get_environ_var('KAFKA_TOPIC'),
-            num_partitions=3,
-            replication_factor=2,
-            retention_in_secs=5 * 60,
-            retention_in_gb=100,
-        )
-    except KafkaClient.CreateTopicError:
-        sys.exit(1)
-
-
-if __name__ == '__main__':
-    main()
+class AnomalyDetectionRuleMock : public AnomalyDetectionRule
+{
+  public:
+    MOCK_METHOD(std::shared_ptr<AnomalyIndicators>,
+                detectAnomalies, ());
+};
 ```
 
-In the unit test case, we use `@patch.dict` to patch the `os.environ` dict. In the second test method, we also use the `@patch.object` decorator
-instead of the plain `@patch` decorator. The `@patch.object` method patches a method/attribute with a mock in `KafkaClient` type objects.
+Let's create an `AnomalyIndicator` class and a mock class, `AnomalyIndicatorMock`:
 
-```python
-import os
-from unittest import TestCase
-from unittest.mock import Mock, patch
+_AnomalyIndicator.h_
+```
+#include <memory>
+#include <vector>
 
-from KafkaClient import KafkaClient
-from main import main
+class AnomalyIndicator
+{
+public:
+  virtual ~AnomalyIndicator() = default;
 
-KAFKA_HOST = 'localhost:9092'
-KAFKA_TOPIC = 'test'
+  virtual void publish() = 0;
+};
 
-
-@patch.dict(os.environ, {'KAFKA_HOST': KAFKA_HOST})
-@patch.dict(os.environ, {'KAFKA_TOPIC': KAFKA_TOPIC})
-class MainTests(TestCase):
-    @patch('main.KafkaClient')
-    def test_main__when_exec_succeeds(self, kafka_client_class_mock: Mock):
-        # GIVEN
-        kafka_client_mock = kafka_client_class_mock.return_value
-
-        # WHEN
-        main()
-
-        # THEN
-        kafka_client_class_mock.assert_called_once_with(KAFKA_HOST)
-        kafka_client_mock.try_create_topic.assert_called_once_with(
-            KAFKA_TOPIC,
-            num_partitions=3,
-            replication_factor=2,
-            retention_in_secs=5 * 60,
-            retention_in_gb=100,
-        )
-
-    @patch.object(KafkaClient, '__init__')
-    @patch.object(KafkaClient, 'try_create_topic')
-    @patch('sys.exit')
-    def test_main__when_exec_failed(
-        self,
-        sys_exit_mock: Mock,
-        try_create_topic_mock: Mock,
-        kafka_client_init_mock: Mock,
-    ):
-        # GIVEN
-        kafka_client_init_mock.return_value = None
-        try_create_topic_mock.side_effect = KafkaClient.CreateTopicError()
-
-        # WHEN
-        main()
-
-        # THEN
-        kafka_client_init_mock.assert_called_once_with(KAFKA_HOST)
-        sys_exit_mock.assert_called_once_with(1)
+using AnomalyIndicators =
+  std::vector<std::shared_ptr<AnomalyIndicator>>;
 ```
 
-Let's create a unit test case for source code that uses dependency injection. We have the following code from an earlier chapter, and
-we would like to create a unit test for the `Application` class `run` method. In the below example, we assume that
-each class is in its own module named according to the class name, and the `di_container = DiContainer()` definition
-is in a module named *di_container.py*.
+_AnomalyIndicatorMock.h_
+```
+#include <gmock/gmock.h>
+#include "AnomalyIndicator.h"
 
-```python
-from enum import Enum
-from typing import Protocol
-
-from dependency_injector import containers, providers
-from dependency_injector.wiring import Provide, inject
-
-class LogLevel(Enum):
-    ERROR = 1
-    WARN = 2
-    INFO = 3
-    # ...
-
-
-class Logger(Protocol):
-    def log(self, log_level: LogLevel, message: str):
-        pass
-
-
-class StdOutLogger(Logger):
-    def log(self, log_level: LogLevel, message: str):
-        # Log to standard output
-
-
-class DiContainer(containers.DeclarativeContainer):
-    wiring_config = containers.WiringConfiguration(
-        modules=['Application']
-    )
-
-    logger = providers.Singleton(StdOutLogger)
-
-
-di_container = DiContainer()
-
-
-class Application:
-    @inject
-    def __init__(self, logger: Logger = Provide['logger']):
-        self.__logger = logger
-
-    def run(self):
-        self.__logger.log(LogLevel.INFO, 'Starting application')
-        # ...
+class AnomalyIndicatorMock : public AnomalyIndicator
+{
+public:
+  MOCK_METHOD(void, publish, ());
+};
 ```
 
-In the below unit test, we first create a mock instance of the `Logger` class and then override the `logger` provider in the DI container to use the mock. We use the `override` context manager
-to define the scope of the override.
+Let's create a unit test for the `detectAnomalies` method in the `AnomalyDetectionEngineImpl` class:
 
-```python
-from unittest import TestCase
-from unittest.mock import Mock
+_AnomalyDetectionEngineImplTests.h_
+```
+#include <gtest/gtest.h>
+#include "ConfigurationMock.h"
+#include "AnomalyDetectionRuleMock.h"
+#include "AnomalyIndicatorMock.h"
 
-from Application import Application
-from di_container import di_container
-from Logger import Logger, LogLevel
+class AnomalyDetectionEngineImplTests : public testing::Test
+{
+protected:
+  void SetUp() override {
+    m_anomalyDetectionRules->push_back(m_anomalyDetectionRuleMock);
+    m_anomalyIndicators->push_back(m_anomalyIndicatorMock);
+  }
 
+  std::shared_ptr<ConfigurationMock> m_configurationMock{
+    std::make_shared<ConfigurationMock>()
+  };
 
-class ApplicationTests(TestCase):
-    def test_run__when_execution_succeeds(self):
-        logger_mock = Mock(Logger)
+  std::shared_ptr<AnomalyDetectionRuleMock> m_anomalyDetectionRuleMock{
+    std::make_shared<AnomalyDetectionRuleMock>()
+  };
 
-        with di_container.logger.override(logger_mock):
-            # GIVEN
-            application = Application()
+  std::shared_ptr<AnomalyDetectionRules> m_anomalyDetectionRules{
+    std::make_shared<AnomalyDetectionRules>()
+  };
 
-            # WHEN
-            application.run()
+  std::shared_ptr<AnomalyIndicatorMock> m_anomalyIndicatorMock{
+    std::make_shared<AnomalyIndicatorMock>()
+  };
 
-            # THEN
-            logger_mock.log.assert_called_once_with(
-                LogLevel.INFO, 'Starting application'
-            )
+  std::shared_ptr<AnomalyIndicators> m_anomalyIndicators{
+    std::make_shared<AnomalyIndicators>()
+  }
+};
+```
+
+_AnomalyDetectionEngineImplTests.cpp_
+```
+#include "../src/AnomalyDetectionEngineImpl.h"
+#include "AnomalyDetectionEngineImplTests.h"
+
+using testing::Return;
+
+TEST_F(AnomalyDetectionEngineImplTests, testDetectAnomalies)
+{
+  // GIVEN
+  AnomalyDetectionEngineImpl anomalyDetectionEngine{m_configurationMock};
+
+  // EXPECTATIONS
+  EXPECT_CALL(*m_configurationMock, getAnomalyDetectionRules)
+    .Times(1)
+    .WillOnce(Return(m_anomalyDetectionRules));
+
+  EXPECT_CALL(*m_anomalyDetectionRuleMock, detectAnomalies)
+    .Times(1)
+    .WillOnce(Return(m_anomalyIndicators));
+
+  EXPECT_CALL(*m_anomalyIndicatorMock, publish).Times(1);
+
+  // WHEN
+  anomalyDetectionEngine.detectAnomalies();
+}
+```
+
+The above example did not contain dependency injection, so let's have another example in C++ where
+dependency injection is used. First, we define a generic base class for singletons:
+
+_Singleton.h_
+```
+#include <memory>
+
+template<typename T>
+class Singleton
+{
+public:
+  Singleton() = default;
+
+  virtual ~Singleton()
+  {
+    m_instance.reset();
+  };
+
+  static inline std::shared_ptr<T>& getInstance()
+  {
+    return m_instance;
+  }
+
+  static void setInstance(const std::shared_ptr<T>& instance)
+  {
+    m_instance = instance;
+  }
+
+private:
+  static inline std::shared_ptr<T> m_instance;
+};
+```
+
+Next, we implement a configuration parser that we will later unit test:
+
+_ConfigParserImpl.h_
+```
+#include <memory>
+#include "Configuration.h"
+
+class ConfigParserImpl {
+public:
+  std::shared_ptr<Configuration> parse();
+};
+```
+
+_ConfigParserImpl.cpp_
+```
+#include "AnomalyDetectionRulesParser.h"
+#include "Configuration.h"
+#include "ConfigFactory.h"
+#include "ConfigParserImpl.h"
+#include "MeasurementDataSourcesParser.h"
+
+std::shared_ptr<Configuration>
+ConfigParserImpl::parse(...)
+{
+  const auto measurementDataSources =
+    MeasurementDataSourcesParser::getInstance()->parse(...);
+
+  const auto anomalyDetectionRules =
+    AnomalyDetectionRulesParser::getInstance()->parse(...);
+
+  return ConfigFactory::getInstance()
+    ->createConfig(anomalyDetectionRules);
+}
+```
+
+Next, we define `MeasurementDataSource`, `MeasurementDataSourcesParser`, and
+`MeasurementDataSourcesParserImpl` classes:
+
+_MeasurementDataSource.h_
+```
+#include <memory>
+#include <vector>
+
+class MeasurementDataSource {
+  // ...
+};
+
+using MeasurementDataSources =
+  std::vector<std::shared_ptr<MeasurementDataSource>>;
+```
+
+_MeasurementDataSourcesParser.h_
+```
+#include "Singleton.h"
+#include "MeasurementDataSource.h"
+
+class MeasurementDataSourcesParser :
+  public Singleton<MeasurementDataSourcesParser>
+{
+public:
+  virtual std::shared_ptr<MeasurementDataSources> parse(...) = 0;
+};
+```
+
+_MeasurementDataSourcesParserImpl.h_
+```
+#include "MeasurementDataSourcesParser.h"
+
+class MeasurementDataSourcesParserImpl :
+  public MeasurementDataSourcesParser
+{
+public:
+  std::shared_ptr<MeasurementDataSources> parse(...) override {
+    // ...
+  }
+};
+```
+
+Next, we define `AnomalyDetectionRulesParser` and `AnomalyDetectionRulesParserImpl`
+classes:
+
+_AnomalyDetectionRulesParser.h_
+```
+#include "Singleton.h"
+#include "AnomalyDetectionRule.h"
+
+class AnomalyDetectionRulesParser :
+  public Singleton<AnomalyDetectionRulesParser>
+{
+public:
+  virtual std::shared_ptr<AnomalyDetectionRules> parse(...) = 0;
+};
+```
+
+_AnomalyDetectionRulesParserImpl.h_
+```
+#include "AnomalyDetectionRulesParser.h"
+
+class AnomalyDetectionRulesParserImpl :
+  public AnomalyDetectionRulesParser
+{
+public:
+  std::shared_ptr<AnomalyDetectionRules> parse(...) override {
+   // ...
+  }
+};
+```
+
+Next, we define `ConfigFactory` and `ConfigFactoryImpl` classes:
+
+_ConfigFactory.h_
+```
+#include "Singleton.h"
+#include "Configuration.h"
+
+class ConfigFactory :
+  public Singleton<ConfigFactory>
+{
+public:
+  virtual std::shared_ptr<Configuration>
+  createConfig(
+    const std::shared_ptr<AnomalyDetectionRules>& rules
+  ) = 0;
+};
+```
+
+_ConfigFactoryImpl.h_
+```
+#include "ConfigFactory.h"
+
+class ConfigFactoryImpl : public ConfigFactory
+{
+public:
+  std::shared_ptr<Configuration>
+  createConfig(
+    const std::shared_ptr<AnomalyDetectionRules>& rules
+  ) override {
+    // ...
+  }
+};
+```
+
+Then we define a dependency injector class:
+
+_DependencyInjector.h_
+```
+#include "AnomalyDetectionRulesParserImpl.h"
+#include "ConfigFactoryImpl.h"
+#include "MeasurementDataSourcesParserImpl.h"
+
+class DependencyInjector final
+{
+public:
+  static void injectDependencies()
+  {
+    AnomalyDetectionRulesParser::setInstance(
+      std::make_shared<AnomalyDetectionRulesParserImpl>()
+    );
+
+    ConfigFactory::setInstance(
+      std::make_shared<ConfigFactoryImpl>()
+    );
+
+    MeasurementDataSourcesParser::setInstance(
+      std::make_shared<MeasurementDataSourcesParserImpl>()
+    );
+  }
+
+private:
+  DependencyInjector() = default;
+};
+```
+
+We inject dependencies upon application startup using the dependency injector:
+
+_main.cpp_
+```
+#include "DependencyInjector.h"
+
+int main()
+{
+  DependencyInjector::injectDependencies();
+
+  // Initialize and start application...
+}
+```
+
+Let's define a unit test class for the `ConfigParserImpl` class:
+
+_ConfigParserImplTests.h_
+```
+#include "MockDependenciesInjectedTest.h"
+
+class ConfigParserImplTests :
+  public MockDependenciesInjectedTest
+{};
+```
+
+All unit test classes should inherit from a base class that injects mock dependencies. When tests are completed,
+the mock dependencies will be removed. The Google Test framework requires this removal because it only validates
+expectations on a mock upon the mock object destruction.
+
+_MockDependenciesInjectedTest.h_
+```
+#include <gtest/gtest.h>
+#include "MockDependencyInjector.h"
+
+class MockDependenciesInjectedTest :
+  public testing::Test
+{
+protected:
+  void SetUp() override
+  {
+    m_mockDependencyInjector.injectMockDependencies();
+  }
+
+  void TearDown() override
+  {
+    m_mockDependencyInjector.removeMockDependencies();
+  }
+
+  MockDependencyInjector m_mockDependencyInjector;
+};
+```
+
+Below are all the mock classes defined:
+
+_AnomalyDetectionRulesParserMock.h_
+```
+#include <gmock/gmock.h>
+#include "AnomalyDetectionRulesParser.h"
+
+class AnomalyDetectionRulesParserMock :
+  public AnomalyDetectionRulesParser
+{
+public:
+  MOCK_METHOD(std::shared_ptr<AnomalyDetectionRules>, parse, (...));
+};
+```
+
+_ConfigFactoryMock.h_
+```
+#include <gmock/gmock.h>
+#include "ConfigFactory.h"
+
+class ConfigFactoryMock : public ConfigFactory
+{
+public:
+  MOCK_METHOD(
+    std::shared_ptr<Configuration>,
+    createConfig,
+    (const std::shared_ptr<AnomalyDetectionRules>& rules)
+  );
+};
+```
+
+_MeasurementDataSourcesParserMock.h_
+```
+#include <gmock/gmock.h>
+#include "MeasurementDataSourcesParser.h"
+
+class MeasurementDataSourcesParserMock :
+  public MeasurementDataSourcesParser
+{
+public:
+  MOCK_METHOD(std::shared_ptr<MeasurementDataSources>, parse, (...));
+};
+```
+
+Below is the `MockDependencyInjector` class defined:
+
+_MockDependencyInjector.h_
+```
+#include "AnomalyDetectionRulesParserMock.h"
+#include "ConfigFactoryMock.h"
+#include "MeasurementDataSourcesParserMock.h"
+
+class MockDependencyInjector final
+{
+public:
+  std::shared_ptr<AnomalyDetectionRulesParserMock>
+  m_anomalyDetectionRulesParserMock{
+    std::make_shared<AnomalyDetectionRulesParserMock>()
+  };
+
+  std::shared_ptr<ConfigFactoryMock> m_configFactoryMock{
+    std::make_shared<ConfigFactoryMock>()
+  };
+
+  std::shared_ptr<MeasurementDataSourcesParserMock>
+  m_measurementDataSourcesParserMock{
+    std::make_shared<MeasurementDataSourcesParserMock>()
+  };
+
+  void injectMockDependencies() const
+  {
+    AnomalyDetectionRulesParser::setInstance(
+      m_anomalyDetectionRulesParserMock
+    );
+
+    ConfigFactory::setInstance(
+      m_configFactoryMock
+    );
+
+    MeasurementDataSourcesParser::setInstance(
+      m_measurementDataSourcesParserMock
+    );
+  }
+
+  void removeMockDependencies() const {
+    AnomalyDetectionRulesParser::setInstance({nullptr});
+    ConfigFactory::setInstance({nullptr});
+    MeasurementDataSourcesParser::setInstance({nullptr});
+  }
+};
+```
+
+Below is the unit test implementation that uses the mocks:
+
+_ConfigParserImplTests.cpp_
+```
+#include "ConfigParserImplTests.h"
+#include "ConfigParserImpl.h"
+
+using testing::Eq;
+using testing::Return;
+
+TEST_F(ConfigParserImplTests, testParseConfig)
+{
+  // GIVEN
+  ConfigParserImpl configParser;
+
+  // EXPECTATIONS
+  EXPECT_CALL(
+    *m_mockDependencyInjector.m_anomalyDetectionRulesParserMock,
+    parse
+  ).Times(1)
+   .WillOnce(Return(m_anomalyDetectionRules));
+
+  EXPECT_CALL(
+    *m_mockDependencyInjector.m_measurementDataSourcesParserMock,
+    parse
+  ).Times(1)
+   .WillOnce(Return(m_measurementDataSources));
+
+  EXPECT_CALL(
+    *m_mockDependencyInjector.m_configFactoryMock,
+    createConfig(Eq(m_anomalyDetectionRules))
+  ).Times(1)
+   .WillOnce(Return(m_configMock));
+
+  // WHEN
+  const auto configuration = configParser.parse();
+
+  // THEN
+  ASSERT_EQ(configuration, m_configMock);
+}
+```
+
+You can also make sure that implementation class instances can be created only in the `DependencyInjector` class by declaring
+implementation class constructors private and making the `DependencyInjector` class a friend of the implementation classes.
+In this way, no one can accidentally create an instance of an implementation class. Instances of implementation classes should be created
+by the dependency injector only. Below is a implementation class where the constructor is made private, and the dependency
+injector is made a friend of the class:
+
+AnomalyDetectionRulesParserImpl.h
+```
+#include "AnomalyDetectionRulesParser.h"
+
+class AnomalyDetectionRulesParserImpl :
+  public AnomalyDetectionRulesParser
+{
+  friend class DependencyInjector;
+
+public:
+  std::shared_ptr<AnomalyDetectionRules> parse() override;
+
+private:
+  AnomalyDetectionRulesParserImpl() = default;
+};
 ```
 
 #### Web UI Component Testing
