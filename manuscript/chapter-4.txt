@@ -3915,54 +3915,44 @@ public class GossipingBusDrivers {
 Next, we should implement a test where drivers don't have common bus stops and they have driven the maximum number of bus stops:
 
 ```python
-class GossipingBusDriversTests(unittest.TestCase):
-    # ...
+class GossipingBusDriversTests {
+  // ...
 
-    @patch('BusStopImpl.__new__')
-    @patch('BusStopImpl.__new__')
-    @patch('BusDriverImpl.__new__')
-    @patch('BusDriverImpl.__new__')
-    def test_drive_until_all_rumors_shared__when_rumors_are_not_shared(
-        self,
-        bus_driver_mock1: Mock,
-        bus_driver_mock2: Mock,
-        bus_stop_mock1: Mock,
-        bus_stop_mock2: Mock,
-    ):
-        # GIVEN
-        bus_stop_mocks = [bus_stop_mock1, bus_stop_mock2]
+  @Test
+  def testDriveUntilAllRumorsShared_whenBusRoutesDontCross(
+    // GIVEN
+    final var mockBusStops = List.of(mockBusStop1, mockBusStop2);
 
-        bus_driver_mock1.drive_to_next_bus_stop.return_value = (
-            bus_stop_mock1
-        )
+    when(mockBusDriver1.driveToNextBusStop()).thenReturn(
+      mockBusStop1
+    );
 
-        bus_driver_mock2.drive_to_next_bus_stop.return_value = (
-            bus_stop_mock2
-        )
+    when(mockBusDriver2.driveToNextBusStop()).thenReturn(
+      mockBusStop2
+    );
 
-        bus_driver_mock1.get_rumors.return_value = {self.rumor1}
-        bus_driver_mock2.get_rumors.return_value = {self.rumor2}
+    when(mockBusDriver1.getRumors).thenReturn(Set.of(self.rumor1));
+    when(mockBusDriver2.getRumors).thenReturn(Set.of(self.rumor2));
 
-        gossiping_bus_drivers = GossipingBusDrivers(
-            [bus_driver_mock1, bus_driver_mock2]
-        )
+    final var gossipingBusDrivers = new GossipingBusDrivers(
+      List.of(mockBusDriver1, mockBusDriver2)
+    );
 
-        max_driven_stop_count = 2
+    final var MAX_DRIVEN_STOP_COUNT = 2;
 
-        # WHEN
-        all_rumors_were_shared = (
-            gossiping_bus_drivers.drive_until_all_rumors_shared(
-                max_driven_stop_count
-            )
-        )
+    // WHEN
+    final var allRumorsWereShared =
+        gossipingBusDrivers.driveUntilAllRumorsShared(
+          MAX_DRIVEN_STOP_COUNT
+        );
 
-        # THEN
-        self.assertFalse(all_rumors_were_shared)
+    // THEN
+    assertFalse(allRumorsWereShared);
 
-        for bus_stop_mock in bus_stop_mocks:
-            self.assertEqual(
-                bus_stop_mock.share_rumors_with_drivers.call_count, 2
-            )
+    for (final var mockBusStop : busStopMocks) {
+      verify(mockBusStop, times(2)).shareRumorsWithDrivers();
+    }
+}
 ```
 
 Let' modify the implementation to make the above test to pass:
