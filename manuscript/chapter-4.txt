@@ -3362,19 +3362,23 @@ class CircularBusRouteTests {
 
 Let's modify the source code to make the above test pass:
 
-```python
-class CircularBusRoute(BusRoute):
-    # ...
+```java
+public class CircularBusRoute implements BusRoute {
+  // ...
 
-    def get_next_bus_stop(self, current_bus_stop: BusStop) -> BusStop:
-        if current_bus_stop not in self.__bus_stops:
-            raise ValueError('Bus stop does not belong to bus route')
+  BusStop getNextBusStop(final BusStop currentBusStop) {
+    if (!busStops.contains(currentBusStop) {
+      throw new IllegalArgumentError("Bus stop does not belong to bus route";
+    }
 
-        if len(self.__bus_stops) == 1:
-            return self.__bus_stops[0]
+    if (busStops.length() == 1) {
+      return busStops.get(0);
+    }
 
-        curr_bus_stop_index = self.__bus_stops.index(current_bus_stop)
-        return self.__bus_stops[curr_bus_stop_index + 1]
+    final var currBusStopIndex = busStops.indexOf(currentBusStop);
+    return busStops.get(currBusStopIndex + 1);
+  }
+}
 ```
 
 Let's add a test for the following scenario:
