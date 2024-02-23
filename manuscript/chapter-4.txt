@@ -3785,74 +3785,78 @@ public class GossipingBusDrivers {
   }
 
   public boolean driveUntilAllRumorsShared(self) -> bool:
-    while True:
-        for bus_driver in self.__bus_drivers:
-            bus_stop = bus_driver.drive_to_next_bus_stop()
-            bus_stop.share_rumors_with_drivers()
+    for (final var busDriver : busDrivers) {
+      final var busStop = busDriver.driveToNextBusStop()
+      busStop.shareRumorsWithDrivers();
+    }
 
-        if self.__all_rumors_are_shared():
-            return True
+    return true;
+  }
 ```
 
 Let's add a test for a scenario where two bus drivers drive from their starting bus stops to two different bus stops and must continue driving
 because all rumors were not shared at the first bus stop. Rumors are shared when drivers continue driving to their next bus stop, which is the same for both drivers.
 
-```python
-class GossipingBusDriversTests(unittest.TestCase):
-    # ...
+```java
+class GossipingBusDriversTests {
+   @Mock
+   private BusStop mockBusStop1;
 
-    @patch('BusStopImpl.__new__')
-    @patch('BusStopImpl.__new__')
-    @patch('BusStopImpl.__new__')
-    @patch('BusDriverImpl.__new__')
-    @patch('BusDriverImpl.__new__')
-    def test_drive_until_all_rumors_shared__after_two_stops(
-        self,
-        bus_driver_mock1: Mock,
-        bus_driver_mock2: Mock,
-        bus_stop_mock1: Mock,
-        bus_stop_mock2: Mock,
-        bus_stop_mock3: Mock,
-    ):
-        # GIVEN
-        bus_stop_mocks = [bus_stop_mock1, bus_stop_mock2, bus_stop_mock3]
+   @Mock
+   private BusStop mockBusStop2;
 
-        bus_driver_mock1.drive_to_next_bus_stop.side_effect = [
-            bus_stop_mock1,
-            bus_stop_mock3,
-        ]
+   @Mock
+   private BusStop mockBusStop3;
 
-        bus_driver_mock2.drive_to_next_bus_stop.side_effect = [
-            bus_stop_mock2,
-            bus_stop_mock3,
-        ]
+   @Mock
+   private BusDriver mockBusDriver1;
 
-        bus_driver_mock1.get_rumors.side_effect = [
-            {self.rumor1},
-            {self.rumor1},
-            self.all_rumors,
-        ]
+   @Mock
+   private BusDriver mockBusDriver2;
 
-        bus_driver_mock2.get_rumors.side_effect = [
-            {self.rumor2},
-            {self.rumor2},
-            self.all_rumors,
-        ]
+   @Test
+   void testDriveUntilAllRumorsShared_afterTwoStops() {
+     // GIVEN
+     final var mockBusStops = List.of(mockBusStop1, mockBusStop2, mockBusStop3);
 
-        gossiping_bus_drivers = GossipingBusDrivers(
-            [bus_driver_mock1, bus_driver_mock2]
-        )
+    when(mockBusDriver1.driveToNextBusStop()).thenReturn(
+      mockBusStop1,
+      mockBusStop3
+    );
 
-        # WHEN
-        all_rumors_were_shared = (
-            gossiping_bus_drivers.drive_until_all_rumors_shared(100)
-        )
+    when(mockBusDriver2.driveToNextBusStop()).thenReturn(
+      mockBusStop2,
+      mockBusStop3
+    );
 
-        # THEN
-        self.assertTrue(all_rumors_were_shared)
+    when(mockBusDriver1.getRumors).thenReturn(
+        Set.of(rumor1),
+        {self.rumor1},
+        self.all_rumors,
+    ]
 
-        for bus_stop_mock in bus_stop_mocks:
-            bus_stop_mock.share_rumors_with_drivers.assert_called_once()
+    bus_driver_mock2.get_rumors.side_effect = [
+        {self.rumor2},
+        {self.rumor2},
+        self.all_rumors,
+    ]
+
+    gossiping_bus_drivers = GossipingBusDrivers(
+        [bus_driver_mock1, bus_driver_mock2]
+    )
+
+    # WHEN
+    all_rumors_were_shared = (
+        gossiping_bus_drivers.drive_until_all_rumors_shared(100)
+    )
+
+    # THEN
+    self.assertTrue(all_rumors_were_shared)
+
+    for bus_stop_mock in bus_stop_mocks:
+        bus_stop_mock.share_rumors_with_drivers.assert_called_once()
+   }
+}
 ```
 
 Let's modify the implementation:
