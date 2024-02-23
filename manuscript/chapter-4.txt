@@ -3755,8 +3755,8 @@ class GossipingBusDriversTests {
     // GIVEN
     when(mockBusDriver1.driveToNextBusStop()).thenReturn(mockBusStop);
     when(mockBusDriver2.driveToNextBusStop()).thenReturn(mockBusStop);
-    when(mockBusDriver1.getRumors()).thenReturn(allRumors);
-    when(mockBusDriver2.getRumors()).thenReturn(allRumors);
+    when(mockBusDriver1.getRumors()).thenReturn(Set.of(rumor1), allRumors);
+    when(mockBusDriver2.getRumors()).thenReturn(Set.of(rumor2), allRumors);
 
     final var gossipingBusDrivers = new GossipingBusDrivers(
         List.of(mockBusDriver1, mockBusDriver2)
@@ -3778,19 +3778,43 @@ Let's make the above test pass with the below code.
 ```java
 public class GossipingBusDrivers {
   private final List<BusDriver> busDrivers;
+  private final Set<Rumor> allRumors;
 
   public GossipingBusDrivers(final List<BusDriver> busDrivers) {
     this.busDrivers = new ImmutableList.copyOf(busDrivers);
-    self.__all_rumors = self.__get_all_rumors()
+    allRumors = getAllRumors();
   }
 
   public boolean driveUntilAllRumorsShared() {
-    for (final var busDriver : busDrivers) {
-      final var busStop = busDriver.driveToNextBusStop()
-      busStop.shareRumorsWithDrivers();
+    while(true) {
+      for (final var busDriver : busDrivers) {
+        final var busStop = busDriver.driveToNextBusStop()
+        busStop.shareRumorsWithDrivers();
+      }
+
+      if (allRumorsAreShared()) {
+        return true;
+      }
     }
 
-    return true;
+    return false;
+  }
+
+  private Set<Rumor> getAllRumors() {
+    final Set<Rumor> allRumors = new HashSet<>();
+
+    for(final var busDriver : busDrivers) {
+      for(final var rumors : busDriver.getRumors()) {
+          allRumors.addAll(rumors);
+      }
+    }
+
+    return allRumors;
+  }
+
+  private boolean allRumorsAreSshared {
+    return busDrivers.stream()
+      .allMatch(busDriver -> busDriver.getRumors().equals(allRumors));
   }
 ```
 
@@ -3830,32 +3854,32 @@ class GossipingBusDriversTests {
      );
 
     when(mockBusDriver1.getRumors).thenReturn(
-        Set.of(rumor1),
-        {self.rumor1},
-        self.all_rumors,
-    ]
+      Set.of(rumor1),
+      Set.of(rumor1),
+      allRumors
+    );
 
-    bus_driver_mock2.get_rumors.side_effect = [
-        {self.rumor2},
-        {self.rumor2},
-        self.all_rumors,
-    ]
+    when(mockBusDriver2.getRumors).thenReturn(
+      Set.of(rumor2),
+      Set.of(rumor2),
+      allRumors
+    );
 
-    gossiping_bus_drivers = GossipingBusDrivers(
-        [bus_driver_mock1, bus_driver_mock2]
+    final var gossipingBusDrivers = new GossipingBusDrivers(
+        List.of(mockBusDriver1, mockBusDriver2]
     )
 
-    # WHEN
-    all_rumors_were_shared = (
-        gossiping_bus_drivers.drive_until_all_rumors_shared(100)
-    )
+    // WHEN
+    final var allRumorsWereShared =
+        gossipingBusDrivers.driveUntilAllRumorsShared();
 
-    # THEN
-    self.assertTrue(all_rumors_were_shared)
+    // THEN
+    assertTrue(all_rumors_were_shared)
 
-    for bus_stop_mock in bus_stop_mocks:
-        bus_stop_mock.share_rumors_with_drivers.assert_called_once()
-   }
+    for (final var mockBusStop : mockBusStops) {
+      verify(mockBusStop).shareRumorsWithDrivers();
+    }
+  }
 }
 ```
 
@@ -3877,21 +3901,6 @@ class GossipingBusDrivers:
 
             if self.__all_rumors_are_shared():
                 return True
-
-    def __get_all_rumors():
-            return {
-                rumor
-                for bus_driver in self.__bus_drivers
-                for rumor in bus_driver.get_rumors()
-            }
-
-        def __all_rumors_are_shared(self) -> bool:
-            return all(
-                [
-                    bus_driver.get_rumors() == self.__all_rumors
-                    for bus_driver in self.__bus_drivers
-                ]
-            )
 ```
 
 Next, we should implement a test where drivers don't have common bus stops and they have driven the maximum number of bus stops:
