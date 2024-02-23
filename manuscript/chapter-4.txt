@@ -3086,7 +3086,7 @@ decide how to implement the above things. For example, the team could specify th
 - Application gets drivers as subsequent command line parameters
 - Each driver is specified with a string in the following format: *<bus route as a comma-separated list of bus stops>;<comma-separated list of rumors>*, e.g., `bus-stop-a,bus-stop-b;rumor-1,rumor-2`
 
-Below are the step implementations for the above Gherkin feature specification:
+We will use Python and Behave to implement the integration tests. Below are the step implementations for the above Gherkin feature specification:
 
 ```python
 import subprocess
