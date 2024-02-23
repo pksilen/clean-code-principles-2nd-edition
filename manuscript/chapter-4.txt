@@ -3735,45 +3735,42 @@ Let's write a unit test for the first scenario when all rumors are shared after 
 The `driveUntilAllRumorsShared` method
 makes drivers drive to the next bus stop (the same for both drivers) and share rumors there.
 
-```python
-class GossipingBusDrivers(unittest.TestCase):
-    rumor1 = Rumor()
-    rumor2 = Rumor()
-    all_rumors = {rumor1, rumor2}
+```java
+class GossipingBusDriversTests {
+  @Mock
+  private BusStop mockBusStop;
 
-    @patch('BusStopImpl.__new__')
-    @patch('BusDriverImpl.__new__')
-    @patch('BusDriverImpl.__new__')
-    def test_drive_until_all_rumors_shared__after_one_stop(
-        self,
-        bus_driver_mock1: Mock,
-        bus_driver_mock2: Mock,
-        bus_stop_mock: Mock,
-    ):
-        # GIVEN
-        bus_driver_mock1.drive_to_next_bus_stop.return_value = (
-            bus_stop_mock
-        )
+  @Mock
+  private BusDriver mockBusDriver1;
 
-        bus_driver_mock2.drive_to_next_bus_stop.return_value = (
-            bus_stop_mock
-        )
+  @Mock
+  private BusDriver mockBusDriver2;
 
-        bus_driver_mock1.get_rumors.return_value = self.all_rumors
-        bus_driver_mock2.get_rumors.return_value = self.all_rumors
+  private final Rumor rumor1 = new Rumor();
+  private final Rumor rumor2 = new Rumor();
+  private final Set<Rumor> allRumors = Set.of(rumor1, rumor2);
 
-        gossiping_bus_drivers = GossipingBusDrivers(
-            [bus_driver_mock1, bus_driver_mock2]
-        )
+  @Test
+  void testDriveUntilAllRumorsShared_afterOneStop() {
+    // GIVEN
+    when(mockBusDriver1.driveToNextBusStop()).thenReturn(mockBusStop);
+    when(mockBusDriver2.driveToNextBusStop()).thenReturn(mockBusStop);
+    when(mockBusDriver1.getRumors()).thenReturn(allRumors);
+    when(mockBusDriver2.getRumors()).thenReturn(allRumors);
 
-        # WHEN
-        all_rumors_were_shared = (
-            gossiping_bus_drivers.drive_until_all_rumors_shared(100)
-        )
+    final var gossipingBusDrivers = new GossipingBusDrivers(
+        List.of(mockBusDriver1, mockBusDriver2)
+    );
 
-        # THEN
-        self.assertTrue(all_rumors_were_shared)
-        bus_stop_mock.share_rumors_with_drivers.assert_called_once()
+    // WHEN
+    final var allRumorsWereShared =
+        gossipingBusDrivers.driveUntilAllRumorsShared(100);
+
+    // THEN
+    assertTrue(allRumorsWereShared);
+    verify(mockBusStop).shareRumorsWithDrivers();
+  }
+}
 ```
 
 Let's make the above test pass with the below code.
