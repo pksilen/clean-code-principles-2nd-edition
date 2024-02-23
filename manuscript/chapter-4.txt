@@ -3995,33 +3995,41 @@ public class GossipingBusDrivers {
 
 Let's refactor the method slightly so that it is not too long (max 5-9 statements):
 
-```python
-class GossipingBusDrivers:
-    # ...
+```java
+public class GossipingBusDrivers {
+  // ...
 
-    def drive_until_all_rumors_shared(
-        self, max_driven_stop_count: int
-    ) -> bool:
-        while True:
-            bus_stops = {
-                bus_driver.drive_to_next_bus_stop()
-                for bus_driver in self.__bus_drivers
-            }
+  public boolean driveUntilAllRumorsShared(final int maxDrivenStopCount) {
+    while(true) {
+      final var busStops = busDriversDriveToNextBusStop();
+      drivenStopCount++;
+      shareRumors(busStops);
 
-            self.__driven_stop_count += 1
-            self.__share_rumors(bus_stops)
+      if (allRumorsAreShared()) {
+        return true;
+      } else if (drivenStopCount == maxDrivenStopCount) {
+        return false;
+      }
+    }
+  }
 
-            if self.__all_rumors_are_shared():
-                return True
-            elif self.__driven_stop_count == max_driven_stop_count:
-                return False
+  private Set<BusStop> busDriversDriveToNextBusStop() {
+    final var Set<BusStop> busStops = new HashSet<>();
 
-    @staticmethod
-    def __share_rumors(bus_stops: set[BusStop]):
-        for bus_stop in bus_stops:
-            bus_stop.share_rumors_with_drivers()
+    for (final var busDriver : busDrivers) {
+      final var busStop = busDriver.driveToNextBusStop();
+      busStops.add(busStop);
+    }
 
-    # ...
+    return busStops;
+  }
+
+  private void shareRumors(final Set<BusStop> busStops) {
+    for (final var busStop : busStops) {
+      busStop.shareRumorsWithDrivers();
+    }
+  }
+}
 ```
 
 Next, we shall implement the `MaxDrivenStopCountParser` and its 'parse' method. Let's create a failing test:
