@@ -1076,6 +1076,41 @@ names should begin with *test&lt;function-name&gt;*, but the test method name sh
 of the specific scenario the test method tests, for example: `testParse_whenParsingFails`. The method name and
 the scenario should be separated by a single underscore to enhance readability.
 
+When using the BDD-style Jest testing library with JavaScript or TypeScript, unit tests are organized and named in the following
+manner:
+
+```js
+describe('<class-name>', () => {
+  describe('<public-method-name>', () => {
+    it('should do this...', () => {
+      // ...
+    });
+
+    it('should do other thing when...', () => {
+      // ...
+    });
+
+    // Other scenarios...
+  });
+});
+
+// Example:
+
+describe('ConfigParser', () => {
+  describe('parse', () => {
+    it('should parse config string successfully', () => {
+      // ...
+    });
+
+    it('should throw an error if parsing fails', () => {
+      // ...
+    });
+
+    // Other scenarios...
+  });
+});
+```
+
 #### Mocking
 
 Python has a `unittest.mock` library for mocking in unit tests. It allows you to replace parts of your [system under test](https://en.wikipedia.org/wiki/System_under_test)
