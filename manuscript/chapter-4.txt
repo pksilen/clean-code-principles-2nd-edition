@@ -3213,13 +3213,14 @@ class CircularBusRouteTests {
   void testConstructor_whenNoBusStops() {
     try {
       // WHEN
-      CircularBusRoute([])
+      final var busStops = List.of();
+      new CircularBusRoute(busStops);
 
-      fail('IllegalArgumentException should have been raised')
+      fail("'IllegalArgumentException should have been raised");
     } catch(final IllegalArgumentException exception) {
       # THEN
       assertEquals(
-        'Bus route must have at least one bus stop',
+        "'Bus route must have at least one bus stop",
         exception.getMessage()
       );
     }
@@ -3229,108 +3230,134 @@ class CircularBusRouteTests {
 
 Let's implement the constructor of the `CircularBusRoute` class to make the above test pass:
 
-```python
-class BusStop(Protocol):
-    pass
+```java
+public interface BusStop {
+}
 
 
-class BusRoute(Protocol):
-    pass
+public interface BusRoute {
+}
 
 
-class CircularBusRoute(BusRoute):
-    def __init__(self, bus_stops: list[BusStop]):
-        if not bus_stops:
-            raise ValueError('Bus route must have at least one bus stop')
-
-        self.__bus_stops: Final = bus_stops.copy()
+public class CircularBusRoute implements BusRoute {
+  public CircularBusRoute(final List<BusStop> busStops) {
+    if (busStops.length() == 0) {
+      throw IllegalArgumentException("Bus route must have at least one bus stop");
+    }
+  }
+}
 ```
 
-The unit test for the next scenario is the following: if there is only one stop in the bus route, the `get_next_bus_stop` method should always
+The unit test for the next scenario is the following: if there is only one stop in the bus route, the `getNextBusStop` method should always
 return that bus stop (because the bus route is circular).
 
-```python
-class CircularBusRouteTests(unittest.TestCase):
-    def test_get_next_bus_stop__when_one_bus_stop(self):
-        # GIVEN
-        bus_stop = BusStopImpl()
-        bus_route = CircularBusRoute([bus_stop])
+```java
+public class CircularBusRouteTests {
+  @Test
+  void testGetNextBusStop_whenOneBusStop() {
+    // GIVEN
+    final var busStop = new BusStopImpl();
+    final var busRoute = new CircularBusRoute(List.of(bus_stop));
 
-        # WHEN
-        next_bus_stop = bus_route.get_next_bus_stop(bus_stop)
+    // WHEN
+    final var nextBusStop = busRoute.getNextBusStop(busStop);
 
-        # THEN
-        self.assertEqual(next_bus_stop, bus_stop)
+    // THEN
+    assertEquals(busStop, nextBusStop);
+}
 ```
 
-Let's implement the `get_next_bus_stop` method to make the above test to pass:
+Let's implement the `getNextBusStop` method to make the above test to pass:
 
-```python
-class BusRoute(Protocol):
-    def get_next_bus_stop(self, current_bus_stop: BusStop):
-        pass
+```java
+public interface BusRoute {
+  BusStop getNextBusStop(final BusStop currentBusStop);
+}
 
 
-class CircularBusRoute(BusRoute):
-    # ...
+class CircularBusRoute implements BusRoute:
+  private final List<BusStop> busStops;
 
-    def get_next_bus_stop(self, current_bus_stop: BusStop) -> BusStop:
-        return self.__bus_stop[0]
+  public CircularBusRoute(final List<BusStop> busStops) {
+    if (busStops.length() == 0) {
+      throw IllegalArgumentException("Bus route must have at least one bus stop");
+    }
+
+    // ImmutableList is from Google Guava library
+    this.busStops = new ImmutableList.copyOf(busStops);
+  }
+
+  BusStop getNextBusStop(final BusStop currentBusStop) {
+    return bus_stops.get(0);
+  }
 ```
 
-Let's implement a unit test for the following scenario: If the `get_next_bus_stop` method's argument is a bus stop not belonging to the bus route, a `ValueError` with an informative message should be raised.
+Let's implement a unit test for the following scenario: If the `getNextBusStop` method's argument is a bus stop not belonging
+to the bus route, an `IllegalArgumentException` with an informative message should be raised.
 
-```python
-class CircularBusRouteTests(unittest.TestCase):
-    # GIVEN
-    bus_stop_a = BusStopImpl()
-    bus_route = CircularBusRoute([bus_stop_a])
-    bus_stop_b = BusStopImpl()
+```java
+class CircularBusRouteTests {
+  @Test
+  void testGetNextBusStop_whenBusStopDoesNotBelongToRoute() {
+     // GIVEN
+     final var busStopA = new BusStopImpl();
+     final var busRoute = new CircularBusRoute(List.of(bus_stop_a));
+     final var busStopB = new BusStopImpl();
 
-    try:
-        # WHEN
-        bus_route.get_next_bus_stop(bus_stop_b)
+    try {
+      // WHEN
+      busRoute.getNextBusStop(busStopB);
 
-        self.fail('ValueError should have been raised')
-    except ValueError as error:
-        # THEN
-        self.assertEqual(
-            str(error), 'Bus stop does not belong to bus route'
-        )
+      fail('IllegalArgumentException should have been raised');
+    } catch (final IllegalArgumentException exception) {
+      // THEN
+      assertEquals(
+        "Bus stop does not belong to bus route",
+        exception.getMessage()
+      );
+    }
+  }
+}
 ```
 
-Let's modify the `get_next_bus_stop` implementation:
+Let's modify the `getNextBusStop` implementation:
 
-```python
-class CircularBusRoute(BusRoute):
-   # ...
+```java
+public class CircularBusRoute implements BusRoute {
+  // ...
 
-    def get_next_bus_stop(self, current_bus_stop: BusStop) -> BusStop:
-        if current_bus_stop not in self.__bus_stops:
-            raise ValueError('Bus stop does not belong to bus route')
+  BusStop getNextBusStop(final BusStop currentBusStop) {
+    if (!busStops.contains(currentBusStop) {
+      throw new IllegalArgumentException("Bus stop does not belong to bus route");
+    }
 
-        return self.__bus_stop[0]
+    return busStop.get(0);
+  }
+}
 ```
 
-Next, we specify two scenarios of how the `get_next_bus_stop` method should behave when there is more than one stop in the bus route:
+Next, we specify two scenarios of how the `getNextBusStop` method should behave when there is more than one stop in the bus route:
 
-> *When a current bus stop is given, the `get_next_bus_stop` method should return the next bus stop in a list of bus stops for the route.*
+> *When a current bus stop is given, the `getNextBusStop` method should return the next bus stop in a list of bus stops for the route.*
 
 Let's write a failing unit test for the above scenario:
 
-```python
-class CircularBusRouteTests(unittest.TestCase:
-    def test_get_next_bus_stop__when_next_bus_stop_in_list_exists(self):
-        # GIVEN
-        bus_stop_a = BusStopImpl()
-        bus_stop_b = BusStopImpl()
-        bus_route = CircularBusRoute([bus_stop_a, bus_stop_b])
+```java
+class CircularBusRouteTests {
+  @Test
+  void testGetNextBusStop_whenNextBusStopExists() {
+    // GIVEN
+    final var busStopA = new BusStopImpl();
+    final var busStopB = new BusStopImpl();
+    final var busRoute = new CircularBusRoute(List.of(bus_stop_a, bus_stop_b));
 
-        # WHEN
-        next_bus_stop = bus_route.get_next_bus_stop(bus_stop_a)
+    // WHEN
+    final var nextBusStop = busRoute.getNextBusStop(busStopA);
 
-        # THEN
-        self.assertEqual(next_bus_stop, bus_stop_b)
+    // THEN
+    self.assertEqual(busStopB, nextBusStop);
+  }
+}
 ```
 
 Let's modify the source code to make the above test pass:
