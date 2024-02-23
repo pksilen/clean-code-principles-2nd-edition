@@ -4034,19 +4034,22 @@ public class GossipingBusDrivers {
 
 Next, we shall implement the `MaxDrivenStopCountParser` and its 'parse' method. Let's create a failing test:
 
-```python
-class MaxDrivenStopCountParserTests(unittest.TestCase):
-    def test_parse__when_it_succeeds(self):
-        # GIVEN
-        max_driven_stop_count_as_str = '2'
+```java
+class MaxDrivenStopCountParserTests {
+  @Test
+  void testParse_whenSuccessful() {
+    // GIVEN
+    final var MAX_DRIVEN_STOP_COUNT_STR = "2";
 
-        # WHEN
-        max_driven_stop_count = MaxDrivenStopCountParserImpl().parse(
-            max_driven_stop_count_as_str
-        )
+    // WHEN
+    maxDrivenStopCount = new MaxDrivenStopCountParserImpl().parse(
+        MAX_DRIVEN_STOP_COUNT_STR
+    )
 
-        # THEN
-        self.assertEqual(max_driven_stop_count, 2)
+    // THEN
+    assertEqual(2, maxDrivenStopCount);
+  }
+}
 ```
 
 Now we can implement the class to make the above test to pass:
