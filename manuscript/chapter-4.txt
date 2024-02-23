@@ -1458,8 +1458,8 @@ Let's have an example with C++ and Google Test unit testing framework. In C++, y
 by extending a pure virtual base class ("interface") and using Google Mock macros to define mocked methods.
 Below is the definition of a `detectedAnomalies` method that we want to unit test:
 
-_AnomalyDetectionEngine.h_
-```
+{title: "AnomalyDetectionEngine.h"}
+```cpp
 class AnomalyDetectionEngine
 {
 public:
@@ -1469,14 +1469,14 @@ public:
 };
 ```
 
-_AnomalyDetectionEngineImpl.h_
-```
+{title: "AnomalyDetectionEngineImpl.h"}
+```cpp
 #include <memory>
 #include "AnomalyDetectionEngine.h"
 #include "Configuration.h"
 
-class AnomalyDetectionEngineImpl :
-  public AnomalyDetectionEngine
+
+class AnomalyDetectionEngineImpl : public AnomalyDetectionEngine
 {
 public:
   explicit AnomalyDetectionEngineImpl(
@@ -1494,11 +1494,12 @@ private:
 };
 ```
 
-_AnomalyDetectionEngineImpl.cpp_
-```
+{title: "AnomalyDetectionEngineImpl.cpp"}
+```cpp
 #include <algorithm>
 #include <execution>
 #include "AnomalyDetectionEngineImpl.h"
+
 
 AnomalyDetectionEngineImpl::AnomalyDetectionEngineImpl(
   std::shared_ptr<Configuration> configuration
@@ -1535,11 +1536,12 @@ void AnomalyDetectionEngineImpl::detectAnomalies(
 
 Let's create a `Configuration` class and a `ConfigurationMock` class for mocks:
 
-_Configuration.h_
-```
+{title: "Configuration.h"}
+```cpp
 #include <memory>
 #include <vector>
 #include "AnomalyDetectionRule.h"
+
 
 class Configuration
 {
@@ -1551,10 +1553,11 @@ public:
 };
 ```
 
-_ConfigurationMock.h_
-```
+{title: "ConfigurationMock.h"}
+```cpp
 #include <gmock/gmock.h>
 #include "Configuration.h"
+
 
 class ConfigurationMock : public Configuration
 {
@@ -1567,9 +1570,10 @@ public:
 
 Let's create an `AnomalyDetectionRule` class and a respective mock class, `AnomalyDetectionRuleMock`:
 
-_AnomalyDetectionRule.h_
-```
+{title: "AnomalyDetectionRule.h"}
+```cpp
 #include "AnomalyIndicator.h"
+
 
 class AnomalyDetectionRule
 {
@@ -1584,10 +1588,11 @@ using AnomalyDetectionRules =
   std::vector<std::shared_ptr<AnomalyDetectionRule>>;
 ```
 
-_AnomalyDetectionRuleMock.h_
-```
+{title: "AnomalyDetectionRuleMock.h"}
+```cpp
 #include <gmock/gmock.h>
 #include "AnomalyDetectionRule.h"
+
 
 class AnomalyDetectionRuleMock : public AnomalyDetectionRule
 {
@@ -1599,10 +1604,11 @@ class AnomalyDetectionRuleMock : public AnomalyDetectionRule
 
 Let's create an `AnomalyIndicator` class and a mock class, `AnomalyIndicatorMock`:
 
-_AnomalyIndicator.h_
-```
+{title: "AnomalyIndicator.h"}
+```cpp
 #include <memory>
 #include <vector>
+
 
 class AnomalyIndicator
 {
@@ -1616,10 +1622,11 @@ using AnomalyIndicators =
   std::vector<std::shared_ptr<AnomalyIndicator>>;
 ```
 
-_AnomalyIndicatorMock.h_
-```
+{title: "AnomalyIndicatorMock.h"}
+```cpp
 #include <gmock/gmock.h>
 #include "AnomalyIndicator.h"
+
 
 class AnomalyIndicatorMock : public AnomalyIndicator
 {
@@ -1630,12 +1637,13 @@ public:
 
 Let's create a unit test for the `detectAnomalies` method in the `AnomalyDetectionEngineImpl` class:
 
-_AnomalyDetectionEngineImplTests.h_
-```
+{title: "AnomalyDetectionEngineImplTests.h"}
+```cpp
 #include <gtest/gtest.h>
 #include "ConfigurationMock.h"
 #include "AnomalyDetectionRuleMock.h"
 #include "AnomalyIndicatorMock.h"
+
 
 class AnomalyDetectionEngineImplTests : public testing::Test
 {
@@ -1667,10 +1675,11 @@ protected:
 };
 ```
 
-_AnomalyDetectionEngineImplTests.cpp_
-```
+{title: "AnomalyDetectionEngineImplTests.cpp"}
+```cpp
 #include "../src/AnomalyDetectionEngineImpl.h"
 #include "AnomalyDetectionEngineImplTests.h"
+
 
 using testing::Return;
 
@@ -1698,9 +1707,10 @@ TEST_F(AnomalyDetectionEngineImplTests, testDetectAnomalies)
 The above example did not contain dependency injection, so let's have another example in C++ where
 dependency injection is used. First, we define a generic base class for singletons:
 
-_Singleton.h_
-```
+{title: "Singleton.h"}
+```cpp
 #include <memory>
+
 
 template<typename T>
 class Singleton
@@ -1730,10 +1740,11 @@ private:
 
 Next, we implement a configuration parser that we will later unit test:
 
-_ConfigParserImpl.h_
-```
+{title: "ConfigParserImpl.h"}
+```cpp
 #include <memory>
 #include "Configuration.h"
+
 
 class ConfigParserImpl {
 public:
@@ -1741,13 +1752,14 @@ public:
 };
 ```
 
-_ConfigParserImpl.cpp_
-```
+{title: "ConfigParserImpl.cpp"}
+```cpp
 #include "AnomalyDetectionRulesParser.h"
 #include "Configuration.h"
 #include "ConfigFactory.h"
 #include "ConfigParserImpl.h"
 #include "MeasurementDataSourcesParser.h"
+
 
 std::shared_ptr<Configuration>
 ConfigParserImpl::parse(...)
@@ -1766,10 +1778,11 @@ ConfigParserImpl::parse(...)
 Next, we define `MeasurementDataSource`, `MeasurementDataSourcesParser`, and
 `MeasurementDataSourcesParserImpl` classes:
 
-_MeasurementDataSource.h_
-```
+{title: "MeasurementDataSource.h"}
+```cpp
 #include <memory>
 #include <vector>
+
 
 class MeasurementDataSource {
   // ...
@@ -1779,10 +1792,11 @@ using MeasurementDataSources =
   std::vector<std::shared_ptr<MeasurementDataSource>>;
 ```
 
-_MeasurementDataSourcesParser.h_
-```
+{title: "MeasurementDataSourcesParser.h"}
+```cpp
 #include "Singleton.h"
 #include "MeasurementDataSource.h"
+
 
 class MeasurementDataSourcesParser :
   public Singleton<MeasurementDataSourcesParser>
@@ -1792,9 +1806,10 @@ public:
 };
 ```
 
-_MeasurementDataSourcesParserImpl.h_
-```
+{title: "MeasurementDataSourcesParserImpl.h"}
+```cpp
 #include "MeasurementDataSourcesParser.h"
+
 
 class MeasurementDataSourcesParserImpl :
   public MeasurementDataSourcesParser
@@ -1809,10 +1824,11 @@ public:
 Next, we define `AnomalyDetectionRulesParser` and `AnomalyDetectionRulesParserImpl`
 classes:
 
-_AnomalyDetectionRulesParser.h_
-```
+{title: "AnomalyDetectionRulesParser.h"}
+```cpp
 #include "Singleton.h"
 #include "AnomalyDetectionRule.h"
+
 
 class AnomalyDetectionRulesParser :
   public Singleton<AnomalyDetectionRulesParser>
@@ -1822,9 +1838,10 @@ public:
 };
 ```
 
-_AnomalyDetectionRulesParserImpl.h_
-```
+{title: "AnomalyDetectionRulesParserImpl.h"}
+```cpp
 #include "AnomalyDetectionRulesParser.h"
+
 
 class AnomalyDetectionRulesParserImpl :
   public AnomalyDetectionRulesParser
@@ -1838,10 +1855,11 @@ public:
 
 Next, we define `ConfigFactory` and `ConfigFactoryImpl` classes:
 
-_ConfigFactory.h_
-```
+{title: "ConfigFactory.h"
+```cpp
 #include "Singleton.h"
 #include "Configuration.h"
+
 
 class ConfigFactory :
   public Singleton<ConfigFactory>
@@ -1854,9 +1872,10 @@ public:
 };
 ```
 
-_ConfigFactoryImpl.h_
-```
+{title: "ConfigFactoryImpl.h"}
+```cpp
 #include "ConfigFactory.h"
+
 
 class ConfigFactoryImpl : public ConfigFactory
 {
@@ -1872,11 +1891,12 @@ public:
 
 Then we define a dependency injector class:
 
-_DependencyInjector.h_
-```
+{title: "DependencyInjector.h"}
+```cpp
 #include "AnomalyDetectionRulesParserImpl.h"
 #include "ConfigFactoryImpl.h"
 #include "MeasurementDataSourcesParserImpl.h"
+
 
 class DependencyInjector final
 {
@@ -1903,9 +1923,10 @@ private:
 
 We inject dependencies upon application startup using the dependency injector:
 
-_main.cpp_
-```
+{title: "main.cpp"}
+```cpp
 #include "DependencyInjector.h"
+
 
 int main()
 {
@@ -1917,9 +1938,10 @@ int main()
 
 Let's define a unit test class for the `ConfigParserImpl` class:
 
-_ConfigParserImplTests.h_
-```
+{title: "ConfigParserImplTests.h"}
+```cpp
 #include "MockDependenciesInjectedTest.h"
+
 
 class ConfigParserImplTests :
   public MockDependenciesInjectedTest
@@ -1930,10 +1952,11 @@ All unit test classes should inherit from a base class that injects mock depende
 the mock dependencies will be removed. The Google Test framework requires this removal because it only validates
 expectations on a mock upon the mock object destruction.
 
-_MockDependenciesInjectedTest.h_
-```
+{title: "MockDependenciesInjectedTest.h"}
+```cpp
 #include <gtest/gtest.h>
 #include "MockDependencyInjector.h"
+
 
 class MockDependenciesInjectedTest :
   public testing::Test
@@ -1955,10 +1978,11 @@ protected:
 
 Below are all the mock classes defined:
 
-_AnomalyDetectionRulesParserMock.h_
-```
+{title: "AnomalyDetectionRulesParserMock.h"}
+```cpp
 #include <gmock/gmock.h>
 #include "AnomalyDetectionRulesParser.h"
+
 
 class AnomalyDetectionRulesParserMock :
   public AnomalyDetectionRulesParser
@@ -1968,10 +1992,11 @@ public:
 };
 ```
 
-_ConfigFactoryMock.h_
-```
+{title: "ConfigFactoryMock.h"}
+```cpp
 #include <gmock/gmock.h>
 #include "ConfigFactory.h"
+
 
 class ConfigFactoryMock : public ConfigFactory
 {
@@ -1984,10 +2009,11 @@ public:
 };
 ```
 
-_MeasurementDataSourcesParserMock.h_
-```
+{title: "MeasurementDataSourcesParserMock.h"}
+```cpp
 #include <gmock/gmock.h>
 #include "MeasurementDataSourcesParser.h"
+
 
 class MeasurementDataSourcesParserMock :
   public MeasurementDataSourcesParser
@@ -1999,11 +2025,12 @@ public:
 
 Below is the `MockDependencyInjector` class defined:
 
-_MockDependencyInjector.h_
-```
+{title: "MockDependencyInjector.h"}
+```cpp
 #include "AnomalyDetectionRulesParserMock.h"
 #include "ConfigFactoryMock.h"
 #include "MeasurementDataSourcesParserMock.h"
+
 
 class MockDependencyInjector final
 {
@@ -2047,10 +2074,11 @@ public:
 
 Below is the unit test implementation that uses the mocks:
 
-_ConfigParserImplTests.cpp_
-```
+{title: "ConfigParserImplTests.cpp"}
+```cpp
 #include "ConfigParserImplTests.h"
 #include "ConfigParserImpl.h"
+
 
 using testing::Eq;
 using testing::Return;
@@ -2093,8 +2121,8 @@ In this way, no one can accidentally create an instance of an implementation cla
 by the dependency injector only. Below is a implementation class where the constructor is made private, and the dependency
 injector is made a friend of the class:
 
-AnomalyDetectionRulesParserImpl.h
-```
+{title: "AnomalyDetectionRulesParserImpl.h"}
+```cpp
 #include "AnomalyDetectionRulesParser.h"
 
 class AnomalyDetectionRulesParserImpl :
