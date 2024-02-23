@@ -3516,39 +3516,39 @@ class BusStopImplTests {
 
 Let's implement the `BusStopImpl` class to make the above test pass:
 
-```python
-class BusDriver(Protocol):
-    def get_rumors(self) -> set[Rumor]:
-        pass
-
-    def set_rumors(self, rumors: set[Rumor]) -> None:
-       pass
+```java
+public interface BusDriver {
+  Set<Rumor> getRumors();
+  void setRumors(final Set<Rumor> rumors);
+}
 
 
-class BusStop(Protocol):
-    def share_rumors_with_drivers(self) -> None:
-        pass
-
-    def add_bus_driver(self, bus_driver: BusDriver) -> None:
-        pass
+public interface BusStop {
+  void shareRumorsWithDrivers();
+  void addBusDriver(final BusDriver busDriver);
+}
 
 
-class BusStopImpl(BusStop):
-    def __init__(self):
-        self.__bus_drivers: Final = set()
+public class BusStopImpl implement BusStop {
+  private final Set<BusDriver> busDrivers = Set.of();
 
-    def share_rumors_with_drivers(self) -> None:
-        all_rumors = {
-            rumor
-            for bus_driver in self.__bus_drivers
-            for rumor in bus_driver.get_rumors()
-        }
+  public void share_rumors_with_drivers() {
+    final Set<Rumor> allRumors = new HashSet<>();
 
-        for bus_driver in self.__bus_drivers:
-            bus_driver.set_rumors(all_rumors)
+    for (final var busDriver : busDrivers) {
+      for (final var rumor : busDriver.getRumors()) {
+        allRumors.add(rumor);
+    }
 
-    def add(self, bus_driver: BusDriver) -> None:
-        self.__bus_drivers.add(bus_driver)
+    for (final var busDriver in busDrivers) {
+      busDriver.setRumors(allRumors);
+    }
+  }
+
+  public void add(final BusDriver busDriver) {
+    busDrivers.add(busDriver);
+  }
+}
 ```
 
 Let's implement the `BusDriverImpl` class next. As shown above, we needed to add two methods, `get_rumors` and `set_rumors`, to the `BusDriver` interface.
