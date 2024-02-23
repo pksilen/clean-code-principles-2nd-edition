@@ -3461,50 +3461,57 @@ public class CircularBusRoute implements BusRoute {
 }
 ```
 
-Next, we shall implement the `BusStopImpl` class and the `share_rumors_with_drivers` method. Let's start by specifying
+Next, we shall implement the `BusStopImpl` class and the `shareRumorsWithDrivers` method. Let's start by specifying
 what that method should do: After the execution of the method is completed, all the drivers at the bus stop should have the same set of rumors
 that is a union of all the rumors that the drivers at the bus stop have.
 
 Let's create a test for the above specification. We will have three bus drivers at a bus stop. Because bus drivers
 are implemented in a separate class, we will use mocks for the drivers.
 
-```python
-class BusStopImplTests(unittest.TestCase):
-    @patch('BusDriverImpl.__new__')
-    @patch('BusDriverImpl.__new__')
-    @patch('BusDriverImpl.__new__')
-    def test_share_rumors_with_drivers(
-        self,
-        bus_driver_mock3: Mock,
-        bus_driver_mock2: Mock,
-        bus_driver_mock1: Mock,
-    ):
-        # GIVEN
-        bus_drivers = [bus_driver_mock1, bus_driver_mock2, bus_driver_mock3]
+```java
+class BusStopImplTests {
+  @Mock
+  private BusDriver mockBusDriver1;
 
-        rumor1 = Rumor()
-        rumor2 = Rumor()
-        rumor3 = Rumor()
-        all_rumors = {rumor1, rumor2, rumor3}
+  @Mock
+  private BusDriver mockBusDriver2;
 
-        bus_driver_mock1.get_rumors.return_value = {rumor1, rumor2}
-        bus_driver_mock2.get_rumors.return_value = {rumor2}
-        bus_driver_mock3.get_rumors.return_value = {rumor2, rumor3}
+  @Mock
+  private BusDriver mockBusDriver3;
 
-        bus_stop = BusStopImpl()
-        bus_stop.add(bus_driver_mock1)
-        bus_stop.add(bus_driver_mock2)
-        bus_stop.add(bus_driver_mock3)
+  @Test
+  void testShareRumorsWithDrivers():
+    // GIVEN
+    final var busDrivers = List.of(mockBusDriver1, mockBusDriver2, mockBusDriver3);
 
-        # WHEN
-        bus_stop.share_rumors_with_drivers()
+    final var rumor1 = new Rumor();
+    final var rumor2 = new Rumor();
+    final var rumor3 = new Rumor();
+    final var allRumors = Set.of(rumor1, rumor2, rumor3);
 
-        # THEN
-        self.__assert_rumors_are_set(all_rumors, bus_drivers)
+    when(mockBusDriver1.getRumors()).thenReturn(Set.of(rumor1, rumor2));
+    when(mockBusDriver2.getRumors()).thenReturn(Set.of(rumor2));
+    when(mockBusDriver3.getRumors()).thenReturn(Set.of(rumor2, rumor3));
 
-    def __assert_rumors_are_set(self, all_rumors, bus_driver_mocks):
-        for bus_driver_mock in bus_driver_mocks:
-            bus_driver_mock.set_rumors.assert_called_with(all_rumors)
+    final var busStop = new BusStopImpl();
+    busStop.add(mockBusDriver1);
+    busStop.add(mockBusDriver2);
+    busStop.add(mockBusDriver3);
+
+    // WHEN
+    busStop.shareRumorsWithDrivers();
+
+    // THEN
+    assertRumorsAreSet(allRumors, busDrivers);
+
+  private void assertRumorsAreSet(
+    final Set<Rumor> rumors,
+    final List<BusDriver> mockBusDrivers
+  ) {
+    for (final var mockBusDriver : mockBusDrivers) {
+      verify(mockBusDriver).setRumors(all_rumors);
+    }
+}
 ```
 
 Let's implement the `BusStopImpl` class to make the above test pass:
