@@ -4153,13 +4153,12 @@ class BusDriversParserImplTests {
     final var busDrivers = new BusDriversParserImpl().parse(busDriverSpecs);
 
     // THEN
+    assertEqual(2, busDrivers.size());
     assertBusStopsAreDifferent(bus_drivers);
     assertRumorsAreDifferent(bus_drivers);
   }
 
   private void assertBusStopsAreDifferent(final List<BusDriver> busDrivers) {
-    assertEqual(2, busDrivers.size());
-
     assertNotEqual(
       busDrivers.get(0).getCurrentBusStop(),
       busDrivers.get(1).getCurrentBusStop()
