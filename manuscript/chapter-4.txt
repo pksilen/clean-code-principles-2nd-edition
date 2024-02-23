@@ -3565,20 +3565,18 @@ class BusDriveImplTests {
   @Test
   void testGetRumors() {
     // GIVEN
-    bus_driver = BusDriverImpl(
-        bus_route_mock, {self.rumor1, self.rumor2}
-    )
+    final busDriver = new BusDriverImpl(mockBusRoute, Set.of(self.rumor1, self.rumor2));
 
     // WHEN
-    rumors = bus_driver.get_rumors()
+    final var rumors = busDriver.getRumors();
 
     // THEN
-    self.assertEqual(rumors, {self.rumor1, self.rumor2})
+    assertEqual(Set.of(self.rumor1, self.rumor2), rumors);
   }
 }
 ```
 
-Now we can implement the `get_rumors` method to make the above test pass:
+Now we can implement the `getRumors` method to make the above test pass:
 
 ```python
 class BusDriverImpl(BusDriver):
