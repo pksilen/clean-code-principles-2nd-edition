@@ -4232,9 +4232,9 @@ public class BusDriversParserImpl implements BusDriversParser {
 }
 ```
 
-Let's create a test for a scenario where we have multiple drivers with one rumor each. The rumors are the same:
+Let's create a test for a scenario where we have multiple drivers with one rumor each. This time the rumors are the same:
 
-```python
+```java
 class BusDriversParserImplTests(unittest.TestCase):
     def test_parse__with_multiple_drivers_and_a_common_rumor(
         self,
