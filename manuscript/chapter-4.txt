@@ -3885,22 +3885,31 @@ class GossipingBusDriversTests {
 
 Let's modify the implementation:
 
-```python
-class GossipingBusDrivers:
-    # ...
+```java
+public class GossipingBusDrivers {
+  // ...
 
-    def drive_until_all_rumors_shared(self) -> bool:
-        while True:
-            bus_stops = {
-                bus_driver.drive_to_next_bus_stop()
-                for bus_driver in self.__bus_drivers
-            }
+  public boolean driveUntilAllRumorsShared() {
+    while(true) {
+      final var Set<BusStop> busStops = new HashSet<>();
 
-            for bus_stop in bus_stops:
-                bus_stop.share_rumors_with_drivers()
+      for (final var busDriver : busDrivers) {
+        final var busStop = busDriver.driveToNextBusStop();
+        busStops.add(busStop);
+      }
 
-            if self.__all_rumors_are_shared():
-                return True
+      for (final var busStop : busStops) {
+        busStop.shareRumorsWithDrivers();
+      }
+
+      if (allRumorsAreShared()) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+}
 ```
 
 Next, we should implement a test where drivers don't have common bus stops and they have driven the maximum number of bus stops:
