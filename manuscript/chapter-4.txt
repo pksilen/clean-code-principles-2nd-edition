@@ -3764,7 +3764,7 @@ class GossipingBusDriversTests {
 
     // WHEN
     final var allRumorsWereShared =
-        gossipingBusDrivers.driveUntilAllRumorsShared(100);
+        gossipingBusDrivers.driveUntilAllRumorsShared();
 
     // THEN
     assertTrue(allRumorsWereShared);
@@ -3784,7 +3784,7 @@ public class GossipingBusDrivers {
     self.__all_rumors = self.__get_all_rumors()
   }
 
-  public boolean driveUntilAllRumorsShared(self) -> bool:
+  public boolean driveUntilAllRumorsShared() {
     for (final var busDriver : busDrivers) {
       final var busStop = busDriver.driveToNextBusStop()
       busStop.shareRumorsWithDrivers();
@@ -3819,15 +3819,15 @@ class GossipingBusDriversTests {
      // GIVEN
      final var mockBusStops = List.of(mockBusStop1, mockBusStop2, mockBusStop3);
 
-    when(mockBusDriver1.driveToNextBusStop()).thenReturn(
-      mockBusStop1,
-      mockBusStop3
-    );
+     when(mockBusDriver1.driveToNextBusStop()).thenReturn(
+       mockBusStop1,
+       mockBusStop3
+     );
 
-    when(mockBusDriver2.driveToNextBusStop()).thenReturn(
-      mockBusStop2,
-      mockBusStop3
-    );
+     when(mockBusDriver2.driveToNextBusStop()).thenReturn(
+       mockBusStop2,
+       mockBusStop3
+     );
 
     when(mockBusDriver1.getRumors).thenReturn(
         Set.of(rumor1),
