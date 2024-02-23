@@ -2217,13 +2217,13 @@ The target of software component integration testing is that all public function
 Not all functionality of the public functions should be tested because that has already been done in the unit testing phase. This is
 why there are fewer integration tests than unit tests. The term *integration testing* sometimes refers to integrating
 a complete software system or a product. However, it should be used to describe software
-component integration only. When testing a product or a software system, the term *end-to-end testing* should be used to avoid
+component integration only. When testing a product or a software system, instead of *product integration* or *system integration*, the term *end-to-end testing* should be preferred to avoid
 confusion and misunderstandings.
 
 The best way to do the integration testing is using [black-box testing](https://en.wikipedia.org/wiki/Black-box_testing).
 The software component is treated as a black box with inputs and outputs. Test automation developers can use any programming language and testing
 framework to develop the tests. Integration tests do not depend on the source code. It can be changed or completely rewritten in a different programming language without the need to modify the integration tests.
-Test automation engineers can also start writing integration tests immediately and don't have to wait for implementation to be ready.
+Test automation engineers can also start writing integration tests immediately and don't have to wait for the implementation to be ready.
 
 The best way to define integration tests is by using [behavior-driven development](https://en.wikipedia.org/wiki/Behavior-driven_development) (BDD).
 and [acceptance test-driven development](https://en.wikipedia.org/wiki/Acceptance_test-driven_development) ATDD. BDD and ATDD encourage teams to
@@ -2240,12 +2240,16 @@ error that can occur.
 
 One widely used way to write behavioral specifications is the [Gherkin](https://cucumber.io/docs/gherkin/) language. However, it is not the only way. So, we cannot say that BDD equals Gherkin.
 You can even write integration tests using a unit testing framework if you prefer. An example of that approach is available in *Steve Freeman*'s and *Nat Pryce*'s book *Growing Object-Oriented Software, Guided by Tests*.
-The problem with using a unit testing framework for writing integration tests has been how to test the external dependencies, like a database. Finally, a clean and easy solution to this problem is available. It is called [testcontainers](https://testcontainers-python.readthedocs.io/).
-They allow you to programmatically start and stop containerized external dependencies, like a database in test cases with only one or two lines of code.
+The problem with using a unit testing framework for writing integration tests has been how to test the external dependencies, like a database. Finally, a clean and easy solution to this problem is available.
+It is called [testcontainers](https://testcontainers.com/).
+Testcontainers allow you to programmatically start and stop containerized external dependencies, like a database in test cases with only one or two lines of code.
 
 You can also write integration tests in two parts: component tests and external integration tests, where the component tests test internal integration (of unit-tested modules with faked external dependencies) and the external integration tests
 test integration to external services. The component tests could be written using a unit test framework, and external integration tests could be written by a test automation developer using tools like Behave and Docker Compose.
-I have also worked with the approach of creating just a handful of fast-executing component tests to act as smoke tests (focusing on the most essential part of business logic), and all integration tests are written using Behave and Docker Compose. I can execute those smoke tests together with unit tests to quickly see if something is broken. The Behave + Docker Compose integration tests take longer to start and run, so they are not executed as often. Remember that if you want to be able to execute component tests with fake external dependencies, you need to follow the *clean microservice design principle (architecture)*  so that you can create fake input/output interface adapter classes used in the tests.
+I have also worked with the approach of creating just a handful of fast-executing component tests to act as smoke tests (focusing on the most essential part of business logic), and all integration tests are written using Behave and Docker Compose.
+I can execute those smoke tests together with unit tests to quickly see if something is broken.
+The Behave + Docker Compose integration tests take longer to start and run, so they are not executed as often.
+Remember that if you want to be able to execute component tests with fake external dependencies, you need to follow the *clean microservice design principle (architecture)* so that you can create fake input/output interface adapter classes used in the tests.
 
 When using the Gherkin language, the behavior of a software component is described as features. There should be a separate
 file for each feature. These files have the *.feature* extension. Each feature file
@@ -2254,7 +2258,8 @@ the so-called "happy path" scenario, and other possible scenarios should handle 
 that need to be tested. Remember that you don't have to test every failure and edge case because those were already tested in
 the unit testing phase.
 
-When the integration tests are black-box tests, the Gherkin features should be end-to-end testable (from software component input to output); otherwise, writing integration tests would be challenging. For example, suppose you have a backlog feature for the data exporter
+When the integration tests are black-box tests, the Gherkin features should be end-to-end testable (from software component input to output);
+otherwise, writing integration tests would be challenging. For example, suppose you have a backlog feature for the data exporter
 microservice for consuming Avro binary messages from Kafka. In that case, you cannot write an integration test because it is not end-to-end testable.
 You can't verify that an Avro binary message was successfully read from Kafka because there is no output in the feature to compare the input with.
 If you cannot write integration tests for a backlog feature, then you cannot prove and demonstrate to relevant stakeholders that the feature is completed by executing the integration (i.e., acceptance) tests,
@@ -2286,15 +2291,16 @@ the chart's data source and what measure(s) and dimension(s) are shown in the ch
 a chart contains the following properties: layout id, type, number of x-axis categories shown, and how many rows of chart data
 should be fetched from the chart's data source.
 
+{title: "createChart.feature"}
 ```gherkin
 Feature: Create chart
   Creates a new chart
 
   Scenario: Creates a new chart successfully
-    Given chart layout id is 1
+    Given chart layout id is "1"
     And chart type is "line"
     And X-axis categories shown count is 10
-    And fetched row count is 1000
+    And fetchedRowCount is 1000
 
     When I create a new chart
 
@@ -2307,158 +2313,207 @@ to describe the feature in more detail. Next, a scenario is defined after the `S
 First, the name of the scenario is given. Then comes the steps of the scenario. Each step is defined using
 one of the following keywords: `Given`, `When`, `Then`, `And`, and `But`. A scenario should follow this pattern:
 
-- Step(s) to describe initial context/setup (Given/And steps)
-- Step to describe an event (When step)
-- Step(s) to describe the expected outcome for the event (Then/And steps)
+- Steps to describe initial context/setup (Given/And steps)
+- Steps to describe an event (When step)
+- Steps to describe the expected outcome for the event (Then/And steps)
 
 We can add another scenario to the above example:
 
+{title: "createChart.feature"}
 ```gherkin
 Feature: Create chart
   Creates a new chart
 
-  Scenario: A new chart is created successfully
-    Given chart layout id is 1
+  Scenario: Creates a new chart successfully
+    Given chart layout id is "1"
     And chart type is "line"
     And X-axis categories shown count is 10
-    And fetched row count is 1000
+    And fetchedRowCount is 1000
 
     When I create a new chart
 
     Then I should get the chart given above
          with status code 201 "Created"
 
-
   Scenario: Chart creation fails due to missing mandatory parameter
     When I create a new chart
 
     Then I should get a response with status code 400 "Bad Request"
-    And response body should contain an errorMessage property with
-        "is mandatory field" entry for following fields
-      | layoutId                 |
-      | fetchedRowCount          |
-      | xAxisCategShownCount     |
-      | type                     |
+    And response body should contain "is mandatory field" entry
+        for following fields
+      | layoutId                  |
+      | fetchedRowCount           |
+      | xAxisCategoriesShownCount |
+      | type                      |
 ```
 
-Now, we have one feature with two scenarios specified. Next, we shall implement the scenarios. We want to implement the integration
-tests in Python, so we will use [Behave](https://behave.readthedocs.io/en/latest/) BDD tool that supports the Gherkin language.
+Now we have one feature with two scenarios specified. Next, we shall implement the scenarios. Our
+_data-visualization-configuration-service_ is implemented in Java, and we want to implement also the integration
+tests in Java. [Cucumber](https://cucumber.io/docs/installation/) has BDD tools for various programming languages.
+We will be using the [Cucumber-JVM](https://cucumber.io/docs/installation/java/) library.
 
-We place integration test code into the source code repository's *integrationtests* directory.
-The feature files are put in the *integrationtests/features* directory. Feature directories should be organized
-into subdirectories like source code: creating subdirectories for subdomains. We can put the above *create_chart.feature*
-file to the *integrationtests/features/chart* directory.
-
-Let's first create an *environment.py* file in the *integration-tests/features* to store things common to all
-step implementations:
-
-```python
-BASE_URL = 'http://localhost:8080/data-visualization-configuration-service/'
-```
+We place integration test code into the source code repository's _src/test_ directory.
+The feature files are in the _src/test/resources/features_ directory. Feature directories should be organized
+into subdirectories in the same way source code is organized into subdirectories: using
+domain-driven design and creating subdirectories for subdomains. We can put the above _createChart.feature_
+file to the _src/test/resources/features/chart_ directory.
 
 Next, we need to provide an implementation for each step in the scenarios. Let's start with the first scenario. We shall
-create a *create_chart_steps.py* file in the *src/integrationtests/features/chart/steps* directory for the implementation of the steps:
+create a file _TestContext.java_ for the test context and a _CreateChartStepDefs.java_ file for the step definitions:
 
-```python
-import requests
-from behave import given, then, when
-from behave.runner import Context
-from environment import BASE_URL
-
-input_chart = {}
-
-
-@given('chart layout id is {layout_id:d}')
-def step_impl(context: Context, layout_id: int):
-    input_chart['layoutId'] = layout_id
-
-
-@given('chart type is "{type}"')
-def step_impl2(context: Context, type: str):
-    input_chart['type'] = type
-
-
-@given('X-axis categories shown count is {x_axis_categ_shown_count:d}')
-def step_impl3(context: Context, x_axis_categ_shown_count: int):
-    input_chart['xAxisCategShownCount'] = x_axis_categ_shown_count
-
-
-@given('fetched row count is {fetched_row_count:d}')
-def step_impl4(context: Context, fetched_row_count: int):
-    input_chart['fetchedRowCount'] = fetched_row_count
-
-
-@when('I create a new chart')
-def step_impl5(context: Context):
-    context.response = requests.post(BASE_URL + 'charts', data=input_chart)
-    context.response_dict = context.response.json()
-
-
-@then(
-    'I should get the chart given above with status code {status_code:d} "{reason}"'
-)
-def step_impl6(context: Context, status_code: int, reason: str):
-    assert context.response.status_code == status_code
-    assert context.response.reason == reason
-    created_chart = context.response_dict
-    assert int(created_chart['id']) > 0
-    assert created_chart['layoutId'] == input_chart['layoutId']
-    assert created_chart['type'] == input_chart['type']
-
-    assert created_chart['xAxisCategShownCount'] == (
-        input_chart['xAxisCategShownCount']
-    )
-
-    assert created_chart['fetchedRowCount'] == (
-        input_chart['fetchedRowCount']
-    )
+{title: "TestContext.java"}
+```java
+public class TestContext {
+  public io.restassured.response.Response response;
+}
 ```
 
-The above implementation contains a function for each step. Each function is decorated with a decorator
-for a specific Gherkin keyword: `@given`, `@when`, and `@then`. Note that a step in a scenario
-can be templated. For example, the step `Given chart layout id is 1` is templated and implemented in the function
-`@Given("chart layout id is {layout_id:d}")` `def step_impl(context: Context, layout_id: int)`
+{title: "CreateChartStepDefs.java"}
+```java
+import integrationtests.TestContext;
+import com.silensoft.dataviz.configuration.service.chart.Chart;
+import io.cucumber.java.en.Given;
+import io.cucumber.java.en.Then;
+import io.cucumber.java.en.When;
+import io.restassured.http.ContentType;
+import io.restassured.mapper.ObjectMapperType;
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
+
+
+public class CreateChartStepDefs {
+  private static final String BASE_URL =
+    "http://localhost:8080/data-visualization-configuration-service/";
+
+  private final TestContext testContext;
+  private final Chart chart = new Chart();
+
+  public CreateChartStepDefs(final TestContext testContext) {
+    this.testContext = testContext;
+  }
+
+  @Given("chart layout id is {string}")
+  public void setChartLayoutId(final String layoutId) {
+    chart.setLayoutId(layoutId);
+  }
+
+  @Given("chart type is {string}")
+  public void setChartType(final String chartType) {
+    chart.setType(chartType);
+  }
+
+  @Given("X-axis categories shown count is {int}")
+  public void setXAxisCategoriesShownCount(
+    final Integer xAxisCategoriesShownCount
+  ) {
+    chart
+      .setxAxisCategoriesShownCount(xAxisCategoriesShownCount);
+  }
+
+  @Given("fetchedRowCount is {int}")
+  public void setFetchedRowCount(final Integer fetchedRowCount) {
+    chart.setFetchedRowCount(fetchedRowCount);
+  }
+
+  @When("I create a new chart")
+  public void createNewChart() {
+    testContext.response = given()
+      .contentType("application/json")
+      .body(chart, ObjectMapperType.GSON)
+      .when()
+      .post(Constants.BASE_URL + "charts");
+  }
+
+   @Then("I should get the chart given above with status code {int} {string}")
+   public void iShouldGetTheChartGivenAbove(
+     final int statusCode,
+     final String statusCodeName
+   ) {
+     testContext.response.then()
+       .assertThat()
+       .statusCode(statusCode)
+       .body("id", greaterThan(0))
+       .body("layoutId", equalTo(chart.getLayoutId()))
+       .body("type", equalTo(chart.getType()))
+       .body("xAxisCategoriesShownCount",
+             equalTo(chart.getXAxisCategoriesShownCount()))
+       .body("fetchedRowCount",
+              equalTo(chart.getFetchedRowCount()));
+ }
+}
+```
+
+The above implementation contains a function for each step. Each function is annotated with an annotation
+for a specific Gherkin keyword: `@Given`, `@When`, and `@Then`. Note that a step in a scenario
+can be templated. For example, the step `Given chart layout id is "1"` is templated and defined in the function
+`@Given("chart layout id is {string}")`  `public void setChartLayoutId(final String layoutId)`
 where the actual layout id is given as a parameter to the function. You can use this templated step
 in different scenarios that can give a different value for the layout id, for example:
-`Given chart layout id is 8`. The `:d` modifier after the `layout_id` tells Behave that this variable should be
-converted to an integer.
+`Given chart layout id is "8"`.
 
-The `@when('I create a new chart')` step implementation uses the *requests* library for submitting an HTTP POST request
-to the *data-visualization-configuration-service*. The `@then('I should get the chart given above with status code {status_code:d} "{reason}")` step implementation takes the HTTP POST response stored in the `context` and validates the status code and the properties in the response body.
+The `createNewChart` method uses [REST-assured](https://rest-assured.io/) for submitting an HTTP POST request
+to the _data-visualization-configuration-service_. And the `iShouldGetTheChartGivenAbove` function takes
+the HTTP POST response and validates the status code and the properties in the response body.
 
 The second scenario is a common failure scenario where you create something with missing parameters. Because
-this scenario is common (i.e., we can reuse the same steps in other features), we put the step definitions
-in a file named *common_steps.py* in the *common* subdirectory of the *integrationtests/features/steps* directory.
+this scenario is common (i.e., we can use the same steps in other features), we put the step definitions
+in a file named _CommonStepDefs.java_ in the _common_ subdirectory of the _src/test/java/integrationtests_ directory.
 
-Here are the step implementations:
+Here are the step definitions:
 
-```python
-from behave import then
-from behave.runner import Context
+{title: "CommonStepDefs.java"}
+```java
+import integrationtests.TestContext;
+import io.cucumber.java.en.And;
+import io.cucumber.java.en.Then;
 
+import java.util.List;
 
-@then(
-    'I should get a response with status code {status_code:d} "{reason}"'
-)
-def step_impl1(context: Context, status_code: int, reason: str):
-    assert context.response.status_code == status_code
-    assert context.response.reason == reason
+import static org.hamcrest.Matchers.hasItems;
 
+public class CommonStepDefs {
+  private final TestContext testContext;
 
-@then(
-    'response body should contain error object with {error} entry for following fields'
-)
-def step_impl2(context: Context, error: str):
-    error_message = context.response_dict['errorMessage']
-    for field_name in context.table:
-        assert f'{field_name} {error}' in error_message
+  public CommonStepDefs(final TestContext testContext) {
+    this.testContext = testContext;
+  }
+
+  @Then("I should get a response with status code {int} {string}")
+  public void iShouldGetAResponseWithResponseCode(
+    final int statusCode,
+    final String statusCodeName
+  ) {
+      testContext.response.then()
+        .assertThat()
+        .statusCode(statusCode);
+  }
+
+  @And("response body should contain {string} entry for following fields")
+  public void responseBodyShouldContainEntryForFollowingFields(
+    final String entry,
+    final List<String> fields
+  ) {
+    testContext.response.then()
+      .assertThat()
+      .body("", hasItems(fields
+                           .stream()
+                           .map(field -> field + ' ' + entry)
+                           .toArray()));
+  }
+}
 ```
 
-To execute the integration tests with Behave, run the `behave` command in the *integration-tests* directory. You can add tags to features and scenarios.
-You can add a command line parameter for the `behave` command to run features/scenarios with a specific tag or tags only.
+Cucumber is available in many other languages in addition to Java. It is available for JavaScript
+with the ([Cucumber.js](https://cucumber.io/docs/installation/javascript/)) library and for Python with the ([Behave](https://behave.readthedocs.io/en/stable/)) library.
+Integration tests can be written in a different language than the language used for implementation
+and unit test code. For example, I am currently developing a microservice in C++. Our team has a
+test automation developer working with integration tests using the Gherkin language for feature definitions
+and Python and Behave for implementing the steps.
 
-Some frameworks offer their way of creating integration tests. For example, the Django web framework offers its own
-way of doing integration tests. There are two reasons why I don't recommend using framework-specific testing tools.
+Some frameworks offer their way of creating integration tests. For example, the Python Django and Spring Boot web frameworks offer their own
+ways of doing integration tests. There are two reasons why I don't recommend using framework-specific testing tools.
 The first reason is that your integration tests are coupled to the framework, and if you decide to reimplement your
 microservice using a different language or framework, you also need to reimplement the integration tests.
 When you use a generic BDD tool like Behave, your integration tests are not coupled to any
@@ -2466,6 +2521,192 @@ microservice implementation programming language or framework. The second reason
 burden for QA/test engineers when they don't have to master multiple framework-specific integration testing tools. If you
 use a single tool like Behave in all the microservices in a software system, it will be easier for
 QA/test engineers to work with different microservices.
+
+Even though I don't recommend framework specific integration testing tools, I will give you one example with Spring Boot
+and the [MockMVC](https://docs.spring.io/spring-framework/reference/testing/spring-mvc-test-framework.html) to test a simple
+*sales-item-service* REST API with some CRUD operations:
+
+{title: "SalesItemControllerTests.java"}
+```java
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.web.servlet.MockMvc;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+
+@SpringBootTest
+@AutoConfigureMockMvc
+@ExtendWith(SpringExtension.class)
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+class SalesItemControllerTests {
+  private static final long SALES_ITEM_USER_ACCOUNT_ID = 1L;
+  private static final String SALES_ITEM_NAME = "Test sales item";
+  private static final int SALES_ITEM_PRICE = 10;
+  private static final int UPDATED_SALES_ITEM_PRICE = 20;
+
+  private static final String UPDATED_SALES_ITEM_NAME =
+    "Updated test sales item";
+
+  @Autowired
+  private MockMvc mockMvc;
+
+  @Test
+  @Order(1)
+  final void testCreateSalesItem() throws Exception {
+    // GIVEN
+    final var salesItemArg =
+      new SalesItemArg(SALES_ITEM_USER_ACCOUNT_ID,
+                       SALES_ITEM_NAME,
+                       SALES_ITEM_PRICE);
+
+    final var salesItemArgJson =
+      new ObjectMapper().writeValueAsString(salesItemArg);
+
+    // WHEN
+    mockMvc
+      .perform(post(SalesItemController.API_ENDPOINT)
+                 .contentType(MediaType.APPLICATION_JSON)
+                 .content(salesItemArgJson))
+      .andDo(print())
+      // THEN
+      .andExpect(jsonPath("$.id").value(1))
+      .andExpect(jsonPath("$.name").value(SALES_ITEM_NAME))
+      .andExpect(jsonPath("$.price").value(SALES_ITEM_PRICE))
+      .andExpect(status().isCreated());
+  }
+
+  @Test
+  @Order(2)
+  final void testGetSalesItems() throws Exception {
+    // WHEN
+    mockMvc
+      .perform(get(SalesItemController.API_ENDPOINT))
+      .andDo(print())
+      // THEN
+      .andExpect(jsonPath("$[0].id").value(1))
+      .andExpect(jsonPath("$[0].name").value(SALES_ITEM_NAME))
+      .andExpect(status().isOk());
+  }
+
+  @Test
+  @Order(3)
+  final void testGetSalesItemById() throws Exception {
+    // WHEN
+    mockMvc
+      .perform(get(SalesItemController.API_ENDPOINT + "/1"))
+      .andDo(print())
+      // THEN
+      .andExpect(jsonPath("$.name").value(SALES_ITEM_NAME))
+      .andExpect(status().isOk());
+  }
+
+  @Test
+  @Order(4)
+  final void testGetSalesItemsByUserAccountId() throws Exception {
+    // GIVEN
+    final var url = SalesItemController.API_ENDPOINT +
+                    "?userAccountId=" + SALES_ITEM_USER_ACCOUNT_ID;
+
+    // WHEN
+    mockMvc
+      .perform(get(url))
+      .andDo(print())
+      // THEN
+      .andExpect(jsonPath("$[0].name").value(SALES_ITEM_NAME))
+      .andExpect(status().isOk());
+  }
+
+  @Test
+  @Order(5)
+  final void testUpdateSalesItem() throws Exception {
+    // GIVEN
+    final var salesItemArg =
+      new SalesItemArg(SALES_ITEM_USER_ACCOUNT_ID,
+                       UPDATED_SALES_ITEM_NAME,
+                       UPDATED_SALES_ITEM_PRICE);
+
+    final var salesItemArgJson =
+      new ObjectMapper().writeValueAsString(salesItemArg);
+
+    // WHEN
+    mockMvc
+      .perform(put(SalesItemController.API_ENDPOINT + "/1")
+                 .contentType(MediaType.APPLICATION_JSON)
+                 .content(salesItemArgJson))
+      .andDo(print());
+
+    // THEN
+    mockMvc
+      .perform(get(SalesItemController.API_ENDPOINT + "/1"))
+      .andDo(print())
+      .andExpect(jsonPath("$.name").value(UPDATED_SALES_ITEM_NAME))
+      .andExpect(jsonPath("$.price").value(UPDATED_SALES_ITEM_PRICE))
+      .andExpect(status().isOk());
+  }
+
+  @Test
+  @Order(6)
+  final void testDeleteSalesItemById() throws Exception {
+    // WHEN
+    mockMvc
+      .perform(delete(SalesItemController.API_ENDPOINT + "/1"))
+      .andDo(print());
+
+    // THEN
+    mockMvc
+      .perform(get(SalesItemController.API_ENDPOINT + "/1"))
+      .andDo(print())
+      .andExpect(status().isNotFound());
+  }
+
+  @Test
+  @Order(7)
+  final void testDeleteSalesItems() throws Exception {
+    // GIVEN
+    final var salesItemArg =
+      new SalesItemArg(SALES_ITEM_USER_ACCOUNT_ID,
+                       SALES_ITEM_NAME,
+                       SALES_ITEM_PRICE);
+
+    final var salesItemArgJson =
+      new ObjectMapper().writeValueAsString(salesItemArg);
+
+    mockMvc
+      .perform(post(SalesItemController.API_ENDPOINT)
+                 .contentType(MediaType.APPLICATION_JSON)
+                 .content(salesItemArgJson))
+      .andDo(print());
+
+    // WHEN
+    mockMvc
+      .perform(delete(SalesItemController.API_ENDPOINT))
+      .andDo(print());
+
+    // THEN
+    mockMvc
+      .perform(get(SalesItemController.API_ENDPOINT))
+      .andDo(print())
+      .andExpect(jsonPath("$").isEmpty())
+      .andExpect(status().isOk());
+  }
+}
+```
 
 For API microservices, one more alternative to implement integration tests is an API development platform like
 [Postman](https://www.postman.com/). Postman can be used to write integration tests using JavaScript.

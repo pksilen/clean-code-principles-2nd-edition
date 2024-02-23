@@ -1570,15 +1570,15 @@ file to the _src/test/resources/features/chart_ directory.
 Next, we need to provide an implementation for each step in the scenarios. Let's start with the first scenario. We shall
 create a file _TestContext.java_ for the test context and a _CreateChartStepDefs.java_ file for the step definitions:
 
-_TestContext.java_
-```
+{title: "TestContext.java"}
+```java
 public class TestContext { 
   public io.restassured.response.Response response;
 }
 ```
 
-_CreateChartStepDefs.java_
-```
+{title: "CreateChartStepDefs.java"}
+```java
 import integrationtests.TestContext;
 import com.silensoft.dataviz.configuration.service.chart.Chart;
 import io.cucumber.java.en.Given;
