@@ -1069,12 +1069,11 @@ For example, if there is a `ConfigParser` class, the respective class for unit t
 `ConfigParserTests`. This makes locating the file containing unit tests for a particular
 implementation class easy.
 
-name of the
-tested method should come. For example, if the tested method is `try_parse`, the test method name should be `test_try_parse`.
+If you are naming your test methods according to the method they test, use the following naming convention.
+For example, if the tested method is `tryParse`, the test method name should be `testParse`.
 There are usually several tests for a single function. All test method
-names should begin with *test_&lt;function-name&gt;*, but the test method name should also contain a description
-of the specific scenario the test method tests, for example: `test_try_parse__when_parsing_fails`. The name of the
-tested scenario is separated from the tested function name by two underscores.
+names should begin with *test&lt;function-name&gt;*, but the test method name should also contain a description
+of the specific scenario the test method tests, for example: `testParseWhenParsingFails`.
 
 #### Mocking
 
