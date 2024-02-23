@@ -3241,7 +3241,7 @@ public interface BusRoute {
 
 public class CircularBusRoute implements BusRoute {
   public CircularBusRoute(final List<BusStop> busStops) {
-    if (busStops.length() == 0) {
+    if (busStops.isEmpty()) {
       throw IllegalArgumentException("Bus route must have at least one bus stop");
     }
   }
@@ -3279,15 +3279,15 @@ class CircularBusRoute implements BusRoute:
   private final List<BusStop> busStops;
 
   public CircularBusRoute(final List<BusStop> busStops) {
-    if (busStops.length() == 0) {
+    if (busStops.isEmpty()) {
       throw IllegalArgumentException("Bus route must have at least one bus stop");
     }
 
     // ImmutableList is from Google Guava library
-    this.busStops = new ImmutableList.copyOf(busStops);
+    busStops = new ImmutableList.copyOf(busStops);
   }
 
-  BusStop getNextBusStop(final BusStop currentBusStop) {
+  public BusStop getNextBusStop(final BusStop currentBusStop) {
     return bus_stops.get(0);
   }
 ```
@@ -3326,7 +3326,7 @@ Let's modify the `getNextBusStop` implementation:
 public class CircularBusRoute implements BusRoute {
   // ...
 
-  BusStop getNextBusStop(final BusStop currentBusStop) {
+  public BusStop getNextBusStop(final BusStop currentBusStop) {
     if (!busStops.contains(currentBusStop) {
       throw new IllegalArgumentException("Bus stop does not belong to bus route");
     }
@@ -3366,12 +3366,12 @@ Let's modify the source code to make the above test pass:
 public class CircularBusRoute implements BusRoute {
   // ...
 
-  BusStop getNextBusStop(final BusStop currentBusStop) {
+  public BusStop getNextBusStop(final BusStop currentBusStop) {
     if (!busStops.contains(currentBusStop) {
       throw new IllegalArgumentError("Bus stop does not belong to bus route";
     }
 
-    if (busStops.length() == 1) {
+    if (busStops.size() == 1) {
       return busStops.get(0);
     }
 
@@ -3383,70 +3383,82 @@ public class CircularBusRoute implements BusRoute {
 
 Let's add a test for the following scenario:
 
-> *If there is no next bus stop in the list of the route's bus stops, the `get_next_bus_stop` method should return the first bus stop (due to the route being circular).*
+> *If there is no next bus stop in the list of the route's bus stops, the `getNextBusStop` method should return the first bus stop (due to the route being circular).*
 
-```python
-class CircularBusRouteTests(unittest.TestCase):
-    def test_get_next_bus_stop__when_no_next_bus_stop_in_list(self):
-        # GIVEN
-        bus_stop_a = BusStopImpl()
-        bus_stop_b = BusStopImpl()
-        bus_route = CircularBusRoute([bus_stop_a, bus_stop_b])
+```java
+class CircularBusRouteTests {
+  @Test
+  void testGetNextBusStop_whenNoNextBusStop() {
+    // GIVEN
+    final var busStopA = new BusStopImpl();
+    final var busStopB = new BusStopImpl();
+    final var busRoute = new CircularBusRoute(List.of(bus_stop_a, bus_stop_b));
 
-        # WHEN
-        next_bus_stop = bus_route.get_next_bus_stop(bus_stop_b)
+    // WHEN
+    final var nextBusStop = busRoute.getNextBusStop(busStopB);
 
-        # THEN
-        self.assertEqual(next_bus_stop, bus_stop_a)
+    // THEN
+    assertEquals(busStopA, nextBusStop);
+  }
+}
 ```
 
 Let's make the above test pass:
 
-```python
-class CircularBusRoute(BusRoute):
-    # ...
+```java
+public class CircularBusRoute implements BusRoute {
+  // ...
 
-    def get_next_bus_stop(self, current_bus_stop: BusStop) -> BusStop:
-        if current_bus_stop not in self.__bus_stops:
-            raise ValueError('Bus stop does not belong to bus route')
+  public BusStop getNextBusStop(final BusStop currentBusStop) {
+    if (!busStops.contains(currentBusStop) {
+      throw new IllegalArgumentError("Bus stop does not belong to bus route";
+    }
 
-        bus_stop_count = len(self.__bus_stops)
+    final busStopCount = busStops.length();
 
-        if bus_stop_count == 1:
-            return self.__bus_stops[0]
+    if (busStopCount == 1) {
+      return busStops.get(0);
+    }
 
-        curr_bus_stop_index = self.__bus_stops.index(current_bus_stop)
-        next_bus_stop_index = curr_bus_stop_index + 1
+    final var currBusStopIndex = busStops.indexOf(currentBusStop);
+    final var nextBusStopIndex = currBusStopIndex + 1;
 
-        if (next_bus_stop_index <= bus_stop_count - 1):
-            return self.__bus_stops[next_bus_stop_index]
-        else:
-            return self.__bus_stops[0]
+    if (nextBusStopIndex <= busStopCount - 1) {
+      return bus_stops.get(nextBusStopIndex);
+    } else {
+      return bus_stops.get(0);
+    }
+}
 ```
 
 Our code could benefit from refactoring. With the help of existing
 unit tests, we can safely refactor the code to the following:
 
-```python
-class CircularBusRoute(BusRoute):
-    def __init__(self, bus_stops: list[BusStop]):
-        if not bus_stops:
-            raise ValueError('Bus route must have at least one bus stop')
+```java
+public class CircularBusRoute implements BusRoute {
+  private final List<BusStop> busStops;
+  private final int busStopCount;
 
-        self.__bus_stops: Final = bus_stops.copy()
-        self.__bus_stop_count: Final = len(bus_stops)
+  public CircularBusRoute(final List<BusStop> busStops) {
+    if (busStops.isEmpty()) {
+      throw IllegalArgumentException("Bus route must have at least one bus stop");
+    }
 
-    def get_next_bus_stop(self, current_bus_stop: BusStop) -> BusStop:
-        try:
-            curr_bus_stop_index = self.__bus_stops.index(current_bus_stop)
-        except ValueError:
-            raise ValueError('Bus stop does not belong to bus route')
+    busStops = new ImmutableList.copyOf(busStops);
+    busStopCount = busStops.size();
+  }
 
-        next_bus_stop_index = (
-            curr_bus_stop_index + 1
-        ) % self.__bus_stop_count
+  public BusStop getNextBusStop(final BusStop currentBusStop) {
+    final currBusStopIndex = busStops.indexOf(currentBusStop);
 
-        return self.__bus_stops[next_bus_stop_index]
+    if (currBusStopIndex == -1) {
+      throw new IllegalArgumentException("Bus stop does not belong to bus route");
+    }
+
+    final var nextBusStopIndex = (currBusStopIndex + 1) % busStopCount;
+    return bus_stops.get(nextBusStopIndex);
+  }
+}
 ```
 
 Next, we shall implement the `BusStopImpl` class and the `share_rumors_with_drivers` method. Let's start by specifying
