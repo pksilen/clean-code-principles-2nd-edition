@@ -1275,16 +1275,19 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.fail;
 
 
-public class ChartStoreTests {
-  // chartStore will contain an instance
-  // of ChartStoreImpl after @Tested
+public class ChartRepositoryTests {
+  // chartRepository will contain an instance
+  // of ChartRepositoryImpl after @Tested
   // annotation is processed
   @Tested
-  private ChartRepository chartRepository;
+  private ChartRepositoryImpl chartRepository;
 
   // @Injectable annotation creates a mock instance
   // of EntityManager interface and then injects
   // it to tested object, in this case 'chartRepository'
+  // ChartRepositoryImpl class has an attribute of
+  // type EntityManager which is annotated with an
+  // @Inject annotation from JakartaEE
   @Injectable
   private EntityManager mockEntityManager;
 
@@ -1410,21 +1413,21 @@ In the above example, we used the `jest.mock` function to create mocked versions
 Another way to handle mocking with Jest is using `jest.fn()`, which creates a mocked function. Let's assume that the `fetchTodos` function is changed so
 that it takes a `store` and `todoService` as its arguments:
 
-_fetchTodos.ts_
-```
+{title: "fetchTodos.ts"}
+```ts
 // ...
 
 export default async function fetchTodos(
   store: Store,
   todoService: TodoService
 ): Promise<void> {
-  // Same code here as in earlier example...
+  // Same code here as in above example...
 }
 ```
 
 Now the mocking would look like the following:
 
-_fetchTodos.test.ts_
+{title: "fetchTodos.test.ts"}
 ```
 import fetchTodos from 'fetchTodos';
 // ...
