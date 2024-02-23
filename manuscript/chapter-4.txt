@@ -4142,27 +4142,37 @@ public class BusDriversParserImpl implements BusDriversParser:
 Let's create a test for a scenario where we have multiple drivers with one bus stop and one rumor each; both the bus stops
 and rumors for drivers are different:
 
-```python
-class BusDriversParserImplTests(unittest.TestCase):
-    def test_parse__with_multiple_drivers_with_different_bus_stop_and_rumor(self):
-        # GIVEN
-        bus_driver_spec = ['bus-stop-a;rumor1', 'bus-stop-b;rumor2']
+```java
+class BusDriversParserImplTests {
+  @Test
+  def testParse_withMultipleDriversWithDifferentBusStopAndRumor() {
+    // GIVEN
+    final var busDriverSpecs = ['bus-stop-a;rumor1', 'bus-stop-b;rumor2']
 
-        # WHEN
-        bus_drivers = BusDriversParserImpl().parse(bus_driver_spec)
+    // WHEN
+    final var busDrivers = new BusDriversParserImpl().parse(busDriverSpecs);
 
-        # THEN
-        self.__assert_bus_stops_are_not_same(bus_drivers)
+    // THEN
+    assertBusStopsAreDifferent(bus_drivers);
+    assertRumorsAreDifferent(bus_drivers);
+  }
 
-        self.assertNotEqual(
-            bus_drivers[0].get_rumors(), bus_drivers[1].get_rumors()
-        )
+  private void assertBusStopsAreDifferent(final List<BusDriver> busDrivers) {
+    assertEqual(2, busDrivers.size());
 
-    def __assert_bus_stops_are_not_same(self, bus_drivers):
-        self.assertEqual(len(bus_drivers), 2)
-        driver1_stop1 = bus_drivers[0].get_current_bus_stop()
-        driver2_stop1 = bus_drivers[1].get_current_bus_stop()
-        self.assertNotEqual(driver1_stop1, driver2_stop1)
+    assertNotEqual(
+      busDrivers.get(0).getCurrentBusStop(),
+      busDrivers.get(1).getCurrentBusStop()
+    );
+  }
+
+  private void assertRumorsAreDifferent(final List<BusDriver> busDrivers) {
+    assertNotEqual(
+      busDrivers.get(0).getRunors(),
+      busDrivers.get(1).getRumors()
+    );
+  }
+}
 ```
 
 The above test will pass without modifications to the implementation.
