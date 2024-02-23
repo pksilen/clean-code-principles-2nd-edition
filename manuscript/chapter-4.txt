@@ -4098,7 +4098,7 @@ class BusDriversParserImplTests {
   @Test
   void testParse_withOneDriverThatHasOneBusStopAndOneRumor() {
     // GIVEN
-    final var busDriverSpec = "bus-stop-a;rumor1"
+    final var busDriverSpec = "bus-stop-a;rumor1";
 
     // WHEN
     final var busDrivers =
@@ -4147,7 +4147,7 @@ class BusDriversParserImplTests {
   @Test
   def testParse_withMultipleDriversWithDifferentBusStopAndRumor() {
     // GIVEN
-    final var busDriverSpecs = ['bus-stop-a;rumor1', 'bus-stop-b;rumor2']
+    final var busDriverSpecs = List.of("bus-stop-a;rumor1", "bus-stop-b;rumor2");
 
     // WHEN
     final var busDrivers = new BusDriversParserImpl().parse(busDriverSpecs);
@@ -4180,21 +4180,28 @@ Let's create a test for a scenario where we have multiple drivers with one bus s
 are the same, but rumors are different:
 
 ```python
-class BusDriversParserImplTests(unittest.TestCase):
-    def test_parse__with_multiple_drivers_with_a_common_bus_stop(self):
-        # GIVEN
-        bus_driver_spec = ["bus-stop-a;rumor1", "bus-stop-a;rumor2"]
+class BusDriversParserImplTests {
+  @Test
+  def testParse_withMultipleDriversWithCommonBusStop() {
+    // GIVEN
+    final var busDriverSpecs = List.of("bus-stop-a;rumor1", "bus-stop-a;rumor2");
 
-        # WHEN
-        bus_drivers = BusDriversParserImpl().parse([bus_driver_spec])
+    // WHEN
+    final var busDrivers = new BusDriversParserImpl().parse([bus_driver_specs]);
 
-        # THEN
-        self.__assert_bus_stops_are_same(bus_drivers)
+    // THEN
+    assertEquals(2, busDrivers.size());
+    assertBusStopsAreSame(bus_drivers);
+    assertRumorsAreDifferent(bus_drivers);
+  }
 
-    def assert_bus_stop_are_same(self, bus_drivers):
-        driver1_stop = bus_driver[0].get_current_bus_stop()
-        driver2_stop = bus_driver[1].get_current_bus_stop()
-        self.assertEqual(driver1_stop, driver2_stop)
+  private void assertBusStopsAreSame(final List<BusDriver> busDrivers) {
+    assertEquals(
+       busDriver.get(0).getCurrentBusStop(),
+       busDriver.get(1).getCurrentBusStop()
+    )
+  }
+}
 ```
 
 Let's modify the implementation to make the above test pass:
