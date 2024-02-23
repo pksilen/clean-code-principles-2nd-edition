@@ -4055,19 +4055,36 @@ class MaxDrivenStopCountParserTests {
 Now we can implement the class to make the above test to pass:
 
 ```python
-class MaxDrivenStopCountParser(Protocol):
-    def parse(self, max_driven_stop_count_as_str: str) -> int:
-        pass
+public interface MaxDrivenStopCountParser {
+  int parse(final String maxDrivenStopCountStr);
+}
 
 
-class MaxDrivenStopCountParserImpl(MaxDrivenStopCountParser):
-    def parse(self, max_driven_stop_count_as_str: str) -> int:
-        return int(max_driven_stop_count_as_str)
+public class MaxDrivenStopCountParserImpl extends MaxDrivenStopCountParser {
+  public int parse(final String maxDrivenStopCountStr) {
+    return Integer.parseInt(maxDrivenStopCountStr);
+  }
 ```
 
-Next, we specify that the `parse` method should throw a `ValueError` if the parsing fails:
+Next, we specify that the `parse` method should throw a `NumberFormatException` if the parsing fails:
 
-```python
+```java
+class MaxDrivenStopCountParserTests {
+  @Test
+  void testParse_whenItFails() {
+    // GIVEN
+    final var MAX_DRIVEN_STOP_COUNT_STR = "invalid";
+
+    // WHEN + THEN
+    assertThrows(
+      NumberFormatException.class,
+      () -> new MaxDrivenStopCountParserImpl().parse(
+        MAX_DRIVEN_STOP_COUNT_STR
+      )
+    );
+  }
+}
+
 class MaxDrivenStopCountParserTests(unittest.TestCase):
      def test_parse__when_it_fails(self):
          # GIVEN
