@@ -1344,37 +1344,34 @@ public class ChartStoreTests {
 }
 ```
 
-</code>
-
 Let's have a unit testing example with JavaScript/TypeScript. We will write a unit test for the following
 function using the Jest library:
 
-_fetchTodos.ts_
+{title: "fetchTodos.ts"}
 
-<code class="sourceCodeWithoutLabel">
-
-```
+```ts
 import store from '../../store/store';
 import todoService from '../services/todoService';
 
 export default async function fetchTodos(): Promise<void> {
-  const { todosState } = store.getState();
-  todosState.isFetching = true;
+  const { todoState } = store.getState();
+  todoState.isFetching = true;
+
   try {
-    todosState.todos = await todoService.tryFetchTodos();
-    todosState.fetchingHasFailed = false;
+    todoState.todos = await todoService.tryFetchTodos();
+    todoState.fetchingHasFailed = false;
   } catch(error) {
-    todosState.fetchingHasFailed = true;
+    todoState.fetchingHasFailed = true;
   }
-  todosState.isFetching = false;
+
+  todoState.isFetching = false;
 }
 ```
-</code>
 
 Below is the unit test case for the happy path scenario:
 
-_fetchTodos.test.ts_
-```
+{title: "fetchTodos.test.ts"}
+```ts
 import store from '../../store/store';
 import todoService from '../services/todoService';
 import fetchTodos from 'fetchTodos';
@@ -1387,8 +1384,8 @@ jest.mock('../services/todoService');
 describe('fetchTodos', async () => {
   it('should fetch todos from todo service', async () => {
     // GIVEN
-    const todosState = { todos: [] } as TodoState;
-    store.getState.mockReturnValue({ todosState });
+    const todoState = { todos: [] } as TodoState;
+    store.getState.mockReturnValue({ todoState });
 
     const todos = [{
       id: 1,
@@ -1402,9 +1399,9 @@ describe('fetchTodos', async () => {
     await fetchTodos();
 
     // THEN
-    expect(todosState.isFetching).toBe(false);
-    expect(todosState.fetchingHasFailed).toBe(false);
-    expect(todosState.todos).toBe(todos);
+    expect(todoState.isFetching).toBe(false);
+    expect(todoState.fetchingHasFailed).toBe(false);
+    expect(todoState.todos).toBe(todos);
   });
 });
 ```
