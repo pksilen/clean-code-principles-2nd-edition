@@ -3775,35 +3775,23 @@ class GossipingBusDriversTests {
 
 Let's make the above test pass with the below code.
 
-```python
-class GossipingBusDrivers:
-    def __init__(self, bus_drivers: list[BusDriver]):
-        self.__bus_drivers = bus_drivers.copy()
-        self.__all_rumors = self.__get_all_rumors()
+```java
+public class GossipingBusDrivers {
+  private final List<BusDriver> busDrivers;
 
-    def drive_until_all_rumors_shared(self) -> bool:
-        while True:
-            for bus_driver in self.__bus_drivers:
-                bus_stop = bus_driver.drive_to_next_bus_stop()
-                bus_stop.share_rumors_with_drivers()
+  public GossipingBusDrivers(final List<BusDriver> busDrivers) {
+    this.busDrivers = new ImmutableList.copyOf(busDrivers);
+    self.__all_rumors = self.__get_all_rumors()
+  }
 
-            if self.__all_rumors_are_shared():
-                return True
+  public boolean driveUntilAllRumorsShared(self) -> bool:
+    while True:
+        for bus_driver in self.__bus_drivers:
+            bus_stop = bus_driver.drive_to_next_bus_stop()
+            bus_stop.share_rumors_with_drivers()
 
-    def __get_all_rumors():
-        return {
-            rumor
-            for bus_driver in self.__bus_drivers
-            for rumor in bus_driver.get_rumors()
-        }
-
-    def __all_rumors_are_shared(self) -> bool:
-        return all(
-            [
-                bus_driver.get_rumors() == self.__all_rumors
-                for bus_driver in self.__bus_drivers
-            ]
-        )
+        if self.__all_rumors_are_shared():
+            return True
 ```
 
 Let's add a test for a scenario where two bus drivers drive from their starting bus stops to two different bus stops and must continue driving
@@ -3885,7 +3873,21 @@ class GossipingBusDrivers:
 
             if self.__all_rumors_are_shared():
                 return True
-    # ...
+
+    def __get_all_rumors():
+            return {
+                rumor
+                for bus_driver in self.__bus_drivers
+                for rumor in bus_driver.get_rumors()
+            }
+
+        def __all_rumors_are_shared(self) -> bool:
+            return all(
+                [
+                    bus_driver.get_rumors() == self.__all_rumors
+                    for bus_driver in self.__bus_drivers
+                ]
+            )
 ```
 
 Next, we should implement a test where drivers don't have common bus stops and they have driven the maximum number of bus stops:
