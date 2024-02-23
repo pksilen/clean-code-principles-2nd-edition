@@ -912,7 +912,7 @@ class ConfigParserTests {
   // ...
 
   @Test
-  void testParseWhenJsonParsingFails() {
+  void testParseWhenParsingFails() {
     // Failure scenario, should produce an error
     fail();
   }
@@ -1020,41 +1020,47 @@ Let's have another example where we change the configuration parser so that the 
 in YAML in addition to JSON. We need to add the following failing unit tests:
 
 ```java
-class ConfigParserTests(unittest.TestCase):
-    # ...
+class ConfigParserTests {
+  // ...
 
-    def test_try_parse__when_yaml_parsing_succeeds(self):
-        self.fail()
+  @Test
+  void testParseWhenYamlParsingSucceeds() {
+    fail();
+  }
 
-    def test_try_parse__when_yaml_parsing_fails(self):
-        # Should produce an error
-        self.fail()
+  @Test
+  void testParseWhenYamlParsingFails(self):
+    // Should produce an error
+    fail();
+}
 ```
 
-We should also rename the following test methods: `test_try_parse__when_successful` and `test_try_parse__when_parsing_fails` to
-`test_try_parse__when_json_parsing_succeeds` and `test_try_parse__when_json_parsing_fails`. Next, we
+We should also rename the following test methods: `testParseWhenSuccessful` and `testParseWhenParsingFails` to
+`testParseWhenJsonParsingSucceeds` and `testParseWhenJsonParsingFails`. Next, we
 implement the changes to the function, and lastly, we implement the two new tests. (Depending on the actual test implementation, you may
 or may not need to make small changes to JSON parsing-related tests to make them pass.)
 
 As the final example, let's make the following change: Configuration has no optional properties, but all properties are
-mandatory. This means that we can remove the following test: `test_try_parse__when_optional_prop_is_missing`. We also need
-to change the `test_try_parse__when_mandatory_prop_is_missing` test:
+mandatory. This means that we can remove the following test: `testParseWhenOptionalPropIsMissing`. We also need
+to change the `testParseWhenMandatoryPropIsMissing` test:
 
-```python
-import unittest
+```java
+class ConfigParserTests {
+  // ...
 
-
-class ConfigParserTests(unittest.TestCase):
-    # ...
-
-    def test_try_parse__when_mandatory_prop_is_missing(self):
-       # Change this scenario so that an error
-       # is expected
+  @Test
+  void testParseWhenMandatoryPropIsMissing() {
+    // Change this scenario so that an error
+    // is expected
+  }
+}
 ```
 
 Once we have implemented the change, we can run all the tests and ensure they pass.
 
-I have presented two alternative methods for writing unit tests: TDD and USDD. As a professional developer, you should use either of them. TDD brings more benefits, but USDD is much better than *test-last*, i.e., writing unit tests only after implementation is ready. If you think you are not ready for TDD yet, try USDD first and reconsider TDD at some point in the future.
+I have presented two alternative methods for writing unit tests: TDD and USDD.
+As a professional developer, you should use either of them. TDD brings more benefits, but USDD is much better than *test-last*,
+i.e., writing unit tests only after implementation is ready. If you think you are not ready for TDD yet, try USDD first and reconsider TDD at some point in the future.
 
 #### Naming Conventions
 
