@@ -3579,75 +3579,84 @@ class BusDriveImplTests {
 Now we can implement the `getRumors` method to make the above test pass:
 
 ```python
-class BusDriverImpl(BusDriver):
-    def __init__(self, rumors: set[Rumor]):
-        self.__rumors = rumors.copy()
+public class BusDriverImpl implements BusDriver {
+  private final Set<Rumor> rumors;
 
-    def get_rumors(self) -> set[Rumor]:
-        return self.__rumors
+  public BusDriverImpl(final Set<Rumor> rumors):
+    rumors = new ImmutableSet.copyOf(rumors);
+
+  public Set<Rumor> getRumors() {
+    return rumors;
+  }
+}
 ```
 
-Let's make a unit test for the `set_rumors` method, which should override the rumors given in the constructor:
+Let's make a unit test for the `setRumors` method, which should override the rumors given in the constructor:
 
-```python
-class BusDriveImplTests(unittest.TestCase):
-    @patch('CircularBusRoute.__new__')
-    def test_set_rumors(self, bus_route_mock: Mock):
-        # GIVEN
-        rumor3 = Rumor()
-        rumor4 = Rumor()
+```java
+class BusDriveImplTests {
+  // ...
 
-        bus_driver = BusDriverImpl(
-            bus_route_mock, {self.rumor1, self.rumor2}
-        )
+  @Test
+  void testSetRumors() {
+    // GIVEN
+    final var rumor3 = new Rumor();
+    final var rumor4 = new Rumor();
 
-        # WHEN
-        bus_driver.set_rumors({rumor3, rumor4})
+    final var busDriver = new BusDriverImpl(mockBusRoute, Set.of(self.rumor1, self.rumor2));
 
-        # THEN
-        self.assertEqual(bus_driver.get_rumors(), {rumor3, rumor4})
+    // WHEN
+    busDriver.setRumors(Set.of(rumor3, rumor4));
+
+    // THEN
+    assertEquals({rumor3, rumor4}, busDriver.getRumors());
+  }
+}
 ```
 
-Now we can implement the `get_rumors` method to make the above test pass:
+Now we can implement the `getRumors` method to make the above test pass:
 
-```python
-class BusDriverImpl(BusDriver):
-    # ...
+```java
+public class BusDriverImpl implements BusDriver {
+  // ...
 
-    def set_rumors(self, rumors: set[Rumor]) -> None:
-        self.__rumors = rumors.copy()
+  public void setRumors(final Set<Rumor> rumors) {
+    rumors = new ImmutableSet.copyOf(rumors);
+  }
+}
 ```
 
-We need to implement the `drive_to_next_bus_stop` method in the `BusDriverImpl` class: A bus driver
+We need to implement the `driveToNextBusSstop` method in the `BusDriverImpl` class: A bus driver
 has a current bus stop that is initially the first bus stop of the route. The driver drives to the next bus stop according to its route. When the driver
 arrives at the next bus stop, the driver is added to the bus stop. The driver is removed from the current bus stop, which is changed to the next bus stop.
 
-```python
-class BusDriverImplTests(unittest.TestCase):
-    @patch('BusStopImpl.__new__')
-    @patch('BusStopImpl.__new__')
-    @patch('CircularBusRoute.__new__')
-    def test_drive_to_next_bus_stop(
-        self,
-        bus_route_mock: Mock,
-        bus_stop_a_mock: Mock,
-        bus_stop_b_mock: Mock,
-    ):
-        # GIVEN
-        bus_route_mock.get_first_bus_stop.return_value = bus_stop_a_mock
-        bus_route_mock.get_next_bus_stop.return_value = bus_stop_b_mock
-        bus_driver = BusDriverImpl(bus_route_mock, set())
+```java
+class BusDriverImplTests {
+  @Mock
+  private BusStop mockBusStopA;
 
-        # WHEN
-        bus_driver.drive_to_next_bus_stop()
+  @Mock
+  private BusStop mockBusStopB;
 
-        # THEN
-        bus_stop_a_mock.remove.assert_called_with(bus_driver)
-        bus_stop_b_mock.add.assert_called_with(bus_driver)
+  @Mock
+  private BusRoute mockBusRoute;
 
-        self.assertEqual(
-            bus_driver.get_current_bus_stop(), bus_stop_b_mock
-        )
+  @Test
+  void testDriveToNextBusStop():
+    // GIVEN
+    when(mockBusRoute.getFirstBusStop()).thenReturn(mockBusStopA);
+    when(mockBusRute.getNextBusStop()).thenReturn(mockBusStopB);
+    final var busDriver = new BusDriverImpl(busRouteMock, Set.of());
+
+    // WHEN
+    busDriver.driveToNextBusStop();
+
+    // THEN
+    verify(mockBusStopA).remove(busDriver);
+    verify(mockBusStopB).add(busDriver);
+    assertEqual(mockBusStopB, busDriver.getCurrentBusStop());
+  }
+}
 ```
 
 Let's implement the `BusDriverImpl` class to make the above test pass. Before that, we must add a test for the new `get_first_bus_stop` method in the `BusRouteImpl` class.
