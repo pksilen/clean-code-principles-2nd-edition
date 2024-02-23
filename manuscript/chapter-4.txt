@@ -1251,15 +1251,12 @@ class SalesItemServiceTests {
 ```
 
 Java has many testing frameworks and mocking libraries. Below is a small example from a JakartaEE
-microservice that uses TestNG and JMockit libraries for unit testing and mocking, respectively. In the below example, we are testing
+microservice that uses [TestNG](https://testng.org/) and [JMockit](https://jmockit.github.io/) libraries for unit testing and mocking, respectively. In the below example, we are testing
 a couple of methods from a `ChartStore` class, which is responsible for handling the persistence of chart entities
 using Java Persistence API (JPA).
 
-_ChartStoreTests.java_
-
-<code class="sourceCodeWithoutLabel">
-
-```
+{title: "ChartStoreTests.java"}
+```java
 import com.silensoft.conflated...DuplicateEntityError;
 import mockit.Expectations;
 import mockit.Injectable;
@@ -1277,36 +1274,36 @@ import java.util.List;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.fail;
 
+
 public class ChartStoreTests {
   // chartStore will contain an instance
   // of ChartStoreImpl after @Tested
   // annotation is processed
   @Tested
-  private ChartStore chartStore;
+  private ChartRepository chartRepository;
 
   // @Injectable annotation creates a mock instance
   // of EntityManager interface and then injects
-  // it where needed
-  // In this case, it will be injected to 'chartStore'
+  // it to tested object, in this case 'chartRepository'
   @Injectable
-  private EntityManager entityManager;
+  private EntityManager mockEntityManager;
 
   // Create a mock instance of Chart
   // (does not inject anywhere)
   @Mocked
-  private Chart chartMock;
+  private Chart mockChart;
 
   @Test
   void testCreate() {
     // WHEN
-    chartStore.create(chartMock);
+    chartRepository.create(mockChart);
 
     // THEN
     // JMockit's verification block checks
     // that below mock functions are called
     new Verifications() {{
-      chartStore.getEntityManager().persist(chartMock);
-      chartStore.getEntityManager().flush();
+      mockEntityManager.persist(mockChart);
+      mockEntityManager.flush();
     }};
   }
 
@@ -1319,32 +1316,30 @@ public class ChartStoreTests {
     // Below the 'persist' mock method call will throw
     // EntityExistsException
     new Expectations() {{
-      chartStore.getEntityManager().persist(chartMock);
+      mockEntityManager.persist(mockChart);
       result = new EntityExistsException();
     }};
 
-    try {
-      // WHEN
-      chartStore.create(chartMock);
-      fail("Expected exception, but it was not thrown");
-    } catch (final DuplicateEntityError error) {
-      // THEN successfully throws an error
-    }
+    // WHEN + THEN
+    assertThrows(
+      DuplicateEntityError.class,
+      () -> chartRepository.create(mockChart)
+    );
   }
 
   @Test
-  void testGetChartById() {
+  void testGetById() {
     // GIVEN
     new Expectations() {{
-      chartStore.getEntityManager().find(Chart.class, 1L);
-      result = chartMock;
+      mockEntityManager.find(Chart.class, 1L);
+      result = mockChart;
     }};
 
     // WHEN
-    final var chart = chartStore.getById(1L);
+    final var chart = chartRepository.getById(1L);
 
     // THEN
-    assertEquals(chart, chartMock);
+    assertEquals(mockChart, chart);
   }
 }
 ```
