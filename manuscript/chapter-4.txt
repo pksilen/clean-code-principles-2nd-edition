@@ -4084,44 +4084,41 @@ class MaxDrivenStopCountParserTests {
     );
   }
 }
-
-class MaxDrivenStopCountParserTests(unittest.TestCase):
-     def test_parse__when_it_fails(self):
-         # GIVEN
-         max_driven_stop_count_as_str = 'invalid'
-
-         # WHEN + THEN
-         self.assertRaises(
-             ValueError,
-             MaxDrivenStopCountParserImpl().parse,
-             max_driven_stop_count_as_str,
-         )
 ```
 
 The above test will pass without modification to the implementation.
 
-Next, we shall implement the `BusDriversParser` and its 'parse' method. We will skip the failure scenarios, like when a bus driver
+Next, we shall implement the `BusDriversParser` and its 'parse' method. To keep the example shorter, we will skip the failure scenarios,
+like when a bus driver
 specification does not contain at least one bus stop and one rumor. Let's first create
 a failing test for a scenario where we have only one driver with one bus stop and one rumor:
 
-```python
-class BusDriversParserImplTests(unittest.TestCase):
-    def test_parse__with_one_driver_that_has_one_bus_stop_and_one_rumor(self):
-        # GIVEN
-        bus_driver_spec = 'bus-stop-a;rumor1'
+```java
+class BusDriversParserImplTests {
+  @Test
+  void testParse_withOneDriverThatHasOneBusStopAndOneRumor() {
+    // GIVEN
+    final var busDriverSpec = "bus-stop-a;rumor1"
 
-        # WHEN
-        bus_drivers = BusDriversParserImpl().parse([bus_driver_spec])
+    // WHEN
+    final var busDrivers =
+      new BusDriversParserImpl().parse(List.of(busDriverSpec));
 
-        # THEN
-        self.__assert_has_circular_bus_route_with_one_stop(bus_drivers)
-        self.assertEqual(len(bus_drivers[0].get_rumors()), 1)
+    // THEN
+    assertEquals(1, busDrivers.size());
+    busDriver = busDrivers.get(0);
+    assertHasCircularBusRouteWithOneStop(busDriver);
+    assertEquals(1, busDriver.getRumors().size());
+  }
 
-    def __assert_has_circular_bus_route_with_one_stop(self, bus_drivers):
-        self.assertEquals(len(bus_drivers), 1)
-        bus_stop = bus_drivers[0].get_current_bus_stop()
-        next_bus_stop = bus_drivers[0].drive_to_next_bus_stop()
-        self.assertEqual(bus_stop, next_bus_stop)
+  private void assertHasCircularBusRouteWithOneStop(
+    final BusDriver bus_driver
+  ) {
+    final var currentbusStop = busDriver.getCurrentBusStop();
+    final var nextBusStop = busDriver.driveToNextBusStop();
+    assertEquals(currentBusStop, nextBusStop);
+  }
+}
 ```
 
 Let's implement the `parse` method to make the above test pass:
