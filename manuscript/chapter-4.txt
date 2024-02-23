@@ -2868,11 +2868,13 @@ If you have implemented integration tests as black-box tests outside the microse
 environment is where the tested microservice and all its dependencies are running. The easiest way to
 set up an integration testing environment for a containerized microservice is to use [Docker Compose](https://docs.docker.com/compose/),
 a simple container orchestration tool for a single host. If you have implemented integration tests using a unit testing framework, i.e., inside the microservice,
-you don't need to set up a testing environment (so this section does not apply). You can set up the needed environment (external dependencies) in each integration test separately by using testcontainers, for example.
+you don't need to set up a testing environment (so this section does not apply).
+You can set up the needed environment (external dependencies) in each integration test separately by using testcontainers, for example.
 
 When a developer needs to debug a failing test in integration tests using Docker Compose, they must attach
 the debugger to the software component's running container, which is a bit more work compared to normally debugging source code.
-Another possibility is to introduce temporary debug-level logging in the microservice source code. That logging can be removed after the bug is found and corrected. However, if you cannot debug the microservice in a customer's production environment, it is good practice to have some debug-level logging in the source code to enable troubleshooting of a customer's problems that cannot be reproduced in a local environment.
+Another possibility is to introduce temporary debug-level logging in the microservice source code. That logging can be removed after the bug is found and corrected.
+However, if you cannot debug the microservice in a customer's production environment, it is good practice to have some debug-level logging in the source code to enable troubleshooting of a customer's problems that cannot be reproduced in a local environment.
 To enable viewing logs, the integration tests should write logs to the console in case of a test failure. This can be done, e.g., by running the `docker logs` command for the application container.
 It should be noted that when the application development has been done using low-level (unit/function-level) BDD (or TDD), the debugging need at the integration testing level is significantly reduced.
 
@@ -2941,7 +2943,8 @@ docker-compose
 ```
 
 The above command will finish after *mysql* service's port 3306 and *sales-item-service's* port 3000 can be
-connected (as specified with the `-c` flag, the `-t` flag specifies a timeout for waiting). After the above command is finished, you can run the integration tests. In the below example, we run the integration
+connected (as specified with the `-c` flag, the `-t` flag specifies a timeout for waiting). After the above command is finished,
+you can run the integration tests. In the below example, we run the integration
 tests using the *newman* CLI tool:
 
 ```bash
@@ -2961,7 +2964,8 @@ docker-compose down
 
 If you need other dependencies in your integration testing environment, you can add them to the *docker-compose.yml*
 file. If you need to add other microservices with dependencies, you must also add transitive dependencies. For example,
-if you needed to add another microservice that uses a PostgreSQL database, you would have to add the other microservice and PostgreSQL database to the *docker-compose.yml* file as new services.
+if you needed to add another microservice that uses a PostgreSQL database, you would have to add the other microservice and
+PostgreSQL database to the *docker-compose.yml* file as new services.
 
 Let's say the *sales-item-service* depends on Apache Kafka 2.x
 that depends on a Zookeeper service. The *sales-item-service's* *docker-compose.yml* looks
