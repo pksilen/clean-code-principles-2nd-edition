@@ -3551,26 +3551,31 @@ public class BusStopImpl implement BusStop {
 }
 ```
 
-Let's implement the `BusDriverImpl` class next. As shown above, we needed to add two methods, `get_rumors` and `set_rumors`, to the `BusDriver` interface.
-Let's make a unit test for the `get_rumors` method, which returns the rumors given for the driver in the constructor:
+Let's implement the `BusDriverImpl` class next. As shown above, we needed to add two methods, `getRumors` and `setRumors`, to the `BusDriver` interface.
+Let's make a unit test for the `getRumors` method, which returns the rumors given for the driver in the constructor:
 
 ```python
-class BusDriveImplTests(unittest.TestCase):
-    rumor1 = Rumor()
-    rumor2 = Rumor()
+class BusDriveImplTests {
+  @Mock
+  private BusRoute mockBusRoute;
 
-    @patch('CircularBusRoute.__new__')
-    def test_get_rumors(self, bus_route_mock: Mock):
-        # GIVEN
-        bus_driver = BusDriverImpl(
-            bus_route_mock, {self.rumor1, self.rumor2}
-        )
+  private final Rumor rumor1 = new Rumor();
+  private final Rumor rumor2 = new Rumor();
 
-        # WHEN
-        rumors = bus_driver.get_rumors()
+  @Test
+  void testGetRumors() {
+    // GIVEN
+    bus_driver = BusDriverImpl(
+        bus_route_mock, {self.rumor1, self.rumor2}
+    )
 
-        # THEN
-        self.assertEqual(rumors, {self.rumor1, self.rumor2})
+    // WHEN
+    rumors = bus_driver.get_rumors()
+
+    // THEN
+    self.assertEqual(rumors, {self.rumor1, self.rumor2})
+  }
+}
 ```
 
 Now we can implement the `get_rumors` method to make the above test pass:
