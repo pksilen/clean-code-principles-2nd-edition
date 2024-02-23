@@ -3140,7 +3140,8 @@ def step_impl5(context: Context):
 ```
 
 In the `@given` steps, we store information in the `context.` We store driver definitions as strings to the `drivers` attribute of
-the `context`. In the `@when` step, the application is launched with command line arguments, and in the `@then` steps, the exit code of the sub-process is examined to be either 0 (successful sharing of all rumors) or non-zero (sharing of
+the `context`. In the `@when` step, the application is launched with command line arguments, and in the `@then` steps,
+the exit code of the sub-process is examined to be either 0 (successful sharing of all rumors) or non-zero (sharing of
 all rumors failed).
 
 Before starting the implementation using TDD, we must first design our application using DDD and then OOD. Let's continue
@@ -3195,28 +3196,35 @@ We already had the integration tests implementation task added to the backlog ea
 can be implemented (either entirely or at least partially) in parallel. If the team has eight team members, each of them can pick a task for themselves and
 proceed in parallel to complete the user story as fast as possible.
 
-We can start implementing classes one public method at a time. Let's start with the most straightforward class, `Rumor,` which does not have behavior at all:
+We can start implementing classes one public method at a time. Let's start with the most straightforward class, `Rumor,` which does not have behavior at all.
+Our implementation will be in Java.
 
-```python
-class Rumor:
-    pass
+```java
+public class Rumor {
+}
 ```
 
-Next, we can implement the `CircularBusRoute` class using TDD. Let's start with the simplest case, which is also a failure scenario: If the bus route has no bus stops, a `ValueError` with an informative message should be raised. Let's implement a unit test for that scenario:
+Next, we can implement the `CircularBusRoute` class using TDD. Let's start with the simplest case, which is also a failure scenario:
+If the bus route has no bus stops, a `ValueError` with an informative message should be raised. Let's implement a unit test for that scenario:
 
-```python
-class CircularBusRouteTests(unittest.TestCase):
-    def test_constructor__when_no_bus_stops(self):
-        try:
-            # WHEN
-            CircularBusRoute([])
+```java
+class CircularBusRouteTests {
+  @Test
+  void testConstructor_whenNoBusStops() {
+    try {
+      // WHEN
+      CircularBusRoute([])
 
-            self.fail('ValueError should have been raised')
-        except ValueError as error:
-            # THEN
-            self.assertEqual(
-                str(error), 'Bus route must have at least one bus stop'
-            )
+      fail('IllegalArgumentException should have been raised')
+    } catch(final IllegalArgumentException exception) {
+      # THEN
+      assertEquals(
+        'Bus route must have at least one bus stop',
+        exception.getMessage()
+      );
+    }
+  }
+}
 ```
 
 Let's implement the constructor of the `CircularBusRoute` class to make the above test pass:
