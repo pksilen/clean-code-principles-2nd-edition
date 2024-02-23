@@ -4206,27 +4206,30 @@ class BusDriversParserImplTests {
 
 Let's modify the implementation to make the above test pass:
 
-```python
-class BusDriversParserImpl(Protocol):
-    def __init__(self):
-        self.__name_to_bus_stop = {}
+```java
+public class BusDriversParserImpl implements BusDriversParser {
+  private final Map<String, BusStop> busStopNameToBusStop = new HashMap<>();
 
-    def parse(self, bus_driver_specs: list[str]) -> list[BusDriver]:
-        return [
-            self.__get_bus_driver(bus_driver_spec)
-            for bus_driver_spec in bus_driver_specs
-        ]
+  public List<BusDriver> parse(final List<String> busDriverSpecs) {
+    return busDriverSpecs.stream()
+      .map(busDriverSpec -> parseBusDriver(busDriverSpec))
+      .toList();
+  }
 
-    def __get_bus_driver(self, bus_driver_spec: str) -> BusDriver:
-        bus_stop_name, _ = bus_driver_spec.split(';')
+  private BusDriver parseBusDriver(final String busDriverSpec) {
+    final var busDriverSpecParts = busDriverSpec.split(";");
+    final var busStopName = busDriverSpecParts[0];
 
-        if self.__name_to_bus_stop.get(bus_stop_name) is None:
-            self.__name_to_bus_stop[bus_stop_name] = BusStopImpl()
+    if (busStopNameToBusStop.get(busStopName) == null) {
+      busStopNameToBusStop.put(busStopName, new BusStopImpl());
+    }
 
-        return BusDriverImpl(
-            CircularBusRoute([self.__name_to_bus_stop[bus_stop_name]]),
-            {Rumor()},
-        )
+    return mew BusDriverImpl(
+        CircularBusRoute(List.of(busStopNameToBusStop.get(busStopName))),
+        Set.of(Rumor())
+    );
+  }
+}
 ```
 
 Let's create a test for a scenario where we have multiple drivers with one rumor each. The rumors are the same:
