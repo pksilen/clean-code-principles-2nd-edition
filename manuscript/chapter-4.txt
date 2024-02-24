@@ -4390,6 +4390,7 @@ class BusDriversParserImplTests {
     assertEquals(3, busDrivers.get(0).getRumors().size());
     assertEquals(2, busDrivers.get(1).getRumors().size());
 
+    // Sets.difference is from Google Guava library
     final var rumorDifference = Sets.difference(
       busDrivers.get(0).getRumors(),
       busDrivers.get(1).getRumors(),
