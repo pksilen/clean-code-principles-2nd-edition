@@ -4295,7 +4295,7 @@ Let's create a test for a scenario where we have multiple drivers with multiple 
 ```java
 class BusDriversParserImplTests {
   @Test
-  void testParse_withMultipleDriversAndMultipleBusStopsWhereFirstIsCommon() {
+  void testParse_withMultipleDriversAndMultipleBusStopsWhereOneIsSame() {
     // GIVEN
     final var busDriverSpecs = List.of(
         "bus-stop-a,bus-stop-b;rumor1",
@@ -4306,10 +4306,10 @@ class BusDriversParserImplTests {
     final var busDrivers = new BusDriversParserImpl().parse(busDriverSpecs);
 
     // THEN
-    assertOnlyFirstBusStopIsSame(busDrivers);
+    assertOnlyOneBusStopIsSame(busDrivers);
   }
 
-  private void assertOnlyFirstBusStopIsSame(final List<BusDriver> busDrivers) {
+  private void assertOnlyOneBusStopIsSame(final List<BusDriver> busDrivers) {
     assertEquals(
       busDrivers.get(0).getCurrentBusStop(),
       busDrivers.get(1).getCurrentBusStop()
@@ -4366,34 +4366,38 @@ public class BusDriversParserImpl implements BusDriversParser {
 }
 ```
 
-Let's create a test for a scenario where we have multiple drivers with multiple rumors (one of which is the same):
+Let's create the final test for a scenario where we have multiple drivers with multiple rumors (one of which is the same):
 
-```python
-class BusDriversParserImplTests(unittest.TestCase):
-    def test_parse__with_multiple_drivers_and_multiple_rumors(self):
-        # GIVEN
-        bus_driver_specs = [
-            'bus-stop-a;rumor1,rumor2,rumor3',
-            'bus-stop-b;rumor1,rumor3',
-        ]
+```java
+class BusDriversParserImplTests {
+  @Test
+  void testParse_withMultipleDriversAndMultipleRumorsWhereOneIsSame() {
+    // GIVEN
+    final var busDriverSpecs = List.of(
+        "bus-stop-a;rumor1,rumor2,rumor3",
+        "bus-stop-b;rumor1,rumor3",
+    );
 
-        # WHEN
-        bus_drivers = BusDriversParserImpl().parse(bus_driver_specs)
+    // WHEN
+    final var busDrivers = new BusDriversParserImpl().parse(busDriverSpecs);
 
-        # THEN
-        self.__assert_rumors_differ_by_one(bus_drivers)
+    // THEN
+    assertBusStopsAreSame(busDrivers);
+    assertRumorsDifferByOne(busDrivers);
+  }
 
-    def __assert_rumors_differ_by_one(self, bus_drivers):
-        self.assertEqual(len(bus_drivers[0].get_rumors()), 3)
-        self.assertEqual(len(bus_drivers[1].get_rumors()), 2)
+  private void assertRumorsDifferByOne(final List<BusDriver> busDrivers) {
+    assertEquals(3, busDrivers.get(0).getRumors().size());
+    assertEquals(2, busDrivers.get(1).getRumors().size());
 
-        rumor_diff = (
-            bus_drivers[0]
-            .get_rumors()
-            .difference(bus_drivers[1].get_rumors())
-        )
+    final var rumorDifference = Sets.difference(
+      busDrivers.get(0).getRumors(),
+      busDrivers.get(1).getRumors(),
+    );
 
-        self.assertEqual(len(rumor_diff), 1)
+    assertEqual(1, rumorDifference.size());
+  }
+}
 ```
 
 Let's modify the implementation to make the above test pass:
