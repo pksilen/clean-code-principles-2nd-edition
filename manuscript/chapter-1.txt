@@ -125,9 +125,14 @@ Dockerfile for a containerized application. Use a minimal size container base im
 any specific operating system dependencies, then use a distroless image as the container base image. If you don't need anything, you should
 not have anything extra in your container. This will minimize the surface for possible attacks.
 
-
 3. Configuration: Store configuration in the environment
+
+Configuration is anything that varies between deployments. Never store such configuration information in the application code.
+Use externalized configuration which is stored in the deployment environment. We will discuss about that later in this chapter.
+
 4. Backing services: Treat backing services as attached resources
+
+
 5. Build, release, run: Build, release, run
 6. Processes: Execute the app as one or more stateless processes
 7. Port binding: Export services via port binding
