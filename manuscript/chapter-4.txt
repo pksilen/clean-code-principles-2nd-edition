@@ -4490,32 +4490,23 @@ public class BusDriversParserImpl implements BusDriversParser {
 
 Finally we need to implement the *main.py*:
 
-```
-class Main:
-    @staticmethod
-    def run():
-        max_driven_stop_count = MaxDrivenStopCountParserImpl().parse(
-            sys.argv[1]
-        )
+```java
+public class Main {
+  public static void main(String[] args):
+    final var maxDrivenStopCount =
+      new MaxDrivenStopCountParserImpl().parse(args[1]);
 
-        bus_drivers = BusDriversParserImpl().parse(sys.argv[2:])
+    final var busDriverSpecs = Arrays.stream(args, 2, args.length())
+      .toArray(String[]::new);
 
-        all_rumors_were_shared = GossipingBusDrivers(
-            bus_drivers
-        ).drive_until_all_rumors_shared(max_driven_stop_count)
+    final var busDrivers = new BusDriversParserImpl().parse(busDriverSpecs);
 
-        code = 0 if all_rumors_were_shared else 1
-        sys.exit(code)
+    final var allRumorsWereShared = new GossipingBusDrivers(
+        busDrivers
+    ).driveUntilAllRumorsShared(maxDrivenStopCount)
 
-
-if __name__ == '__main__':
-    Main().run()
-```
-
-The program can be run from the command line, for example:
-
-```bash
-python main.py 100 "stop-a;rumor-1" "stop-a;rumor2"
+    System.exit(allRumorsWereShared ? 0 : 1);
+}
 ```
 
 Let's say that product management wants a new feature and puts the following user story on the backlog:
