@@ -4790,7 +4790,7 @@ We need to perform the following (Change the hardcoded version number in the URL
 
 An alternative method to test authorization is to use a configurable mock OAuth2 server instead of a real IAM system.
 
-Let's implement the steps for the first scenario of the first user story (creating a sales item):
+Let's implement the steps for the first scenario of the first user story (creating a sales item) using Python and Behave:
 
 {title: "create_sales_item_steps.py"}
 ```python
@@ -4895,30 +4895,29 @@ The team decides to use the *clean microservice design principle*. Thus, interfa
 
 ```
 sales-item-service
-└── src
+└── src/main/java
     └── sales-items
         ├── common
         │   ├── dtos
-        │   │   ├── InputSalesItem.py
-        │   │   └── OutputSalesItem.py
+        │   │   ├── InputSalesItem.java
+        │   │   └── OutputSalesItem.java
         │   ├── entities
-        │   │   └── SalesItem.py
+        │   │   └── SalesItem.java
         │   └── validator
-        │       └── InputSalesItemValidator.py
+        │       └── InputSalesItemValidator.java
         ├── create
-        │   ├── CreateSalesItemRepository.py
-        │   ├── CreateSalesItemService.py
-        │   ├── CreateSalesItemServiceImpl.py
-        │   ├── RestCreateSalesItemController.py
-        │   └── SqlCreateSalesItemRepository.py
+        │   ├── CreateSalesItemRepository.java
+        │   ├── CreateSalesItemService.java
+        │   ├── CreateSalesItemServiceImpl.java
+        │   ├── RestCreateSalesItemController.java
+        │   └── SqlCreateSalesItemRepository.java
         └── read
-            ├── ReadSalesItemsRepository.py
-            ├── ReadSalesItemsService.py
-            ├── ReadSalesItemsServiceImpl.py
-            ├── RestReadSalesItemsController.py
-            └── SqlReadSalesItemsRepository.py
+            ├── ReadSalesItemsRepository.java
+            ├── ReadSalesItemsService.java
+            ├── ReadSalesItemsServiceImpl.java
+            ├── RestReadSalesItemsController.java
+            └── SqlReadSalesItemsRepository.java
 ```
-
 
 When we continue with DDD for the rest of the user stories, we should eventually have subdirectories for `update` and `delete` features
 like those for `create` and `read` features. What we ended up having is called *vertical slice design or architecture*, which
@@ -4932,7 +4931,9 @@ details how to create a REST controller, DTOs, a service class, and repositories
 
 As I mentioned earlier, Gherkin is not the only syntax, and Behave is not the only tool to conduct BDD. I want to give you an example where
 [Robot Framework](https://robotframework.org/) (RF) is used as an alternative to Gherkin and Behave. You don't have to completely say goodbye to
-the Gherkin syntax because the Robot framework also supports a Gherkin-style way to define test cases. The below example is for the first user story we defined earlier: creating a sales item. The example shows how to test that user story's first two scenarios (or *test cases* in RF vocabulary). The below *.robot* file resembles the Gherkin *.feature* file. Each test case in the *.robot* file contains a list of steps that are *keywords*, defined in the *.resource* files.
+the Gherkin syntax because the Robot framework also supports a Gherkin-style way to define test cases. The below example is for the first user story we defined earlier:
+creating a sales item. The example shows how to test that user story's first two scenarios (or *test cases* in RF vocabulary).
+The below *.robot* file resembles the Gherkin *.feature* file. Each test case in the *.robot* file contains a list of steps that are *keywords*, defined in the *.resource* files.
 Each keyword defines code (a list of functions) to execute. The functions are implemented in the *libraries*.
 
 {title: "create_sales_item.robot"}
