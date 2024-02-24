@@ -4439,39 +4439,53 @@ public class BusDriversParserImpl implements BusDriversParser {
 
 Now that we have implemented all tests, we can refactor the `parse` to the following:
 
-```python
-class BusDriversParserImpl(Protocol):
-    def __init__(self):
-        self.__name_to_bus_stop = {}
-        self.__name_to_rumor = {}
+```java
+public class BusDriversParserImpl implements BusDriversParser {
+  // ...
 
-    def parse(self, bus_driver_specs: list[str]) -> list[BusDriver]:
-        return [
-            self.__get_bus_driver(bus_driver_spec)
-            for bus_driver_spec in bus_driver_specs
-        ]
+  private BusDriver parseBusDriver(final String busDriverSpec) {
+    final var busDriverSpecParts = busDriverSpec.split(";");
+    final var busRouteSpec = busDriverSpecParts[0];
+    final var busStopNames = busRouteSpec.split(",");
+    final var busStops = parseBusStops(busStopNames);
+    final var rumorsSpec = busDriverSpecParts[1];
+    final var rumorNames = rumorsSpec.split(",");
+    final var rumors = parseRumors(rumorNames);
+    return mew BusDriverImpl(CircularBusRoute(busStops), rumors));
+  }
 
-    def __get_bus_driver(self, bus_driver_spec: str) -> BusDriver:
-        bus_route_spec, rumors_spec = bus_driver_spec.split(';')
-        bus_stop_names = bus_route_spec.split(',')
-        bus_stops = self.__get_bus_stops(bus_stop_names)
-        rumor_names = rumors_spec.split(',')
-        rumors = self.__get_rumors(rumor_names)
-        return BusDriverImpl(CircularBusRoute(bus_stops), rumors)
+  private List<BusStop> parseBusStops(final List<String> busStopNames) {
+    final List<BusStop> busStops = new ArrayList<>();
 
-    def __get_bus_stops(self, bus_stop_names: list[str]) -> list[BusStop]:
-        for name in bus_stop_names:
-            if self.__name_to_bus_stop.get(name) is None:
-                self.__name_to_bus_stop[name] = BusStopImpl()
+    for (final var busStopName : busStopNames) {
+      var busStop = busStopNameToBusStop.get(busStopName);
 
-        return [self.__name_to_bus_stop[name] for name in bus_stop_names]
+      if (busStop == null) {
+        busStop = new BusStopImpl();
+        busStopNameToBusStop.put(busStopName, busStop);
+      }
 
-    def __get_rumors(self, rumor_names: list[str]) -> set[Rumor]:
-        for name in rumor_names:
-            if self.__name_to_rumor.get(name) is None:
-                self.__name_to_rumor[name] = Rumor()
+      busStops.add(busStop);
+    }
 
-        return {self.__name_to_rumor[name] for name in rumor_names}
+    return busStops;
+  }
+
+  private Set<Rumor> parseRumors(final List<String> rumorNames) {
+    final Set<Rumor> rumors = new HashSet<>();
+
+    for (final var rumorName : rumorNames) {
+      var rumor = rumorNameToRumor.get(rumorName);
+
+      if (rumor == null) {
+        rumor = new Rumor();
+        rumorNameToRumor.put(rumorName, rumor);
+      }
+
+      rumors.add(rumor);
+    }
+  }
+}
 ```
 
 Finally we need to implement the *main.py*:
