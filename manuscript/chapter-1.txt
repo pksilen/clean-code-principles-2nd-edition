@@ -160,9 +160,16 @@ on a different node. For this reason, make the startup fast and make the shutdow
 for example. The fast startup is extremely important when using containers in a serverless CaaS environment where microservices can be
 scaled to zero instances when no traffic.
 
-10. Dev/prod parity: Keep development, staging, and production as similar as possible
-11. Logs: Treat logs as event streams
-12. Admin processes: Run admin/management tasks as one-off processes
+10. **Dev/prod parity: Keep development, staging, and production as similar as possible**
+
+
+11. **Logs: Treat logs as event streams**
+Microservice developers should only be concerned about writing log entries in a specified format to standard output.
+The DevOps team will implement the rest that is to collect and store the logs.
+
+12. **Admin processes: Run admin/management tasks as one-off processes**
+Do not add administrative tasks to your microservices, but create a separate microservice for each administrative task.
+In this way, the single responsiblity of microservices is better handled. Tese administrative microservices can then be run on demand or on schedule.
 
 
 ## Single Responsibility Principle
