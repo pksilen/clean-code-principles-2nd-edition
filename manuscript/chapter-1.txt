@@ -110,8 +110,22 @@ A computer program can also be composed of one or more libraries, and a library 
 
 > ***[The twelve-factor app](https://12factor.net/) is a methodology for building modern cloud-native applications.***
 
-1. Codebase: One codebase tracked in revision control, many deploys
+1. **Codebase: One codebase tracked in revision control, many deploys**
+
+There shall be one codebase for an application (e.g., a microservice) stored in a revision control system, like Git.
+The application codebase is not related to application deployments. You can make several deployments from the one codebase.
+There can be *externalized configuration* that can be applied to each deployment to make the application with one codebase behave differently
+in different environments.
+
 2. Dependencies: Explicitly declare and isolate dependencies
+
+Never rely on implicit system-wide dependencies. Make all your application dependencies explicit. Use a software package manager like
+NPM or Maven to explicitly declare what you application needs. Regarding operating system dependencies, declare them in the application's
+Dockerfile for a containerized application. Use a minimal size container base image and add only dependencies you need. If you don't need
+any specific operating system dependencies, then use a distroless image as the container base image. If you don't need anything, you should
+not have anything extra in your container. This will minimize the surface for possible attacks.
+
+
 3. Configuration: Store configuration in the environment
 4. Backing services: Treat backing services as attached resources
 5. Build, release, run: Build, release, run
