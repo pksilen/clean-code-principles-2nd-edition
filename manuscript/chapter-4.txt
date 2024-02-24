@@ -4235,20 +4235,25 @@ public class BusDriversParserImpl implements BusDriversParser {
 Let's create a test for a scenario where we have multiple drivers with one rumor each. This time the rumors are the same:
 
 ```java
-class BusDriversParserImplTests(unittest.TestCase):
-    def test_parse__with_multiple_drivers_and_a_common_rumor(
-        self,
-    ):
-        # GIVEN
-        bus_driver_spec = ['bus-stop-a;rumor1', 'bus-stop-b;rumor1']
+class BusDriversParserImplTests {
+  @Test
+  void testParse_withMultipleDriversAndCommonRumor() {
+    // GIVEN
+    final var busDiverSpecs = List.of("bus-stop-a;rumor1", "bus-stop-b;rumor1");
 
-        # WHEN
-        bus_drivers = BusDriversParserImpl().parse(bus_driver_spec)
+    // WHEN
+    final var busDrivers = new BusDriversParserImpl().parse(busDriverSpecs);
 
-        # THEN
-        self.assertEqual(
-            bus_drivers[0].get_rumors(), bus_drivers[1].get_rumors()
-        )
+    // THEN
+    assertRumorsAreSame(busDrivers);
+  }
+
+  private void assertRumorsAreSame(final List<BusDriver> busDrivers) {
+    assertEquals(
+        busDrivers.get(0).getRumors(), busDrivers.get(1).getRumors()
+    )
+  }
+}
 ```
 
 Let's modify the implementation to make the test pass:
