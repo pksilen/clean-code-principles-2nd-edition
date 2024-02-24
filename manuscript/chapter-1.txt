@@ -35,6 +35,8 @@ recent years. If you are new to Kubernetes, you can familiarize yourself with th
 
 This chapter discusses the following architectural principles and patterns:
 
+- Software hierarchy
+- The twelve-factor app
 - Single responsibility principle
 - Uniform naming principle
 - Encapsulation principle
@@ -103,6 +105,24 @@ packaged, tested, and delivered. It consists of one or more classes, and a class
 A computer program can also be composed of one or more libraries, and a library can be composed of other libraries.
 
 ![Software Components](resources/chapter1/images/software-components.png)
+
+## The Twelve-Factor App
+
+> ***[The twelve-factor app](https://12factor.net/) is a methodology for building modern cloud-native applications.***
+
+1. Codebase: One codebase tracked in revision control, many deploys
+2. Dependencies: Explicitly declare and isolate dependencies
+3. Configuration: Store configuration in the environment
+4. Backing services: Treat backing services as attached resources
+5. Build, release, run: Build, release, run
+6. Processes: Execute the app as one or more stateless processes
+7. Port binding: Export services via port binding
+8. Concurrency: Scale out via the process model
+9. Disposability: Maximize robustness with fast startup and graceful shutdown
+10. Dev/prod parity: Keep development, staging, and production as similar as possible
+11. Logs: Treat logs as event streams
+12. Admin processes: Run admin/management tasks as one-off processes
+
 
 ## Single Responsibility Principle
 
