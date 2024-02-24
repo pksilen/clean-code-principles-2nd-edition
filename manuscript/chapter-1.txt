@@ -110,34 +110,56 @@ A computer program can also be composed of one or more libraries, and a library 
 
 > ***[The twelve-factor app](https://12factor.net/) is a methodology for building modern cloud-native applications.***
 
-1. **Codebase: One codebase tracked in revision control, many deploys**
+1. **Codebase: One codebase tracked in revision control, many deployments**
 
-There shall be one codebase for an application (e.g., a microservice) stored in a revision control system, like Git.
-The application codebase is not related to application deployments. You can make several deployments from the one codebase.
-There can be *externalized configuration* that can be applied to each deployment to make the application with one codebase behave differently
+There shall be one codebase for a microservice stored in a revision control system, like Git.
+The codebase is not related to deployments. You can make several deployments from the one codebase.
+There can be *externalized configuration* that can be applied to each deployment to make the microservice with one codebase behave differently
 in different environments.
 
-2. Dependencies: Explicitly declare and isolate dependencies
+2. **Dependencies: Explicitly declare and isolate dependencies**
 
-Never rely on implicit system-wide dependencies. Make all your application dependencies explicit. Use a software package manager like
-NPM or Maven to explicitly declare what you application needs. Regarding operating system dependencies, declare them in the application's
-Dockerfile for a containerized application. Use a minimal size container base image and add only dependencies you need. If you don't need
+Never rely on implicit system-wide dependencies. Make all your microservice dependencies explicit. Use a software package manager like
+NPM or Maven to explicitly declare what your microservice needs. Regarding operating system dependencies, declare them in the
+Dockerfile for a containerized microservice. Use a minimal size container base image and add only dependencies you need. If you don't need
 any specific operating system dependencies, then use a distroless image as the container base image. If you don't need anything, you should
 not have anything extra in your container. This will minimize the surface for possible attacks.
 
-3. Configuration: Store configuration in the environment
+3. **Configuration: Store configuration in the environment**
 
-Configuration is anything that varies between deployments. Never store such configuration information in the application code.
+Configuration is anything that varies between deployments. Never store such configuration information in the microservice code.
 Use externalized configuration which is stored in the deployment environment. We will discuss about that later in this chapter.
 
-4. Backing services: Treat backing services as attached resources
+4. **Backing services: Treat backing services as attached resources**
+Depending on the deployment environment, the microservice should be able to connect different backing services. Store the connection information
+for the backing services in the deployment environment. Never hard-code dependencies to backing services in the source code.
 
 
-5. Build, release, run: Build, release, run
-6. Processes: Execute the app as one or more stateless processes
-7. Port binding: Export services via port binding
-8. Concurrency: Scale out via the process model
-9. Disposability: Maximize robustness with fast startup and graceful shutdown
+5. **Build, release, run: Strictly separate build and run stages**
+For your microservices, implement pipelines for continuous integration (CI), continuous delivery (CD) and continuous
+deployment (CD).
+
+
+6. **Processes: Execute the app as one or more stateless processes**
+First of all, make your microservice stateless. This allows you to easily run multiple instances of the microservice
+in parallel (as separate processes).
+
+
+7. **Port binding: Expose services via port binding**
+Expose your microservice to other microservices via a well-known and fixed hostname and port. The other microservices
+are then able to connect to your microservice using the well-known hostname and port combination.
+
+8. **Concurrency: Scale out via the process model**
+Do not scale up, but scale out by adding more instances (processes) of your stateless microservice. This approach
+makes concurrency easy because you don't necessarily need to implement multithreading in your microservice. Implementing multithreading
+correctly can be complex and multithreading easily can cause concurrency issues and should be avoided whenever possible.
+
+9. **Disposability: Maximize robustness with fast startup and graceful shutdown**
+In a cloud environment, you should be prepared for your microservice instances to go down and then be started again e.g.
+on a different node. For this reason, make the startup fast and make the shutdown graceful so that no information is lost or left unprocessed,
+for example. The fast startup is extremely important when using containers in a serverless CaaS environment where microservices can be
+scaled to zero instances when no traffic.
+
 10. Dev/prod parity: Keep development, staging, and production as similar as possible
 11. Logs: Treat logs as event streams
 12. Admin processes: Run admin/management tasks as one-off processes
