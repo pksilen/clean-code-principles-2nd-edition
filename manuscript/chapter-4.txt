@@ -4327,14 +4327,7 @@ Let's make the above test pass:
 
 ```java
 public class BusDriversParserImpl implements BusDriversParser {
-  private final Map<String, BusStop> busStopNameToBusStop = new HashMap<>();
-  private final Map<String, Rumor> rumorNameToRumor = new HashMap<>();
-
-  public List<BusDriver> parse(final List<String> busDriverSpecs) {
-    return busDriverSpecs.stream()
-      .map(busDriverSpec -> parseBusDriver(busDriverSpec))
-      .toList();
-  }
+  // ...
 
   private BusDriver parseBusDriver(final String busDriverSpec) {
     final var busDriverSpecParts = busDriverSpec.split(";");
@@ -4359,7 +4352,7 @@ public class BusDriversParserImpl implements BusDriversParser {
     }
 
     return mew BusDriverImpl(
-        CircularBusRoute(List.of(busStopNameToBusStop.get(busStopName))),
+        CircularBusRoute(busStops)),
         Set.of(rumorNameToRumor.get(rumorName))
     );
   }
@@ -4403,40 +4396,45 @@ class BusDriversParserImplTests {
 
 Let's modify the implementation to make the above test pass:
 
-```python
-class BusDriversParserImpl(Protocol):
-    # ...
+```java
+public class BusDriversParserImpl implements BusDriversParser {
+  // ...
 
-    def parse(self, bus_driver_specs: list[str]) -> list[BusDriver]:
-        return [
-            self.__get_bus_driver(bus_driver_spec)
-            for bus_driver_spec in bus_driver_specs
-        ]
+  private BusDriver parseBusDriver(final String busDriverSpec) {
+    final var busDriverSpecParts = busDriverSpec.split(";");
+    final var busRouteSpec = busDriverSpecParts[0];
+    final var busStopNames = busRouteSpec.split(",");
+    final List<BusStop> busStops = new ArrayList<>();
 
-    def __get_bus_driver(self, bus_driver_spec: str) -> BusDriver:
-        bus_route_spec, rumors_spec = bus_driver_spec.split(';')
-        bus_stop_names = bus_route_spec.split(',')
+    for (final var busStopName : busStopNames) {
+      var busStop = busStopNameToBusStop.get(busStopName);
 
-        for bus_stop_name in bus_stop_names:
-            if self.__name_to_bus_stop.get(bus_stop_name) is None:
-                self.__name_to_bus_stop[bus_stop_name] = BusStopImpl()
+      if (busStop == null) {
+        busStop = new BusStopImpl();
+        busStopNameToBusStop.put(busStopName, busStop);
+      }
 
-        bus_stops = [
-            self.__name_to_bus_stop[bus_stop_name]
-            for bus_stop_name in bus_stop_names
-        ]
+      busStops.add(busStop);
+    }
 
-        rumor_names = rumors_spec.split(',')
+    final var rumorsSpec = busDriverSpecParts[1];
+    final var rumorNames = rumorsSpec.split(",");
+    final Set<Rumor> rumors = new HashSet<>();
 
-        for rumor_name in rumor_names:
-            if self.__name_to_rumor.get(rumor_name) is None:
-                self.__name_to_rumor[rumor_name] = Rumor()
+    for (final var rumorName : rumorNames) {
+      var rumor = rumorNameToRumor.get(rumorName);
 
-        rumors = {
-            self.name_to_rumor[rumor_name] for rumor_name in rumor_names
-        }
+      if (rumor == null) {
+        rumor = new Rumor();
+        rumorNameToRumor.put(rumorName, rumor);
+      }
 
-        return BusDriverImpl(CircularBusRoute(bus_stops), rumors)
+      rumors.add(rumor);
+    }
+
+    return mew BusDriverImpl(CircularBusRoute(busStops), rumors));
+  }
+}
 ```
 
 Now that we have implemented all tests, we can refactor the `parse` to the following:
