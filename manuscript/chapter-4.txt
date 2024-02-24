@@ -4292,30 +4292,36 @@ public class BusDriversParserImpl implements BusDriversParser {
 
 Let's create a test for a scenario where we have multiple drivers with multiple bus stops (the first bus stop is the same):
 
-```python
-class BusDriversParserImplTests(unittest.TestCase):
-    def test_parse__with_multiple_drivers_and_multiple_bus_stops_where_first_is_common(self):
-        # GIVEN
-        bus_driver_spec = [
-            'bus-stop-a,bus-stop-b;rumor1',
-            'bus-stop-a,bus-stop-c;rumor2',
-        ]
+```java
+class BusDriversParserImplTests {
+  @Test
+  void testParse_withMultipleDriversAndMultipleBusStopsWhereFirstIsCommon() {
+    // GIVEN
+    final var busDriverSpecs = List.of(
+        "bus-stop-a,bus-stop-b;rumor1",
+        "bus-stop-a,bus-stop-c;rumor2",
+    );
 
-        # WHEN
-        bus_drivers = BusDriversParserImpl().parse(bus_driver_spec)
+    // WHEN
+    final var busDrivers = new BusDriversParserImpl().parse(busDriverSpecs);
 
-        # THEN
-        self.__assert_only_first_bus_stops_are_same(bus_drivers)
+    // THEN
+    assertOnlyFirstBusStopIsSame(busDrivers);
+  }
 
 
-    def assert_only_first_bus_stops_are_same(self, bus_drivers):
-        driver1_stop1 = bus_drivers[0].get_current_bus_stop()
-        driver2_stop1 = bus_drivers[1].get_current_bus_stop()
-        self.assertEqual(driver1_stop1, driver2_stop1)
+  private void assertOnlyFirstBusStopIsSame(final List<BusDriver> busDrivers) {
+    assertEquals(
+      busDrivers.get(0).getCurrentBusStop(),
+      busDrivers.get(1).getCurrentBusStop()
+    );
 
-        driver1_stop2 = bus_drivers[0].drive_to_next_bus_stop()
-        driver2_stop2 = bus_drivers[1].drive_to_next_bus_stop()
-        self.assertNotEqual(driver1_stop2, driver2_stop2)
+    assertNotEqual(
+      busDrivers.get(0).driveToNextBusStop(),
+      busDrivers.get(1).driveToNextBusStop()
+    );
+  }
+}
 ```
 
 Let's make the above test pass:
