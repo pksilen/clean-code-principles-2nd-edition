@@ -165,8 +165,8 @@ Staging and production environments should be identical in every way except the 
 environment can be large, but the staging environment does not have to be as big. Do not use different backed services
 in your development and production environments. For example, don't use a different database in the development environment
 compared to the production environment. In the development environment, declare your backed services in a Docker compose
-file using the same Docker image and version as is used in the production deployment. Suppose we have used MySQL version x.y in production,
-but development environment uses MariaDB version x.z. Now there can be a problem in the production environment with
+file using the same Docker image and version as is used in the production deployment. Suppose we use MySQL version x.y in production,
+but development environment uses MariaDB version x.z. Now, there is a chance for a problem in the production environment with
 the MySQL version x.y which cannot be reproduced in the development environment with the MariaDB version x.z.
 
 11. **Logs: Treat logs as event streams**
