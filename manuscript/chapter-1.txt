@@ -158,7 +158,7 @@ makes concurrency easy because you don't necessarily need to implement multithre
 
 9. **Disposability: Maximize robustness with fast startup and graceful shutdown**
 
-In a cloud environment, you should be prepared for your microservice instances to go down and then be started again, for example, on a different node. For this reason, make the startup fast and make the shutdown graceful so that no information is lost or left unprocessed upon shutdown. Fast startup is critical for containers in a serverless CaaS environment where microservices can be scaled to zero instances when there is no traffic.
+In a cloud environment, you should be prepared for your microservice instances to go down and then be started again, for example, on a different node. For this reason, make the startup fast and make the shutdown graceful so that no information is lost or left unprocessed upon shutdown. Suppose you have a microservice with an internal queue for processing messages. When a microservice instance receives a shutdown request, it should gracefully shut down by draining the internal queue and processing the messages before termination. Fast startup is critical for containers in a serverless CaaS environment where microservices can be scaled to zero instances when there is no traffic.
 
 10. **Dev/prod parity: Keep development, staging, and production as similar as possible**
 
