@@ -172,13 +172,12 @@ the MySQL version x.y cannot be reproduced in the development environment with t
 
 11. **Logs: Treat logs as event streams**
 
-Microservice developers should only be concerned about writing log entries in a specified format to standard output.
-The DevOps team will implement the rest what is needed: to collect and store the logs.
+Microservice developers should only be concerned about writing log entries in a specific format to standard output.
+The DevOps team will implement the rest of what is needed to collect and store the logs.
 
 12. **Admin processes: Run admin/management tasks as one-off processes**
 
-Do not add administrative tasks to your microservices, but create a separate microservice for each administrative task.
-In this way, the single responsiblity of microservices is better handled. Tese administrative microservices can then be run on demand or on schedule.
+Do not add administrative tasks to your microservices. Instead, create a separate microservice for each administrative task. Each microservice will be guaranteed a single responsibility. These administrative microservices can then be run on demand or schedule. Examples of administrative tasks are database initialization, database cleanup, and backup. In a Kubernetes environment, you can perform database initialization either in a Helm install hook or Pod's init container. Cleanup and backup tasks can be performed using a Kubernetes CronJob.
 
 ## Single Responsibility Principle
 
