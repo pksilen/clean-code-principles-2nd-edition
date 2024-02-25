@@ -3286,7 +3286,7 @@ Generic type parameters are usually named with a single character only. If there
 If the generic type parameter has a special meaning, use the first letter from that meaning; for example, in `Map<K, V>`, the `K` means
 key and the `V` means value, or in `AbstractAction<S>`, the `S` means state. The problem with single-letter generic type parameters
 can be lousy readability. For example, in the `AbstractAction<S>`, can we assume everybody understands what the `S` means? It is often better
-to name generic type parameters with the convention `T<purpose>`, e.g., `TKey`, `TValue`, or `TState`. The initial `T` is essential to distinguish
+to name generic type parameters with the convention `T<purpose>`, e.g., `TKey`, `TValue`, or `TState`. The initial `T` is needed to distinguish
 generic type parameters from similar class names, like `Key`, `Value`, or `State`.
 
 #### Naming Function Parameters
