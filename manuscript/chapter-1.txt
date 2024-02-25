@@ -137,13 +137,13 @@ for the backing services in the deployment environment. Never hard-code dependen
 
 5. **Build, release, run: Strictly separate build and run stages**
 For your microservices, implement pipelines for continuous integration (CI), continuous delivery (CD) and continuous
-deployment (CD).
-
+deployment (CD). You can combine these stages to a CI/CD pipeline, but each stage is separate and depends on the
+artifacts produced in the previous stage: continuous integration depends on source code, continuous delivery depends on build artifacts
+and continuous deployment depends on release artifacts like a Helm chart and Docker image.
 
 6. **Processes: Execute the app as one or more stateless processes**
 First of all, make your microservice stateless. This allows you to easily run multiple instances of the microservice
 in parallel (as separate processes).
-
 
 7. **Port binding: Expose services via port binding**
 Expose your microservice to other microservices via a well-known and fixed hostname and port. The other microservices
@@ -161,16 +161,21 @@ for example. The fast startup is extremely important when using containers in a 
 scaled to zero instances when no traffic.
 
 10. **Dev/prod parity: Keep development, staging, and production as similar as possible**
-
+Staging and production environments should be identical in every way except the size of the environment. The production
+environment can be large, but the staging environment does not have to be as big. Do not use different backed services
+in your development and production environments. For example, don't use a different database in the development environment
+compared to the production environment. In the development environment, declare your backed services in a Docker compose
+file using the same Docker image and version as is used in the production deployment. Suppose we have used MySQL version x.y in production,
+but development environment uses MariaDB version x.z. Now there can be a problem in the production environment with
+the MySQL version x.y which cannot be reproduced in the development environment with the MariaDB version x.z.
 
 11. **Logs: Treat logs as event streams**
 Microservice developers should only be concerned about writing log entries in a specified format to standard output.
-The DevOps team will implement the rest that is to collect and store the logs.
+The DevOps team will implement the rest what is needed: to collect and store the logs.
 
 12. **Admin processes: Run admin/management tasks as one-off processes**
 Do not add administrative tasks to your microservices, but create a separate microservice for each administrative task.
 In this way, the single responsiblity of microservices is better handled. Tese administrative microservices can then be run on demand or on schedule.
-
 
 ## Single Responsibility Principle
 
