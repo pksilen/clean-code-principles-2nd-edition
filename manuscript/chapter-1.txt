@@ -112,55 +112,59 @@ A computer program can also be composed of one or more libraries, and a library 
 
 1. **Codebase: One codebase tracked in revision control, many deployments**
 
-There shall be one codebase for a microservice stored in a revision control system, like Git.
+There should be one codebase for a microservice stored in a revision control system, like Git.
 The codebase is not related to deployments. You can make several deployments from the one codebase.
-There can be *externalized configuration* that can be applied to each deployment to make the microservice with one codebase behave differently
+There can be *externalized configurations* that can be applied to deployments to make the microservice with one codebase behave differently
 in different environments.
 
 2. **Dependencies: Explicitly declare and isolate dependencies**
 
 Never rely on implicit system-wide dependencies. Make all your microservice dependencies explicit. Use a software package manager like
 NPM or Maven to explicitly declare what your microservice needs. Regarding operating system dependencies, declare them in the
-Dockerfile for a containerized microservice. Use a minimal size container base image and add only dependencies you need. If you don't need
-any specific operating system dependencies, then use a distroless image as the container base image. If you don't need anything, you should
-not have anything extra in your container. This will minimize the surface for possible attacks.
+Dockerfile for a containerized microservice. Use a minimal-size container base image and add only the dependencies you need. If you don't need
+any operating system dependencies, use a distroless image as the container base image. You should
+not have anything extra in your container when you don't need anything. This will minimize the surface for potential attacks.
 
 3. **Configuration: Store configuration in the environment**
 
-Configuration is anything that varies between deployments. Never store such configuration information in the microservice code.
-Use externalized configuration which is stored in the deployment environment. We will discuss about that later in this chapter.
+Configuration is anything that varies between deployments. Never store such configuration information in the microservice source code.
+Use externalized configuration that is stored in the deployment environment.
 
 4. **Backing services: Treat backing services as attached resources**
-Depending on the deployment environment, the microservice should be able to connect different backing services. Store the connection information
-for the backing services in the deployment environment. Never hard-code dependencies to backing services in the source code.
 
+Depending on the deployment environment, the microservice should be able to connect to different backing services. Store the connection information
+for the backing services in the deployment environment. Never hard-code connection information for backing services in the source code.
 
 5. **Build, release, run: Strictly separate build and run stages**
-For your microservices, implement pipelines for continuous integration (CI), continuous delivery (CD) and continuous
-deployment (CD). You can combine these stages to a CI/CD pipeline, but each stage is separate and depends on the
-artifacts produced in the previous stage: continuous integration depends on source code, continuous delivery depends on build artifacts
-and continuous deployment depends on release artifacts like a Helm chart and Docker image.
+
+For your microservices, implement pipelines for continuous integration (CI), continuous delivery (CD), and continuous
+deployment (CD). You can combine these stages into a CI/CD pipeline. Each stage is separate and depends on the
+artifacts produced in the previous stage: continuous integration depends on source code, continuous delivery depends on build artifacts, and continuous deployment depends on release artifacts like a Helm chart and Docker image.
 
 6. **Processes: Execute the app as one or more stateless processes**
-First of all, make your microservice stateless. This allows you to easily run multiple instances of the microservice
+
+First of all, make your microservice stateless. This allows you to run multiple instances of the microservice easily
 in parallel (as separate processes).
 
 7. **Port binding: Expose services via port binding**
+
 Expose your microservice to other microservices via a well-known and fixed hostname and port. The other microservices
-are then able to connect to your microservice using the well-known hostname and port combination.
+can then connect to your microservice using the well-known hostname and port combination.
 
 8. **Concurrency: Scale out via the process model**
-Do not scale up, but scale out by adding more instances (processes) of your stateless microservice. This approach
-makes concurrency easy because you don't necessarily need to implement multithreading in your microservice. Implementing multithreading
-correctly can be complex and multithreading easily can cause concurrency issues and should be avoided whenever possible.
+
+Do not scale up; scale out by adding more instances (processes) of your stateless microservice. This approach
+makes concurrency easy because you don't necessarily need to implement multithreading in your microservice. Correctly implementing multithreading can be complex. You can easily introduce concurrency issues in multithreaded code if you, for example, forget to implement locking when accessing a resource shared by multiple threads.
 
 9. **Disposability: Maximize robustness with fast startup and graceful shutdown**
+
 In a cloud environment, you should be prepared for your microservice instances to go down and then be started again e.g.
 on a different node. For this reason, make the startup fast and make the shutdown graceful so that no information is lost or left unprocessed,
 for example. The fast startup is extremely important when using containers in a serverless CaaS environment where microservices can be
 scaled to zero instances when no traffic.
 
 10. **Dev/prod parity: Keep development, staging, and production as similar as possible**
+
 Staging and production environments should be identical in every way except the size of the environment. The production
 environment can be large, but the staging environment does not have to be as big. Do not use different backed services
 in your development and production environments. For example, don't use a different database in the development environment
@@ -170,10 +174,12 @@ but development environment uses MariaDB version x.z. Now, there is a chance for
 the MySQL version x.y which cannot be reproduced in the development environment with the MariaDB version x.z.
 
 11. **Logs: Treat logs as event streams**
+
 Microservice developers should only be concerned about writing log entries in a specified format to standard output.
 The DevOps team will implement the rest what is needed: to collect and store the logs.
 
 12. **Admin processes: Run admin/management tasks as one-off processes**
+
 Do not add administrative tasks to your microservices, but create a separate microservice for each administrative task.
 In this way, the single responsiblity of microservices is better handled. Tese administrative microservices can then be run on demand or on schedule.
 
