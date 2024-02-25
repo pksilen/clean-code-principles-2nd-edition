@@ -3279,6 +3279,16 @@ When or "on what occasion" will this method be called? Examples of good names fo
 `componentDidUpdate` and `componentWillUnmount`. There is no reason to repeat the class name in the lifecycle method names. Better
 names would have been: `afterMount`, `afterUpdate`, and `beforeUnmount`.
 
+#### Naming Generic Type Parameters
+
+Generic type parameters are usually named with a single character only. If there is one generic type parameter, a `T` is often used, e.g.,
+`List<T>`. If there are multiple generic type parameters, the letters following T in the alphabet are used, e.g., `T` and `U`.
+If the generic type parameter has a special meaning, use the first letter from that meaning; for example, in `Map<K, V>`, the `K` means
+key and the `V` means value, or in `AbstractAction<S>`, the `S` means state. The problem with single-letter generic type parameters
+can be lousy readability. For example, in the `AbstractAction<S>`, can we assume everybody understands what the `S` means? It is often better
+to name generic type parameters with the convention `T<purpose>`, e.g., `TKey`, `TValue`, or `TState`. The initial `T` is essential to distinguish
+generic type parameters from similar class names, like `Key`, `Value`, or `State`.
+
 #### Naming Function Parameters
 
 Naming rules for function parameters are mostly the same as for variables. _Uniform naming principle_ for variables
