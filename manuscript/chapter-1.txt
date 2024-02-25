@@ -108,7 +108,10 @@ A computer program can also be composed of one or more libraries, and a library 
 
 ## The Twelve-Factor App
 
-> ***[The twelve-factor app](https://12factor.net/) is a methodology for building modern cloud-native applications.***
+> ***[The twelve-factor app](https://12factor.net/) is a methodology for building modern cloud-native microservices.***
+
+Below are listed the 12 factors of a cloud-native microservice with short descriptions of each factor. For most of the
+topics presented here, we will discuss them further and in more detail in later sections of this chapter.
 
 1. **Codebase: One codebase tracked in revision control, many deployments**
 
