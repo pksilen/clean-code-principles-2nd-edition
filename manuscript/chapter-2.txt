@@ -2658,7 +2658,9 @@ And there could be different subclasses for different data formats:  `AvroBinary
 The interface or base class name should be retained in the class or subclass name. Class names should follow the pattern:
 `<class-purpose>` + `<interface-name>` or `<sub-class-purpose>` + `<super-class-name>`, e.g.,
 `Kafka` + `InputMessage` = `KafkaInputMessage` and `AvroBinary` + `KafkaInputMessage` = `AvroBinaryKafkaInputMessage`.
-Name abstract classes with the prefix `Abstract`.
+Name abstract classes with the prefix `Abstract`. Java follows the above-described naming convention. For example, there exists an
+`Executor` interface. The `ThreadPoolExecutor` class implements the `Executor` interface and `ScheduledThreadPoolExecutor`
+class extends the `ThreadPoolExecutor` class.
 
 If an interface or class name is over 20-30 characters long, consider abbreviating one or more words in the name.
 The reason for this is to keep the code readable. Very long names are harder to read and slow a developer down. (Remember that

@@ -157,7 +157,8 @@ can then connect to your microservice using the well-known hostname and port com
 8. **Concurrency: Scale out via the process model**
 
 Do not scale up; scale out by adding more instances (processes) of your stateless microservice. This approach
-makes concurrency easy because you don't necessarily need to implement multithreading in your microservice. Correctly implementing multithreading can be complex. You can easily introduce concurrency issues in multithreaded code if you, for example, forget to implement locking when accessing a resource shared by multiple threads.
+makes concurrency easy because you don't necessarily need to implement multithreading in your microservice.
+Correctly implementing multithreading can be complex. You can easily introduce concurrency issues in multithreaded code if you, for example, forget to implement locking when accessing a resource shared by multiple threads.
 
 9. **Disposability: Maximize robustness with fast startup and graceful shutdown**
 
@@ -2097,7 +2098,9 @@ system where users can transfer money from their accounts. We have a higher-leve
 called *account-balance-service* and *account-transaction-service*. The *account-balance-service* holds accounts'
 balance information while the *account-transaction-service* keeps track of all account transactions.
 The *account-money-transfer-service* acts as a saga orchestrator and utilizes both of the lower-level microservices to make
-a money transfer to happen.
+a money transfer to happen. Do not confuse the distributed transaction with an account transaction. They are two separate things.
+The distributed transaction spans the whole money transfer process, while an account transaction is a transaction related
+to a particular account, either a withdrawal or deposit transaction. An account transaction is an entity stored in the *account-transaction-service*'s database.
 
 Let's consider a distributed transaction executed by the *account-money-transfer-service* when a user makes a withdrawal
 of $25.10:
