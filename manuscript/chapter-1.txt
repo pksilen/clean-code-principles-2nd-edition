@@ -177,7 +177,7 @@ The DevOps team will implement the rest of what is needed to collect and store t
 
 12. **Admin processes: Run admin/management tasks as one-off processes**
 
-Do not add administrative tasks to your microservices. Instead, create a separate microservice for each administrative task. Each microservice will be guaranteed a single responsibility. These administrative microservices can then be run on demand or schedule. Examples of administrative tasks are database initialization, database cleanup, and backup. In a Kubernetes environment, you can perform database initialization either in a Helm install hook or Pod's init container. Cleanup and backup tasks can be performed using a Kubernetes CronJob.
+Do not add administrative tasks to your microservices. Instead, create a separate microservice for each administrative task. Each microservice will be guaranteed a single responsibility. These administrative microservices can then be run on demand or schedule. Examples of administrative tasks are database initialization, database cleanup, and backup. In a Kubernetes environment, you can perform database initialization either in a Helm post-install hook or Pod's init container. Cleanup and backup tasks can be performed using a Kubernetes CronJob.
 
 ## Single Responsibility Principle
 
