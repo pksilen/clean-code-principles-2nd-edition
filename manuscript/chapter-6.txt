@@ -1086,13 +1086,27 @@ contact the technical support at <email address>*.
 
 Below is the base error class for the *sales-item-service*:
 
-{format: python}
-![errors/SalesItemServiceError.py](resources/chapter6/code/salesitemservice/errors/SalesItemServiceError.py)
+{title: "SalesItemServiceError.ts"}
+```ts
+export default class SalesItemServiceError extends ApiError {
+}
+```
 
 Let's then define one error class that is used by the API:
 
-{format: python}
-![errors/EntityNotFoundError.py](resources/chapter6/code/salesitemservice/errors/EntityNotFoundError.py)
+{title: "EntityNotFoundError"}
+```ts
+export default class EntityNotFoundError extends SalesItemServiceError {
+  constructor(entityName: string, entityId: string) {
+    super(
+      404,
+      'Not Found',
+      `${entity_name} with id {entity_id} not found`,
+      'EntityNotFound'
+    )
+  }
+}
+```
 
 Let's implement a custom error handler for our API. Notice how the handler is general purpose and
 can be used with any API having its errors derived from the `ApiError`.
