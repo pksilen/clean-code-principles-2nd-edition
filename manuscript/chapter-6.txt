@@ -1120,13 +1120,22 @@ export class SalesItemServiceErrorFilter implements ExceptionFilter {
     const response = context.getResponse<Response>();
     const request = context.getRequest<Request>();
 
+    // Log error.cause at least always
+    // when error.status_code >= 500
+
+    // Increment 'request_failures' counter by one
+    // with three labels:
+    // api_endpoint=`${request.method} ${request.url}`
+    // status_code=error.statusCode
+    // error_code=error.code
+
     response
       .status(error.statusCode)
       .json({
         statusCode: error.statusCode,
         statusText: error.statusText,
         timestamp: new Date().toISOString(),
-        url: request.url,
+        endpoint: `${request.method} ${request.url}`,
         errorCode: error.code,
         errorMessage: error.message,
         errorDescription: error.description,
@@ -1154,7 +1163,7 @@ Content-Type: application/json
 {
   "statusCode": 404,
   "statusText": "Not Found",
-  "url": ".../sales-item-service/sales-items/1",
+  "endpoint": "GET .../sales-item-service/sales-items/1",
   "timestamp": "2024-02-26T12:32:49+0000",
   "errorCode": "EntityNotFound",
   "errorMessage": "Sales item with id 10 not found"
@@ -1172,13 +1181,21 @@ export class ValidationErrorFilter implements ExceptionFilter {
     const response = context.getResponse<Response>();
     const request = context.getRequest<Request>();
 
+    // Audit log
+
+    // Increment 'request_failures' counter by one
+    // with three labels:
+    // api_endpoint=`${request.method} ${request.url}`
+    // status_code=400
+    // errorCode="RequestValidationError"
+
     response
       .status(400)
       .json({
         statusCode: 400,
         statusText: "Bad Request",
         timestamp: new Date().toISOString(),
-        url: request.url,
+        endpoint: `${request.method} ${request.url}`,
         errorCode: "RequestValidationError",
         errorMessage: 'Request validation failed',
         errorDescription: error.message
@@ -1196,17 +1213,25 @@ export class GenericErrorFilter implements ExceptionFilter {
     const response = context.getResponse<Response>();
     const request = context.getRequest<Request>();
 
+    # Log error
+
+    # Increment 'request_failures' counter by one
+    # with labels:
+    # api_endpoint=f'{request.method} {request.url}'
+    # status_code=500
+    # error_code='UnspecifiedError'
+
     response
       .status(500)
       .json({
         statusCode: 500,
         statusText: 'Internal Server Error',
         timestamp: new Date().toISOString(),
-        url: request.url,
+        endpoint: `${request.method} ${request.url}`,
         errorCode: 'UnspecifiedError',
-        'errorMessage': 'Unspecified internal error',
-        'errorDescription': error.message,
-        'stackTrace': getStackTrace(error),
+        errorMessage: 'Unspecified internal error',
+        errorDescription: error.message,
+        stackTrace: getStackTrace(error),
       });
   }
 }
