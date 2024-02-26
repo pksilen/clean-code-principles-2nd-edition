@@ -2057,7 +2057,12 @@ the end users usually prefer to get information fast, even if it is not current 
 
 It should be noted that using
 the CQRS pattern does not require the command and query models to use different databases. It is perfectly fine to use
-the same database. The main idea behind the CQRS pattern is that the models for queries and commands differ. In the above
+the same database. The main idea behind the CQRS pattern is that the models for queries and commands differ as shown
+in the below picture.
+
+![CQRS](resources/chapter1/images/cqrs2.png)
+
+In the above
 example, the command model stores entities that are order-related events, and the query model constructs order entities from
 the stored order-related events. The CQRS pattern is useful in cases where the domain model is relatively complex, and
 you benefit from separating the command and query models. For a simple API with basic CRUD operations on simple
