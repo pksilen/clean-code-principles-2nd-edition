@@ -889,7 +889,7 @@ for the audit logging decorator and the JWT for the authorization decorators. Yo
 from the controller to the service class. The service class decorators then operate with that object.
 
 The DTOs (objects that specify what data is transferred (input or output) between clients and the server)
-are defined using [pydantic](https://docs.pydantic.dev/latest/) validation library:
+are defined using:
 
 {format: python}
 ![dtos/SalesItemImage.py](resources/chapter6/code/salesitemservice/dtos/SalesItemImage.py)
@@ -1066,14 +1066,17 @@ def handle_unspecified_error(request: Request, error: Exception):
 
 The rest of the API service source code files look like the following:
 
-{format: python}
-![DiContainer.py](resources/chapter6/code/salesitemservice/DiContainer.py)
+{title: "app.ts"}
+```ts
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  app.useGlobalPipes(new ValidationPipe());
+  await app.listen(3000);
+}
 
-{format: python}
-![utils.py](resources/chapter6/code/salesitemservice/utils.py)
-
-{format: python}
-![app.py](resources/chapter6/code/salesitemservice/app.py)
+bootstrap();
+}
+```
 
 ### GraphQL API Design
 
