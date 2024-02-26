@@ -1113,6 +1113,13 @@ the development of the higher-level microservice.
 
 This principle is the same as the *loose-coupling principle* in the IDEALS microservice principles.
 
+The ideal coupling of a microservice is zero, but in practice, a microservice might need to use
+one or two other microservices. Sometimes, a microservice might need to use 3-4 or even more other microservices.
+In those cases, the probability of needing to implement distributed transactions becomes higher. Distributed transactions
+can be challenging to implement correctly and thoroughly test. If you require 100% consistency in all cases, carefully consider
+if you should use distributed transactions. For example, if you are implementing a banking software system, you need high consistency in many cases. You can be better off not using distributed transactions but grouping closely related microservices into a larger one
+where you can use ACID transactions instead.
+
 ## Library Composition Principle
 
 > ***Higher-level libraries should be composed of lower-level libraries.***
