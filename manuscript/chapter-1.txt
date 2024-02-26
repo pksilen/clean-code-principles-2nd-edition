@@ -2331,6 +2331,10 @@ repository content for new microservice:
 - Should microservice have a database, and what database?
 - What are the other dependent microservices?
 
+To make things even easier, you could create, e.g., a Jenkins job that asks the questions from the developer in the Jenkins UI and
+then creates a new source code repository and pushes the content created by the utility to the new source code repository.
+Developers only need to know the link to the Jenkins job to kickstart a brand-new microservice.
+
 Of course, decisions about the preferred technology stacks are not engraved in stone. They are not static.
 As time passes, new technologies arise, and new programming languages gain popularity. At some point, a decision
 could be made that a new technology stack should replace an existing preferred technology stack. Then, new projects should use the new stack and old software components will be gradually migrated to use the new technology stack or eventually retired.
