@@ -1091,13 +1091,17 @@ Cohesion refers to the degree to which classes inside a service belong together.
 When following the *single responsibility principle*, it is possible to implement services as microservices with
 high cohesion. Service aggregation adds low coupling. Microservices and service aggregation together enable
 high cohesion and low coupling, which is the target
-of good architecture. If there were no service aggregation, lower-level microservices would need to communicate
+of good architecture.
+
+![Coupling vs. Cohesion](resources/chapter1/images/high-coupling.png)
+
+If there were no service aggregation, lower-level microservices would need to communicate
 with each other, creating high coupling in the architecture. Also, clients would be coupled with the lower-level microservices.
 For example, in the e-commerce example, the *order-service* would be coupled with
 almost all the other microservices. And if the *sales-item-service* API changed, in the worst case, a change would be needed
 in three other microservices. When using service aggregation, lower-level microservices are coupled only to the higher-level microservice.
 
-![E-Commerce Software System With High Coupling](resources/chapter1/images/high-coupling.png)
+![E-Commerce Software System With High Coupling](resources/chapter1/images/cohesion.png)
 
 Low coupling means that the development of services can be highly parallelized.
 In the e-commerce example, the five lower-level microservices don't have coupling with
