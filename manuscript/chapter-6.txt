@@ -19,8 +19,10 @@ It is always good to keep implementation details as hidden as possible.
 
 > ***Design a JSON-based RPC API to perform a single action (procedure) for an API endpoint.***
 
-As the name suggests, JSON-RPC APIs are for executing remote procedure calls using JSON-encoded payloads. The remote procedure argument is a JSON object in the HTTP request body. The remote procedure return value is a JSON object in the HTTP response body.
-A client calls a remote procedure by issuing an HTTP POST request where it specifies the procedure's name in the URL path and gives the argument for the remote procedure call in the request body in JSON.
+As the name suggests, JSON-RPC APIs are for executing remote procedure calls using JSON-encoded payloads. The remote procedure
+argument is a JSON object in the HTTP request body. The remote procedure return value is a JSON object in the HTTP response body.
+A client calls a remote procedure by issuing an HTTP POST request where it specifies the procedure's name in the URL path
+and gives the argument for the remote procedure call in the request body in JSON.
 
 Below is an example request for a translation service's *translate* procedure:
 
@@ -161,56 +163,25 @@ Content-Type: application/json
 POST /sales-item-service/delete-sales-items HTTP/1.1
 ```
 
-You can easily create API endpoints for the above service. Below, they are implemented with FastAPI.
+You can easily create a controller for the above service. Below is an example of such a controller with one remote procedure defined:
 
-```python
-from typing import Any
+{title: "SalesItemController.java"}
+```java
+@RestController
+public class SalesItemController {
+  @Autowired
+  private SalesItemService salesItemService;
 
-from fastapi import FastAPI
-from pydantic import BaseModel
+  @PostMapping("/create-sales-tem")
+  @ResponseStatus(HttpStatus.CREATED)
+  public final SalesItem createSalesItem(
+    @RequestBody final InputSalesItem inputSalesItem
+  ) {
+    return salesItemService.createSalesItem(inputSalesItem);
+  }
 
-app = FastAPI()
-
-# In production code, add additional validations
-# to DTO attributes, like maximum length for the 'name'
-class InputSalesItem(BaseModel):
-    name: str
-    price: int
-
-
-class OutputSalesItem(BaseModel):
-    id: int
-    name: str
-    price: int
-
-
-class SalesItemUpdate(InputSalesItem):
-    id: int
-
-
-class Id(BaseModel):
-    id: int
-
-
-@app.post("/sales-item-service/create-sales-item", response_model=OutputSalesItem)
-async def create_sales_items(sales_item: InputSalesItem) -> Any:
-    # ...
-
-@app.post("/sales-item-service/get-sales-items", response_model=list[OutputSalesItem])
-async def get_sales_items() -> Any:
-    # ...
-
-@app.post("/sales-item-service/get-sales-item-by-id", response_model=OutputSalesItem)
-async def get_sales_item_by_id(id: Id) -> Any:
-    # ...
-
-@app.post("/sales-item-service/update-sales-item", response_model=OutputSalesItem)
-async def update_sales_item(sales_item_update: SalesItemUpdate) -> Any:
-    # ...
-
-@app.post("/sales-item-service/delete-sales-item-by-id")
-async def delete_sales_item_by_id(id: Id) -> None:
-    # ...
+  // Rest of the methods ...
+}
 ```
 
 You can version your API by adding a version number to the URL. In the below example, the
