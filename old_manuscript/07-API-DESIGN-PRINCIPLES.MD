@@ -760,8 +760,8 @@ can use the _@nestjs/swagger_ library.
 
 Let's implement the API endpoints for the _sales-item-service_ using Typescript and Nest.js and its `Controller` decorator:
 
-_SalesItemController.ts_
-```
+{title: "SalesItemController.ts"}
+```ts
 import { 
   Controller,
   Get,
@@ -776,7 +776,6 @@ import {
 
 @Controller('sales-items')
 export class SalesItemController {
-  
   constructor(private readonly salesItemService: SalesItemService) {}
   
   @Post()

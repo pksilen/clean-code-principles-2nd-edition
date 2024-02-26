@@ -527,7 +527,8 @@ The above SQL statement will only modify the price column; other columns remain 
 
 > ***Use resource versioning when needed.***
 
-When you get a resource from the server and try to update it, someone else may have updated it after you got it but before trying to update it. This can be okay if you don't care about other clients' updates. But sometimes, you want to ensure no one else has updated
+When you get a resource from the server and try to update it, someone else may have updated it after you got it but before trying to update it.
+This can be okay if you don't care about other clients' updates. But sometimes, you want to ensure no one else has updated
 the resource before you update it. In that case, you should use resource versioning. In the resource versioning,
 there is a version field in the resource, which is incremented by one during each update. If you get a resource
 with version *x* and then try to update the resource, giving back the same version *x* to the server, but someone
@@ -633,7 +634,8 @@ The problem with this approach is that the *sales-item-service* will grow in siz
 nested resources in the future, the size will grow even more, making the microservice too complex and being
 possibly responsible for too many things.
 
-A better alternative might be to create a separate microservice for the nested resources. This will enable the utilization of the best-suited technologies to implement the microservice. Regarding the sales item images,
+A better alternative might be to create a separate microservice for the nested resources. This will enable the utilization of the best-suited technologies to implement the microservice.
+Regarding the sales item images,
 the *sales-item-image-service* could employ a cloud object storage to store images, and the *sales-item-service*
 could utilize a standard relational database for storing sales items.
 
@@ -773,22 +775,9 @@ You can use tools like [SwaggerHub](https://swagger.io/tools/swaggerhub/) or Pos
 for multiple languages. Code generators generate code based on the OpenAPI specification. They can generate
 client-side code in addition to the server-side code.
 
-When using the second alternative, you can use a web framework-specific way to generate the API specification from the API
-implementation. For example, with FastAPI, you get automatic API specification generation. By default, the OpenAPI schema
-is served in JSON format at the following endpoint: `/openapi.json`. This URL is configurable. FastAPI also provides Swagger
-UI interactive docs and client at the following URL: `/docs`. This URL is also customizable. [ReDoc](https://redocly.com/redoc/)
-interactive docs are available at `/redoc,` which is also configurable. For example, setting OpenAPI schema to be served
-at `/my-service/v1/openapi.json` and setting Swagger UI to be served at `/my-service/v1/docs` and disabling ReDoc can be achieved in the following way:
-
-```python
-from fastapi import FastAPI
-
-app = FastAPI(
-    openapi_url='/my-service/v1/openapi.json',
-    docs_url='/my-service/v1/docs',
-    redoc_url=None
-)
-```
+When using the second alternative, you can use a web framework-specific way to build the API spec from the API
+implementation. For example, if you are using Spring Boot, you can use the [springdoc-openapi-ui](https://springdoc.org/) library, and with Nest.js, you
+can use the [@nestjs/swagger](https://docs.nestjs.com/openapi/introduction) library.
 
 I prefer to use the second approach of writing the code first. I like it better when I don't have to work with both
 auto-generated and handwritten code. Many web frameworks offer automatic generation of the OpenAPI schema and
@@ -799,8 +788,70 @@ interactive documentation from the source code.
 Let's implement *sales-item-service* API endpoints for CRUD operations on sales items using FastAPI. We use the
 *clean microservice design principle* introduced earlier and write the API endpoints inside a controller class:
 
-{format: python}
-![controllers/RestSalesItemController.py](resources/chapter6/code/salesitemservice/controllers/RestSalesItemController.py)
+{title: "SalesItemController.ts"}
+```ts
+import {
+  Controller,
+  Get,
+  Query,
+  Post,
+  Body,
+  Put,
+  Param,
+  Delete
+} from '@nestjs/common';
+// ...
+
+@Controller('sales-items')
+export class SalesItemController {
+  constructor(private readonly salesItemService: SalesItemService) {}
+
+  @Post()
+  create(@Body() inputSalesItem: InputSalesItem): Promise<OutputSalesItem> {
+    return this.salesItemService.createSalesItem(inputSalesItem);
+  }
+
+  @Get()
+  getSalesItems(
+    @Query('userAccountId') userAccountId: string,
+  ): Promise<OutputSalesItem[]> {
+    if (userAccountId) {
+      return this.salesItemService.getSalesItemsByUserAccountId
+      (
+        userAccountId
+      );
+    } else {
+      return this.salesItemService.getSalesItems();
+    }
+  }
+
+  @Get('/:id')
+  getSalesItemById()(@Param('id') id: string): Promise<OutputSalesItem> {
+    return this.salesItemService.getSalesItem(id);
+  }
+
+  @Put('/:id')
+  @HttpCode(204)
+  updateSalesItem(
+    @Param('id') id: string,
+    @Body() inputSalesItemArg: InputSalesItem
+  ):Promise<void> {
+    return this.salesItemService.updateSalesItem(id, inputSalesItem);
+  }
+
+  @Delete('/:id')
+  @HttpCode(204)
+  deleteSalesItemById(@Param('id') id: string): Promise<void> {
+    return this.salesItemService.deleteSalesItem(id);
+  }
+
+  @Delete()
+  @HttpCode(204)
+  deleteSalesItems(): Promise<void> {
+    return this.salesItemService.deleteSalesItems();
+  }
+}
+```
 
 The above controller is not production quality. The following must be added:
 
@@ -808,63 +859,20 @@ The above controller is not production quality. The following must be added:
 - Observability, e.g., updating metric(s)
 - Authorization
 
-All of the above could be and probably should be implemented using decorators, for example:
+All of the above could be and probably should be implemented using custom decorators, for example:
 
-```python
-@allow_for_user_roles(['admin'], authorizer)
-@audit_log
-@increment_counter(Counters.request_attempts)
-def create_sales_item(
-    self,
-    input_sales_item: InputSalesItem,
-    request: Request
-) -> OutputSalesItem:
-    return self.__sales_item_service.create_sales_item(
-        input_sales_item
-    )
+```ts
+@AllowForUserRoles(['admin'], authorizer)
+@AuditLog()
+@IncrementCounter(Counters.request_attempts)
+@Post()
+create(@Req() request: Request, @Body() salesItemArg: SalesItemArg): Promise<SalesItem> {
+  return this.salesItemService.createSalesItem(salesItemArg);
+}
 ```
 
-The authorization decorator `@allow_for_user_roles(['admin'], authorizer)` is the same as discussed
-in the previous chapter. The `@audit_log` decorator can be implemented in the following way:
-
-```python
-from functools import wraps
-
-
-def audit_log(handle_request):
-    @wraps(handle_request)
-    def wrapped_handle_request(*args, **kwargs):
-        method = kwargs['request'].method
-        url = kwargs['request'].url
-        client_host = kwargs['request'].client.host
-        # The below printed text should be written to audit log
-        print(f'API endpoint: {method} {url} accessed from: {client_host}')
-        return handle_request(*args, **kwargs)
-
-    return wrapped_handle_request
-```
-
-The `@increment_counter` decorator can be implemented in the following way:
-
-```python
-from functools import wraps
-
-
-def increment_counter(counter):
-    def decorate(handle_request):
-        @wraps(handle_request)
-        def wrapped_handle_request(*args, **kwargs):
-            method = kwargs['request'].method
-            url = kwargs['request'].url
-            # Increment counter by one with 'api_endpoint' label
-            counter.increment(1, {'api_endpoint': f'{method} {url}'})
-            return handle_request(*args, **kwargs)
-
-        return wrapped_handle_request
-
-    return decorate
-```
-
+The implementation of the above custom decorators are not shown here, but if you are interested, similar decorators
+for Python are implemented in this same chapter in my other book: Clean Code Principles And Patterns: Python Edition.
 Notice how the above decorators are general purpose and not specific to this *sales-item-service* API. Instead of
 adding the decorators to the controller class methods, you might be better off creating decorators that can be added to the service class
 methods. In that case, you need to supply the needed information from the controller methods to the service methods, like the client's host
