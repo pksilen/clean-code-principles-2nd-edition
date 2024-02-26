@@ -807,7 +807,9 @@ export class SalesItemController {
   constructor(private readonly salesItemService: SalesItemService) {}
 
   @Post()
-  create(@Body() inputSalesItem: InputSalesItem): Promise<OutputSalesItem> {
+  createSalesItem(
+    @Body() inputSalesItem: InputSalesItem
+  ): Promise<OutputSalesItem> {
     return this.salesItemService.createSalesItem(inputSalesItem);
   }
 
@@ -826,7 +828,7 @@ export class SalesItemController {
   }
 
   @Get('/:id')
-  getSalesItemById((@Param('id') id: string): Promise<OutputSalesItem> {
+  getSalesItem((@Param('id') id: string): Promise<OutputSalesItem> {
     return this.salesItemService.getSalesItem(id);
   }
 
@@ -841,7 +843,7 @@ export class SalesItemController {
 
   @Delete('/:id')
   @HttpCode(204)
-  deleteSalesItemById(@Param('id') id: string): Promise<void> {
+  deleteSalesItem(@Param('id') id: string): Promise<void> {
     return this.salesItemService.deleteSalesItem(id);
   }
 
@@ -866,13 +868,20 @@ All of the above could be and probably should be implemented using custom decora
 @AuditLog()
 @IncrementCounter(Counters.request_attempts)
 @Post()
-create(@Req() request: Request, @Body() salesItemArg: SalesItemArg): Promise<SalesItem> {
-  return this.salesItemService.createSalesItem(salesItemArg);
+createSalesItem(
+  // You need to add 'request' parameter because
+  // you need to access it in your custom decorators
+  // to get e.g., request URL, client's host and Authorization header
+  @Req() request: Request,
+  @Body() inputSalesItem: InputSalesItem
+): Promise<OutputSalesItem> {
+  return this.salesItemService.createSalesItem(inputSalesItem);
 }
 ```
 
-The implementation of the above custom decorators are not shown here, but if you are interested, similar decorators
-for Python are implemented in this same chapter in my other book: Clean Code Principles And Patterns: Python Edition.
+The implementation of the above custom decorators is not shown here, but if you are interested, similar decorators
+for Python are implemented in this same chapter in my other book, Clean Code Principles And Patterns: Python Edition.
+You can use the Python decorator implementations as a reference and basis for the TypeScript decorator implementations.
 Notice how the above decorators are general purpose and not specific to this *sales-item-service* API. Instead of
 adding the decorators to the controller class methods, you might be better off creating decorators that can be added to the service class
 methods. In that case, you need to supply the needed information from the controller methods to the service methods, like the client's host
