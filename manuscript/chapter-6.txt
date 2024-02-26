@@ -826,7 +826,7 @@ export class SalesItemController {
   }
 
   @Get('/:id')
-  getSalesItemById()(@Param('id') id: string): Promise<OutputSalesItem> {
+  getSalesItemById((@Param('id') id: string): Promise<OutputSalesItem> {
     return this.salesItemService.getSalesItem(id);
   }
 
