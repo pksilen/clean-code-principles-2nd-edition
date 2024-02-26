@@ -911,30 +911,38 @@ export default class SalesItemImage {
 {title: "InputSalesItem.ts"}
 ```ts
 export default class InputSalesItem {
-    @MaxLength(256)
-    name: string;
+  @MaxLength(256)
+  name: string;
 
-    // We accept negative prices for sales items that act
-    // as discount items
+  // We accept negative prices for sales items that act
+  // as discount items
+  @IsInt()
+  priceInCents: number;
 
-    @IsInt()
-    priceInCents: number;
-
-    @ValidateNested()
-    @ArrayMaxSize(25)
-    images: SalesItemImage[];
+  @ValidateNested()
+  @ArrayMaxSize(25)
+  images: SalesItemImage[];
 }
 ```
 
-{format: python}
-![dtos/OutputSalesItem.py](resources/chapter6/code/salesitemservice/dtos/OutputSalesItem.py)
+{title: "OutputSalesItem.ts"}
+```ts
+export default class OutputSalesItem extends InputSalesItem {
+  @MaxLength(256)
+  id: string;
+
+  @IsInt()
+  @IsPositive()
+  createdAtTimestampInMs: number;
+}
+```
 
 Notice that we have specified validation for each attribute in all three DTO classes. This is important because of security.
 For example, string and list attributes should have maximum length validators to prevent possible denial of
 service attacks. Output DTOs should have validation as well. This is important because of security.
 Output validation can protect against injection attacks that try to return data that has an invalid shape.
-In FastAPI, output DTOs are also used in the automatic documentation of the API schema and when
-automatically generating client code.
+With Nest.js, the output DTOs are not validated (at the moment of writing this book). You need to implement it by yourself, e.g.,
+in your application service class using the `validateOrReject` function from the *class-validator* library:``await validateOrReject(outputDto)`.
 
 The `SalesItemService` protocol looks like the following:
 
