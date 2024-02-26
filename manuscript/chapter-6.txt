@@ -1023,30 +1023,65 @@ export default interface SalesItemRepository {
 }
 ```
 
-
 Various implementations for the `SalesItemRepository` are presented in the next chapter, where we focus on database
 principles. The next chapter provides three different implementations for the repository: Object-Relational
 Mapping (ORM), parameterized SQL queries, and MongoDB.
 
-For error handling, we depend on the `except` block provided by the FastAPI web framework. We could raise
-errors of the FastAPI's `HTTPException` type in our business logic, but then we would be coupling our web framework
+For error handling, we depend on the `catch` block provided by the Nest.js web framework. We could throw
+errors of the Nest.js `HTTPException` type in our business logic, but then we would be coupling our web framework
 with business logic, which is not desired. Remember how in the *clean microservice design principle*, the dependency goes only
 from the web framework (controller) towards business logic, not vice versa. If we used web framework-specific
 error classes in our business and logic, and we would like to migrate the microservice to a different web framework, we would
 have to refactor the whole business logic concerning raised errors.
 
-What we should do is introduce a base error class for our microservice and provide a custom error handler for
-FastAPI. The custom error handler translates our business logic-specific errors into HTTP responses. The possible errors
+What we should do is introduce a base error class for our microservice and provide a custom exception filter for
+Nest.js. The custom exception filter translates our business logic-specific errors into HTTP responses. The possible errors
 the microservice can raise should all derive from the base error class. The `ApiError` class below is a general-purpose base error class
 for any API.
 
-{format: python}
-![errors/ApiError.py](resources/chapter6/code/salesitemservice/errors/ApiError.py)
+{title: "ApiError.ts"}
+```ts
+export default class ApiError extends Error {
+    constructor(
+        private readonly statusCode_: number,
+        private readonly statusText_: string,
+        private readonly message_: string,
+        private readonly code_: string | undefined,
+        private readonly description_: string | undefined,
+        private readonly cause_: Error | undefined
+    ) {}
+
+    get statusCode(): number {
+      return statusCode_;
+    }
+
+    get statusText(): string {
+      return statusText_;
+    }
+
+    get message(): string {
+      return message_;
+    }
+
+    get code(): string | undefined {
+      return code;
+    }
+
+    get description(): string | undefined {
+      return description_;
+    }
+
+    get cause(): Error | undefined {
+      return cause_;
+    }
+}
+```
 
 The `code` property could also be named `type`. The idea behind that property is to tell what kind
 of an error is in question. This property can be used on the server side as a label for failure metrics, and on the
 client side, special handling for particular error codes can be implemented.
-If you want, you can even add one more property to the above class, namely `recovery_action`. This optional property contains information about recovery steps for an actionable error. For example, a database connection error might have a `recovery_action` property value: *Please retry after a while. If the problem persists,
+If you want, you can even add one more property to the above class, namely `recoveryAction`. This optional property contains
+information about recovery steps for an actionable error. For example, a database connection error might have a `recoveryAction` property value: *Please retry after a while. If the problem persists,
 contact the technical support at <email address>*.
 
 Below is the base error class for the *sales-item-service*:
