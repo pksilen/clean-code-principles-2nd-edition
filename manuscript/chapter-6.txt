@@ -889,13 +889,42 @@ for the audit logging decorator and the JWT for the authorization decorators. Yo
 from the controller to the service class. The service class decorators then operate with that object.
 
 The DTOs (objects that specify what data is transferred (input or output) between clients and the server)
-are defined using:
+are defined as shown below. For validating DTOs, we need to use the [class-validator](https://github.com/typestack/class-validator) and [class-transformer](https://github.com/typestack/class-transformer) libraries as instructed in [Nest.js
+validation guide](https://docs.nestjs.com/techniques/validation).
 
-{format: python}
-![dtos/SalesItemImage.py](resources/chapter6/code/salesitemservice/dtos/SalesItemImage.py)
+{title: "SalesItemImage.ts"}
+```ts
+export default class SalesItemImage {
+  @IsInt()
+  @IsPositive()
+  id: number;
 
-{format: python}
-![dtos/InputSalesItem.py](resources/chapter6/code/salesitemservice/dtos/InputSalesItem.py)
+  @IsInt()
+  @IsPositive()
+  rank: number;
+
+  @IsUrl()
+  url: string;
+}
+```
+
+{title: "InputSalesItem.ts"}
+```ts
+export default class InputSalesItem {
+    @MaxLength(256)
+    name: string;
+
+    // We accept negative prices for sales items that act
+    // as discount items
+
+    @IsInt()
+    priceInCents: number;
+
+    @ValidateNested()
+    @ArrayMaxSize(25)
+    images: SalesItemImage[];
+}
+```
 
 {format: python}
 ![dtos/OutputSalesItem.py](resources/chapter6/code/salesitemservice/dtos/OutputSalesItem.py)
