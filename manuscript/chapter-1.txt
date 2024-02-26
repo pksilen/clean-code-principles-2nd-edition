@@ -2055,6 +2055,14 @@ Using event sourcing and CQRS offers availability over consistency, which the sy
 the end users usually prefer to get information fast, even if it is not current but will eventually be up-to-date.
 *Availability over consistency principle* is one of the IDEALS microservice principles.
 
+It should be noted that using
+the CQRS pattern does not require the command and query models to use different databases. It is perfectly fine to use
+the same database. The main idea behind the CQRS pattern is that the models for queries and commands differ. In the above
+example, the command model stores entities that are order-related events, and the query model constructs order entities from
+the stored order-related events. The CQRS pattern is useful in cases where the domain model is relatively complex, and
+you benefit from separating the command and query models. For a simple API with basic CRUD operations on simple
+resources, using CQRS is overkill and only makes the code complicated.
+
 ### Distributed Transaction Patterns
 
 A [distributed transaction](https://en.wikipedia.org/wiki/Distributed_transaction) is a transaction that spans multiple microservices. A distributed transaction
