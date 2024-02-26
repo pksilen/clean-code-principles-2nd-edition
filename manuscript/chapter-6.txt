@@ -946,18 +946,83 @@ in your application service class using the `validateOrReject` function from the
 
 The `SalesItemService` interface looks like the following:
 
-{format: python}
-![service/SalesItemService.py](resources/chapter6/code/salesitemservice/service/SalesItemService.py)
+{title: "SalesItemService.ts"}
+```ts
+export default interface SalesItemService {
+  createSalesItem(inputSalesItem: InputSalesItem): OutputSalesItem;
+  getSalesItems(): OutputSalesItem[];
+  getSalesItemsByUserAccountId(userAccountId: string): OutputSalesItem[];
+  getSalesItem(id: string): OutputSalesItem;
+  updateSalesItem(id: string, inputSalesItem: InputSalesItem): void;
+  deleteSalesItem(id: string): void;
+}
+```
 
 Next, we can implement the above protocol:
 
-{format: python}
-![service/SalesItemServiceImpl.py](resources/chapter6/code/salesitemservice/service/SalesItemServiceImpl.py)
+{title: "SalesItemServiceImpl.ts"}
+```ts
+export default class SalesItemServiceImpl implements SalesItemService {
+  constructor(private readonly salesItemRepository SalesItemRepository) {
+  }
+
+  createSalesItem(inputSalesItem: InputSalesItem): OutputSalesItem {
+     let salesItem = SalesItem.from(inputSalesItem);
+     salesItem = this.salesItemRepository.save(salesItem);
+     return OutputSalesItem.from(salesItem);
+  }
+
+  getSalesItems(): OutputSalesItem[] {
+     const salesItems = this.salesItemRepository.findAll();
+     return salesItems.map((salesItem) -> OutputSalesItem.from(salesItem));
+  }
+
+  getSalesItemsByUserAccountId(userAccountId: string): OutputSalesItem[] {
+     const salesItems =
+       this.salesItemRepository.findByUserAccountId(userAccountId);
+
+     return salesItems.map((salesItem) -> OutputSalesItem.from(salesItem));
+  }
+
+  getSalesItem(id: string): OutputSalesItem {
+    salesItem = this.salesItemRepository.find(id);
+
+    if (!salesItem) {
+      throw new EntityNotFoundError('Sales item', id);
+    }
+
+    return OutputSalesItem.from(salesItem);
+  }
+
+  updateSalesItem(id: string, inputSalesItem: InputSalesItem): void {
+    if (!this.salesItemRepository.find(id)) {
+      throw new EntityNotFoundError('Sales item', id);
+    }
+
+    let salesItem = SalesItem.from(inputSalesItem);
+    this.salesItemRepository.update(id, salesItem);
+  }
+
+  deleteSalesItem(id: string): void {
+    this.salesItemRepository.delete(id);
+  }
+}
+```
 
 Below is the definition of the `SalesItemRepository` protocol:
 
-{format: python}
-![repositories/SalesItemRepository.py](resources/chapter6/code/salesitemservice/repositories/SalesItemRepository.py)
+{title: "SalesItemRepository.ts"}
+```ts
+export default interface SalesItemRepository {
+  save(salesItem: SalesItem): SalesItem;
+  findAll(): SalesItem[];
+  findByUserAccountId(userAccountId: string): SalesItem[];
+  find(id: string): SalesItem | null;
+  update(id: string, inputSalesItem: InputSalesItem): void;
+  delete(id: string): void;
+}
+```
+
 
 Various implementations for the `SalesItemRepository` are presented in the next chapter, where we focus on database
 principles. The next chapter provides three different implementations for the repository: Object-Relational
