@@ -1347,146 +1347,74 @@ There are two ways to implement a GraphQL API:
 - Schema first
 - Code first (schema is generated from the code)
 
-Let's first focus on the schema-first approach and implement the above-specified API using the [Ariadne](https://ariadnegraphql.org/) library.
-Initially, we define fake implementations (returning static objects) for some of the API endpoints (queries/mutations):
+Let's first focus on the schema-first approach and implement the above-specified API using the [Apollo Server](https://www.apollographql.com/docs/apollo-server/) library.
+The Apollo server below implements some GraphQL type resolvers returning static responses.
 
-```python
-import time
+{title: "server.js"}
+```js
+import { ApolloServer } from '@apollo/server';
+import { startStandaloneServer } from '@apollo/server/standalone';
 
-from ariadne import MutationType, QueryType, gql, make_executable_schema
-from ariadne.asgi import GraphQL
+const typeDefs = readFileSync('./schema.graphql',
+                              { encoding: 'utf8' });
 
-schema = gql(
-    """
-type Image {
-  id: Int!
-  rank: Int!
-  url: String!
-}
-
-type SalesItem {
-  id: ID!
-  createdAtTimestampInMs: String!
-  name: String!
-  priceInCents: Int!
-  images(
-    sortByField: String = "rank",
-    sortDirection: SortDirection = ASC,
-    offset: Int = 0,
-    limit: Int = 5
-  ): [Image!]!
-}
-
-input InputImage {
-  id: Int!
-  rank: Int!
-  url: String!
-}
-
-input InputSalesItem {
-  name: String!
-  priceInCents: Int!
-  images: [InputImage!]!
-}
-
-enum SortDirection {
-  ASC
-  DESC
-}
-
-type IdResponse {
-  id: ID!
-}
-
-type Query {
-  salesItems(
-    sortByField: String = "createdAtTimestampInMs",
-    sortDirection: SortDirection = DESC,
-    offset: Int = 0,
-    limit: Int = 50
-  ): [SalesItem!]!
-
-  salesItem(id: ID!): SalesItem!
-
-  salesItemsByFilters(
-    nameContains: String,
-    priceGreaterThan: Float
-  ): [SalesItem!]!
-}
-
-type Mutation {
-  createSalesItem(inputSalesItem: InputSalesItem!): SalesItem!
-
-  updateSalesItem(
-    id: ID!,
-    inputSalesItem: InputSalesItem
-  ): IdResponse!
-
-  deleteSalesItem(id: ID!): IdResponse!
-}
-"""
-)
-
-query = QueryType()
-
-
-@query.field('salesItems')
-def resolve_sales_items(*, **kwargs):
-    if kwargs['offset'] == 0:
-        return [
-            {
-                'id': 1,
-                'createdAtTimestampInMs': '12345678999877',
-                'name': 'sales item',
-                'priceInCents': 1095,
-                'images': [{'id': 1, 'rank': 2, 'url': 'url'}],
-            }
-        ]
-    return []
-
-
-@query.field('salesItem')
-def resolve_sales_item(*, id):
-    return {
-        'id': id,
-        'createdAtTimestampInMs': '12345678999877',
-        'name': 'sales item',
-        'priceInCents': 1095,
-        'images': [{'id': 1, 'rank': 2, 'url': 'url'}],
+const resolvers = {
+  Query: {
+    salesItems: (_, { sortByField,
+                      sortDirection,
+                      offset,
+                      limit }) =>
+    [{
+        id: 1,
+        createdAtTimestampInMillis: '12345678999877',
+        name: 'sales item',
+        price: 10.95
+    }],
+    salesItem: (_, { id }) => ({
+      id,
+      createdAtTimestampInMillis: '12345678999877',
+      name: 'sales item',
+      price: 10.95
+    })
+  },
+  Mutation: {
+    createSalesItem: (_, { newSalesItem }) => {
+      return {
+        id: 100,
+        createdAtTimestampInMillis: Date.now().toString(),
+        ...newSalesItem
+      };
+    },
+    deleteSalesItem: (_, { id }) => {
+      return {
+        id
+      };
     }
-
-
-mutation = MutationType()
-
-
-@mutation.field('createSalesItem')
-def resolve_create_sales_item(*, **kwargs):
-    return {
-        'id': 100,
-        'createdAtTimestampInMs': str(round(time.time() * 1000)),
-        **kwargs['inputSalesItem'],
+  },
+  SalesItem: {
+    images: (parent) => {
+      return [{
+        id: 1,
+        rank: 1,
+        url: 'url'
+      }];
     }
+  }
+};
 
+const server = new ApolloServer({
+  typeDefs,
+  resolvers
+});
 
-@mutation.field('deleteSalesItem')
-def resolve_delete_sales_item(*, id):
-    return {'id': id}
-
-
-executable_schema = make_executable_schema(schema, [query, mutation])
-
-app = GraphQL(executable_schema)
+startStandaloneServer(server, {
+  listen: { port: 4000 }
+});
 ```
 
-In the above example, the `gql` function validates the schema and raises a descriptive `GraphQLSyntaxError` if there is an issue or returns
-the original string if it is correct. We created a resolver function for the first two queries in the schema and resolvers for creating and deleting a sales item. You can start the GraphQL server with the following command
-(You should have [uvicorn](https://www.uvicorn.org/) already installed using *pip*):
 
-```bash
-uvicorn app:app
-```
-
-After running the server, browse to the URL: *http://127.0.0.1:8000/*.
+After starting the server with the `node server.js` command, you can browse to _http://localhost:4000_ and
+try to execute some of the implemented queries or mutations.
 You will see the GraphiQL UI, where you can execute queries and mutations. Enter the following query to the
 left pane in the UI.
 
@@ -1582,15 +1510,76 @@ mutation delete {
 }
 ```
 
-Let's replace the dummy static implementations in our Ariadne GraphQL controller with actual calls to the sales item service:
+Let's replace the dummy static implementations in our GraphQL controller with actual calls to the sales item service:
 
-{format: python}
-![controllers/AriadneGraphQlSalesItemController.py](resources/chapter6/code/salesitemservice/controllers/AriadneGraphQlSalesItemController.py)
+{title: "GraphQlSalesItemController.js"}
+```js
+export default class GraphQlSalesItemController {
+  constructor(salesItemService) {
+    this.salesItemService = salesItemService;
+  }
+
+  getSalesItems(...) {
+    return this.salesItemService.getSalesItems(...);
+  }
+
+  getSalesItem({ id }) {
+    return this.salesItemService.getSalesItem(id);
+  }
+
+  createSalesItem({ inputSalesItem: input }) {
+    const inputSalesItem = await transformAndValidate(InputSalesItem, input);
+    return this.salesItemService.createSalesItem(inputSalesItem);
+  }
+
+  updateSalesItem({ id, inputSalesItem: input }) {
+    const inputSalesItem = await transformAndValidate(InputSalesItem, input);
+    return this.salesItemService.createSalesItem(newSalesItem);
+  }
+
+  deleteSalesItem({ id }) {
+    this.salesItemService.deleteSalesItem(id);
+    return { id };
+  }
+
+  getResolvers() {
+    return {
+      Query: {
+        salesItems: this.getSalesItems,
+        salesItem: this.getSalesItem
+      },
+      Mutation: {
+        createSalesItem: this.createSalesItem,
+        deleteSalesItem: this.deleteSalesItem
+      },
+      SalesItem: {
+        images: this.getSalesItemImages
+      }
+    }
+  }
+}
+```
 
 Notice in the above code that we must remember to validate the input for the two mutations. We can do that
-by converting the input dict to a Pydantic model using the `parse_obj` method.
-We should add authorization, audit logging, and metric updates to make the example more production-like. This can be done by creating decorators in a similar way we created earlier in the REST API example. The decorators can get the request object from the `info.context` dict:
-`info.context['request']`.
+by using [class-transformer-validator](https://www.npmjs.com/package/class-transformer-validator) library.
+
+Currently our model depends on receiving validated input DTOs. There is even a better approach for validating input DTOs.
+We can validate them in the entity factory. In this case, we could put the validation of `InputSalesItem` DTOs into the
+`SalesItem` class's factory method, `SalesItem.from(inputSalesItem: InputSalesItem)`. This is a very natural place for
+validation and validation is now moved from the input adapter layer (controllers) to the application core/model. If the
+validation logic is complex, you should create a separate class, `InputSalesItemValidator`, that can be used in the
+entity factory method, `SalesItem.from`.
+
+We should add authorization, audit logging, and metric updates to make the example more production-like. This can be done by creating decorators in a similar way we created earlier in the REST API example.
+The decorators can get the request object from the context:
+
+```js
+const { url } = await startStandaloneServer(server, {
+  context: async ({ request }) => ({
+    request
+  }),
+});
+```
 
 GraphQL error handling differs from REST API error handling. A GraphQL API responses do not provide different HTTP response status codes.
 A GraphQL API response is always sent with the status code *200 OK*.
@@ -1618,20 +1607,57 @@ Suppose a `salesItem` query results in an `EntityNotFoundError`. Then the API re
 }
 ```
 
-Below is the code for the *app_graphql.py* module:
+Below is the code for the *app.js* module:
 
-{format: python}
-![app_graphql.py](resources/chapter6/code/salesitemservice/app_graphql.py)
+{format: "app.js"}
+```js
+format_custom_error(
+    graphql_error, debug: bool = False
+) -> dict[str, Any]:
+    error = unwrap_graphql_error(graphql_error)
+
+    if isinstance(error, SalesItemServiceError):
+        return {
+            'message': error.message,
+            'extensions': {
+                'statusCode': error.status_code,
+                'statusText': error.status_text,
+                'errorCode': error.code,
+                'errorDescription': error.description,
+                'stackTrace': get_stack_trace(error.cause),
+            },
+        }
+
+    if isinstance(error, ValidationError):
+        return {
+            'message': 'Request validation failed',
+            'extensions': {
+                'statusCode': 400,
+                'statusText': 'Bad Request',
+                'errorCode': 'RequestValidationError',
+                'errorDescription': str(error),
+                'stackTrace': None,
+            },
+        }
+
+    if isinstance(error, Exception):
+        return {
+            'message': 'Unspecified internal error',
+            'extensions': {
+                'statusCode': 500,
+                'statusText': 'Internal Server Error',
+                'errorCode': 'UnspecifiedError',
+                'errorDescription': str(error),
+                'stackTrace': get_stack_trace(error),
+            },
+        }
+
+    else:
+        return format_error(graphql_error, debug)
+```
 
 I apologize for the above code containing *a chain of instanceof checks* code smell. What we should do is to
-move the `format_custom_error` code to a factory whose `create` method we give the `error` as a parameter.
-
-The Ariadne GraphQl version of the *sales-item-service* can be run with the below command. (We assume
-the service source code is placed in a package *salesitemservice*, and we are currently located in the parent directory of that).
-
-```bash
-uvicorn salesitemservice.app_graphql:app
-```
+move the `formatError` code to a factory whose `create` method we give the `error` as a parameter.
 
 As an alternative to the described error handling mechanism, it is also possible to return an error as a query/mutation return value. This can be done, e.g., by returning a union type
 from a query or mutation. This approach requires a more complex GraphQL schema and more complex resolvers on the server side.
