@@ -2299,6 +2299,8 @@ export default class WebSocketChatMsgServer {
   }
 
   send(chatMessage, serverUuid) {
+    // Extract this method to: ChatMsgService.send(chatMessage)
+
     if (serverUuid === this.serverUuid) {
       // Recipient has active connection on
       // the same server instance as sender
@@ -2467,6 +2469,9 @@ export default class KafkaChatMsgBrokerConsumer
     this.kafkaConsumer.run({
       eachMessage: async ({ message }) => {
         try {
+          // Kutsu ChatMsgService.send(chatMessage)
+          // poista alla oleva koodi
+
           const chatMessage =
             JSON.parse(message.value.toString());
 
