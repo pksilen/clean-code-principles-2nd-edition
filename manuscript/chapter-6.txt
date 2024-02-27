@@ -2070,7 +2070,9 @@ Let's have an example of a GraphQL subscription. The below GraphQL schema define
 subscription for a post's comments. It is not relevant what a post is. It can be a blog post or
 social media post, for example. We want a client to be able to subscribe to a post's comments.
 
-```graphql
+<div class="sourceCodeWithoutLabel">
+
+```
 type PostComment {
   id: ID!,
   text: String!
@@ -2080,11 +2082,14 @@ type Subscription {
   postComment(postId: ID!): PostComment
 }
 ```
+</div>
 
-On the client side, we can have the below JavaScript code to define a subscription named `postCommentText` that subscribes to
+On the client side, we can define a subscription named `postCommentText` that subscribes to
 a post's comments and returns the text property of comments:
 
-```js
+<div class="sourceCodeWithoutLabel">
+
+```
 import { gql } from '@apollo/client';
 
 const POST_COMMENT_SUBSCRIPTION = gql`
@@ -2095,11 +2100,14 @@ const POST_COMMENT_SUBSCRIPTION = gql`
   }
 `;
 ```
+</div>
 
 If a client executes the above query for a particular post (defined with the `postId` parameter), the following kind
 of response can be expected:
 
-```json
+<div class="sourceCodeWithoutLabel">
+
+```
 {
   "data": {
     "postComment": {
@@ -2108,15 +2116,16 @@ of response can be expected:
   }
 }
 ```
+</div>
 
-To be able to use GraphQL subscriptions, you must implement support for them both on the server and client side. In practice, this means
-setting up WebSocket communication because GraphQL uses it to implement subscriptions. For the server side,
-you can find instructions for the *Ariadne* library here: [https://ariadnegraphql.org/docs/subscriptions](https://ariadnegraphql.org/docs/subscriptions).
-And for the client side, you can find instructions for the *Apollo client* here: [https://www.apollographql.com/docs/react/data/subscriptions/#setting-up-the-transport](https://www.apollographql.com/docs/react/data/subscriptions/#setting-up-the-transport)
+To be able to use GraphQL subscriptions, you must implement support for them both on the server and client side. For the server side,
+you can find instructions for the _Apollo server_ here: [https://www.apollographql.com/docs/apollo-server/data/subscriptions/#enabling-subscriptions](https://www.apollographql.com/docs/apollo-server/data/subscriptions/#enabling-subscriptions).
+And for the client side, you can find instructions for the _Apollo client_ here: [https://www.apollographql.com/docs/react/data/subscriptions/#setting-up-the-transport](https://www.apollographql.com/docs/react/data/subscriptions/#setting-up-the-transport)
 
 After the server and client-side support for subscriptions are implemented, you can use the subscription in your React component:
 
-```jsx
+_SubscribedPostCommentsView.jsx_
+```
 import { useState } from 'react';
 import { gql, useSubscription } from '@apollo/client';
 
