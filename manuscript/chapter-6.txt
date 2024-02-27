@@ -2402,16 +2402,33 @@ export default class RedisPhoneNbrToInstanceUuidCache
   }
 ```
 
-_KafkaMessageBrokerProducer.js_
-```
-export default class KafkaMessageBrokerProducer {
-  kafkaProducer;
+{title: ChatMsgBrokerProducer.ts}
+```ts
+export default interface KafkaMessageBrokerProducer {
+ static Error = class extends WebSockeExampleError {
+ }
 
-  constructor(kafkaClient) {
+ tryProduce(chatMessage, topic): Promise<void>;
+ tryClose()
+    try {
+      this.isTerminating = true;
+      await this.kafkaProducer.disconnect();
+    } catch {
+    }
+  }
+}
+
+{title: "KafkaChatMsgBrokerProducer.ts"}
+```
+export default class KafkaChatMsgBrokerProducer
+                       implements ChatMsgBrokerProducer {
+  private readonly kafkaProducer: KafkaProducer;
+
+  constructor(kafkaClient: kafkaClient) {
     this.kafkaProducer = kafkaClient.producer();
   }
 
-  async produce(chatMessage, topic) {
+  async tryProduce(chatMessage, topic): Promise<void> {
     try {
       await this.kafkaProducer.connect();
       await this.kafkaProducer.send({
@@ -2423,7 +2440,7 @@ export default class KafkaMessageBrokerProducer {
     }
   }
 
-  async close() {
+  async close(): Promise<void> {
     try {
       this.isTerminating = true;
       await this.kafkaProducer.disconnect();
