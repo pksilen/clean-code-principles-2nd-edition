@@ -2296,10 +2296,7 @@ export default class WebSocketChatMsgServer {
         }
 
         // Validate chatMessage ...
-
-
         // Store chat message permanently using another API ...
-        this.store(chatMessage);
 
         const recipientServerUuid =
           await this.getServerUuid(chatMessage.recipientPhoneNbr);
@@ -2317,33 +2314,6 @@ export default class WebSocketChatMsgServer {
     this.wsServer.close();
     this.wsServer.clients.forEach(client => client.close());
     this.messageBrokerProducer.close();
-  }
-
-  async handleOnlineIndication(
-    wsConnection,
-    senderPhoneNbr
-  ) {
-    phoneNbrToWsConnectionMap.set(
-      senderPhoneNbr,
-      wsConnection
-    );
-
-    this.wsConnectionToPhoneNbrMap.set(
-      wsConnection,
-      senderPhoneNbr
-    );
-
-
-  }
-
-  store(chatMessage) {
-    fetch('http://.../chat-message-service/chat-messages',
-      { method: 'post',
-        body: JSON.stringify(chatMessage)
-      })
-      .catch(() => {
-        // Handle error
-      });
   }
 
   send(chatMessage, serverUuid) {
@@ -2381,62 +2351,56 @@ export default class WebSocketChatMsgServer {
 
 {title: "PhoneNbrToInstanceUuidCache.ts"}
 ```
-class PhoneNbrToInstanceUuidCache(Protocol):
-    class Error(WebSocketExampleError):
-        pass
+export default interface PhoneNbrToInstanceUuidCache {
+  static Error = class extends WebSocketExampleError {
+  }
 
-    def retrieve_instance_uuid(
-        self, phone_number: str | None
-    ) -> str | None:
-        pass
-
-    def try_store(self, phone_number: str, instance_uuid: str) -> None:
-        pass
-
-    def try_remove(self, phone_number: str) -> None:
-        pass
+  retrieveInstanceUuid(phone_number: string | undefined): str | undefined;
+  tryStore(phoneNumber: string, instanceUuid: string): Promise<void>;
+  tryRemove(phoneNumber: string): Promise<void>;
+}
 ```
 
 {title: "RedisPhoneNbrToInstanceUuidCache.ts"}
+```ts
+export default class RedisPhoneNbrToInstanceUuidCache
+                       implements PhoneNbrToInstanceUuidCache
+  constructor(private readonly redisClient: RedisClient) {
+  }
+
+  retrieveInstanceUuid(phone_number: string | undefined): str | undefined {
+    try {
+      return
+        await redisClient.hget(
+          'phoneNbrToServerUuidMap',
+           phoneNbr
+        );
+    } catch {
+      return undefined;
+    }
+  }
+
+  tryStore(phoneNumber: string, instanceUuid: string): Promise<void> {
+    try {
+      await redisClient.hset(
+        'phoneNbrToServerUuidMap',
+        senderPhoneNbr,
+        this.serverUuid
+      );
+    } catch {
+      // Handle error
+    }
+  }
+
+  tryRemove(phoneNumber: string): Promise<void> {
+    try {
+      await redisClient.hdel('phoneNbrToServerUuidMap',
+                             phoneNbr);
+    } catch {
+      // Handle error
+    }
+  }
 ```
-class RedisPhoneNbrToInstanceUuidCache(PhoneNbrToInstanceUuidCache):
-    def __init__(self, redis_client: Redis):
-        self.__redis_client = redis_client
-
-    def retrieve_instance_uuid(
-        self, phone_number: str | None
-    ) -> str | None:
-        try {
-              return
-                await redisClient.hget(
-                  'phoneNbrToServerUuidMap',
-                   phoneNbr
-                );
-            } catch {
-              return undefined;
-            }
-
-    def try_store(self, phone_number: str, instance_uuid: str) -> None:
-        try {
-              await redisClient.hset(
-                'phoneNbrToServerUuidMap',
-                senderPhoneNbr,
-                this.serverUuid
-              );
-            } catch {
-              // Handle error
-            }
-
-    def try_remove(self, phone_number: str) -> None:
-        try {
-              await redisClient.hdel('phoneNbrToServerUuidMap',
-                                     phoneNbr);
-            } catch {
-              // Handle error
-            }
-```
-
-
 
 _KafkaMessageBrokerProducer.js_
 ```
