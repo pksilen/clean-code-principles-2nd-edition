@@ -39,257 +39,191 @@ you must create a logical database (or schema) by yourself.
 
 > ***Use an object-relational mapper (ORM) to avoid the need to write SQL and to avoid making your microservice potentially vulnerable to SQL injection attacks. Use an ORM to automatically map the database rows to objects that can be serialized to JSON.***
 
-This section presents examples using the [SQLAlchemy](https://www.sqlalchemy.org/) library's ORM functionality.
-An ORM uses *entities* as building blocks for the database schema. Each entity class in a microservice is reflected as a table in the database.
-SQLAlchemy uses the term *model* instead of *entity*. I use the term entity in this book because it is a commonly used term, e.g., in domain-driven design.
-Use the same name for an entity and the database table, except the table name should be plural. Below is an example of a `SalesItem` entity class.
-Before defining the actual entity class(es), we need to declare a `Base` entity class:
+Many languages have ORM frameworks. Java has Java Persistence API (JPA, the most famous implementation of which is Hibernate),
+JavaScript/TypeScript has TypeORM, and Python has the Django framework, for example.
 
-{title: "Base.py"}
-```python
-from sqlalchemy.orm import DeclarativeBase
+An ORM uses entities as building blocks for the database schema. Each entity class in a microservice is reflected as a table in the database. Use the same name for an entity and the database table, except the table name should
+be plural.
 
-class Base(DeclarativeBase):
-    pass
+The domain entity and database entity are not necessarily the same. A typical example is when the entity id in the database entity is numeric, a 64-bit integer, but the domain entity has it as a string so that it can be used by any client (including JavaScript, where numeric limits are
+less than 64-bit).
+You often benefit from creating separate entity classes for a repository and the domain model. You might want to store domain entities in a database in a slightly different format. In that case, you
+must define separate entity classes for the domain and the repository. You can name database-related entities with a Db-prefix, e.g. DbSalesItem.
+In the DbSalesItem class, you need two conversion methods: from a domain entity and to a domain entity:
+
+```java
+DbSalesItem.from(domainEntity)
+// For example
+DbSalesItem.from(salesItem)
+
+salesItem = dbSalesItem.toDomainEntity()
 ```
 
-{title: "SalesItem.py"}
-```python
-from sqlalchemy import BigInteger, Double, String
-from sqlalchemy.orm import Mapped
-from sqlalchemy.orm import mapped_column
+If you need to change your database, you can have mixed format ids (e.g., from a relational database with BIGINT ids to a MongoDB with string-format ObjectIds). If you want uniform unique ids, you must generate them
+in your software component, not by the database. This might be a good approach also from the security point of view to prevent [IDOR](https://cheatsheetseries.owasp.org/cheatsheets/Insecure_Direct_Object_Reference_Prevention_Cheat_Sheet.html).
+If you generate random UUIDs in your application, and you have accidentally broken authorization (IDOR), it is not possible for an attacker to guess UUIDs and try to access other users' resources using them.
 
-from Base import Base
+Below is an example of `DbSalesItem` entity class:
 
-
-class SalesItem(Base):
-    __tablename__ = 'salesitems'
-
-    id: Mapped[int] = mapped_column(
-        BigInteger(), primary_key=True, autoincrement=True
-    )
-
-    name: Mapped[str] = mapped_column(String(256))
-    price: Mapped[float] = mapped_column(Double())
+{title: DbSalesItem.java"}
+```java
+@Entity
+public class DbSalesItem {
+  private Long id;
+  private String name;
+  private Integer price;
+}
 ```
 
-Name the related table in the plural, e.g., `SalesItem` entities are stored in a table named `salesitems`. In this book, I write all identifiers in lowercase. The case sensitivity of a database
+Store `SalesItem` entities in a table named `salesitems`. In this book, I use
+case-insensitive database identifiers and write all identifiers in lowercase. The case sensitivity of a database
 depends on the database and the operating system it is running on. For example, MySQL is case-sensitive only on Linux
 systems.
 
-The attributes of an entity map to columns of the entity table, meaning that the `salesitems` table has
+The properties of an entity map to columns of the entity table, meaning that the `salesitems` table has
 the following columns:
 
 - id
 - name
 - price
 
-Each entity table should have a [primary key](https://en.wikipedia.org/wiki/Primary_key) defined. The primary key must be unique for each row in the table.
-In the above example, we give the `primary_key=True` argument for the `mapped_column` function to define that the particular
-column should be a primary key and contain a unique value for each row. We also define that the database
-should generate an automatically incremented value for the `id` column (The default value for the `autoincrement` parameter is True, so it is not specified anymore in further examples).
+Each entity table must have a primary key defined. The primary key must be unique for each row in the table.
+In the below example, we are using the `@Id` annotation to define the `id` column as the primary key containing
+a unique value for each row. The `@GeneratedValue` annotation defines that the database should automatically generate
+a value for the `id` column using the supplied strategy.
 
-ORM can create database tables according to entity definitions in code. Below is an example SQL statement that the ORM generates to create a table for storing `SalesItem` entities:
+{title: "DbSalesItem.java"}
+```java
+@Entity
+@Table(name = "salesitems")
+public class DbSalesItem {
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
+
+  private String name;
+  private Integer price;
+}
+```
+
+ORM can create database tables according to entity specifications in code. Below is
+an example SQL statement for PostgreSQL that an ORM generates to create a table for storing `SalesItem` entities:
 
 ```sql
 CREATE TABLE salesitems (
-    id BIGINT NOT NULL AUTO_INCREMENT,
-    name VARCHAR(256) NOT NULL,
-    price DOUBLE NOT NULL,
-    PRIMARY KEY (id)
-)
+  id BIGINT GENERATED ALWAYS AS IDENTITY,
+  name TEXT,
+  price INTEGER,
+  PRIMARY KEY (id)
+);
 ```
 
-Columns of a table can be specified as unique and nullable. We want to store sales items with unique names. Below is an example where we define the values of the `name` column in the `salesitems` table as unique (using the `UniqueConstraint`). We also add a `description` column that is nullable.
+Columns of a table can be specified as unique and not nullable. By default, a column is nullable and is not unique.
+Below is an example where we define that the `name` column in the `salesitems` table cannot have null values, and values
+must be unique. We don't want to store sales items with null names, and we want to store sales items
+having unique names.
 
-```python
-from typing import Optional
+{title: "DbSalesItem.java"}
+```java
+@Entity
+@Table(name = "salesitems")
+public class DbSalesItem {
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-from Base import Base
-from sqlalchemy import BigInteger, String, UniqueConstraint
-from sqlalchemy.orm import Mapped, mapped_column
+  @Column(unique=true, nullable=false)
+  private String name;
 
-
-class SalesItem(Base):
-    __tablename__ = 'salesitems'
-    __table_args__ = (UniqueConstraint('name'))
-
-    id: Mapped[int] = mapped_column(BigInteger(), primary_key=True)
-    name: Mapped[str] = mapped_column(String(256))
-    price: Mapped[float] = mapped_column(Double())
-    description: Mapped[Optional[str]] = mapped_column(String(1024))
+  private Integer price;
+}
 ```
 
-ORM generates the following SQL statement for creating the above-defined `salesitems` table:
+When you have a `DbSalesItem` entity, you can persist it with an instance of JPA's `EntityManager`:
 
-```sql
-CREATE TABLE salesitems (
-    id BIGINT NOT NULL AUTO_INCREMENT,
-    name VARCHAR(256) NOT NULL,
-    price DOUBLE NOT NULL,
-    description VARCHAR(1024),
-    PRIMARY KEY (id),
-    UNIQUE (name)
-)
+```java
+entityManager.persist(dbSalesItem);
 ```
 
-Let's create an entity and store it in the database. First, we have to create a database engine:
-
-```python
-import os
-
-from sqlalchemy import create_engine
-
-engine = create_engine(os.environ.get('DATABASE_URL'))
-```
-
-For demonstration purposes, we could use an in-memory SQLite database:
-
-```python
-from sqlalchemy import create_engine
-
-engine = create_engine('sqlite://', echo=True)
-```
-
-The `echo=True` parameter defines that SQL statements generated and used by the ORM will be logged to standard output.
-This is handy for debugging purposes. After we have created the database engine, we must create the database tables
-in the database. That can be done using the following command:
-
-```python
-from Base import Base
-
-
-Base.metadata.create_all(engine)
-```
-
-Next, we can create a sales item and persist it to the database:
-
-```python
-from SalesItem import SalesItem
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
-
-sales_item = SalesItem(name='Sample sales item', price='10')
-
-try:
-    with Session(engine) as session:
-        session.add(sales_item)
-        session.commit()
-except SQLAlchemyError:
-    # Handle error
-```
-
-ORM will generate the needed SQL statement on your behalf and execute it.
-Below is an example SQL statement generated by the ORM to persist a sales item
-(Remember that the database autogenerates the `id` column).
+JPA will generate the needed SQL statement on your behalf and execute it.
+Below is an example SQL statement generated by the ORM to persist a sales item (Remember that the database autogenerates the `id` column).
 
 ```sql
 INSERT INTO salesitems (name, price)
-VALUES ('Sample sales item', 10)
+VALUES ('Sample sales item', 10);
 ```
 
-You can search for the created sales item in the database:
+You can search for the created sales item in the database (assuming here that we have a `getId` getter defined):
 
-```python
-from SalesItem import SalesItem
-from sqlalchemy import select
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
-
-statement = select(SalesItem).where(SalesItem.id == sales_item.id)
-
-try:
-    with Session(engine) as session:
-        sales_item = session.scalars(statement).one()
-except SQLAlchemyError:
-    # Handle error
+```java
+entityManager.find(DbSalesItem.class, salesItem.getId());
 ```
 
 For the above operation, the ORM will generate the following SQL query:
 
 ```sql
-SELECT id, name, price, description FROM salesitems WHERE id = 1
+SELECT id, name, price FROM salesitems WHERE id = 1;
 ```
 
-Then, you can modify the entity by setting the values of its attributes and using `commit` on the `session` to update the database:
+Then you can modify the entity and merge it with the entity manager to update the database:
 
-```python
-from SalesItem import SalesItem
-from sqlalchemy import select
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
-
-try:
-    with Session(engine) as session:
-        sales_item = session.get(SalesItem, 1)
-        sales_item.price = 20
-        session.commit()
-except SQLAlchemyError:
-    # Handle error
+```java
+dbSalesItem.setPrice(20);
+entityManager.merge(dbSalesItem);
 ```
 
-For the above operation, the ORM will generate the following SQL statement:
+Finally, you can delete the sales item with the entity manager:
 
-```sql
-UPDATE salesitems SET price = 20 WHERE id = 1
-```
-
-Lastly, you can delete the sales item:
-
-```python
-try:
-    with Session(engine) as session:
-        sales_item = session.get(SalesItem, 1)
-        session.delete(sales_item)
-        session.commit()
-except SQLAlchemyError:
-    # Handle error
+```java
+entityManager.remove(dbSalesItem);
 ```
 
 The ORM will execute the following SQL statement:
 
 ```sql
-DELETE FROM salesitems WHERE id = 1
+DELETE FROM salesitems WHERE id = 1;
 ```
 
 Suppose your microservice executes SQL queries that do not include the primary key column in the
-query's WHERE clause. In that case, the database engine must perform a [full table scan](https://en.wikipedia.org/wiki/Full_table_scan) to find the wanted rows. Let's say
+query's WHERE clause. In that case, the database engine must perform a full table scan to find the wanted rows. Let's say
 you want to query sales items, the price of which is less than 10. This can be achieved with
 the below query:
 
-```python
-# price = ...
+```java
+// final var price = ...
 
-statement = select(SalesItem).where(SalesItem.price < price)
+final TypedQuery<DbSalesItem> dbSalesItemsQuery = entityManager
+ .createQuery("SELECT s FROM salesitems s WHERE s.price < :price",
+              DbSalesItem.class);
 
-try:
-    with Session(engine) as session:
-        sales_items = session.scalars(statement).all()
-except SQLAlchemyError:
-    # Handle error
+dbSalesItemsQuery.setParameter("price", price);
+
+final List<DbSalesItem> dbSalesItems = dbSalesItemsQuery.getResultList();
 ```
 
 The database engine must perform a full table scan to find all the sales items where the `price` column has
 a value below the `price` variable's value. If the database is large, this can be slow. If you
 perform the above query often, you should optimize those queries by creating an index. For the above
-query to be fast, we must create an index for the `price` column:
+query to be fast, we must create an index for the `price` column using the `@Index` annotation inside the
+`@Table` annotation:
 
-```python
-from typing import Optional
+{title: "DbSalesItem.java"}
+```java
+@Entity
+@Table(
+  name = "salesitems",
+  indexes = @Index(columnList = "price")
+)
+public class DbSalesItem {
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-from Base import Base
-from sqlalchemy import BigInteger, Double, String, UniqueConstraint
-from sqlalchemy.orm import Mapped, mapped_column
+  @Column(unique=true, nullable=false)
+  private String name;
 
-
-class SalesItem(Base):
-    __tablename__ = 'salesitems'
-    __table_args__ = (UniqueConstraint('name'),)
-
-    id: Mapped[int] = mapped_column(BigInteger(), primary_key=True)
-    name: Mapped[str] = mapped_column(String(256))
-    price: Mapped[float] = mapped_column(Double(), index=True)
-    description: Mapped[Optional[str]] = mapped_column(String(1024))
+  private Integer price;
+}
 ```
 
 #### Entity/Table Relationships
@@ -309,56 +243,68 @@ have a relationship with multiple rows in another table.
 Let's have an example with an *order-service* that can store orders in a database. Each order consists of one
 or more order items. An order item contains information about the bought sales item.
 
-```python
-from Base import Base
-from sqlalchemy import BigInteger, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+```java
+@Entity
+@Table(name = "orders")
+public class DbOrder {
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
+  // Other order fields ...
 
-class Order(Base):
-    __tablename__ = 'orders'
+  @OneToMany(mappedBy="order")
+  private List<DbOrderItem> orderItems;
+}
 
-    id: Mapped[int] = mapped_column(BigInteger(), primary_key=True)
-    # Other fields ...
-    items: Mapped[list['OrderItem']] = relationship(lazy='joined')
+@Entity
+@Table(name = "orderitems")
+public class DbOrderItem {
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
+  @OneToOne
+  @JoinColumn(name = "salesitemid")
+  private DbSalesItem salesItem;
 
-class OrderItem(Base):
-    __tablename__ = 'orderitems'
-    __table_args__ = (
-        PrimaryKeyConstraint('orderId', 'id', name='orderitems_pk'),
-    )
-
-    id: Mapped[int]
-    salesitemid: Mapped[int] = mapped_column(BigInteger())
-    orderid: Mapped[int] = mapped_column(ForeignKey('orders.id'))
+  @ManyToOne
+  @JoinColumn(name = "orderid", nullable = false)
+  private DbOrder dbOrder;
+}
 ```
 
 Orders are stored in the `orders` table, and order items
 are stored in the `orderitems` table, which contains a join column named `orderid`. Using this join column, we can map a particular
-order item to a specific order. Each order item maps to precisely one sales item. For this reason, the `orderitems` table
-also contains a column named `salesitemid`. Sales items are stored in a different database in a separate microservice (*sales-item-service*), so there are no intra-database inter-table relationships with the  *order-service* and *sales-item-service*.
+order item to a specific order. Each order item maps to exactly one sales item. For this reason, the `orderitems` table
+also contains a join column named `salesitemid`. Using this join column, we can map an order item to a sales item.
 
-Below is the SQL statement generated by the ORM for creating the `orderitems` table. The one-to-many relationship
-is reflected in the [foreign key](https://en.wikipedia.org/wiki/Foreign_key) constraint:
+Below is the SQL statement generated by the ORM for creating the `orderitems` table. The one-to-one and one-to-many relationships
+are reflected in the foreign key constraints:
+
+- `fksalesitem`: a `salesitemid` column value in the `orderitems` table references an `id` column value in the `salesitems` table
+- `fkorder`: an `orderid` column value in the `orderitems` table references an `id` column value in the `orders` table
 
 ```sql
 CREATE TABLE orderitems (
-    id INTEGER NOT NULL,
-    salesitemid BIGINT NOT NULL,
-    orderid BIGINT NOT NULL,
-    CONSTRAINT orderitems_pk PRIMARY KEY (orderid, id),
-    FOREIGN KEY (orderid) REFERENCES orders (id)
-)
+  id BIGINT GENERATED ALWAYS AS IDENTITY,
+  salesitemid BIGINT,
+  orderid BIGINT,
+  CONSTRAINT fksalesitem FOREIGN KEY (salesitemid)
+    REFERENCES salesitems(id),
+  CONSTRAINT fkorder FOREIGN KEY (orderid)
+    REFERENCES orders(id)
+);
 ```
 
-The ORM executes the below SQL query to fetch the order with id 123 and its order items:
+The following SQL query is executed by the ORM to fetch the order with id 123 and its order items:
 
 ```sql
-SELECT o.id, oi.id
+SELECT o.id, s.name, ...
 FROM orders o
 LEFT JOIN orderitems oi ON o.id = oi.orderid
-WHERE o.id = 123
+LEFT JOIN salesitems s ON s.id = oi.salesitemid
+WHERE o.id = 123;
 ```
 
 ##### Many-To-Many Relationships
@@ -368,74 +314,64 @@ a relationship with many entities of the first entity type. For example, a stude
 
 Suppose we have a service that stores student and course entities in a database. Each student entity contains the courses the student has
 attended. Similarly, each course entity contains a list of students that have attended the course. We have a many-to-many relationship where
-one student can attend multiple courses, and multiple students can attend one course. This means an additional [association/associative table](https://en.wikipedia.org/wiki/Associative_entity), `studentcourse,` must be created.
+one student can attend multiple courses, and multiple students can attend one course. This means an additional [association/associative table](https://en.wikipedia.org/wiki/Associative_entity),
+`studentcourse,` must be created.
 This new table maps a particular student to a particular course.
 
-```python
-from sqlalchemy import BigInteger Column, ForeignKey, Table
-from sqlalchemy.orm import (
-    DeclarativeBase,
-    Mapped,
-    mapped_column,
-    relationship,
-)
+```java
+@Entity
+@Table(name = "students")
+class DbStudent {
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
+  // Other Student fields...
 
-class Base(DeclarativeBase):
-    pass
+  @JoinTable(
+    name = "studentcourse",
+    joinColumns = @JoinColumn(name = "studentid"),
+    inverseJoinColumns = @JoinColumn(name = "courseid")
+  )
+  @ManyToMany
+  private List<DbCourse> attendedCourses;
+}
 
+@Entity
+@Table(name = "courses")
+class DbCourse {
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-student_course_assoc_table = Table(
-    'studentcourse',
-    Base.metadata,
-    Column('studentid', ForeignKey('students.id'), primary_key=True),
-    Column('courseid', ForeignKey('courses.id'), primary_key=True),
-)
+  // Other Course fields...
 
-
-class Student(Base):
-    __tablename__ = 'students'
-
-    id: Mapped[int] = mapped_column(BigInteger(), primary_key=True)
-    # Other fields...
-
-    courses: Mapped[list['Course']] = relationship(
-        secondary=student_course_assoc_table, back_populates='students'
-    )
-
-
-class Course(Base):
-    __tablename__ = 'courses'
-
-    id: Mapped[int] = mapped_column(BigInteger(), primary_key=True)
-    # Other fields...
-
-    students: Mapped[list[Student]] = relationship(
-        secondary=student_course_assoc_table, back_populates='courses'
-    )
+  @ManyToMany(mappedBy = "attendedCourses")
+  private List<DbStudent> students;
+}
 ```
 
 The ORM creates the `students` and `courses` tables in addition to the `studentcourse` mapping table:
 
-```sql
+```
 CREATE TABLE studentcourse (
-  studentid BIGINT NOT NULL,
-  courseid BIGINT NOT NULL,
-  PRIMARY KEY (studentid, courseid),
-  FOREIGN KEY (studentid) REFERENCES students (id),
-  FOREIGN KEY (courseid) REFERENCES courses (id)
-)
-
+  studentid BIGINT,
+  courseid BIGINT,
+  CONSTRAINT fkstudent FOREIGN KEY (studentid)
+    REFERENCES students(id),
+  CONSTRAINT fkorder FOREIGN KEY (courseid)
+    REFERENCES courses(id)
+);
 ```
 
 Below is an example SQL query that the ORM executes to fetch attended courses for the user identified with id 123:
 
 ```sql
-SELECT s.id, c.id
+SELECT s.id, c.id, ...
 FROM students s
 LEFT JOIN studentcourse sc ON s.id = sc.studentid
 LEFT JOIN courses c ON c.id = sc.courseid
-WHERE s.id = 123
+WHERE s.id = 123;
 ```
 
 Below is an example SQL query that the ORM executes to fetch students for the course identified with id 123:
@@ -445,7 +381,7 @@ SELECT c.id, s.id
 FROM courses c
 LEFT JOIN studentcourse sc ON c.id = sc.courseid
 LEFT JOIN students s ON s.id = sc.studentid
-WHERE c.id = 123
+WHERE c.id = 123;
 ```
 
 In real-life scenarios, you don't necessarily have to or should implement many-to-many database relations inside a single microservice.
@@ -471,23 +407,6 @@ Below is the implementation of the `OrmSalesItemRepository`:
 
 {format: python}
 ![repositories/OrmSalesItemRepository.py](resources/chapter6/code/salesitemservice/repositories/OrmSalesItemRepository.py)
-
-The domain entity and database entity are not necessarily the same. A typical example is when the entity id in the database entity is numeric, a 64-bit integer, but the domain entity has it as a string so that it can be used by any client (including JavaScript, where numeric limits are
-less than 64-bit).
-You often benefit from creating separate entity classes for a repository and the domain model. You might want to store domain entities in a database in a slightly different format. In that case, you
-must define separate entity classes for the domain and the repository. You can name database-related entities with a Db-prefix, e.g. DbSalesItem.
-In the DbSalesItem class, you need two conversion methods: from a domain entity and to a domain entity:
-
-```java
-DbSalesItem.from(domainEntity)
-DbSalesItem.from(salesItem)
-
-salesItem = dbSalesItem.toDomainEntity()
-```
-
-If you need to change your database, you can have mixed format ids (e.g., from a relational database with BIGINT ids to a MongoDB with string-format ObjectIds). If you want uniform unique ids, you must generate them
-in your software component, not by the database. This might be a good approach also from the security point of view to prevent [IDOR](https://cheatsheetseries.owasp.org/cheatsheets/Insecure_Direct_Object_Reference_Prevention_Cheat_Sheet.html). If you generate random UUIDs in your application, and you have accidentally broken authorization (IDOR), it is not possible for an attacker to guess UUIDs and try to access other users' resources using them.
-
 
 ### Use Parameterized SQL Statements Principle
 
