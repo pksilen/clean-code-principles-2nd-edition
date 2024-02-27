@@ -2594,18 +2594,15 @@ They are defined in a file named with the extension _.proto_. The syntax of _pro
 the service by listing the remote procedures. A remote procedure is defined with the following syntax:
 `rpc <procedure-name> (<argument-type>) returns (<return-type>) {}`. A type is defined with the below syntax:
 
-<div class="sourceCodeWithoutLabel">
-
 ```
 message <type-name> {
   <field-type> <field-name> [= <field-index>];
   ...
 }
 ```
-</div>
 
-_salesItemService.proto_
-```
+{title: "salesItemService.proto"}
+```proto
 syntax = "proto3";
 
 option java_multiple_files = true;
@@ -2646,11 +2643,8 @@ message SalesItems {
 
 Below is a partial implementation of the gRPC server. We have only implemented the `createSalesItem` procedure.
 
-_SalesItemServiceServer.java_
-
-<code class="sourceCodeWithoutLabel">
-
-```
+{title: "SalesItemServiceServer.java"}
+```java
 package com.silensoft.salesitemservice;
 
 import io.grpc.Server;
@@ -2726,8 +2720,8 @@ public class SalesItemServiceServer {
 
 Below is the gRPC client implementation for the above gRPC server:
 
-_SalesItemServiceClient.java_
-```
+{title: "SalesItemServiceClient.java"}
+```java
 package com.silensoft.salesitemservice;
 
 import io.grpc.Channel;
@@ -2902,12 +2896,15 @@ Below is an example response when the loan application is rejected:
 ```
 
 Alternatively, request and response messages can be treated as events with some data. When we send events between
-microservices, we call it an [event-driven architecture](https://en.wikipedia.org/wiki/Event-driven_architecture). For event-driven architecture, we must decide if we have a single or multiple topics
+microservices, we call it an [event-driven architecture](https://en.wikipedia.org/wiki/Event-driven_architecture).
+For event-driven architecture, we must decide if we have a single or multiple topics
 for the software system in the message broker. If all the microservices share a single topic in the software system,
 then each microservice will consume each message from the message broker and decide if they should act on it. This approach is suitable except when large events are produced to the message broker. When large events are produced, each microservice must consume those large events even if they don't need to react to them. This will unnecessarily consume a lot of network bandwidth if the number of microservices is also high. The other
 extreme is to create a topic for each microservice in the message broker. This approach causes extra network bandwidth consumption if a large event must be produced to multiple topics to be handled by multiple microservices. You can also create a hybrid model with a broadcast topic or topics and individual topics for specific microservices.
 
-To solve the problems described above, you can use the [claim check pattern](https://learn.microsoft.com/enus/azure/architecture/patterns/claim-check). In that pattern, you split a large message into a claim check and the actual payload of the message. You only send the claim check to a message queue and store the payload elsewhere. This protects other microservices from needing to read large messages from the message queue that they don't have to react to.
+To solve the problems described above, you can use the [claim check pattern](https://learn.microsoft.com/enus/azure/architecture/patterns/claim-check).
+In that pattern, you split a large message into a claim check and the actual payload of the message. You only send the claim check
+to a message queue and store the payload elsewhere. This protects other microservices from needing to read large messages from the message queue that they don't have to react to.
 
 Below are the earlier request and response messages written as events:
 
