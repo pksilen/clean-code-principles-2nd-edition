@@ -2453,20 +2453,29 @@ export default class KafkaChatMsgBrokerProducer
 The `KafkaMessageBrokerConsumer` class defines a Kafka consumer that consumes chat messages from
 a particular Kafka topic and sends them to the recipient's WebSocket connection:
 
-_KafkaMessageBrokerConsumer.js_
+{title: "ChatMsgBrokerConsumer.ts"}
+```ts
+export default interface ChatMsgBrokerConsumer {
+  consumeChatMessages(topic): void;
+  close(): Promise<void>;
+}
 ```
+
+{title: "KafkaChatMsgBrokerConsumer.ts"}
+```ts
 import phoneNbrToWsConnectionMap
   from './phoneNbrToWsConnectionMap.js';
 
-export default class KafkaMessageBrokerConsumer {
-  kafkaConsumer;
+export default class KafkaChatMsgBrokerConsumer
+                       implements ChatMsgBrokerConsumer{
+  private readonly kafkaConsumer: KafkaConsumer;
 
-  constructor(kafkaClient) {
+  constructor(kafkaClient: KafkaClient) {
     this.kafkaConsumer =
       kafkaClient.consumer({ groupId: 'app-y' });
   }
 
-  async consumeChatMessages(topic) {
+  async consumeChatMessages(topic): void<Promise> {
     await this.kafkaConsumer.connect();
     await this.kafkaConsumer.subscribe({
       topic,
@@ -2492,7 +2501,7 @@ export default class KafkaMessageBrokerConsumer {
     });
   }
 
-  async close() {
+  async close(): void<Promise> {
     try {
       await this.kafkaConsumer.disconnect();
     } catch
