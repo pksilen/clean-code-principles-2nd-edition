@@ -8554,6 +8554,7 @@ Many modern UI frameworks and state management libraries implement a specializat
 Model-View-ViewModel (MVVM). In the MVVM pattern, the controller is called the view model. I use the more
 generic term _controller_ in the below example, though. The main difference between the view model and the presenter
 in the MVP pattern is that in the MVP pattern, the presenter has a reference to the view, but the view model does not.
+
 MVVM is an application of *clean microservice design (or architecture)*. As can be seen in the below picture, the
 dependencies goes from views to view models to the model (actions and entities). Similarly, the model does not depend
 on particular services, but service interfaces which concrete services implement. For example, if you have a weather forecast web
