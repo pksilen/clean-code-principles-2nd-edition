@@ -1566,7 +1566,7 @@ by using [class-transformer-validator](https://www.npmjs.com/package/class-trans
 Currently our model depends on receiving validated input DTOs. There is even a better approach for validating input DTOs.
 We can validate them in the entity factory. In this case, we could put the validation of `InputSalesItem` DTOs into the
 `SalesItem` class's factory method, `SalesItem.from(inputSalesItem: InputSalesItem)`. This is a very natural place for
-validation and validation is now moved from the input adapter layer (controllers) to the application core/model. If the
+validation. Validation is now moved from the input adapter layer (controllers) to the application core/model. If the
 validation logic is complex, you should create a separate class, `InputSalesItemValidator`, that can be used in the
 entity factory method, `SalesItem.from`.
 
