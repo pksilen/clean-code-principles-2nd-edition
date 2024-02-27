@@ -8560,7 +8560,8 @@ on particular services, but service interfaces which concrete services implement
 application, the model of the application should define a weather forecast API service interface for fetching weather information.
 The model should not depend on any particular weather forecast API. If you want to integrate your application with a new weather
 forecast API, you should be able to do it by defining a new service class that implements the weather forecast API service interface.
-Now you have successfully modified your web application using the *open-closed principle*.
+Next, in the dependency injection container, you can define that you want to use the new service implementation instead of some old
+implementation. Now you have successfully modified your web application using the *open-closed principle*.
 
 ![Figure 3.9 Frontend MVC Architecture with Redux](resources/chapter2/images/mvvm_clean_arch.png)
 
