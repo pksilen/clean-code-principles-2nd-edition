@@ -1043,36 +1043,29 @@ for any API.
 ```ts
 export default class ApiError extends Error {
     constructor(
-        private readonly statusCode_: number,
-        private readonly statusText_: string,
-        private readonly message_: string,
-        private readonly code_: string | undefined,
-        private readonly description_: string | undefined,
-        private readonly cause_: Error | undefined
-    ) {}
-
-    get statusCode(): number {
-      return statusCode_;
+        private readonly statusCode: number,
+        private readonly statusText: string,
+        private readonly errorMessage: string,
+        private readonly errorCode: string | undefined,
+        private readonly errorDescription: string | undefined,
+        private readonly cause: Error | undefined
+    ) {
+      timestamp = new Date();
     }
 
-    get statusText(): string {
-      return statusText_;
-    }
-
-    get message(): string {
-      return message_;
-    }
-
-    get code(): string | undefined {
-      return code;
-    }
-
-    get description(): string | undefined {
-      return description_;
-    }
-
-    get cause(): Error | undefined {
-      return cause_;
+    toResponseObject {
+      return {
+        statusCode: error.statusCode,
+        statusText: error.statusText,
+        timestamp: new Date().toISOString(),
+        errorCode: error.code,
+        errorMessage: error.message,
+        errorDescription: error.description,
+        // getStackTrace returns stack trace only
+        // when environment is not production
+        // otherwise it returns 'undefined'
+        stackTrace: getStackTrace(error.cause)
+      }
     }
 }
 ```
@@ -1129,21 +1122,10 @@ export class SalesItemServiceErrorFilter implements ExceptionFilter {
     // status_code=error.statusCode
     // error_code=error.code
 
-    response
-      .status(error.statusCode)
-      .json({
-        statusCode: error.statusCode,
-        statusText: error.statusText,
-        timestamp: new Date().toISOString(),
-        endpoint: `${request.method} ${request.url}`,
-        errorCode: error.code,
-        errorMessage: error.message,
-        errorDescription: error.description,
-        // getStackTrace returns stack trace only
-        // when environment is not production
-        // otherwise it returns 'undefined'
-        stackTrace: getStackTrace(error.cause)
-      });
+    response.status(error.statusCode).json({
+      endpoint: `${request.method} ${request.url}`,
+      ...error.toResponseObject
+    });
   }
 }
 ```
@@ -2603,154 +2585,190 @@ communication can be used when no response to a request is expected, or the resp
 #### gRPC-Based API Design Example
 
 Let's have an example of a gRPC-based API. First, we must define the needed Protocol Buffers types.
-They are defined in a file named with the extension *.proto*. The syntax of *proto* files is pretty simple. We define
+They are defined in a file named with the extension _.proto_. The syntax of _proto_ files is pretty simple. We define
 the service by listing the remote procedures. A remote procedure is defined with the following syntax:
-`rpc <procedure-name> (<argument-type>) returns (<return-type>) {}`. A remote procedure always accepts exactly one argument and returns one value. A message type is defined with the below syntax:
+`rpc <procedure-name> (<argument-type>) returns (<return-type>) {}`. A type is defined with the below syntax:
+
+<div class="sourceCodeWithoutLabel">
 
 ```
 message <type-name> {
-  [optional] [repeated] <field-type> <field-name> [= <field-index>];
+  <field-type> <field-name> [= <field-index>];
   ...
 }
 ```
+</div>
 
-Below are the Protocol Buffers definitions for the *sales-item-service*:
-
-{title: "sales_item_service.proto"}
-```proto
+_salesItemService.proto_
+```
 syntax = "proto3";
 
+option java_multiple_files = true;
+option java_package = "com.silensoft.salesitemservice";
+option java_outer_classname = "SalesItemServiceProto";
 option objc_class_prefix = "SIS";
 
 package salesitemservice;
 
 service SalesItemService {
-  rpc createSalesItem (InputSalesItem) returns (OutputSalesItem) {}
-  rpc getSalesItems (GetSalesItemsOptions) returns (OutputSalesItems) {}
-  rpc getSalesItem (Id) returns (OutputSalesItem) {}
-  rpc updateSalesItem (SalesItemUpdate) returns (Nothing) {}
-  rpc deleteSalesItem (Id) returns (Nothing) {}
-}
-
-message GetSalesItemsOptions {
-  optional string sortByField = 1;
-  optional string sortDirection = 2;
-  optional uint64 offset = 3;
-  optional uint64 limit = 4;
+  rpc createSalesItem (NewSalesItem) returns (SalesItem) {}
+  rpc getSalesItems(Nothing) returns (SalesItems) {}
+  rpc getSalesItem (Id) returns (SalesItem) {}
 }
 
 message Nothing {}
 
-message Image {
-  uint64 id = 1;
-  uint64 rank = 2;
-  string url = 3;
-}
-
-message InputSalesItem {
+message NewSalesItem {
   string name = 1;
   float price = 2;
-  repeated Image images = 3;
 }
 
-message SalesItemUpdate {
-  uint64 id = 1;
-  string name = 2;
-  float price = 3;
-  repeated Image images = 4;
-}
-
-message OutputSalesItem {
+message SalesItem {
   uint64 id = 1;
   uint64 createdAtTimestampInMillis = 2;
   string name = 3;
   float price = 4;
-  repeated Image images = 5;
 }
 
 message Id {
   uint64 id = 1;
 }
 
-message OutputSalesItems {
-  repeated OutputSalesItem salesItems = 1;
-}
-
-message ErrorDetails {
-    optional string code = 1;
-    optional string description = 2;
+message SalesItems {
+  repeated SalesItem salesItem = 1;
 }
 ```
 
-In the above example, the `getSalesItems` procedure returns an object that contains an array of sales items. gRPC
-offers the possibility to stream data in both directions. For example, we could make the `getSalesItems` procedure a streaming
-method, and then we did not need the properties `offset` and `limit` in the `GetSalesItemsArg`. We could define a streaming `getSalesItems` procedure as follows:
+Below is a partial implementation of the gRPC server. We have only implemented the `createSalesItem` procedure.
 
-```proto
-// ...
+_SalesItemServiceServer.java_
 
-service SalesItemService {
-  // ...
-  rpc getSalesItems (GetSalesItemsArg) returns (stream OutputSalesItem) {}
-  // ...
+<code class="sourceCodeWithoutLabel">
+
+```
+package com.silensoft.salesitemservice;
+
+import io.grpc.Server;
+import io.grpc.ServerBuilder;
+import io.grpc.stub.StreamObserver;
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+import lombok.Log;
+
+@Log
+public class SalesItemServiceServer {
+  private Optional<Server> maybeGrpcServer;
+
+  private void start() throws IOException {
+    maybeGrpcServer = Optional.of(ServerBuilder.forPort(50051)
+      .addService(new SalesItemServiceImpl())
+      .build());
+
+    maybeGrpcServer.get().start();
+    logger.info("Server started, listening on port: " + port);
+
+    Runtime.getRuntime().addShutdownHook(new Thread() {
+      @Override
+      public void run() {
+        try {
+          stop();
+        } catch (final InterruptedException exception) {
+          exception.printStackTrace(System.err);
+        }
+
+        System.err.println("Server shut down");
+      }
+    });
+  }
+
+  private void stop() throws InterruptedException {
+    maybeGrpcServer
+      .ifPresent(grpcServer ->
+        grpcServer
+          .shutdown()
+          .awaitTermination(30, TimeUnit.SECONDS));
+  }
+
+  private void waitUntilTerminated() throws InterruptedException {
+    maybeGrpcServer.ifPresent(Server::awaitTermination);
+  }
+
+  public static void main(
+    final String[] args
+  ) throws IOException, InterruptedException {
+    final var server = new SalesItemServiceServer();
+    server.start();
+    server.waitUntilTerminated();
+  }
+
+  static class SalesItemServiceImpl
+                 extends SalesItemServiceGrpc.ImplBase {
+    @Override
+    public void createSalesItem(
+      final NewSalesItem salesItem,
+      final StreamObserver<SalesItem> responseObserver
+    ) {
+      // Set createdAtTimestamp value on salesItem to be now
+      // Insert sales item to database and return 'id'
+
+      salesItem.id = id;
+      responseObserver.onNext(salesItem);
+      responseObserver.onCompleted();
+    }
+  }
 }
-
-// ...
 ```
 
-After completing the *proto* file, we must generate code for the gRPC server. Let's install the *grpcio-tools* library:
+Below is the gRPC client implementation for the above gRPC server:
 
-```bash
-pip install grpcio-tools
+_SalesItemServiceClient.java_
 ```
+package com.silensoft.salesitemservice;
 
-Then, we can generate code with the following command:
+import io.grpc.Channel;
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
+import io.grpc.StatusRuntimeException;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import lombok.Log;
 
-```bash
-python -m grpc_tools.protoc -I. --python_out=. --pyi_out=. --grpc_python_out=. sales_item_service.proto
-```
+@Log
+public class SalesItemServiceClient {
+  private final SalesItemServiceGrpc.SalesItemServiceBlockingStub salesItemService;
 
-After executing the above command, three files should be generated in the directory. Creating the actual server code requires the following two steps:
+  public SalesItemServiceClient(final Channel channel) {
+    salesItemService =
+      SalesItemServiceGrpc.newBlockingStub(channel);
+  }
 
-- Implementing the generated *servicer* interface with functions that perform the actual “work” of the service.
-- Run a gRPC server that listens for client requests and transmits responses.
+  public SalesItem createSalesItem(final NewSalesItem salesItem) {
+    try {
+      return salesItemService.createSalesItem(salesItem);
+    } catch (final StatusRuntimeException exception) {
+       logger.log(Level.ERROR,
+                  "CreateSalesItem failed: {0}",
+                  exception.getStatus());
+    }
+  }
 
-We need to install the following libraries:
+  public static void main(final String[] args) throws Exception {
+    final var channel = ManagedChannelBuilder
+                          .forTarget("localhost:50051")
+                          .usePlaintext()
+                          .build();
 
-```bash
-pip install grpcio grpcio-status
-```
+    try {
+      SalesItemServiceClient client =
+        new SalesItemServiceClient(channel);
 
-Let's implement the gRPC controller for the *sales-item-service*:
-
-{format: python}
-![controllers/GrpcSalesItemSController.py](resources/chapter6/code/salesitemservice/controllers/GrpcSalesItemController.py)
-
-For production, you must add audit logging and metrics updating to each gRPC procedure implementation.
-As shown in earlier examples, you can create and use decorators for those purposes. If your service is located in
-the backend and used by trusted backend clients only, you might not need authorization, but if you need it, you can
-plug in your own authorization mechanism, e.g., token-based.
-
-Below is the gRPC server code:
-
-{format: python}
-![controllers/app_grpc.py](resources/chapter6/code/salesitemservice/app_grpc.py)
-
-You can run the server with the following command from a directory above the *salesitemservice* directory:
-
-```bash
-python -m salesitemservice.app_grpc
-```
-
-Below is an example of a gRPC client that performs operations using the above server:
-
-{format: python}
-![grpc_client.py](resources/chapter6/code/salesitemservice/grpc_client.py)
-
-You can run the client with the following command from a directory above the *salesitemservice* directory:
-
-```bash
-python -m salesitemservice.grpc_client
+      client.createSalesItem(...);
+    } finally {
+      channel.shutdownNow().awaitTermination(5, TimeUnit.SECONDS);
+    }
+  }
+}
 ```
 
 ### Asynchronous API Design Principle

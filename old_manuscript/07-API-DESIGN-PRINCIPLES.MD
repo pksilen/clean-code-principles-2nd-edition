@@ -2370,8 +2370,6 @@ public class SalesItemServiceServer {
 }
 ```
 
-</code>
-
 Below is the gRPC client implementation for the above gRPC server:
 
 _SalesItemServiceClient.java_
