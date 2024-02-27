@@ -2184,6 +2184,12 @@ export default redisClient;
 
 The below `KafkaMessageBrokerAdminClient` class implementing the `ChatMsgBrokerAdminClient` interface is used to create topics in Kafka:
 
+{title: "WebSocketExampleError.ts"}
+```ts
+export default class WebSocketExampleError extends Error {
+}
+```
+
 {title: "ChatMsgBrokerAdminClient.ts"}
 ```ts
 export default class ChatMsgBrokerAdminClient {
@@ -2219,22 +2225,44 @@ export default class KafkaChatMsgBrokerAdminClient
 }
 ```
 
-Users of the chat messaging application are identified with phone numbers. On the server side, we store the WebSocket connection for each user in the `phoneNbrToWsConnectionMap`:
+Users of the chat messaging application are identified with phone numbers. On the server side, we store the connection for each user in the `phoneNbrToConnMap`:
 
-_phoneNbrToWsConnectionMap.js_
-```
-const phoneNbrToWsConnectionMap = new Map();
-export default phoneNbrToWsConnectionMap;
+{title: "phoneNbrToConnMap.ts"}
+```ts
+const phoneNbrToConnMap = new Map<String, Connection>();
+export default phoneNbrToConnMap;
 ```
 
-The below `WebSocketChatMessagingServer` class handles the construction of a WebSocket server. The server accepts connections from clients. When it receives a chat message from a client, it will first parse and validate it. If the received chat message is a special online
+{title: "Connection.ts"}
+```ts
+export default interface Connection {
+  static Error = class extends WebSocketExampleError {
+  }
+
+  trySend(message: string): Promise<void>;
+}
+```
+
+{title: "WebSocketConnection.ts"}
+```ts
+export default WebSocketConnection implement Connection {
+  constructor(private readonly webSocketConn: WebSocketConnection) {
+  }
+
+  trySend(message: string): Promise<void> {
+    this.webSocketConn.send(message);
+  }
+}
+```
+
+The below `WebSocketChatMsgServer` class handles the construction of a WebSocket server. The server accepts connections from clients. When it receives a chat message from a client, it will first parse and validate it. If the received chat message is a special online
 indication message, the server will register a new user. For an actual chat message, the server will store
 the message in persistent storage (using a separate _chat-message-service_ REST API, not implemented here). The server gets the recipient's server information from a Redis cache and sends the chat message to the recipient's WebSocket connection or produces the chat message to a Kafka topic where
 another server instance can consume the chat message and send it to the recipient's WebSocket connection. The Redis cache stores
 a hash map where the users' phone numbers are mapped to the server instance they are currently connected. A UUID identifies a server instance.
 
-_WebSocketChatMessagingServer.js_
-```
+{title: "WebSocketChatMsgServer.ts"}
+```ts
 import { WebSocketServer } from 'ws';
 import kafkaClient from './kafkaClient.js';
 import redisClient from './redisClient.js';
@@ -2245,45 +2273,38 @@ import phoneNbrToWsConnectionMap
 import KafkaMessageBrokerProducer
   from './KafkaMessageBrokerProducer.js';
 
-export default class WebSocketChatMessagingServer {
+
+export default class WebSocketChatMsgServer {
   wsServer;
-  serverUuid;
   messageBrokerProducer;
   wsConnectionToPhoneNbrMap = new Map();
 
-  constructor(serverInstanceUuid) {
-    this.serverUuid = serverUuid;
-
-    this.messageBrokerProducer =
-      new KafkaMessageBrokerProducer(kafkaClient);
-
-    this.wsServer = new WebSocketServer({ port: 8080 });
+  constructor(private readonly instanceUuid) {
+    this.chatMsgBrokerProducer = new KafkaChatMsgBrokerProducer(kafkaClient);
+    this.webSocketServer = new WebSocketServer({ port: 8080 });
 
     this.wsServer.on('connection', wsConnection => {
+      phone_nbr_to_conn_map[phone_number] = connection
+      self.__conn_to_phone_nbr_map[connection] = phone_number
+      cache.tryStore(phoneNumber, self.__instance_uuid)
+
       wsConnection.on('message', async (chatMessageJson) => {
-        const chatMessage = this.parse(chatMessageJson);
-
-        if (chatMessage) {
-          const messageIsOnlineIndicator =
-            chatMessage.message === 'online' &&
-            !chatMessage.recipientPhoneNbr;
-
-          if (messageIsOnlineIndicator) {
-            await this.handleOnlineIndication(
-              wsConnection,
-              chatMessage.senderPhoneNbr
-            );
-          } else {
-            this.store(chatMessage);
-
-            const recipientServerUuid =
-              await this.getServerUuid(
-                chatMessage.recipientPhoneNbr
-              );
-
-            this.send(chatMessage, recipientServerUuid);
-          }
+        try {
+          const chatMessage = this.parse(chatMessageJson);
+        } catch {
+            // ...
         }
+
+        // Validate chatMessage ...
+
+
+        // Store chat message permanently using another API ...
+        this.store(chatMessage);
+
+        const recipientServerUuid =
+          await this.getServerUuid(chatMessage.recipientPhoneNbr);
+
+        this.send(chatMessage, recipientInstanceUuid);
       });
 
       wsConnection.on('close', () => {
@@ -2296,18 +2317,6 @@ export default class WebSocketChatMessagingServer {
     this.wsServer.close();
     this.wsServer.clients.forEach(client => client.close());
     this.messageBrokerProducer.close();
-  }
-
-  parse(chatMessageJson) {
-    return (() => {
-      try {
-        const chatMessage = JSON.parse(chatMessageJson);
-        // Validate chatMessage properties here
-        return chatMessage;
-      } catch {
-        return '';
-      }
-    })();
   }
 
   async handleOnlineIndication(
@@ -2324,15 +2333,7 @@ export default class WebSocketChatMessagingServer {
       senderPhoneNbr
     );
 
-    try {
-      await redisClient.hset(
-        'phoneNbrToServerUuidMap',
-        senderPhoneNbr,
-        this.serverUuid
-      );
-    } catch {
-      // Handle error
-    }
+
   }
 
   store(chatMessage) {
@@ -2343,18 +2344,6 @@ export default class WebSocketChatMessagingServer {
       .catch(() => {
         // Handle error
       });
-  }
-
-  async getServerUuid(phoneNbr) {
-    try {
-      return
-        await redisClient.hget(
-          'phoneNbrToServerUuidMap',
-           phoneNbr
-        );
-    } catch {
-      return undefined;
-    }
   }
 
   send(chatMessage, serverUuid) {
@@ -2385,16 +2374,69 @@ export default class WebSocketChatMessagingServer {
 
     phoneNbrToWsConnectionMap.delete(phoneNbr);
     this.wsConnectionToPhoneNbrMap.delete(wsConnection);
-
-    try {
-      await redisClient.hdel('phoneNbrToServerUuidMap',
-                             phoneNbr);
-    } catch {
-      // Handle error
-    }
+    cache.tryRemove()
   }
 }
 ```
+
+{title: "PhoneNbrToInstanceUuidCache.ts"}
+```
+class PhoneNbrToInstanceUuidCache(Protocol):
+    class Error(WebSocketExampleError):
+        pass
+
+    def retrieve_instance_uuid(
+        self, phone_number: str | None
+    ) -> str | None:
+        pass
+
+    def try_store(self, phone_number: str, instance_uuid: str) -> None:
+        pass
+
+    def try_remove(self, phone_number: str) -> None:
+        pass
+```
+
+{title: "RedisPhoneNbrToInstanceUuidCache.ts"}
+```
+class RedisPhoneNbrToInstanceUuidCache(PhoneNbrToInstanceUuidCache):
+    def __init__(self, redis_client: Redis):
+        self.__redis_client = redis_client
+
+    def retrieve_instance_uuid(
+        self, phone_number: str | None
+    ) -> str | None:
+        try {
+              return
+                await redisClient.hget(
+                  'phoneNbrToServerUuidMap',
+                   phoneNbr
+                );
+            } catch {
+              return undefined;
+            }
+
+    def try_store(self, phone_number: str, instance_uuid: str) -> None:
+        try {
+              await redisClient.hset(
+                'phoneNbrToServerUuidMap',
+                senderPhoneNbr,
+                this.serverUuid
+              );
+            } catch {
+              // Handle error
+            }
+
+    def try_remove(self, phone_number: str) -> None:
+        try {
+              await redisClient.hdel('phoneNbrToServerUuidMap',
+                                     phoneNbr);
+            } catch {
+              // Handle error
+            }
+```
+
+
 
 _KafkaMessageBrokerProducer.js_
 ```
