@@ -394,19 +394,104 @@ many-to-many relationships between database tables in a single microservice.
 
 Let's define a `SalesItemRepository` implementation using SQLAlchemy's ORM capabilities for the *sales-item-service* API defined in the previous chapter. Let's start by defining the `Base`, `SalesItem`, and `SalesItemImage` entities:
 
-{format: python}
-![entities/Base.py](resources/chapter6/code/salesitemservice/entities/Base.py)
+{title: "DbSalesItem.ts}
+```ts
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"
 
-{format: python}
-![entities/SalesItem.py](resources/chapter6/code/salesitemservice/entities/SalesItem.py)
+@Entity()
+export default class DbSalesItem {
+    @PrimaryGeneratedColumn()
+    id: number;
 
-{format: python}
-![entities/SalesItemImage.py](resources/chapter6/code/salesitemservice/entities/SalesItemImage.py)
+    @Column()
+    name: string;
 
-Below is the implementation of the `OrmSalesItemRepository`:
+    @Column()
+    priceInCents: number;
 
-{format: python}
-![repositories/OrmSalesItemRepository.py](resources/chapter6/code/salesitemservice/repositories/OrmSalesItemRepository.py)
+    @Column()
+    images: DbSalesItemImage[];
+}
+```
+
+{title: "DbSalesItemImage.ts}
+```ts
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"
+
+@Entity()
+export default class DbSalesItemImage {
+    @Column()
+    id: number;
+
+    @Column()
+    salesItemId: number
+
+    @Column()
+    rank: number
+
+    @Column()
+    url: string;
+}
+```
+
+Below is the implementation of the `TypeOrmSalesItemRepository`:
+
+{title: "TypeOrmSalesItemRepository.ts"}
+```ts
+export default class TypeOrmSalesItemRepository implement SalesItemRepository {
+  constructor(
+  )
+  {// create repository}
+
+
+  save(salesItem: SalesItem) -> SalesItem:
+    try:
+            // Siirrä tämä SalesItem.from factoryyn
+            salesItem.createdAtTimestampInMs = (
+                time.time_ns() / 1_000_000
+            )
+            const dbSalesItem = DbSalesItem.from(salesItem);
+            return this.repository.save(dbSalesItem);
+    except SQLAlchemyError as error:
+        raise DatabaseError(error)
+
+    def findAll(self) -> list[SalesItem]:
+        try:
+            return this.repository.findMany();
+
+        except SQLAlchemyError as error:
+            raise DatabaseError(error)
+
+    def find(self, id: str) -> SalesItem | None:
+        try:
+            return repository.findOne(id);
+        except SQLAlchemyError as error:
+            raise DatabaseError(error)
+
+    def update(self, id_: str, salesItem: InputSalesItem) -> None:
+        try:
+                if (!find(id) {
+                   raise EntityNotFoundError('Sales item', id_)
+                }
+
+                const dbSalesItem = DbSalesItem.from(salesItem);
+                this.repository.update(id, dbSalesItem);
+        except SQLAlchemyError as error:
+            raise DatabaseError(error)
+
+    def delete(self, id_: str) -> None:
+        try:
+          this.repository.delete(id);
+        except SQLAlchemyError as error:
+            raise DatabaseError(error)
+
+```
+
+Below is the implementation of the `PrismaOrmSalesItemRepository`:
+
+{title: "TypeOrmSalesItemRepository.ts"}
+```ts
+```
 
 ### Use Parameterized SQL Statements Principle
 
