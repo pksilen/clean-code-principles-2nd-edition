@@ -1914,48 +1914,109 @@ for clients to subscribe to loan application summaries. A client will show loan 
 Whenever a new summary for a loan application is available, the server will send a loan application summary event
 to clients that will update their UIs by adding a new loan application summary. The below example uses FastAPI and the [sse-starlette](https://github.com/sysid/sse-starlette) library.
 
-```python
-import json
+{title: "server.js"}
+```js
+import express from 'express';
+import bodyParser from 'body-parser';
+import loanApplicationSummariesSubscriptionHandler
+  from './loanApplicationSummariesSubscriptionHandler.js';
 
-from fastapi import FastAPI, Request
-from sse_starlette.sse import EventSourceResponse
+const app = express();
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({extended: false}));
 
-loan_app_summaries = []
+app.get('/subscribe-to-loan-application-summaries',
+        loanApplicationSummariesSubscriptionHandler);
 
-app = FastAPI()
+app.listen(3001);
+```
 
-def get_loan_app_summary():
-    if len(loan_app_summaries) > 0:
-        return loan_app_summaries.pop(0)
-    return None
+{title: "subscribers.js"}
+```js
+import { v4 as uuidv4 } from 'uuid';
 
-@app.get('/subscribe-to-loan-app-summaries')
-async def subscribe_to_loan_app_summaries(request: Request):
-    async def generate_loan_app_summary_events():
-        while True:
-            if await request.is_disconnected():
-                break
+export let subscribers = [];
 
-            loan_app_summary = get_loan_app_summary()
-            if loan_app_summary:
-                yield json.dumps(loan_app_summary)
+export function addSubscriber(response) {
+  const id = uuidv4();
 
-    return EventSourceResponse(
-        generate_loan_app_summary_events()
-    )
+  const subscriber = {
+    id,
+    response
+  };
 
-@app.post('/loan-app-summaries')
-async def create_loan_app_summary(
-    request: Request
-) -> None:
-    loan_app_summary = await request.json()
-    loan_app_summaries.append(loan_app_summary)
+  subscribers.push(subscriber);
+  return id;
+}
+
+export function removeSubscriber(id) {
+  subscribers = subscribers.filter((subscriber) =>
+    subscriber.id !== id);
+}
+```
+
+{title: "loanApplicationSummariesSubscriptionHandler.js"}
+```js
+import {
+  addSubscriber,
+  removeSubscriber
+} from './subscribers.js';
+
+export default function
+loanApplicationSummariesSubscriptionHandler(request, response) {
+  // Response headers needed for SSE:
+  // - Server sent events are identified with
+  //   content type 'text/event-stream'
+  // - The connection must be kept alive so that server
+  //   can send continuously data to client
+  // - Server sent events should not be cached
+  const headers = {
+    'Content-Type': 'text/event-stream',
+    'Connection': 'keep-alive',
+    'Cache-Control': 'no-cache'
+    // For dev environment you can add CORS header:
+    'Access-Control-Allow-Origin': '*'
+  };
+
+  response.writeHead(200, headers);
+
+  // Server sent event must be a string beginning with 'data: '
+  // and ending with two newline characters
+  // First event is empty
+  const data = 'data: \n\n';
+  response.write(data);
+  const subscriberId = addSubscriber(response);
+  request.on('close', () => removeSubscriber(subscriberId));
+}
+```
+
+The below `publishLoanApplicationSummary` function is called whenever the server receives a new loan application summary.
+The server can receive loan application summaries as messages consumed from a message broker's topic. (This message
+consumption part is not implemented here, but there is another example later in this chapter demonstrating how messages
+can be consumed from a Kafka topic.)
+
+{title: "publishLoanApplicationSummary.js"}
+```js
+import { subscribers } from './subscribers.js';
+
+export default function publishLoanApplicationSummary(
+  loanApplicationSummary
+) {
+   // Send an event to each subscriber
+   // Loan application summary data is converted to JSON
+   // before sending the event
+   // Server sent event must be a string beginning with 'data: '
+   // and ending with two newline characters
+   const data = JSON.stringify(loanApplicationSummary);
+   subscribers.forEach(({ response }) =>
+     response.write(`data: ${data}\n\n`));
+}
 ```
 
 Next, we can implement the web client in JavaScript and define the following React functional component:
 
-{format: jsx, type: code}
-```
+{title: "LoanApplicationSummaries.jsx"}
+```jsx
 import React, { useEffect, useState } from 'react';
 
 export default function LoanAppSummaries() {
@@ -1983,7 +2044,6 @@ export default function LoanAppSummaries() {
         // Handle error
       }
     });
-
 
     eventSource.addEventListener('error', (errorEvent) => {
       // Handle error
