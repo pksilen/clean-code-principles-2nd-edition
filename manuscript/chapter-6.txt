@@ -2154,8 +2154,8 @@ running. These instances are stateless except for storing WebSocket connections 
 
 A new Kafka client is created using the _kafkajs_ NPM library:
 
-_kafkaClient.js_
-```
+{title: kafkaClient.ts"}
+```ts
 import { Kafka } from 'kafkajs';
 
 const kafkaClient = new Kafka({
@@ -2168,8 +2168,8 @@ export default kafkaClient;
 
 A new Redis client is created using the _ioredis_ NPM library:
 
-_redisClient.js_
-```
+{title: "redisClient.ts"}
+```ts
 import Redis from 'ioredis';
 
 const redisClient = new Redis({
@@ -2182,28 +2182,38 @@ const redisClient = new Redis({
 export default redisClient;
 ```
 
-The below `KafkaMessageBrokerAdminClient` class is used to create topics in Kafka:
+The below `KafkaMessageBrokerAdminClient` class implementing the `ChatMsgBrokerAdminClient` interface is used to create topics in Kafka:
 
-_KafkaMessageBrokerAdminClient.js_
+{title: "ChatMsgBrokerAdminClient.ts"}
+```ts
+export default class ChatMsgBrokerAdminClient {
+  static class CreateTopicError = class extends WebSocketExampleError {};
+
+  tryCreateTopic(name: string): Promise<void>;
+}
 ```
-export default class KafkaMessageBrokerAdminClient {
-  kafkaAdminClient;
 
-  constructor(kafkaClient) {
+{title: "KafkaChatMsgBrokerAdminClient.ts"}
+```ts
+export default class KafkaChatMsgBrokerAdminClient
+                       implements ChatMsgBrokerAdminClient {
+  private readonly kafkaAdminClient: AdminClient;
+
+  constructor(kafkaClient: KafkaClient) {
     this.kafkaAdminClient = kafkaClient.admin();
   }
 
-  async create(topic) {
+  async try createTopic(name: string): Promise<void> {
     try {
       await this.kafkaAdminClient.connect();
 
       await this.kafkaAdminClient.createTopics({
-        topics: [{ topic }]
+        topics: [{ name }]
       });
 
       await this.kafkaAdminClient.disconnect();
     } catch {
-      // Handle error
+      throw new this.CreateTopicError();
     }
   }
 }
