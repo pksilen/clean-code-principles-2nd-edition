@@ -489,7 +489,7 @@ export default class TypeOrmSalesItemRepository implement SalesItemRepository {
 
 Below is the implementation of the `PrismaOrmSalesItemRepository`:
 
-{title: "TypeOrmSalesItemRepository.ts"}
+{title: "PrismaOrmSalesItemRepository.ts"}
 ```ts
 ```
 
