@@ -2149,69 +2149,373 @@ export default function SubscribedPostCommentsView({ postId }) {
 
 ### WebSocket Example
 
-Below is a chat messaging application consisting of a WebSocket server implemented with FastAPI and a WebSocket client implemented with React. The server uses Kafka and Redis.
-There can be multiple instances of the server running. These instances are stateless except for storing WebSocket connections for
-locally connected clients. First, we list the source code files for the server side.
+Below is a chat messaging application consisting of a WebSocket server implemented with Node.js and the _ws_ NPM library, and a WebSocket client implemented with React. There can be multiple instances of the server
+running. These instances are stateless except for storing WebSocket connections for locally connected clients. First, we list the source code files for the server side.
 
-A new Redis client is created using the [redis-py](https://redis-py.readthedocs.io/en/stable/) library:
+A new Kafka client is created using the _kafkajs_ NPM library:
 
-{format: python}
-![redis_client.py](resources/chapter6/code/websocket/redis_client.py)
+_kafkaClient.js_
+```
+import { Kafka } from 'kafkajs';
 
-The below `KafkaMsgBrokerAdminClient` class is used to create topics in Kafka:
+const kafkaClient = new Kafka({
+  clientId: 'app-y',
+  brokers: [process.env.KAFKA_BROKER],
+});
 
-{format: python}
-![ChatMsgBrokerAdminClient.py](resources/chapter6/code/websocket/ChatMsgBrokerAdminClient.py)
+export default kafkaClient;
+```
 
-{format: python}
-![KafkaChatMsgBrokerAdminClient.py](resources/chapter6/code/websocket/KafkaChatMsgBrokerAdminClient.py)
+A new Redis client is created using the _ioredis_ NPM library:
 
-Users of the chat messaging application are identified with phone numbers. On the server side, we store the WebSocket
-connection for each user in the `phone_nbr_to_conn_map`:
+_redisClient.js_
+```
+import Redis from 'ioredis';
 
-{format: python}
-![phone_nbr_to_conn_map.py](resources/chapter6/code/websocket/phone_nbr_to_conn_map.py)
+const redisClient = new Redis({
+  port: parseInt(process.env.REDIS_PORT, 10),
+  host: process.env.REDIS_HOST,
+  username: process.env.REDIS_USERNAME,
+  password: process.env.REDIS_PASSWORD
+});
 
-{format: python}
-![Connection.py](resources/chapter6/code/websocket/Connection.py)
+export default redisClient;
+```
 
-{format: python}
-![WebSocketConnection.py](resources/chapter6/code/websocket/WebSocketConnection.py)
+The below `KafkaMessageBrokerAdminClient` class is used to create topics in Kafka:
 
-The below module is the WebSocket server. The server accepts connections from clients.
-When it receives a chat message from a client, it will first parse and validate it. Then, it will store the message in persistent storage (using a separate *chat-message-service* REST API, not implemented here). The server gets the recipient's server information from a Redis cache. It sends the chat message to the recipient's WebSocket connection or produces the chat message to a Kafka topic where
-another microservice instance can consume the chat message and send it to the recipient's WebSocket connection. The Redis cache stores
-a hash map where the users' phone numbers are mapped to the server instance they are currently connected. A UUID identifies a microservice instance.
+_KafkaMessageBrokerAdminClient.js_
+```
+export default class KafkaMessageBrokerAdminClient {
+  kafkaAdminClient;
 
-{format: python}
-![ChatMsgServer.py](resources/chapter6/code/websocket/ChatMsgServer.py)
+  constructor(kafkaClient) {
+    this.kafkaAdminClient = kafkaClient.admin();
+  }
 
-{format: python}
-![WebSocketChatMsgServer.py](resources/chapter6/code/websocket/WebSocketChatMsgServer.py)
+  async create(topic) {
+    try {
+      await this.kafkaAdminClient.connect();
 
-{format: python}
-![PhoneNbrToInstanceUuidCache.py](resources/chapter6/code/websocket/PhoneNbrToInstanceUuidCache.py)
+      await this.kafkaAdminClient.createTopics({
+        topics: [{ topic }]
+      });
 
-{format: python}
-![RedisPhoneNbrToInstanceUuidCache.py](resources/chapter6/code/websocket/RedisPhoneNbrToInstanceUuidCache.py)
+      await this.kafkaAdminClient.disconnect();
+    } catch {
+      // Handle error
+    }
+  }
+}
+```
 
-{format: python}
-![ChatMsgBrokerProducer.py](resources/chapter6/code/websocket/ChatMsgBrokerProducer.py)
+Users of the chat messaging application are identified with phone numbers. On the server side, we store the WebSocket connection for each user in the `phoneNbrToWsConnectionMap`:
 
-{format: python}
-![KafkaChatMsgBrokerProducer.py](resources/chapter6/code/websocket/KafkaChatMsgBrokerProducer.py)
+_phoneNbrToWsConnectionMap.js_
+```
+const phoneNbrToWsConnectionMap = new Map();
+export default phoneNbrToWsConnectionMap;
+```
 
-The `KafkaChatMsgBrokerConsumer` class defines a Kafka consumer that consumes chat messages from
+The below `WebSocketChatMessagingServer` class handles the construction of a WebSocket server. The server accepts connections from clients. When it receives a chat message from a client, it will first parse and validate it. If the received chat message is a special online
+indication message, the server will register a new user. For an actual chat message, the server will store
+the message in persistent storage (using a separate _chat-message-service_ REST API, not implemented here). The server gets the recipient's server information from a Redis cache and sends the chat message to the recipient's WebSocket connection or produces the chat message to a Kafka topic where
+another server instance can consume the chat message and send it to the recipient's WebSocket connection. The Redis cache stores
+a hash map where the users' phone numbers are mapped to the server instance they are currently connected. A UUID identifies a server instance.
+
+_WebSocketChatMessagingServer.js_
+```
+import { WebSocketServer } from 'ws';
+import kafkaClient from './kafkaClient.js';
+import redisClient from './redisClient.js';
+
+import phoneNbrToWsConnectionMap
+  from './phoneNbrToWsConnectionMap.js';
+
+import KafkaMessageBrokerProducer
+  from './KafkaMessageBrokerProducer.js';
+
+export default class WebSocketChatMessagingServer {
+  wsServer;
+  serverUuid;
+  messageBrokerProducer;
+  wsConnectionToPhoneNbrMap = new Map();
+
+  constructor(serverInstanceUuid) {
+    this.serverUuid = serverUuid;
+
+    this.messageBrokerProducer =
+      new KafkaMessageBrokerProducer(kafkaClient);
+
+    this.wsServer = new WebSocketServer({ port: 8080 });
+
+    this.wsServer.on('connection', wsConnection => {
+      wsConnection.on('message', async (chatMessageJson) => {
+        const chatMessage = this.parse(chatMessageJson);
+
+        if (chatMessage) {
+          const messageIsOnlineIndicator =
+            chatMessage.message === 'online' &&
+            !chatMessage.recipientPhoneNbr;
+
+          if (messageIsOnlineIndicator) {
+            await this.handleOnlineIndication(
+              wsConnection,
+              chatMessage.senderPhoneNbr
+            );
+          } else {
+            this.store(chatMessage);
+
+            const recipientServerUuid =
+              await this.getServerUuid(
+                chatMessage.recipientPhoneNbr
+              );
+
+            this.send(chatMessage, recipientServerUuid);
+          }
+        }
+      });
+
+      wsConnection.on('close', () => {
+        this.close(wsConnection);
+      });
+    });
+  }
+
+  closeServer() {
+    this.wsServer.close();
+    this.wsServer.clients.forEach(client => client.close());
+    this.messageBrokerProducer.close();
+  }
+
+  parse(chatMessageJson) {
+    return (() => {
+      try {
+        const chatMessage = JSON.parse(chatMessageJson);
+        // Validate chatMessage properties here
+        return chatMessage;
+      } catch {
+        return '';
+      }
+    })();
+  }
+
+  async handleOnlineIndication(
+    wsConnection,
+    senderPhoneNbr
+  ) {
+    phoneNbrToWsConnectionMap.set(
+      senderPhoneNbr,
+      wsConnection
+    );
+
+    this.wsConnectionToPhoneNbrMap.set(
+      wsConnection,
+      senderPhoneNbr
+    );
+
+    try {
+      await redisClient.hset(
+        'phoneNbrToServerUuidMap',
+        senderPhoneNbr,
+        this.serverUuid
+      );
+    } catch {
+      // Handle error
+    }
+  }
+
+  store(chatMessage) {
+    fetch('http://.../chat-message-service/chat-messages',
+      { method: 'post',
+        body: JSON.stringify(chatMessage)
+      })
+      .catch(() => {
+        // Handle error
+      });
+  }
+
+  async getServerUuid(phoneNbr) {
+    try {
+      return
+        await redisClient.hget(
+          'phoneNbrToServerUuidMap',
+           phoneNbr
+        );
+    } catch {
+      return undefined;
+    }
+  }
+
+  send(chatMessage, serverUuid) {
+    if (serverUuid === this.serverUuid) {
+      // Recipient has active connection on
+      // the same server instance as sender
+      const recipientWsConnection =
+        phoneNbrToWsConnectionMap
+          .get(chatMessage.recipientPhoneNbr);
+
+      recipientWsConnection?
+        .send(JSON.stringify(chatMessage));
+
+    } else if (serverUuid) {
+      // Recipient has active connection on different
+      // server instance compared to sender
+      const serverTopic = serverUuid;
+
+      this.messageBrokerProducer
+        .produce(chatMessage, serverTopic);
+    }
+  }
+
+  async close(wsConnection) {
+    const phoneNbr =
+      this.wsConnectionToPhoneNbrMap
+        .get(wsConnection);
+
+    phoneNbrToWsConnectionMap.delete(phoneNbr);
+    this.wsConnectionToPhoneNbrMap.delete(wsConnection);
+
+    try {
+      await redisClient.hdel('phoneNbrToServerUuidMap',
+                             phoneNbr);
+    } catch {
+      // Handle error
+    }
+  }
+}
+```
+
+_KafkaMessageBrokerProducer.js_
+```
+export default class KafkaMessageBrokerProducer {
+  kafkaProducer;
+
+  constructor(kafkaClient) {
+    this.kafkaProducer = kafkaClient.producer();
+  }
+
+  async produce(chatMessage, topic) {
+    try {
+      await this.kafkaProducer.connect();
+      await this.kafkaProducer.send({
+        topic,
+        messages: [{ value: JSON.stringify(chatMessage) }],
+      });
+    } catch {
+      // Handle error
+    }
+  }
+
+  async close() {
+    try {
+      this.isTerminating = true;
+      await this.kafkaProducer.disconnect();
+    } catch {
+    }
+  }
+}
+```
+
+The `KafkaMessageBrokerConsumer` class defines a Kafka consumer that consumes chat messages from
 a particular Kafka topic and sends them to the recipient's WebSocket connection:
 
-{format: python}
-![ChatMsgBrokerConsumer.py](resources/chapter6/code/websocket/ChatMsgBrokerConsumer.py)
+_KafkaMessageBrokerConsumer.js_
+```
+import phoneNbrToWsConnectionMap
+  from './phoneNbrToWsConnectionMap.js';
 
-{format: python}
-![KafkaChatMsgBrokerProducer.py](resources/chapter6/code/websocket/KafkaChatMsgBrokerConsumer.py)
+export default class KafkaMessageBrokerConsumer {
+  kafkaConsumer;
 
-{format: python}
-![app.py](resources/chapter6/code/websocket/app.py)
+  constructor(kafkaClient) {
+    this.kafkaConsumer =
+      kafkaClient.consumer({ groupId: 'app-y' });
+  }
+
+  async consumeChatMessages(topic) {
+    await this.kafkaConsumer.connect();
+    await this.kafkaConsumer.subscribe({
+      topic,
+      fromBeginning: true
+    });
+
+    this.kafkaConsumer.run({
+      eachMessage: async ({ message }) => {
+        try {
+          const chatMessage =
+            JSON.parse(message.value.toString());
+
+          const recipientWsConnection =
+            phoneNbrToWsConnectionMap
+              .get(chatMessage.recipientPhoneNbr);
+
+          recipientWsConnection?
+            .send(JSON.stringify(chatMessage));
+        } catch {
+          // Handle error
+        }
+      },
+    });
+  }
+
+  async close() {
+    try {
+      await this.kafkaConsumer.disconnect();
+    } catch
+    {}
+  }
+}
+```
+
+Finally, we put it all together in the index.js file:
+
+_index.js_
+```
+import { v4 as uuidv4 } from 'uuid';
+import kafkaClient from './kafkaClient.js';
+
+import KafkaMessageBrokerAdminClient
+  from './KafkaMessageBrokerAdminClient.js';
+
+import KafkaMessageBrokerConsumer
+  from './KafkaMessageBrokerConsumer.js';
+
+import WebSocketChatMessagingServer
+  from './WebSocketChatMessagingServer.js';
+
+// Generate a unique id for this particular server instance
+const serverUuid = uuidv4();
+const serverTopic = serverUuid;
+
+// Create a Kafka topic for this particular microservice instance
+await new KafkaMessageBrokerAdminClient(kafkaClient)
+  .create(serverTopic);
+
+// Create the chat messaging service for
+// handling WebSocket connections
+const chatMessagingServer =
+  new WebSocketChatMessagingServer(serverUuid);
+
+// Create and start a Kafka consumer to consume and send
+// chat messages for recipients that are connected to
+// this microservice instance
+const messageBrokerConsumer =
+  new KafkaMessageBrokerConsumer(kafkaClient);
+
+messageBrokerConsumer.consumeChatMessages(serverTopic);
+
+// Close the Web Socket server and Kafka consumer before exiting
+function prepareExit() {
+  chatMessagingServer.closeServer();
+  messageBrokerConsumer.close();
+}
+
+// Handle signals and prepare for the process exit
+process.once('SIGINT', prepareExit);
+process.once('SIGQUIT', prepareExit);
+process.once('SIGTERM', prepareExit);
+```
 
 For the web client, we have the below code. An instance of the `ChatMessagingService` class connects to
 a chat messaging server via WebSocket. It listens to messages received from the server and dispatches an action upon
