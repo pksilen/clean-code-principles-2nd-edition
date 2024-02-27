@@ -2512,8 +2512,8 @@ export default class KafkaChatMsgBrokerConsumer
 
 Finally, we put it all together in the index.js file:
 
-_index.js_
-```
+{title: "index.ts"}
+```ts
 import { v4 as uuidv4 } from 'uuid';
 import kafkaClient from './kafkaClient.js';
 
@@ -2566,13 +2566,13 @@ receiving a chat message. The class also offers a method for sending a chat mess
 {format: js}
 ![ChatMessagingService.js](resources/chapter6/code/websocket_client/ChatMessagingService.js)
 
-{format: jsx, type: code}
+{format: jsx}
 ![index.jsx](resources/chapter6/code/websocket_client/index.jsx)
 
 The chat application `ChatApp` parses the user's and contact's phone numbers from the URL and then
 renders a chat view between the user and the contact:
 
-{format: jsx, type: code}
+{format: jsx}
 ![ChatApp.jsx](resources/chapter6/code/websocket_client/ChatApp.jsx)
 
 The `ContactChatView` component renders chat messages between a user and a contact:
