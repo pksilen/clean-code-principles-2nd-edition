@@ -1259,8 +1259,7 @@ type Query {
 In the above GraphQL examples, we did not implement user input validation. Validation is required in production code. You can manually add validation logic to each resolver function, and if input parameters are not valid, you
 can throw a validation error from the resolver.
 
-One major shortcoming in the GraphQL schema language is that you cannot define validation. Even though validation is always needed for
-`input` types. Consider implementing a GraphQL API with TypeScript instead of JavaScript. Then you can use the _type-graphql_
+Then you can use the _type-graphql_
 NPM library that allows you to write a GraphQL schema using TypeScript classes with decorator-based validation. Below is the `NewSalesItem` input type from the earlier GraphQL schema represented as a TypeScript class with validation decorators from the _class-validator_ library. When using the _type-graphql_ library, you don't have to write validation logic to each resolver function separately.
 Validation is handled by the _class-validator_ library transparently, and your code will be cleaner. The _type-graphql_ library works
 with most GraphQL server implementations, like _express-graphql_ or _apollo-server_.
@@ -1268,21 +1267,17 @@ with most GraphQL server implementations, like _express-graphql_ or _apollo-serv
 _NewSalesItem.ts_
 ```
 import { Field, InputType } from 'type-graphql';
-import { Max, MaxLength, Min } from "class-validator";
 import InputImage from './InputImage';
 
 @InputType()
-export default class NewSalesItem {
+export default class InputSalesItem {
   @Field()
-  @MaxLength(256)
-  title: name;
+  name: string;
 
   @Field()
-  @Min(0)
-  @Max(100000000)
   price: number;
 
-  @Field(type => [InputImage])
+  @Field()
   images: InputImage[];
 }
 ```
@@ -1294,21 +1289,16 @@ are identical, except that some decorators are imported from a different library
 _NewSalesItem.ts_
 ```
 import { Field, Int, InputType } from '@nestjs/graphql';
-import { Max, MaxLength, Min } from "class-validator";
 import InputImage from './InputImage';
 
 @InputType()
-export class NewSalesItem {
+export class InputSalesItem {
   @Field()
-  @MaxLength(256)
-  title: name;
+  name: string;
 
   @Field()
-  @Min(0)
-  @Max(100000000)
   price: number;
-
-  @Field(type => [InputImage])
+  
   images: InputImage[];
 }
 ```
@@ -1318,7 +1308,7 @@ resolver classes that are used to compose the final root resolver for the GraphQ
 resolver:
 
 _SalesItemResolver.ts_
-```
+```ts
 import {
   Args,
   Int,

@@ -1815,31 +1815,89 @@ type Query {
 }
 ```
 
-Let's have another example with GraphQL and use the code-first approach, this time with the [Strawberry](https://strawberry.rocks/) library.
-When implementing production code, we should follow the *clean microservice design principle*. We should be able to share the services, repositories, DTOs, errors, and entities with the earlier *sales-item-service* REST API example and
-only define a separate controller for the GraphQL API as we did with the Ariadne library. The example below implements only two API endpoints (getting and creating a sales item) to keep the example shorter.
+Then you can use the _type-graphql_
+NPM library that allows you to write a GraphQL schema using TypeScript classes Below is the `InputSalesItem` input type from the earlier GraphQL schema represented as a TypeScript class
+ The _type-graphql_ library works
+with most GraphQL server implementations, like _express-graphql_ or _apollo-server_.
 
-{format: python}
-![controllers/StrawberryGraphQlSalesItemController.py](resources/chapter6/code/salesitemservice/controllers/StrawberryGraphQlSalesItemController.py)
+{title: "InputSalesItem.ts"}
+```ts
+import { Field, InputType } from 'type-graphql';
+import InputImage from './InputImage';
 
-We must add authorization, audit logging, and metrics updates to make our controller more production-like. We can
+@InputType()
+export default class InputSalesItem {
+  @Field()
+  name: string;
+
+  @Field()
+  price: number;
+
+  @Field()
+  images: InputImage[];
+}
+```
+
+Instead of _type-graphql_, you can use the Nest.js web framework. It also allows you to define a GraphQL schema
+using TypeScript classes, too. The above and below examples
+are identical, except that some decorators are imported from a different library.
+
+{title: "InputSalesItem.ts"}
+```ts
+import { Field, Int, InputType } from '@nestjs/graphql';
+import InputImage from './InputImage';
+
+@InputType()
+export class InputSalesItem {
+  @Field()
+  name: string;
+
+  @Field()
+  price: number;
+
+  images: InputImage[];
+}
+```
+
+Both with _type-graphql_ and Nest.js, you don't specify a controller for GraphQL queries and mutations. You specify
+resolver classes that are used to compose the final root resolver for the GraphQL API. Below is an example Nest.js
+resolver:
+
+{title: "SalesItemResolver.ts"}
+```ts
+import {
+  Args,
+  Int,
+  Parent,
+  Query,
+  ResolveField,
+  Resolver,
+} from '@nestjs/graphql';
+// ...
+
+@Resolver(of => SalesItem)
+export class SalesItemResolver {
+  constructor(
+    private salesItemService: SalesItemService,
+    private salesItemImageService: SalesItemImageService
+  ) {}
+
+  @Query(returns => SalesItem)
+  async salesitem(@Args('id', { type: () => Int }) id: number) {
+    return this.salesItemService.getSalesItem(id);
+  }
+
+  @ResolveField()
+  async images(@Parent() salesItem: SalesItem) {
+    return this.salesItemImageService
+      .getSalesItemImages(salesItem.id);
+  }
+}
+```
+
+We must add authorization, audit logging, and metrics updates to make our resolvers more production-like. We can
 implement decorators similar to those in the earlier REST API example. When the decorators need to access the request, it
-can be done via the *info* parameter: `info.context['request']`
-
-In addition to the above controller, we must define strawberry types, which can be based on existing *pydantic*
-classes. Here are the strawberry types:
-
-{format: python}
-![graphqltypes/InputSalesItem.py](resources/chapter6/code/salesitemservice/graphqltypes/InputSalesItem.py)
-
-{format: python}
-![graphqltypes/InputSalesItemImage.py](resources/chapter6/code/salesitemservice/graphqltypes/InputSalesItemImage.py)
-
-{format: python}
-![graphqltypes/OutputSalesItem.py](resources/chapter6/code/salesitemservice/graphqltypes/OutputSalesItem.py)
-
-{format: python}
-![graphqltypes/OutputSalesItemImage.py](resources/chapter6/code/salesitemservice/graphqltypes/OutputSalesItemImage.py)
+can be done via the context parameter.
 
 ### Subscription-Based API Design
 
