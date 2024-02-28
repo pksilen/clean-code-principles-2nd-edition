@@ -490,7 +490,9 @@ What you should especially try to avoid is using uncommon abbreviations. For exa
 
 #### Avoid Too Short Or Meaningless Names
 
-Names that are too short do not communicate what the variable is about. As loop counters, use a variable name like _index_ or _&lt;something&gt;Index_ if the loop variable is used to index something, like
+Names that are too short do not communicate what the variable is about. Variable names like *tmp*, *temp*, *ret* or *retval* are all meaningless. You should
+figure out a name that describes the value a variable holds. This is not always an easy task and it should be remembered that naming things is
+hard and actually one of the hardest things in software engineering. Good news is that you get the better in it the more you practice. As loop counters, use a variable name like _index_ or _&lt;something&gt;Index_ if the loop variable is used to index something, like
 an array, for example. An indexing variable should start from zero. If the loop variable is counting the number of things, use _number_ or
 _&lt;something&gt;Number_ as the variable name, and start the loop counter from value one instead of zero. For example,
 a loop to start five threads should be written in C++ in the following way:
@@ -510,6 +512,14 @@ for (size_t count{1U}; count <= objectCount; ++count)
   objects.push_back(acquireObject(std::forward<Args>(args)...));
 }
 ```
+
+Let's have another example. Suppose you have a class named `ImageGetter` with a method `getImage`. Both of the names are
+too abstract and can mean several things in practice, like the image could be gotten from local disk, local cache, database or remote location.
+If the `ImageGetter` is always getting image from a remote location, it is better name the class with a descriptive name, like `ImageDownloader`
+and have a method `downloadImage` in it.
+You should not use abstract names with concrete classes, but you can create an interface named `ImageGetter` with a method `getImage`.
+This is because by nature interfaces are abstract and you cannot create an instance of them. You can then create concrete implementations
+of the `ImageGetter` interface, like `LocalDiskImageGetter`, `LocalCacheImageGetter`, `MySqlDbImageGetter` or `RemoteUrlImageGetter`.
 
 Even if you don't agree with all naming conventions presented here and in the previous chapter, I recommend you create rules for naming code entities, like classes, functions, and variables. That would make your code look
 consistent and professional. It makes the code look pretty bad if no naming conventions are used, and naming inside a single module or even a function varies dramatically. For example, a 'customers' variable is used somewhere, while a `customer_list` variable is used elsewhere, and the `customers` variable is used to store a list of customers in some place and the number of customers in another place. It is preferable if a whole development team or, even better, all development teams could share a common set of naming conventions.
