@@ -1040,6 +1040,86 @@ Let's implement the `SalesItemRepository` for the *sales-item-service* API from 
 
 {title: "MongoDbSalesItemRepository.ts"}
 ```ts
+export default class MongoDbSalesItemRepository implements SalesItemRepository {
+    def __init__(self):
+        try:
+            database_url = os.environ.get('DATABASE_URL')
+            self.__client = MongoClient(database_url)
+            database_name = database_url.split('/')[3]
+            database = self.__client[database_name]
+            self.__sales_items = database['salesitems']
+        except Exception as error:
+            # Log error
+            raise (error)
+
+    def save(self, input_sales_item: InputSalesItem) -> SalesItem:
+        try:
+            sales_item = input_sales_item.dict() | {
+                'createdAtTimestampInMs': time.time_ns() / 1_000_000
+            }
+
+            self.__sales_items.insert_one(sales_item)
+            return self.__create_sales_item_entity(sales_item)
+
+        except PyMongoError as error:
+            raise DatabaseError(error)
+
+    def find_all(self) -> list[SalesItem]:
+        try:
+            sales_items = self.__sales_items.find()
+            return [
+                self.__create_sales_item_entity(sales_item)
+                for sales_item in sales_items
+            ]
+        except PyMongoError as error:
+            raise DatabaseError(error)
+
+    def find(self, id_: str) -> SalesItem | None:
+        try:
+            sales_item = self.__sales_items.find_one(
+                {'_id': ObjectId(id_)}
+            )
+
+            return (
+                None
+                if sales_item is None
+                else self.__create_sales_item_entity(sales_item)
+            )
+        except InvalidId:
+            raise EntityNotFoundError('Sales item', id_)
+        except (BSONError, PyMongoError) as error:
+            raise DatabaseError(error)
+
+    def update(self, id_: str, sales_item_update: InputSalesItem) -> None:
+        try:
+            self.__sales_items.update_one(
+                {'_id': ObjectId(id_)}, {'$set': sales_item_update.dict()}
+            )
+        except InvalidId:
+            raise EntityNotFoundError('Sales item', id_)
+        except (BSONError, PyMongoError) as error:
+            raise DatabaseError(error)
+
+    def delete(self, id_: str) -> None:
+        try:
+            self.__sales_items.delete_one({'_id': ObjectId(id_)})
+        except InvalidId:
+            pass
+        except (BSONError, PyMongoError) as error:
+            raise DatabaseError(error)
+
+    def __create_sales_item_entity(sales_item: dict[str, Any]):
+        id_ = sales_item['_id']
+        del sales_item['_id']
+
+        images = [
+            SalesItemImage(**image) for image in sales_item['images']
+        ]
+
+        return SalesItem(
+            **(sales_item | {'id': str(id_)} | {'images': images})
+        )
+ }
 ```
 
 ## Key-Value Database Principle
@@ -1047,44 +1127,41 @@ Let's implement the `SalesItemRepository` for the *sales-item-service* API from 
 > ***Use a key-value database for fast real-time access to data stored by a key. Key-value stores usually store data in memory with a possibility for persistence.***
 
 A simple use case for a key-value database is to use it as a cache for a relational database. For example, a microservice can store SQL query results
-from a relational database in the cache. [Redis](https://redis.io/) is a popular open-source key-value store. Let's have an example with Redis
-to cache an SQL query result. In the below example, we assume that the SQL query result is available as a dict:
+from a relational database in the cache. _Redis_ is a popular open-source key-value store. Let's have an example with JavaScript and Redis
+to cache an SQL query result. In the below example, we assume that the SQL query result is available as a JavaScript object:
 
-```python
-import json
-from redis import Redis
-
-
-redis_client = Redis(host='localhost', port=6379, decode_responses=True)
-redis_client.set(sql_query_statement, json.dumps(sql_query_result))
+```js
+redisClient.set(sqlQueryStatement,
+                JSON.stringify(sqlQueryResult));
 ```
 
 The cached SQL query result can be fetched from Redis:
 
-```python
-sql_query_result_json = redis_client.get(sql_query_statement)
+```js
+const sqlQueryResultJson = redisClient.get(sqlQueryStatement);
 ```
 
-With Redis, you can create key-value pairs that expire automatically after a specified time. This is a useful feature if you are using the key-value database as a cache. You may want the cached items to expire after a while.
+With Redis, you can create key-value pairs that expire automatically after a specific time.
+This is a useful feature if you are using the key-value database as a cache. You may want the cached items to expire after a while.
 
 In addition to plain strings, Redis also supports other data structures. For example, you
-can store a list, queue, or hash map as a value for a key in Redis. If you store a queue in Redis, you can
+can store a list, queue, or hash map for a key. If you store a queue in Redis, you can
 use it as a simple single-consumer message broker. Below is an example of producing a
 message to a topic in the message broker:
 
-```python
-# RPUSH command (= right push) pushes a new message
-# to the end of the list identified by key *topic*.
-redis_client.rpush(topic, message)
+```js
+// RPUSH command (= right push) pushes a new message
+// to the end of the list identified by key _topic_.
+redisClient.rpush(topic, message);
 ```
 
 Below is an example of consuming a message from a topic in the message broker:
 
-```python
-# LPOP command (= left pop) pops a message from
-# the beginning of the list identified by key *topic*
-# The LPOP command removes the value from the list
-message = redis_client.lpop(topic)
+```js
+// LPOP command (= left pop) pops a message from
+// the beginning of the list identified by key _topic_
+// The LPOP command removes the value from the list
+const message = redisClient.lpop(topic);
 ```
 
 ## Wide-Column Databases
