@@ -394,7 +394,17 @@ many-to-many relationships between database tables in a single microservice.
 
 Let's define a `SalesItemRepository` implementation using TypeORM for the *sales-item-service* API defined in the previous chapter.
 TypeORM is a popular ORM that can be used with various SQL database engines including MySQL, PostgreSQL, MariaDB, Oracle, SQL Server, CockroachDB, SAP Hana
-and even MongoDB.
+and even MongoDB. In the below example, we don't need database transactions, because each repository operation is a single atomic operation like, `save`, `update` or `delete`.
+If you need to perform multiple database operations to fulfill a repository operation, you need a transaction. Consult your ORM documentation to find out
+how transactions can be used. In case Spring JPA ORM, if your repository extends the `CrudRepository` interface, the repository methods are by default
+transactional. In TypeORM, you need to supply a callback function where you execute database operations:
+
+```js
+await myDataSource.transaction(async (transactionalEntityManager) => {
+    // execute queries using 'transactionalEntityManager'
+})
+```
+
 Let's start by defining the `DbSalesItem`, and `DbSalesItemImage` entities:
 
 {title: "DbSalesItem.ts}
