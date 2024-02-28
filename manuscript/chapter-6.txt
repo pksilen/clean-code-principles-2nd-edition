@@ -2132,8 +2132,31 @@ export default function SubscribedPostCommentsView({ postId }) {
 ### WebSocket Example
 
 Below is a chat messaging application consisting of a WebSocket server implemented with Node.js and the _ws_ NPM library, and a WebSocket client implemented with React. There can be multiple instances of the server
-running. These instances are stateless except for storing WebSocket connections for locally connected clients. First, we list the source code files for the server side.
+running. These instances are stateless except for storing WebSocket connections for locally connected clients.
+We implement the example using *clean microservice design (or architecture)* principle as shown in the below picture.
 
+![WebSocket Example Clean Architecture](resources/chapter6/images/websocket_clean_arch.png)
+
+On the interface adapter layer, we have multiple interface adapters:
+- RedisPhoneNbrToInstanceUuidCache
+- KafkaChatMsgBrokerAdminClient
+- KafkaChatMsgBrokerAdminProducer
+- KafkaChatMsgBrokerAdminConsumer
+- ChatMsgStoreService
+- WebSocketChatMsgServer
+- WebSocketConnection
+
+The above classes depend on the microservice model consisting of `ChatMessageService` and `ChatMessage`.
+The `RedisPhoneNbrToInstanceUuidCache` implements the `PhoneNbrToInstanceUuidCache` interface and is responsible
+for storing the chat server instance UUID for each end-user (according to their phone number). The `KafkaChatMsgBrokerAdminProducer`
+implements the `ChatMsgBrokerAdminProducer` interface and is responsible for sending a chat message to Kafka to be handled
+by another chat server instance. The `KafkaChatMsgBrokerAdminConsumer` implements the `ChatMsgBrokerAdminConsumer` interface
+and is responsible for reading chat messages belonging to the particular chat server from the Kafka.
+The `ChatMsgStoreService` is responsible for contacting a remote *chat-message-store-service* for persistent storage of
+chat messages. The `WebSocketChatMsgServer` implements a chat message server using WebSocket protocol and is responsible
+for creating `WebSocketConnection` instances.
+
+First, we list the source code files for the server side.
 A new Kafka client is created using the _kafkajs_ NPM library:
 
 {title: kafkaClient.ts"}
