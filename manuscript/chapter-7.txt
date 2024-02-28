@@ -967,87 +967,79 @@ When a sales item is fetched, the whole document is retrieved from the database.
 adds a review for a sales item, the sales item is fetched from the database. The new review is appended to the `reviews` array, a new average
 rating is calculated, and finally, the document is persisted with the modifications.
 
-Below is an example of inserting one sales item to a MongoDB collection named `salesItems` using the [PyMongo](https://pymongo.readthedocs.io/en/stable/api/index.html) library. MongoDB uses the term [collection](https://www.mongodb.com/docs/manual/core/databases-and-collections/)
-instead of *table*. A MongoDB collection can store multiple documents.
+Below is an example of inserting one sales item to a MongoDB collection named `salesItems`. MongoDB uses the term _collection_
+instead of _table_. A MongoDB collection can store multiple documents.
 
-```python
-from pymongo import MongoClient
-
-URL = "mongodb://localhost:27017"
-client = MongoClient(URL)
-
-# Create the database for our example
-database = client['sales_item_service']
-sales_items_coll = database['sales_items']
-
-sales_items_coll.insert_one({
-  'category': 'Power tools',
-  'name': 'Sample sales item 1',
-  'price': 10,
-  'images': ['https://url-to-image-1...',
-             'https://url-to-image-2...'],
-  'averageRatingInStars': None,
-  'reviews': []
+```js
+db.salesItems.insertOne({
+  category: "Power tools",
+  name: "Sample sales item",
+  price: 10,
+  images: ["https://url-to-image-1...",
+             "https://url-to-image-2..."],
+  averageRatingInStars: null,
+  reviews: []
 })
-
-client.close()
 ```
 
-You can find sales items for the *Power tools* category with the following query:
+You can find sales items for the _Power tools_ category with the following query:
 
-```python
-sales_items = sales_items_coll.find({ 'category': 'Power tools' })
-print(sales_items.next())
+```js
+db.salesItems.find({ category: "Power tools" })
 ```
 
 If clients are usually querying sales items by category, it is wise to create an index for that field:
 
-```python
-# 1 means ascending index, -1 means descending index
-sales_items_coll.create_index([('category', 1)])
+```js
+// 1 means ascending index, -1 means descending index
+db.salesItems.createIndex( { category: 1 } )
 ```
 
 When a client wants to add a new review for a sales item, you first fetch the document for the sales item:
 
-```python
-sales_items_coll.find({ '_id': ObjectId('507f191e810c19729de860ea') })
+```js
+db.salesItems.find({ _id: ObjectId("507f191e810c19729de860ea") })
 ```
 
-Then, you calculate a new value for the `averageRatingInStars` field using the existing ratings and the new rating
+Then you calculate a new value for the `averageRatingInStars` field using the existing ratings and the new rating
 and add the new review to the `reviews` array and then update the document with the following command:
 
-```python
-sales_items_coll.update_one(
-    {'_id': ObjectId('6527a461bd3c27d2d1822508')},
-    {
-        '$set': {'averageRatingInStars': 5},
-        '$push': {
-            'reviews': {
-                'reviewerName': 'John Doe',
-                'date': '2022-09-01',
-                'ratingInStars': 5,
-                'text': 'Such a great product!',
-            }
-        },
-    },
+```js
+db.salesItems.updateOne(
+  { _id: ObjectId("507f191e810c19729de860ea")  },
+  { $set: {averageRatingInStars: 5},
+    $push: { reviews: {
+      reviewerName: "John Doe",
+      date: "2022-09-01",
+      ratingInStars: 5,
+      text: "Such a great product!"
+    }}
+  }
 )
 ```
+</div>
 
 Clients may want to retrieve sales items sorted descending by the average rating. For this reason, you might want
-to change the indexing to the following:
+to change the indexing to be the following:
 
-```python
-sales_items_coll.create_index( [ ('category', 1), ('averageRatingInStars', -1) ] )
+<div class="sourceCodeWithoutLabel">
+
 ```
+db.salesItems.createIndex( { category: 1, averageStarCount: -1 } )
+```
+</div>
 
-A client can issue, for example, a request to get the best-rated sales items in the *power tools* category.
+A client can issue, for example, a request to get the best-rated sales items in the _power tools_ category.
 This request can be fulfilled with the following query that utilizes the above-created index:
 
-```python
-sales_items_coll.find({'category': 'Power tools'}).sort(
-    [('averageRatingInStars', -1)]
-)
+<div class="sourceCodeWithoutLabel">
+
 ```
+db.salesItems
+  .find({ category: "Power tools" })
+  .sort({ averageStarCount: -1 })
+```
+</div>
 
 ### Sales Item Repository Example
 
