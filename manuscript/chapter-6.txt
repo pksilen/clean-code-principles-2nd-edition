@@ -2133,6 +2133,7 @@ export default function SubscribedPostCommentsView({ postId }) {
 
 Below is a chat messaging application consisting of a WebSocket server implemented with Node.js and the _ws_ NPM library, and a WebSocket client implemented with React. There can be multiple instances of the server
 running. These instances are stateless except for storing WebSocket connections for locally connected clients.
+
 We implement the example using *clean microservice design (or architecture)* principle as shown in the below picture.
 
 ![WebSocket Example Clean Architecture](resources/chapter6/images/websocket_clean_arch.png)

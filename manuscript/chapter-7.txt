@@ -487,12 +487,6 @@ export default class TypeOrmSalesItemRepository implement SalesItemRepository {
 
 ```
 
-Below is the implementation of the `PrismaOrmSalesItemRepository`:
-
-{title: "PrismaOrmSalesItemRepository.ts"}
-```ts
-```
-
 ### Use Parameterized SQL Statements Principle
 
 > ***If you are not using an ORM for database access, use parameterized SQL statements to prevent potential SQL injection attacks.***
