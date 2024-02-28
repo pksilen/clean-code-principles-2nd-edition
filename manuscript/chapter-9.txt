@@ -116,18 +116,18 @@ should contain tasks that must be completed before a user story can be approved.
 
 > ***You write code for other people and your future self.***
 
+The *fundamental theorem of readability* (from the book *The Art of Readable Code* by *Dustin Boswell* and *Trevor Foucher*) states:
+
+> ***Code should be written to minimize the time needed for someone else to understand it.***
+
+And in the above statement, that *someone else* also means the future version of you.
+
 Situations where you work alone with a piece of software are relatively rare. You cannot predict what
 will happen in the future. There might be someone else responsible for the code you once wrote. There are cases
 when you work with some code for some time and then, after several years, need to return to that code. For
 these reasons, writing clean code that is easy to read and understand by others and
 yourself in the future is essential. Remember that code is not written for a computer only but also for people.
 People should be able to read and comprehend code easily. Remember that code is read more often than written. At best, the code reads like beautiful prose!
-
-The *fundamental theorem of readability* (from the book *The Art of Readable Code* by *Boswell* and *Foucher*) states:
-
-> ***Code should be written to minimize the time needed for someone else to understand it.***
-
-And in the above statement, that *someone else* also means the future version of you.
 
 ## Avoid Technical Debt Principle
 
