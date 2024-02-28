@@ -392,7 +392,10 @@ many-to-many relationships between database tables in a single microservice.
 
 #### Sales Item Repository Example
 
-Let's define a `SalesItemRepository` implementation using SQLAlchemy's ORM capabilities for the *sales-item-service* API defined in the previous chapter. Let's start by defining the `Base`, `SalesItem`, and `SalesItemImage` entities:
+Let's define a `SalesItemRepository` implementation using TypeORM for the *sales-item-service* API defined in the previous chapter.
+TypeORM is a popular ORM that can be used with various SQL database engines including MySQL, PostgreSQL, MariaDB, Oracle, SQL Server, CockroachDB, SAP Hana
+and even MongoDB.
+Let's start by defining the `DbSalesItem`, and `DbSalesItemImage` entities:
 
 {title: "DbSalesItem.ts}
 ```ts
@@ -491,186 +494,123 @@ export default class TypeOrmSalesItemRepository implement SalesItemRepository {
 
 > ***If you are not using an ORM for database access, use parameterized SQL statements to prevent potential SQL injection attacks.***
 
-Let's use the Python MySQL connector library [mysql-connector-python](https://dev.mysql.com/doc/connector-python/en/). First, we insert data to the `salesitems` table:
+Let's use Node.js and the _mysql_ NPM library for parameterized SQL examples. First, let's insert data to the `salesitems` table:
 
-```python
-from mysql.connector import connect, Error
+```js
+// Create a connection...
 
-connection = None
-
-try:
-    connection = connect(
-        host='...',
-        database='...',
-        user='...',
-        password='...'
-    )
-
-    cursor = connection.cursor(prepared=True)
-    sql_statement = 'INSERT INTO salesitems (name, price) VALUES (%s, %s)'
-    cursor.execute(sql_statement, ('Sample sales item 1', 20))
-    connection.commit()
-except Error as error:
-    # Handle error
-finally:
-    if connection:
-        connection.close()
+connection.query(
+  `INSERT INTO salesitems (name, price)
+   VALUES (?, ?)`,
+  ['Sample sales item', 10]
+);
 ```
 
-The `%s` in the above SQL statement are placeholders for parameters in a parameterized SQL statement. The second argument for the `execute`
-method contains the parameter values in a tuple. When a database engine receives a parameterized query, it will replace the placeholders in the SQL statement with the supplied parameter values.
+The question marks (?) are placeholders for parameters in a parameterized SQL query. The second argument to the `query`
+method contains the parameter values. When a database engine receives a parameterized query, it will replace the placeholders in the query
+with the supplied parameter values.
 
 Next, we can update a row in the `salesitems` table. The below example changes the price of the sales item with id 123 to 20:
 
-```python
-from mysql.connector import connect, Error
-
-connection = None
-
-try:
-    connection = connect(
-        host='...',
-        database='...',
-        user='...',
-        password='...'
-    )
-
-    cursor = connection.cursor(prepared=True)
-    sql_statement = 'UPDATE salesitems SET PRICE = %s WHERE id = %s'
-    cursor.execute(sql_statement, (20, 123))
-    connection.commit()
-except Error as error:
-    # Handle error
-finally:
-    if connection:
-        connection.close()
+```js
+connection.query('UPDATE salesitems SET price = ? WHERE id = ?',
+                  [20, 123]);
 ```
 
 Let's execute a SELECT statement to get sales items with their price over 20:
 
-```python
-from mysql.connector import connect, Error
-
-connection = None
-
-try:
-    connection = connect(
-        host='...',
-        database='...',
-        user='...',
-        password='...'
-    )
-
-    cursor = connection.cursor(prepared=True)
-    sql_statement = 'SELECT id, name, price FROM salesitems WHERE price >= %s'
-    cursor.execute(sql_statement, (20,))
-    result = cursor.fetchall()
-except Error as error:
-    # Handle error
-finally:
-    if connection:
-        connection.close()
+```js
+connection.query(
+  'SELECT id, name, price FROM salesitems WHERE price >= ?',
+  [20]
+);
 ```
+</div>
 
-In an SQL SELECT statement, you cannot use parameters everywhere. You can use them as value placeholders in the WHERE clause. You need string concatenation to put user-supplied data in other parts of an SQL SELECT statement. You should not concatenate user-supplied data without sanitation because that would open up possibilities for SQL injection attacks. Let's say you allow the microservice client to specify a sorting column:
+In an SQL SELECT statement, you cannot use parameters everywhere. You can use them as value placeholders
+in the WHERE clause. If you want to use user-supplied data in other parts of an SQL SELECT statement, you
+need to use string concatenation. You should not concatenate user-supplied data without sanitation because that
+would open up possibilities for SQL injection attacks. Let's say you allow the microservice client to specify a sorting column:
 
-```python
-import string
+<div class="sourceCodeWithoutLabel">
 
-
-class ValidateColNameError(Exception):
-    pass
-
-
-def try_validate_col_name(column_name: str) -> str:
-    allowed_chars = string.ascii_letters + string.digits + '_' + '$'
-
-    if all(
-        col_name_char in allowed_chars for col_name_char in column_name
-    ):
-        return column_name
-
-    raise ValidateColNameError()
-
-
-sort_column_name = # Unvalidated data got from client
-
-sql_query = (
-    'SELECT id, name, price FROM salesitems ORDER BY '
-    + try_validate_col_name(sort_column_name)
-)
-
-# ...
 ```
+const sortColumn = // Unvalidated data got from client
+const sqlQuery =
+  'SELECT id, name, price FROM salesitems ORDER BY ' +
+  connection.escapeId(sortColumn);
 
-As shown above, you must validate the `sort_column` value to contain only valid characters for a MySQL column name. If you need to get the sorting direction from the client, you should validate
-that value as `ASC` or `DESC`.
-
-```python
-class ValidateSortDirError(Exception):
-    pass
-
-
-def try_validate_sort_dir(sort_dir: str) -> str:
-    lower_case_sort_dir = sort_dir.lower()
-
-    if lower_case_sort_dir == 'asc' or lower_case_sort_dir == 'desc':
-        return sort_dir
-
-    raise ValidateSortDirError()
-
-
-sort_column_name = # Unvalidated data got from client
-sort_direction = # Unvalidated data got from client
-
-sql_query = (
-  'SELECT id, name, price'
-  'FROM salesitems'
-  'ORDER BY'
-  f'{try_validate_col_name(sort_column_name)}'
-  f'{try_validate_sort_dir(sort_direction)'
-)
-
-# ...
+connection.query(sqlQuery);
 ```
+</div>
+
+As shown above, you need to escape the `sortColumn` value so that it contains only valid characters
+for a MySQL column name. If you need to get the sorting direction from the client, you should validate
+that value to be either `ASC` or `DESC`. In the below example, we assume that a `validateSortDirection` function
+exists:
+
+<div class="sourceCodeWithoutLabel">
+
+```
+const sortColumn = // Unvalidated data got from client
+const sortDirection = // Unvalidated data got from client
+
+// throws if invalid sorting direction
+const validatedSortDirection =
+  validateSortDirection(sortDirection);
+
+const sqlQuery = `
+  SELECT id, name, price
+  FROM salesitems
+  ORDER BY
+  ${connection.escapeId(sortColumn)}
+  ${validatedSortDirection}
+`;
+
+connection.query(sqlQuery);
+```
+</div>
 
 When you get values for a MySQL query's `LIMIT` clause from a client, you must validate that those values are
 integers and in a valid range. Don't allow the client to supply random, very large values. In the example below, we assume
-two validation functions exist: `try_validate_row_offset` and `try_validate_row_count`. The validation functions will raise an error if
+that two validation functions exist: `validateRowOffset` and `validateRowCount`. The validation functions will throw if
 validation fails.
 
-```python
+<div class="sourceCodeWithoutLabel">
 
-def try_validate_row_offset(row_offset: str) -> str:
-    # Implement ...
-
-def try_validate_row_count(row_count: str) -> str:
-    # Implement ...
-
-row_offset = # Unvalidated data got from client
-row_count = # Unvalidated data got from client
-
-try_validate_row_offset(row_offset)
-try_validate_row_count(row_count)
-
-sql_query = (
-  'SELECT id, name, price'
-  'FROM salesitems'
-  f'LIMIT {row_offset}, {row_count}'
-)
-
-# ...
 ```
+const rowOffset = // Unvalidated data got from client
+const rowCount = // Unvalidated data got from client
+
+const validatedRowOffset = validateRowOffset(rowOffset);
+const validatedRowCount = validateRowCount(rowCount);
+
+const sqlQuery = `
+  SELECT id, name, price
+  FROM salesitems
+  LIMIT ${validatedRowOffset}, ${validatedRowCount}
+`;
+
+connection.query(sqlQuery);
+```
+</div>
 
 When you get a list of wanted column names from a client, you must validate that each of them is a valid column identifier:
 
-```python
-column_names = # Unvalidated data got from client
-validated_col_names = [try_validate_col_name(column_name) for column_name in column_names]
-sql_query = f'SELECT {", ".join(validated_col_names)} FROM salesitems'
+<div class="sourceCodeWithoutLabel">
 
-# ...
 ```
+const columnNames = // Unvalidated data got from client
+
+const escapedColumnNames =
+  columnNames.map(columnName => connection.escapedId(columnName));
+
+const sqlQuery =
+  `SELECT ${escapedColumnNames.join(', ')} FROM salesitems`;
+
+connection.query(sqlQuery);
+```
+</div>
 
 #### Sales Item Repository Example
 
