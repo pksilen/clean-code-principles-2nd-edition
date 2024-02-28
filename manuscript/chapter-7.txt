@@ -1017,36 +1017,30 @@ db.salesItems.updateOne(
   }
 )
 ```
-</div>
 
 Clients may want to retrieve sales items sorted descending by the average rating. For this reason, you might want
 to change the indexing to be the following:
 
-<div class="sourceCodeWithoutLabel">
-
-```
+```js
 db.salesItems.createIndex( { category: 1, averageStarCount: -1 } )
 ```
-</div>
 
 A client can issue, for example, a request to get the best-rated sales items in the _power tools_ category.
 This request can be fulfilled with the following query that utilizes the above-created index:
 
-<div class="sourceCodeWithoutLabel">
-
-```
+```js
 db.salesItems
   .find({ category: "Power tools" })
   .sort({ averageStarCount: -1 })
 ```
-</div>
 
 ### Sales Item Repository Example
 
 Let's implement the `SalesItemRepository` for the *sales-item-service* API from the previous chapter using MongoDB:
 
-{format: python}
-![repositories/MongoDbSalesItemRepository.py](resources/chapter6/code/salesitemservice/repositories/MongoDbSalesItemRepository.py)
+{title: "MongoDbSalesItemRepository.ts"}
+```ts
+```
 
 ## Key-Value Database Principle
 
