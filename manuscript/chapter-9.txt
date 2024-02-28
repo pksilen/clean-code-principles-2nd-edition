@@ -123,6 +123,12 @@ these reasons, writing clean code that is easy to read and understand by others 
 yourself in the future is essential. Remember that code is not written for a computer only but also for people.
 People should be able to read and comprehend code easily. Remember that code is read more often than written. At best, the code reads like beautiful prose!
 
+The *fundamental theorem of readability* (from the book *The Art of Readable Code* by *Boswell* and *Foucher*) states:
+
+> ***Code should be written to minimize the time needed for someone else to understand it.***
+
+And in the above statement, that *someone else* also means the future version of you.
+
 ## Avoid Technical Debt Principle
 
 {aside}
