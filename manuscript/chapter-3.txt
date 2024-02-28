@@ -279,6 +279,7 @@ vmsCategories, error = vmsClient.GetCategories(vmsUrl, logger)
 Maps are accessed by requesting a _value_ for a certain _key_. This is why I recommend naming maps using the pattern _keyToValue_ or keyToValueMap_.
 Let’s say we have a map containing order counts for customer ids. This map should be named `customerIdToOrderCount` or `customerIdToOrderCountMap`.
 Or if we have a list of suppliers for product names, the map variable should be named `productNameToSuppliers` or `productNameToSuppliersMap`.
+I prefer to use the shorter version, it is enough to tell that a variable is a map because of the `to` word in the middle.
 Below is an example of accessing maps in Java:
 
 ```java
