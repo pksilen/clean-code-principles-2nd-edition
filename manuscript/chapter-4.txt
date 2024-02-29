@@ -38,6 +38,22 @@ denote both the integration of unit-tested modules and external interfaces.
 
 > ***Unit tests should test the functionality of public functions as isolated units with as high coverage as possible. The isolation means that dependencies (other classes/modules/services) are mocked.***
 
+The isolation is not a mandatory requirement, but you should mock at least all external dependencies like external services and databases.
+There exists two schools of thought regarding unit testing and test-driven development (TDD): London and Detroit/Chicago. In the London school
+of TDD, unit tests are created from top to bottom (from higher-level classes to lower-level classes) or from outside to inside (when considering
+clean architecture). What this means in practice is that you must to create mocks for lower-level classes when you implement unit tests for
+the high-level classes, because the low-level classes do not exists yet. London school of TDD is also called *Mockist*. It focuses on interactions between objects and ensuring correct messages are sent
+between them. On the other hand, in the Detroit or Chicago school of TDD, unit tests are created from bottom to top (from lower-level classes to
+higher level classes) or from inside to outside when considering clean architecture. This TDD style is also called *Classic*. What this means in practice is that you don't necessarily need
+to create so many mocks. When you test a higher-level class, you have already implemented the needed lower-level classes and you can use their
+implementation in your higher-level class tests. This would make the higher-level class tests as partial integration tests. There are benefits
+and drawbacks in both schools of TDD. These styles are not mutually exclusive. The drawback of London school of TDD is that mocks create tight
+coupling to lower-level interfaces and changing them requires changes to tests. The benefit is that you can follow the natural path from
+creating higher-level classes first and lower-level classes later as needed. The drawback of Detroit/Chicago school of TDD is that you need
+figure out the lower level classes first and implement them first which might be slow and feel unnatural. In theory, the Detroit/Chicago school
+tests can be slower if they test dependencies, also a bug in a single unit can cause many tests to fail. The benefit of Detroit/Chicago school
+of TDD is that code refactoring is easier and tests don't break easily if they are not relying on mocks.
+
 Unit tests should be written for public functions only. Do not try to test private functions separately. They
 should be tested indirectly when testing public functions. Unit tests should test the function specification, i.e., what
 the function is expected to do in various scenarios, not how the function is implemented. When you unit test only public functions,
