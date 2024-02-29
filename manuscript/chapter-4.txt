@@ -52,7 +52,9 @@ coupling to lower-level interfaces and changing them requires changes to tests. 
 creating higher-level classes first and lower-level classes later as needed. The drawback of Detroit/Chicago school of TDD is that you need
 figure out the lower level classes first and implement them first which might be slow and feel unnatural. In theory, the Detroit/Chicago school
 tests can be slower if they test dependencies, also a bug in a single unit can cause many tests to fail. The benefit of Detroit/Chicago school
-of TDD is that code refactoring is easier and tests don't break easily if they are not relying on mocks.
+of TDD is that code refactoring is easier and tests don't break easily if they are not relying on mocks. Which of the schools of TDD is better?
+It is hard to say. London school of TDD (or unit testing in general) is probably more popular but it does not make it necessarily better.
+Hybrid approaches, where elements from both schools are taken, are also popular. Many developers don't even know these two schools exists.
 
 Unit tests should be written for public functions only. Do not try to test private functions separately. They
 should be tested indirectly when testing public functions. Unit tests should test the function specification, i.e., what
