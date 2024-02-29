@@ -1232,6 +1232,7 @@ can be done to avoid writing comments:
 - Don't comment out the code. Just remove the unused code. The removed code will be available in the version control system forever
 - You don't have to comment on a function's logic. Code readers should be able to infer that information from the code itself
   and the related unit tests. Complex code logic and behavior do not usually need comments if you have practiced *test-driven development* and a complete set of well-named unit tests is available.
+  You should not comment e.g., what value a function should return with certain input. Create a test case for that.
 
 Code comments often duplicate information already available in the code itself or related tests. This is called information duplication, which should be avoided according to the *don't repeat yourself* (DRY) principle. This principle was introduced in the *Pragmatic Programmer* book by *David Thomas* and *Andrew Hunt*.
 
