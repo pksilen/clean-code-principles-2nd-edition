@@ -56,6 +56,7 @@ of TDD is that code refactoring is easier and tests don't break easily if they a
 It is hard to say. London school of TDD (or unit testing in general) is probably more popular in general but it does not make it necessarily better.
 Many TDD veterans favor the classic approach, i.e. Detroit/Chicago school.
 Hybrid approaches, where elements from both schools are taken, are also popular. Many developers don't even know these two schools exists.
+Later in the chapter I will give you an example of using both of these schools using the same example.
 
 Unit tests should be written for public functions only. Do not try to test private functions separately. They
 should be tested indirectly when testing public functions. Unit tests should test the function specification, i.e., what
