@@ -38,8 +38,11 @@ denote both the integration of unit-tested modules and external interfaces.
 
 > ***Unit tests should test the functionality of public functions as isolated units with as high coverage as possible. The isolation means that dependencies (other classes/modules/services) are mocked.***
 
-The isolation is not a mandatory requirement, but you should mock at least all external dependencies like external services and databases.
-There exists two schools of thought regarding unit testing and test-driven development (TDD): London and Detroit/Chicago. In the London school
+A complete isolation is not a mandatory requirement, but you should mock at least all external dependencies like external services and databases.
+In your unit tests, you can use other dependencies, like classes if they are already implemented and available. If not available, you can use mocks
+or implement the dependencies to be able to use them.
+
+There exists two schools of thought regarding unit testing and test-driven development (TDD): *London* and *Detroit/Chicago*. In the London school
 of TDD, unit tests are created from top to bottom (from higher-level classes to lower-level classes) or from outside to inside (when considering
 clean architecture). What this means in practice is that you must to create mocks for lower-level classes when you implement unit tests for
 the high-level classes, because the low-level classes do not exists yet. London school of TDD is also called *Mockist*. It focuses on interactions between objects and ensuring correct messages are sent
