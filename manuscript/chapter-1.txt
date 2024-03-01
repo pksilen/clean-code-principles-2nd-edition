@@ -422,7 +422,7 @@ We define that our *ecommerce-service* aggregates the following lower-level micr
 Most of the microservices described above can be implemented as REST APIs because they mainly contain
 basic CRUD (create, read, update and delete) operations for which a REST API is a good match. We will handle
 API design in more detail in a later chapter. Let's implement the _sales-item-service_ as a REST API
-using Java and [Spring Boot}(https://spring.io/projects/spring-boot).
+using Java and [Spring Boot](https://spring.io/projects/spring-boot).
 
 {aside}
 Source code for the below example is available [here](https://github.com/pksilen/clean-code-principles-code/tree/main/chapter1/salesitemservice).
@@ -433,6 +433,8 @@ defines API endpoints for creating, getting, updating, and deleting sales items:
 
 {title: SalesItemController.java}
 ```java
+package com.example.salesitemservice;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -448,6 +450,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+
 @RestController
 @RequestMapping(SalesItemController.API_ENDPOINT)
 @Tag(
@@ -456,17 +459,20 @@ import org.springframework.web.bind.annotation.RestController;
 )
 public class SalesItemController {
   public static final String API_ENDPOINT = "/sales-items";
+  private final SalesItemService salesItemService;
 
   @Autowired
-  private SalesItemService salesItemService;
+  public SalesItemController(final SalesItemService salesItemService) {
+    this.salesItemService = salesItemService;
+  }
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(summary = "Creates new sales item")
   public final SalesItem createSalesItem(
-    @RequestBody final SalesItemArg salesItemArg
+    @RequestBody final InputSalesItem inputSalesItem
   ) {
-    return salesItemService.createSalesItem(salesItemArg);
+    return salesItemService.createSalesItem(inputSalesItem);
   }
 
   @GetMapping
@@ -491,8 +497,7 @@ public class SalesItemController {
   public final Iterable<SalesItem> getSalesItemsByUserAccountId(
     @RequestParam("userAccountId") final Long userAccountId
   ) {
-    return salesItemService
-             .getSalesItemsByUserAccountId(userAccountId);
+    return salesItemService.getSalesItemsByUserAccountId(userAccountId);
   }
 
   @PutMapping("/{id}")
@@ -500,9 +505,9 @@ public class SalesItemController {
   @Operation(summary = "Updates a sales item")
   public final void updateSalesItem(
     @PathVariable final Long id,
-    @RequestBody final SalesItemArg salesItemArg
+    @RequestBody final InputSalesItem inputSalesItem
   ) {
-    salesItemService.updateSalesItem(id, salesItemArg);
+    salesItemService.updateSalesItem(id, inputSalesItem);
   }
 
   @DeleteMapping("/{id}")
@@ -531,19 +536,19 @@ without changing the controller or introduce a different controller, e.g., a Gra
 
 {title: "SalesItemService.java"}
 ```java
+package com.example.salesitemservice;
+
+
 public interface SalesItemService {
-  SalesItem createSalesItem(SalesItemArg salesItemArg);
+  SalesItem createSalesItem(InputSalesItem inputSalesItem);
   SalesItem getSalesItemById(Long id);
-
-  Iterable<SalesItem> getSalesItemsByUserAccountId(
-   Long userAccountId
-  );
-
+  Iterable<SalesItem> getSalesItemsByUserAccountId(Long userAccountId);
   Iterable<SalesItem> getSalesItems();
-  void updateSalesItem(Long id, SalesItemArg salesItemArg);
+  void updateSalesItem(Long id, InputSalesItem inputSalesItem);
   void deleteSalesItemById(Long id);
   void deleteSalesItems();
 }
+
 ```
 
 The below `SalesItemServiceImpl` class implements the `SalesItemService` interface.
@@ -551,37 +556,44 @@ It will interact with a sales item repository to persist, fetch and delete data 
 
 {title: "SalesItemServiceImpl.java"}
 ```java
+package com.example.salesitemservice;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 
 @Service
 public class SalesItemServiceImpl implements SalesItemService {
   private static final String SALES_ITEM = "Sales item";
+  private final SalesItemRepository salesItemRepository;
 
   @Autowired
-  private SalesItemRepository salesItemRepository;
+  public SalesItemServiceImpl(
+    final SalesItemRepository salesItemRepository
+  ) {
+    this.salesItemRepository = salesItemRepository;
+  }
 
   @Override
   public final SalesItem createSalesItem(
-    final SalesItemArg salesItemArg
+    final InputSalesItem inputSalesItem
   ) {
-    final var salesItem = SalesItem.from(salesItemArg);
+    final var salesItem = SalesItem.from(inputSalesItem);
     return salesItemRepository.save(salesItem);
   }
 
   @Override
   public final SalesItem getSalesItemById(final Long id) {
     return salesItemRepository.findById(id)
-             .orElseThrow(() ->
-               new EntityNotFoundError(SALES_ITEM, id));
+      .orElseThrow(() ->
+        new EntityNotFoundError(SALES_ITEM, id));
   }
 
   @Override
   public final Iterable<SalesItem> getSalesItemsByUserAccountId(
     final Long userAccountId
   ) {
-    return salesItemRepository
-             .findByUserAccountId(userAccountId);
+    return salesItemRepository.findByUserAccountId(userAccountId);
   }
 
   @Override
@@ -592,12 +604,10 @@ public class SalesItemServiceImpl implements SalesItemService {
   @Override
   public final void updateSalesItem(
     final Long id,
-    final SalesItemArg salesItemArg
+    final InputSalesItem inputSalesItem
   ) {
     if (salesItemRepository.existsById(id)) {
-      final var salesItem =
-        SalesItem.from(salesItemArg, id);
-
+      final var salesItem = SalesItem.from(inputSalesItem, id);
       salesItemRepository.save(salesItem);
     } else {
       throw new EntityNotFoundError(SALES_ITEM, id);
@@ -620,17 +630,19 @@ public class SalesItemServiceImpl implements SalesItemService {
 
 {title: "EntityNotFoundError.java"}
 ```java
+package com.example.salesitemservice;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
+
 
 @ResponseStatus(HttpStatus.NOT_FOUND)
 public class EntityNotFoundError extends RuntimeException {
   EntityNotFoundError(final String entityType, final long id) {
-    super(entityType +
-         " entity not found with id " +
-         String.valueOf(id));
+    super(entityType + " entity not found with id " + id);
   }
 }
+
 ```
 
 The `SalesItemRepository` interface is defined below. Spring will create an instance of a class implementing that interface and
@@ -644,37 +656,43 @@ the method to the interface, and that's it. We don't have to provide an implemen
 
 {title: "SalesItemRepository.java"}
 ```java
+package com.example.salesitemservice;
+
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
+
 @Repository
 public interface SalesItemRepository extends
-                    CrudRepository<SalesItem, Long>
-{
+  CrudRepository<SalesItem, Long> {
   Iterable<SalesItem> findByUserAccountId(Long userAccountId);
 }
+
 ```
 
-Next, we define the `SalesItem` entity class, which contains properties like `name` and `price`. It also includes two methods to convert an instance of the `SalesItemArg` Data Transfer Object (DTO) class
+Next, we define the `SalesItem` entity class, which contains properties like `name` and `price`. It also includes two methods to convert an instance of the `InputSalesItem` Data Transfer Object (DTO) class
 to an instance of the `SalesItem` class. A DTO is an object that transfers data between a server and a client. I have used the
-class name `SalesItemArg` instead of `SalesItemDto` to describe that a
-`SalesItemArg` DTO  is an argument for an API endpoint. If some API endpoint returned a special sales item DTO instead of a sales item entity, I would name that DTO class `SalesItemResponse` instead of `SalesItemDto`.
-The terms `Arg` and `Response` better describe the direction in which a DTO transfers data. You could also use the following DTO names: `InputSalesItem` and `OutputSalesItem` to describe an incoming and outgoing DTO (from the server's point of view).
+class name `InputSalesItem` instead of `SalesItemDto` to describe that a
+`InputSalesItem` DTO  is an argument for an API endpoint. If some API endpoint returned a special sales item DTO instead of a sales item entity, I would name that DTO class `OutputSalesItem` instead of `SalesItemDto`.
+The terms `Input` and `Output` better describe the direction in which a DTO transfers data.
 
 {title: "SalesItem.java"}
 ```java
+package com.example.salesitemservice;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.modelmapper.ModelMapper;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+
 
 @Entity
 @Data
@@ -697,43 +715,44 @@ public class SalesItem {
   )
   private Integer price;
 
-  static SalesItem from(final SalesItemArg salesItemArg) {
-    return new ModelMapper()
-                 .map(salesItemArg, SalesItem.class);
+  static SalesItem from(final InputSalesItem inputSalesItem) {
+    return new ModelMapper().map(inputSalesItem, SalesItem.class);
   }
 
   static SalesItem from(
-    final SalesItemArg salesItemArg,
+    final InputSalesItem inputSalesItem,
     final Long id
   ) {
-    final var salesItem =
-      new ModelMapper().map(salesItemArg, SalesItem.class);
-
+    final var salesItem = new ModelMapper().map(inputSalesItem, SalesItem.class);
     salesItem.setId(id);
     return salesItem;
   }
 }
 ```
 
-The below `SalesItemArg` class contains the same properties as the `SalesItem` entity class, except the `id` property.
-The `SalesItemArg` DTO class is used when creating a new sales item or updating an existing sales
+The below `InputSalesItem` class contains the same properties as the `SalesItem` entity class, except the `id` property.
+The `InputSalesItem` DTO class is used when creating a new sales item or updating an existing sales
 item. When creating a new sales item, the `id` property should not be given by the client because the microservice will automatically generate
 it (or the database will, actually, in this case).
 
 {title: "SalesItemArg.java"}
 ```java
+package com.example.salesitemservice;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class SalesItemArg {
+public class InputSalesItem {
   private Long userAccountId;
   private String name;
   private Integer price;
 }
+```
 
 Below is defined how the higher-level *ecommerce-service* will orchestrate the use of the aggregated lower-level microservices:
 
