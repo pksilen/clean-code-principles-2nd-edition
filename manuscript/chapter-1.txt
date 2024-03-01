@@ -794,12 +794,13 @@ the user's orders from the *order-service*.
 Source code for the below example is available [here](https://github.com/pksilen/clean-code-principles-code/tree/main/chapter1/ecommerceservice).
 {/aside}
 
-{title: "server.js"}
+{title: "server_real.js"}
 ```js
 const express = require('express');
-const { graphqlHTTP } = require('express-graphql');
+const { createHandler } = require('graphql-http/lib/use/express');
 const { buildSchema, GraphQLError } = require('graphql');
 const axios = require('axios').default;
+var { ruruHTML } = require('ruru/server');
 
 const schema = buildSchema(`
   type UserAccount {
@@ -831,31 +832,25 @@ const schema = buildSchema(`
   }
 `);
 
-const {
-  ORDER_SERVICE_URL,
-  SALES_ITEM_SERVICE_URL,
-  USER_ACCOUNT_SERVICE_URL
-} = process.env;
+const { ORDER_SERVICE_URL, SALES_ITEM_SERVICE_URL, USER_ACCOUNT_SERVICE_URL } =
+  process.env;
 
 const rootValue = {
   user: async ({ id }) => {
     try {
-      const [
-        { data: userAccount },
-        { data: salesItems },
-        { data: orders }
-      ] = await Promise.all([
-        axios.get(`${USER_ACCOUNT_SERVICE_URL}/user-accounts/${id}`),
-        axios.get(
-          `${SALES_ITEM_SERVICE_URL}/sales-items?userAccountId=${id}`
-        ),
-        axios.get(`${ORDER_SERVICE_URL}/orders?userAccountId=${id}`)
-      ]);
+      const [{ data: userAccount }, { data: salesItems }, { data: orders }] =
+        await Promise.all([
+          axios.get(`${USER_ACCOUNT_SERVICE_URL}/user-accounts/${id}`),
+          axios.get(
+            `${SALES_ITEM_SERVICE_URL}/sales-items?userAccountId=${id}`,
+          ),
+          axios.get(`${ORDER_SERVICE_URL}/orders?userAccountId=${id}`),
+        ]);
 
       return {
         userAccount,
         salesItems,
-        orders
+        orders,
       };
     } catch (error) {
       throw new GraphQLError(error.message);
@@ -863,13 +858,13 @@ const rootValue = {
   },
 };
 
-const app = express();
+var app = express();
+app.all('/graphql', createHandler({ schema, rootValue }));
 
-app.use('/graphql', graphqlHTTP({
-  schema,
-  rootValue,
-  graphiql: true,
-}));
+app.get('/', (_req, res) => {
+  res.type('html');
+  res.end(ruruHTML({ endpoint: '/graphql' }));
+});
 
 app.listen(4000);
 ```
@@ -899,10 +894,13 @@ On the left-hand side pane, you can specify a GraphQL query. For example, to que
 }
 ```
 
-Because we haven't implemented the lower-level microservices, let's modify the part of the *server.js* where lower level
+Because we haven't implemented the lower-level microservices, let's modify the part of the *server_real.js* where lower level
 microservices are accessed to return dummy static results instead of accessing the real lower-level microservices:
 
+{title: "server_fake.js"}
 ```js
+// ...
+
 const [
         { data: userAccount },
         { data: salesItems },
@@ -931,6 +929,8 @@ const [
           ]
         })
       ]);
+
+// ...
 ```
 
 
@@ -962,9 +962,12 @@ We should see the result below if we now execute the previously specified query.
 }
 ```
 
-We can simulate a failure by modifying the *server.js* to contain the following code:
+We can simulate a failure by modifying the *server_fake.js* to contain the following code:
 
+{title: "server_failure.js"}
 ```js
+// ...
+
 const [
         { data: userAccount },
         { data: salesItems },
@@ -988,6 +991,8 @@ const [
           ]
         })
       ]);
+
+// ...
 ```
 
 Now, if we execute the query again, we will get the below error response because the GraphQL server cannot connect to
