@@ -790,6 +790,10 @@ technologies to implement a single GraphQL query in the *ecommerce-service*. Bel
 information from the *user-account-service*, the user's sales items from the *sales-item-service*, and finally,
 the user's orders from the *order-service*.
 
+{aside}
+Source code for the below example is available [here](https://github.com/pksilen/clean-code-principles-code/tree/main/chapter1/ecommerceservice).
+{/aside}
+
 {title: "server.js"}
 ```js
 const express = require('express');
@@ -993,7 +997,7 @@ a service at `localhost:3000` because no service runs at that address.
 {
   "errors": [
     {
-      "message": "connect ECONNREFUSED 127.0.0.1:3000",
+      "message": "connect ECONNREFUSED ::1:3000",
       "locations": [
         {
           "line": 2,
@@ -1002,8 +1006,7 @@ a service at `localhost:3000` because no service runs at that address.
       ],
       "path": [
         "user"
-      ],
-      "extensions": {}
+      ]
     }
   ],
   "data": null
