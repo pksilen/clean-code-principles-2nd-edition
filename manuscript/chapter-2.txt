@@ -653,49 +653,48 @@ Suppose we get an assignment to introduce support for square shapes. Let's try t
 `RectangleShape` class, because a square is also a rectangle:
 
 ```java
-class RectangleShape(Shape):
-    public class RectangleShape implements Shape {
-      private int width;
-      private int height;
+public class RectangleShape implements Shape {
+  private int width;
+  private int height;
 
-      // Rectangle constructor
-      public RectangleShape(final int width, final int height)  {
-        this.width = width;
-        this.height = height;
-      }
+  // Rectangle constructor
+  public RectangleShape(final int width, final int height)  {
+    this.width = width;
+    this.height = height;
+  }
 
-      // Square constructor
-      public RectangleShape(final int sideLength) {
-        this.width = sideLength;
-        this.height = sideLength;
-      }
+  // Square constructor
+  public RectangleShape(final int sideLength) {
+    this.width = sideLength;
+    this.height = sideLength;
+  }
 
-      public int getWidth() {
-          return width;
-      }
+  public int getWidth() {
+    return width;
+  }
 
-      public int getHeight() {
-          return height;
-      }
+  public int getHeight() {
+    return height;
+  }
 
-      public void setWidth(final int newWidth) {
-        if (height == width) {
-          //noinspection SuspiciousNameCombination
-          height = newWidth;
-        }
-
-        width = newWidth;
-      }
-
-      public void setHeight(final int newHeight) {
-        if (height == width) {
-          //noinspection SuspiciousNameCombination
-          width = newHeight;
-        }
-
-        height = newHeight;
-      }
+  public void setWidth(final int newWidth) {
+    if (height == width) {
+      //noinspection SuspiciousNameCombination
+      height = newWidth;
     }
+
+    width = newWidth;
+  }
+
+  public void setHeight(final int newHeight) {
+    if (height == width) {
+      //noinspection SuspiciousNameCombination
+      width = newHeight;
+    }
+
+    height = newHeight;
+  }
+}
 ```
 
 We needed to add a factory method for creating squares and modify two methods in the class. Everything works okay when we run tests.
