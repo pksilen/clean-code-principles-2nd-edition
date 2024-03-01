@@ -2411,7 +2411,8 @@ aware of the eigth fallacies of distributed computing:
    A service mesh offers automatic retries, timeouts, and circuit breakers, for instance.
 2. Latency is zero
    Latency can vary from time to time. Usually, you deploy your software system to a single cloud region.
-   In that case, latency is small and, for many applications, is on an acceptable level. If you have a real-time application with strict latency requirements, you might need to conduct testing and measure the latency and see
+   In that case, latency is small and, for many applications, is on an acceptable level. If you have a real-time application
+   with strict latency requirements, you might need to conduct testing and measure the latency and see
    if it is acceptable.
 3. Bandwidth is infinite.
    Bandwidth inside a single cloud region is high. If you transfer high amounts of data, with testing, you can measure if the bandwidth is
