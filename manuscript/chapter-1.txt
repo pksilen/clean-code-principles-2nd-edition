@@ -422,7 +422,13 @@ We define that our *ecommerce-service* aggregates the following lower-level micr
 Most of the microservices described above can be implemented as REST APIs because they mainly contain
 basic CRUD (create, read, update and delete) operations for which a REST API is a good match. We will handle
 API design in more detail in a later chapter. Let's implement the _sales-item-service_ as a REST API
-using Java and [Spring Boot}(https://spring.io/projects/spring-boot). We will implement the `SalesItemController` class first. It
+using Java and [Spring Boot}(https://spring.io/projects/spring-boot).
+
+{aside}
+Source code for the below example is available [here](https://github.com/pksilen/clean-code-principles-code/tree/main/chapter1/salesitemservice).
+{/aside}
+
+We will implement the `SalesItemController` class first. It
 defines API endpoints for creating, getting, updating, and deleting sales items:
 
 {title: SalesItemController.java}
