@@ -1171,7 +1171,8 @@ public class ClassC() {
 is considered the most optimal when it has *low coupling* between classes and *high cohesion* in classes. In the above example, the `ClassB`
 only depends on the three methods provided by the `ProtocolA1`, not all the five methods provided by the `ProtocolA`.
 
-Next, we will have examples of an extreme case of the *interface segregation principle*: Segregating larger interfaces to microinterfaces with a single capability/behavior and constructing larger interfaces by
+Next, we will have examples of an extreme case of the *interface segregation principle*: Segregating larger interfaces to
+microinterfaces with a single capability/behavior and constructing larger interfaces by
 inheriting multiple microinterfaces. Let's have a Java example with several automobile classes:
 
 ```java
@@ -1584,7 +1585,7 @@ Python standard library also contains the below abstract base classes that inher
 | `Sequence`          | `Collection`, `Reversible`        |
 
 
-### Program Against Interfaces Principle (Generalized Dependency Inversion Principle)
+### Program Against Interfaces Principle (a.k.a. Generalized Dependency Inversion Principle)
 
 > ***Do not write programs where internal dependencies are concrete object types—instead, program against interfaces.***
 > ***Exceptions to this rule are data classes with no behavior (not counting simple getters/setters) and utility classes***.
@@ -2128,7 +2129,7 @@ Clean microservice design is a relatively simple concept. If you have used the s
 principle), you may have applied the clean microservice design without knowing it. The clean microservice design principle also employs the *adapter pattern* from design patterns discussed later in this chapter. The adapter pattern is used in input and output interface adapters. We can create separate adapter classes for various input sources and output destinations. Many resources (books, websites, etc.) can explain the clean architecture in rather complex terms.
 
 {aside}
-If you are interested, there are similar concepts to *clean architecture* called [hexagonal architecture](https://en.wikipedia.org/wiki/Hexagonal_architecture_(software)) and *onion architecture*.
+If you are interested, there are similar concepts to *clean architecture* called [hexagonal architecture](https://en.wikipedia.org/wiki/Hexagonal_architecture_(software)) (or *ports and adapters architecture*) and *onion architecture*.
 They have the same basic idea of separating technology-related code from the business logic code, making it easy to change technological aspects of the
 software without modifications to the business logic part. They can use different terms, and in hexagonal architecture, you
 have co-centric hexagons instead of circles like in clean architecture, but the basic idea in all of them is the same.
