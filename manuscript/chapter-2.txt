@@ -206,7 +206,7 @@ button.draw();
 // Output:
 // Button drawn
 
-button = IconButton();
+button = new IconButton();
 button.draw();
 
 // Output:
@@ -274,10 +274,10 @@ Below is functional code that uses `map` and `filter` functions:
 
 ```ts
 const numbers = [1, 2, 3, 4, 5];
-const is_even = (number: number) => number % 2 == 0;
+const isEven = (number: number) => number % 2 == 0;
 const squared = (number: number) => number**2;
 
-console.log(numbers.filter(is_even).map(squared));
+console.log(numbers.filter(isEven).map(squared));
 
 // Output:
 // [4, 16]
@@ -1603,7 +1603,7 @@ as a static method in a final utility class:
 ```java
 // Utility class is declared final
 // You should not be able to extend the utility class,
-// because the method implementation are not expected to change
+// because the method implementations are not expected to change
 public final class ParseUtils {
   private ParseUtils() {
     // Utility class with static methods only
@@ -1620,7 +1620,8 @@ public final class ParseUtils {
 }
 ```
 
-The above method implementation is not expected to change in the future. But if we have
+The above method implementation is not expected to change in the future. We are not expecting to have different implementations
+of parsing an integer. But if we have
 a class for performing application configuration parsing, that functionality *can* change, and the *program
 against interfaces principle* should be applied. We should create a `ConfigParser` interface and then provide one or more
 implementations in various implementation classes, like `XyzFormatConfigParser`, `JsonConfigParser`, or `YamlConfigParser`.
