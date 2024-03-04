@@ -109,7 +109,7 @@ public interface Clickable {
 }
 
 
-public class Window implement Drawable {
+public class Window implements Drawable {
   public void draw() {
     System.out.println("Window drawn");
   }
@@ -127,9 +127,9 @@ public class Button implements Drawable, Clickable {
 }
 
 
-final var button = new Button()
-button.draw()
-button.click()
+final var button = new Button();
+button.draw();
+button.click();
 
 // Output:
 // Button drawn
