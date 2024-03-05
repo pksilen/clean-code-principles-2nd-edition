@@ -2717,7 +2717,6 @@ class Circle {
     // ..
   }
 
-
   getOrigin(): Point {
     return this.origin;
   }
@@ -2783,7 +2782,7 @@ public class User {
 
 The above class can be refactored to use *value objects* to reduce the number of attributes:
 
-```python
+```java
 public class Name {
   private String firstName;
   private String lastName;
