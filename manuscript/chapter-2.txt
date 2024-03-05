@@ -3593,6 +3593,9 @@ We could write the above function definition in a very readable manner in Swift:
 func close(after timeoutInMs: Int, if isOpen: Bool): void {
   // ...
 }
+
+// Call it
+close(after: timeoutInMs, if: isOpen);
 ```
 
 ## Encapsulation Principle
@@ -3810,32 +3813,40 @@ public interface Drivable {
   );
 }
 
+
 public interface Engine {
   // Methods like start, stop ...
 }
+
 
 public class CombustionEngine implements Engine {
   // Methods like start, stop ...
 }
 
+
 public class ElectricEngine implements Engine {
   // Methods like start, stop ...
 }
+
 
 public interface Transmission {
   // Methods like changeGear ...
 }
 
+
 public class AutomaticTransmission implements Transmission {
   // Methods like changeGear ...
 }
+
 
 public class ManualTransmission implements Transmission {
   // Methods like changeGear ...
 }
 
+
 // Define DriveType here...
 // Define Design here...
+
 
 public class Car implements Drivable {
   private final Engine engine;
