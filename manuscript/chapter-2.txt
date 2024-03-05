@@ -2914,7 +2914,8 @@ looking at the class implementation will finally reveal it.
 
 The general rule is to name a function so that the purpose of the function is clear. A good function name should not
 make you think. If a function name is *20 or more characters long*, consider abbreviating one or more words in the name.
-The reason for this is to keep the code readable. Very long names are harder to read and slow a developer down. (Remember that
+The reason for this is to keep the code readable. The maximum length of function names should be lower than the maximum length of interface/class names because function names are used more
+often and if the functions are methods they are used in conjunction with an object name. Very long names are harder to read and slow a developer down. (Remember that
 code is more often read than written). Only use abbreviations that are widely used and understandable for other developers.
 If a word does not have a good abbreviation, don't abbreviate.
 
