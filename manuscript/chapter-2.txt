@@ -2571,7 +2571,12 @@ Note that the above `createOrder` method is not production quality because it la
 
 {aside}
 Only the most relevant source code files were listed above to keep the example short enough.
-Complete example is available [here](https://github.com/pksilen/clean-code-principles-code/tree/main/chapter2/orderservice)
+Complete example is available [here](https://github.com/pksilen/clean-code-principles-code/tree/main/chapter2/orderservice).
+The example shows how to use DTOs, domain and database entities and how to generate UUIDs both on the server and the client
+side. For ultimate security, consider generating all identifiers on the server side only. These things are covered in detail
+in later chapters of this book. The given example is not production quality because it is missing things like detailed error
+handling, logging, audit logging, authorization, observability. All of these aspects are discussed by the end of this book
+when you should have learned how to craft production quality software.
 {/aside}
 
 Now we have seen examples of the following benefits of clean microservice design:
