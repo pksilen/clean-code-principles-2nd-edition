@@ -4800,6 +4800,7 @@ public interface ConfigParserFactory {
   ConfigParser createConfigParser(ConfigFormat configFormat);
 }
 
+
 public class ConfigParserFactoryImpl implements
                ConfigParserFactory {
    public final ConfigParser createConfigParser(
@@ -4831,8 +4832,6 @@ uses the `ConfigParserFactory` instance to create a `ConfigParser` to parse the 
 inject a `ConfigParserFactory` mock to an `Application` instance using the `@Injectable` annotation
 from JMockit. Unit testing and mocking are better described later in the _testing principles_ chapter.
 
-<div class="sourceCodeWithoutLabel">
-
 ```java
 public class Application {
   private ConfigParserFactory configParserFactory;
@@ -4855,6 +4854,7 @@ public class Application {
     return config;
   }
 }
+
 
 public class ApplicationTests {
   @Tested
@@ -4924,7 +4924,7 @@ that the function may raise an error.
 Below is an example class with two factory methods and a private constructor:
 
 {title: "Url.ts"}
-```
+```ts
 class Url {
   private constructor(
     scheme: string,
@@ -5176,9 +5176,11 @@ We annotate the constructor with the `@Inject` annotation to inject an instance 
 ```java
 import com.google.inject.Inject;
 
+
 public interface ConfigReader {
   Configuration tryRead(...);
 }
+
 
 public class FileConfigReader
          implements ConfigReader {
@@ -5211,6 +5213,7 @@ when needed to be used.
 ```java
 import com.google.inject.AbstractModule;
 
+
 public class DiModule extends AbstractModule {
   @Override
   protected void configure() {
@@ -5225,6 +5228,7 @@ Alternatively, we can define an eager singleton:
 
 ```java
 import com.google.inject.AbstractModule;
+
 
 public class DiModule extends AbstractModule {
   @Override
@@ -5310,7 +5314,7 @@ is not found in the object's properties, the prototype object will be looked up 
 so that a prototype object contains another prototype object. This chaining is used to implement an inheritance chain.
 Below is a simple example of prototypal inheritance:
 
-```ja
+```js
 const pet = {
   name: '',
   getName: function() { return this.name; }
