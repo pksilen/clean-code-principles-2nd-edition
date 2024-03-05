@@ -4282,7 +4282,8 @@ to consume a message from a data source.
 #### Factories
 
 In domain-driven design, the creation of domain objects can be separated from the object classes to factories. Factories are
-objects that are dedicated to creating objects of a particular type. Domain object factories can be created using the *factory pattern* which is described in a later section of this chapter.
+objects that are dedicated to creating objects of a particular type. Instead of creating a separate factory class, you can create a factory method in the domain entity class.
+Domain object factories can be created using the *factory patterns* which are described in a later section of this chapter.
 
 #### Repositories
 
