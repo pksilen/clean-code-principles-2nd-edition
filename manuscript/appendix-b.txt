@@ -1,6 +1,0 @@
-# Appendix B
-
-Here is the source code for the `proto_to_dict` function:
-
-{format: python}
-![grpc/proto_to_dict.py](resources/chapter6/code/salesitemservice/grpc/proto_to_dict.py)

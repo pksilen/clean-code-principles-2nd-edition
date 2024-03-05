@@ -2188,6 +2188,8 @@ changes in the outer layers do not affect the inner layers. The clean microservi
 and database change, e.g., from REST to gRPC or SQL to NoSQL database. All these changes can be made
 without affecting the business logic (use case and entities layers).
 
+Entity classes do not depend on anything except other entities to create hierarchical entities (aggregates). For example, the `Order`
+entity consists of `OrderItem` entities.
 Put entity-related business rules into entity classes. A `BankAccount` entity class should have
 a method for withdrawing money from the account. That method should enforce a business rule: Withdrawal is possible only if the account has enough funds.
 Don't put the withdrawal functionality into a service class and use `BankAccount`'s `get_balance` and `set_balance` accessors to perform the withdrawal
@@ -2209,26 +2211,79 @@ the validation can be done with the following call: `sprintValidator.validate(ne
 ### Real-Life Example
 
 Let's have a real-life example of creating an API microservice called *order-service*, which handles orders in an
-e-commerce software system. First, we define a REST API controller using Java and Spring Boot:
+e-commerce software system.
+
+{aside}
+Source code for the below example is available [here](https://github.com/pksilen/clean-code-principles-code/tree/main/chapter2/orderservice).
+{/aside}
+
+First, we define a REST API controller using Java and Spring Boot:
 
 {title: "RestOrderController.java"}
 ```java
+package com.example.orderservice.controllers.rest;
+
+import com.example.orderservice.dtos.InputOrder;
+import com.example.orderservice.dtos.OutputOrder;
+import com.example.orderservice.services.OrderService;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
+
+
 @RestController
 @RequestMapping("/orders")
 public class RestOrderController {
+  private final OrderService orderService;
+
   @Autowired
-  private OrderService orderService;
+  public RestOrderController(final OrderService orderService) {
+    this.orderService = orderService;
+  }
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  public final Order createOrder(
-    @RequestBody final OrderArg orderArg
+  public final OutputOrder createOrder(
+    @Valid @RequestBody final InputOrder inputOrder
   ) {
-    return orderService.createOrder(orderArg);
+    return orderService.createOrder(inputOrder);
   }
 
-  // Other API methods...
+  @GetMapping("/{id}")
+  @ResponseStatus(HttpStatus.OK)
+  public final OutputOrder getOrderById(
+    @PathVariable("id") final String id
+  ) {
+    return orderService.getOrderById(id);
+  }
+
+  @GetMapping(params = "userAccountId")
+  @ResponseStatus(HttpStatus.OK)
+  public final Iterable<OutputOrder> getOrdersByUserAccountId(
+    @RequestParam("userAccountId") final String userAccountId
+  ) {
+    return orderService.getOrdersByUserAccountId(userAccountId);
+  }
+
+  @PutMapping("/{id}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public final void updateOrder(
+    @PathVariable final String id,
+    @Valid @RequestBody final InputOrder inputOrder
+  ) {
+    orderService.updateOrder(id, inputOrder);
+  }
+
+  @DeleteMapping("/{id}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public final void deleteOrder(
+    @PathVariable final String id
+  ) {
+    orderService.deleteOrderById(id);
+  }
 }
+
 ```
 
 The API offered by the microservice depends on the controller, as seen in the earlier diagram. The API is currently a REST API, but
@@ -2238,23 +2293,46 @@ for standard input (stdin) or command line interface (CLI). A CLI controller rea
 Remember that you can have multiple controllers active in the same microservice. Your microservice could be used by frontend clients using a REST controller,
 or it could be used on the command line using its CLI controller.
 
-Below is a partial implementation of a GraphQL controller with Java and Spring Boot:
+Below is a partial implementation of a GraphQL controller:
 
 {title: "GraphQlOrderController.java"}
 ```java
+package com.example.orderservice.controllers.graphql;
+
+import com.example.orderservice.dtos.InputOrder;
+import com.example.orderservice.dtos.OutputOrder;
+import com.example.orderservice.repositories.DbOrder;
+import com.example.orderservice.services.OrderService;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.graphql.data.method.annotation.Argument;
+import org.springframework.graphql.data.method.annotation.MutationMapping;
+import org.springframework.graphql.data.method.annotation.QueryMapping;
+import org.springframework.stereotype.Controller;
+
+
 @Controller
 public class GraphQlOrderController {
-  @Autowired
-  private OrderService orderService;
+  private final OrderService orderService;
 
-  @MutationMapping
-  public final Order createOrder(
-    @Argument final OrderArg orderArg
-  ) {
-    return orderService.createOrder(orderArg);
+  @Autowired
+  public GraphQlOrderController(final OrderService orderService) {
+    this.orderService = orderService;
   }
 
-  // Other API methods...
+  @MutationMapping
+  public final OutputOrder createOrder(
+    @Valid @Argument final InputOrder inputOrder
+  ) {
+    return orderService.createOrder(inputOrder);
+  }
+
+  @QueryMapping
+  public final OutputOrder orderById(
+    @Argument final String id
+  ) {
+    return orderService.getOrderById(id);
+  }
 }
 ```
 
@@ -2265,43 +2343,106 @@ the `OrderService` protocol:
 
 {title: "OrderService.java"}
 ```java
+package com.example.orderservice.services;
+
+import com.example.orderservice.dtos.InputOrder;
+import com.example.orderservice.dtos.OutputOrder;
+import com.example.orderservice.repositories.DbOrder;
+
 public interface OrderService {
-  Order createOrder(OrderArg orderArg);
-  Order getOrderById(Long id);
-  Iterable<Order> getOrderByUserAccountId(Long userAccountId);
-  void updateOrder(Long id, OrderArg orderArg);
-  void deleteOrderById(Long id);
+  OutputOrder createOrder(final InputOrder inputOrder);
+  OutputOrder getOrderById(final String id);
+  Iterable<OutputOrder> getOrdersByUserAccountId(final String userAccountId);
+  void updateOrder(final String id, final InputOrder inputOrder);
+  void deleteOrderById(final String id);
 }
 ```
 
 The below `OrderServiceImpl` class implements the `OrderService` protocol:
 
 {title: "OrderServiceImpl.java"}
-```java
+package com.example.orderservice.services;
+
+import com.example.orderservice.Application;
+import com.example.orderservice.dtos.InputOrder;
+import com.example.orderservice.dtos.OutputOrder;
+import com.example.orderservice.entities.Order;
+import com.example.orderservice.repositories.DbOrder;
+import com.example.orderservice.errors.EntityNotFoundError;
+import com.example.orderservice.repositories.OrderRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.stream.StreamSupport;
+
 @Service
 public class OrderServiceImpl implements OrderService {
   private static final String ORDER = "Order";
+  private final OrderRepository orderRepository;
 
   @Autowired
-  private OrderRepository orderRepository;
-
-  @Override
-  public final Order createOrder(
-    final OrderArg orderArg
+  public OrderServiceImpl(
+    @Qualifier(Application.DATABASE_TYPE) final OrderRepository orderRepository
   ) {
-    final var order = Order.from(orderArg);
-    return orderRepository.save(order);
+    this.orderRepository = orderRepository;
   }
 
   @Override
-  public final Order getOrderById(final Long id) {
-    return orderRepository.findById(id)
-             .orElseThrow(() ->
-               new EntityNotFoundError(ORDER, id));
+  public final OutputOrder createOrder(final InputOrder inputOrder) {
+    // Creates domain object 'order' performing, e.g. dynamic validation
+    // according to business logic
+    final var order = Order.from(inputOrder);
+
+    // Creates database entity which can be different from domain entity
+    final var dbOrder = DbOrder.from(order);
+
+    orderRepository.save(dbOrder);
+
+    // Returns output DTO which can differ from the domain entity, e.g.
+    // domain entity might contain fields not wanted to be delivered to clients
+    // Output DTO class contains validations which can be enabled in controllers
+    // This can be useful to prevent disclosure of sensitive data upon a successful
+    // injection attack
+    return order.toOutput();
   }
 
-  // Rest of the methods...
+  @Override
+  public final OutputOrder getOrderById(final String id) {
+    final var dbOrder = orderRepository.findById(id)
+      .orElseThrow(() ->
+        new EntityNotFoundError(ORDER, id));
+
+    return dbOrder.toDomainEntity().toOutput();
+  }
+
+  @Override
+  public Iterable<OutputOrder> getOrdersByUserAccountId(final String userAccountId) {
+    final var dbOrders = orderRepository.findByUserAccountId(userAccountId);
+    return StreamSupport.stream(dbOrders.spliterator(), false)
+      .map(dbOrder -> dbOrder.toDomainEntity().toOutput()).toList();
+  }
+
+  @Override
+  public void updateOrder(final String id, InputOrder inputOrder) {
+    if (orderRepository.existsById(id)) {
+      final var order = Order.from(inputOrder);
+      final var dbOrder = DbOrder.from(order, id);
+      orderRepository.save(dbOrder);
+    } else {
+      throw new EntityNotFoundError(ORDER, id);
+    }
+  }
+
+  @Override
+  public void deleteOrderById(final String id) {
+    if (orderRepository.existsById(id)) {
+      orderRepository.deleteById(id);
+    }
+  }
 }
+
 ```
 
 The `OrderServiceImpl` class has a dependency on an order repository. This dependency is also inverted. The `OrderServiceImpl` class depends only on the `OrderRepository` interface. The order repository is used to orchestrate the persistence of order entities.
@@ -2312,18 +2453,54 @@ Below is the `OrderRepository` protocol:
 
 {title: "OrderRepository.java"}
 ```java
+package com.example.orderservice.repositories;
+
+import java.util.Optional;
+
+
 public interface OrderRepository {
-  Order save(Order order);
-  Order findById(Long id);
-  // ...
+  <S extends DbOrder> S save(final S order);
+  Optional<DbOrder> findById(final String id);
+  boolean existsById(final String id);
+  Iterable<DbOrder> findByUserAccountId(final String userAccountId);
+  void deleteById(final String id);
 }
 ```
 
-The `OrderRepository` interface depends only on the `Order` entity class. You can introduce an *output interface adapter* class
+You can introduce an *output interface adapter* class
 that implements the `OrderRepository` interface. An output interface adapter adapts a particular concrete output destination (e.g., a database) to the `OrderRepository` interface.
-Entity classes do not depend on anything except other entities to create hierarchical entities (aggregates). For example, the `Order`
-entity consists of `OrderItem` entities. For example, you can define `SqlOrderRepository` *output interface adapter* class for an SQL database.
-Changing the database to MongoDB can be done by creating a new `MongoDbOrderRepository` output interface adapter class that implements the `OrderRepository` interface.
+For example, you can define `SqlOrderRepository` *output interface adapter* class for an SQL database:
+
+{title: "SqlOrderRepository.java"}
+```java
+package com.example.orderservice.repositories;
+
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.stereotype.Repository;
+
+
+@Qualifier("sql")
+@Repository
+public interface SqlOrderRepository extends CrudRepository<DbOrder, String>, OrderRepository {
+}
+```
+
+Changing the database to MongoDB can be done by creating a new `MongoDbOrderRepository` output interface adapter class that implements the `OrderRepository` interface:
+
+{title: "MongoDbOrderRepository.java"}
+```java
+package com.example.orderservice.repositories;
+
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.stereotype.Repository;
+
+@Qualifier("mongodb")
+@Repository
+public interface MongoDbOrderRepository extends MongoRepository<DbOrder, String>, OrderRepository {
+}
+```
 
 ![Clean Microservice Design for Order Service](resources/chapter2/images/04-05.png)
 
@@ -2346,22 +2523,41 @@ Let's add a feature where the shopping cart is emptied when an order is created:
 
 {title: "ShoppingCartEmptyingOrderService.java"}
 ```java
+package com.example.orderservice.services.application;
+
+import com.example.orderservice.Application;
+import com.example.orderservice.dtos.InputOrder;
+import com.example.orderservice.dtos.OutputOrder;
+import com.example.orderservice.entities.Order;
+import com.example.orderservice.repositories.DbOrder;
+import com.example.orderservice.repositories.OrderRepository;
+import com.example.orderservice.services.external.ShoppingCartService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Service;
+
+
 @Service
 public class ShoppingCartEmptyingOrderService implements OrderService {
-  @Autowired
-  private OrderRepository orderRepository;
+  private final OrderRepository orderRepository;
+  private final ShoppingCartService shoppingCartService;
 
   @Autowired
-  private ShoppingCartService shoppingCartService;
+  public ShoppingCartEmptyingOrderService(
+    @Qualifier(Application.DATABASE_TYPE) final OrderRepository orderRepository,
+    final ShoppingCartService shoppingCartService
+  ) {
+    this.orderRepository = orderRepository;
+    this.shoppingCartService = shoppingCartService;
+  }
 
   @Override
-  public final Order createOrder(
-    final OrderArg orderArg
-  ) {
-    final var order = Order.from(orderArg);
-    final var savedOrder = orderRepository.save(order);
-    shoppingCartService.emptyCart(order.userAccountId);
-    return savedOrder;
+  public final OutputOrder createOrder(final InputOrder inputOrder) {
+    final var order = Order.from(inputOrder);
+    shoppingCartService.emptyCart(order.getUserAccountId());
+    final var dbOrder = DbOrder.from(order);
+    orderRepository.save(dbOrder);
+    return order.toOutput();
   }
 }
 ```
@@ -2371,7 +2567,12 @@ shopping cart service. We can create an *output interface adapter* class that is
 For example, that interface adapter class connects to a particular external shopping cart service via a REST API. Once again,
 the dependency injector will inject a concrete `ShoppingCartService` implementation to an instance of the `ShoppingCartEmptyingOrderService` class.
 
-Note that the above `create_order` method is not production quality because it lacks a transaction.
+Note that the above `createOrder` method is not production quality because it lacks a transaction.
+
+{aside}
+Only the most relevant source code files were listed above to keep the example short enough.
+Complete example is available [here](https://github.com/pksilen/clean-code-principles-code/tree/main/chapter2/orderservice)
+{/aside}
 
 Now we have seen examples of the following benefits of clean microservice design:
 
@@ -2394,7 +2595,10 @@ to a *Flask*-based microservice. In that example, we can change the used web fra
 Thus, we can be confident that we do not break any existing functionality. We successfully apply the *open-closed principle* to our software.
 
 It should be noted that the clean microservice design principle applies to other microservices with input or output, not just API microservices. We will have an example of this later in this chapter.
-One additional benefit of the clean microservice design that has not been mentioned yet is that you can write component tests that test the software component's business logic (or the model) using fake input and output adapters instead of the real ones. Let's take a data exporter microservice as an example. It reads data from an input source (e.g., Apache Kafka) and transforms it in various ways before writing to an output destination (e.g., Apache Pulsar). We can test the transformation business logic using a fake input and output adapter injected into the software component. Running the tests will be fast because there is no need to spin up an instance of Kafka and Pulsar. Later, we can augment the component tests with some integration tests that test the integration to real input and output. We will talk more about component and integration tests in a later chapter.
+One additional benefit of the clean microservice design that has not been mentioned yet is that you can write component tests that test the software component's business logic (or the model) using fake input and output adapters instead of the real ones. Let's take a data exporter microservice as an example. It reads data from an input source (e.g., Apache Kafka) and transforms it in various ways before writing to an output destination (e.g., Apache Pulsar).
+We can test the transformation business logic using a fake input and output adapter injected into the software component.
+Running the tests will be fast because there is no need to spin up an instance of Kafka and Pulsar. Later, we can augment
+the component tests with some integration tests that test the integration to real input and output. We will talk more about component and integration tests in a later chapter.
 
 ## Vertical Slice Design Principle
 
