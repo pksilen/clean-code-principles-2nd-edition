@@ -5355,6 +5355,7 @@ its methods to achieve thread safety. More about thread safety in the coming _co
 ```cpp
 #include <memory>
 
+
 template <typename T>
 class ObjectPool
 {
@@ -5372,6 +5373,7 @@ public:
 #include "ScopedSpinlock.h"
 #include "Spinlock.h"
 #include "ObjectPool.h"
+
 
 template <typename T>
 class LimitedSizeObjectPool : public ObjectPool<T>
@@ -5428,10 +5430,11 @@ objects returned to the pool are cleared before reusing. The below implementatio
 whether the allocated objects are wrapped inside a shared or unique pointer. You can also supply parameters used when constructing an object.
 
 {title: "ObjectPool.h"}
-```
+```cpp
 #include <concepts>
 #include <deque>
 #include <memory>
+
 
 template<typename T>
 concept ClearableObject =
@@ -5473,6 +5476,7 @@ public:
 #include "ScopedLock.h"
 #include "Spinlock.h"
 #include "ObjectPool.h"
+
 
 template<
   ClearableObject O,
