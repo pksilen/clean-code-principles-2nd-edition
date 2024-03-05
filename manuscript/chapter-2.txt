@@ -3123,8 +3123,8 @@ There are several methods in the JavaScript `Array` class for finding elements i
 
 Here are the suggested new names for the above functions:
 
-- `find` ==> `findFirstThat`
-- `findIndex` ==> `findFirstIndexThat`
+- `find` ==> `findFirst`
+- `findIndex` ==> `findFirstIndex`
 - `includes` ==> `include`
 - `indexOf` ==> `findFirstIndexOf`
 - `lastIndexOf` ==> `findLastIndexOf`
@@ -3134,8 +3134,8 @@ Below are examples of these new function names in use:
 ```js
 const numbers = [1, 2, 3, 4, 5, 5];
 const isEven = nbr => (nbr % 2) === 0;
-const firstEvenNumber = numbers.findFirstThat(isEven);
-const firstEvenNumberIndex = numbers.findFirstIndexThat(isEven);
+const firstEvenNumber = numbers.findFirst(isEven);
+const firstEvenNumberIndex = numbers.findFirstIndex(isEven);
 const numbersIncludeFour = numbers.include(4);
 const firstIndexOfFive = numbers.findFirstIndexOf(5);
 const lastIndexOfFive = numbers.findLastIndexOf(5);
