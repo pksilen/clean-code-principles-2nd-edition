@@ -2663,6 +2663,63 @@ order-service
             └── SqlDeleteOrderRepository.py
 ```
 
+The above example is quite simplistic and *CRUDish*. Let's have a more realistic example where we have also applied *domain-driven design* (DDD).
+Our example is for a travel booking microservice. After applying the DDD, we should have a ubiquitous language defined for our microservices, and
+we can define our features using that language. We can end up with the following features:
+
+- Book a trip
+- Cancel a trip
+- Hotel reservation
+    - Add hotel reservation to a trip
+    - Replace hotel reservation for a trip
+    - Remove hotel reservation from a trip
+- Flight reservation
+    - Add flight reservation to a trip
+    - Replace flight reservation for a trip
+    - Remove flight reservation from a trip
+- Rental Car Reservation
+    - Add rental car reservation to a trip
+    - Replace rental car reservatin to a trip
+    - Remove rental car reservation from a trip
+
+Let's use the *vertical slice design principle* and layout the directory structure for our microservice:
+
+```
+travel-booking-service
+└── src
+    ├── common
+    ├── booktrip
+    │   ├── BookTripRepository.py
+    │   ├── BookTripService.py
+    │   ├── BookTripServiceImpl.py
+    │   ├── RestBookTripController.py
+    │   └── SqlBookTripRepository.py
+    ├── canceltrip
+    │   ├── CancelTripRepository.py
+    │   ├── CancelTripService.py
+    │   ├── CancelTripServiceImpl.py
+    │   ├── RestCancelTripController.py
+    │   └── SqlCancelTripRepository.py
+    ├── hotelreservation
+    │   ├── HotelReservationRepository.py
+    │   ├── HotelReservationService.py
+    │   ├── HotelReservationServiceImpl.py
+    │   ├── RestHotelReservationController.py
+    │   └── SqlHotelReservationRepository.py
+    ├── flightreservation
+    │   ├── FlightReservationRepository.py
+    │   ├── FlightReservationService.py
+    │   ├── FlightReservationServiceImpl.py
+    │   ├── RestFlightReservationController.py
+    │   └── SqlFlightReservationRepository.py
+    └── rentalcarreservation
+        ├── RentalCarReservationRepository.py
+        ├── RentalCarReservationService.py
+        ├── RentalCarReservationServiceImpl.py
+        ├── RestRentalCarReservationController.py
+        └── SqlRentalCarReservationRepository.py
+```
+
 ## Class Organization Principle
 
 A class should be organized in the following manner:
