@@ -205,10 +205,10 @@ The benefits of TDD are many:
 - You don't write unnecessary code because you only write code that makes the tests pass (you can follow the [YAGNI principle](https://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it))
 - Less need for debugging
 
-TDD aims to maximize the external and internal quality of the software. External quality is the quality the users see, e.g., a minimal number of bugs and correct features.
-Internal quality is what the developers see. If internal quality is low, it is more likely that a developer can introduce bugs (i.e., cause low external quality) to
+TDD's main benefit is not finding bugs early but improved design due to constant refactoring. You can consider TDD as an effective design tool. TDD aims to maximize the external and internal quality of the software. External quality is the quality the users see, e.g., a minimal number of bugs and correct features.
+Internal quality is what the developers see: good design and lack of technical debt. If internal quality is low, it is more likely that a developer can introduce bugs (i.e., cause low external quality) to
 the software. High internal quality can be achieved with TDD. You have a comprehensive set of tests and a good design with low technical debt.
-It will be easy for a developer to maintain and develop such software further.
+It will be easy for any developer to maintain and develop such software further.
 
 I have been in the industry for almost 30 years, and when I began coding, there were no automated tests or
 test-driven development. Only since around 2010 have I been writing automated unit tests. Due to this
