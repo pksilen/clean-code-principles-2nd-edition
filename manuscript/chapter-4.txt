@@ -2890,7 +2890,7 @@ Then("I should see the search bar", () => {
 If you have implemented integration tests as black-box tests outside the microservice, an integration testing environment must be set up before integration tests can be run. An integration testing
 environment is where the tested microservice and all its dependencies are running. The easiest way to
 set up an integration testing environment for a containerized microservice is to use [Docker Compose](https://docs.docker.com/compose/),
-a simple container orchestration tool for a single host. If you have implemented integration tests using a unit testing framework, i.e., inside the microservice,
+a simple container orchestration tool for a single host. Docker Compose offers a clean, declarative way of defining the external services on which your microservice depends. If you have implemented integration tests using a unit testing framework, i.e., inside the microservice,
 you don't need to set up a testing environment (so this section does not apply).
 You can set up the needed environment (external dependencies) in each integration test separately by using testcontainers, for example.
 
