@@ -8910,17 +8910,13 @@ Let's implement a list view for todos:
 {title: "TodoListView.tsx"}
 ```
 import { connect } from 'react-redux';
-import { useEffect } from "react";
-import { controller, ActionDispatchers, State }
-  from './todosController';
+import { useEffect } from 'react';
+import { controller, ActionDispatchers, State } from '../../todoController';
+
 
 type Props = ActionDispatchers & State;
 
-function TodoListView({
-  toggleTodoDone,
-  startFetchTodos,
-  todos
-}: Props) {
+function TodoListView({ toggleTodoDone, startFetchTodos, todos }: Props) {
   useEffect(() => {
     startFetchTodos();
   }, [startFetchTodos]);
@@ -8929,12 +8925,7 @@ function TodoListView({
     <li key={id}>
       {id}&nbsp;
       {name}&nbsp;
-      {isDone
-        ? undefined
-        : <button onClick={() => toggleTodoDone(id)}>
-            Mark done
-          </button>
-      }
+      {isDone || <button onClick={() => toggleTodoDone(id)}>Mark done</button>}
     </li>
   ));
 
@@ -8942,17 +8933,18 @@ function TodoListView({
 }
 
 // Here we connect the view to the model using the controller
-export default connect(
-  controller.getState,
-  () => controller.actionDispatchers
+export default connect(controller.getState, () =>
+  controller.getActionDispatchers()
 )(TodoListView);
+
 ```
 
 Below is the base class for controllers:
 
 {title: "Controller.ts"}
 ```ts
-import AbstractAction from "./AbstractAction";
+import AbstractAction from './AbstractAction';
+
 
 export type ReduxDispatch =
  (reduxActionObject: { type: AbstractAction<any> }) => void;
@@ -8972,31 +8964,38 @@ Below is the controller for todos:
 
 {title: "todoController.ts"}
 ```ts
-import store from './store';
-import { AppState } from "./AppState";
-import ToggleDoneTodoAction from "./ToggleDoneTodoAction";
-import StartFetchTodosAction from "./StartFetchTodosAction";
-import Controller from "./Controller";
+import store from '../common/model/store';
+import { AppState } from '../common/model/AppState';
+import ToggleDoneTodoAction from './model/actions/ToggleDoneTodoAction';
+import StartFetchTodosAction from './model/actions/StartFetchTodosAction';
+import Controller from '../common/Controller';
+
 
 class TodoController extends Controller {
-  readonly actionDispatchers = {
-    toggleTodoDone: (id: number) =>
-      this.dispatch(new ToggleDoneTodoAction(id)),
-
-    startFetchTodos: () =>
-      this.dispatch(new StartFetchTodosAction())
-  }
-
   getState(appState: AppState) {
     return {
       todos: appState.todosState.todos,
-    }
+    };
+  }
+
+  getActionDispatchers() {
+    return {
+      toggleTodoDone: (id: number) =>
+        this.dispatch(new ToggleDoneTodoAction(id)),
+
+      startFetchTodos: () => {
+        this.dispatch(new StartFetchTodosAction());
+      }
+    };
   }
 }
 
-export const controller = new TodosController(store.dispatch);
+export const controller = new TodoController(store.dispatch);
 export type State = ReturnType<typeof controller.getState>;
-export type ActionDispatchers = typeof controller.actionDispatchers;
+
+export type ActionDispatchers = ReturnType<
+  typeof controller.getActionDispatchers
+>;
 ```
 
 In the development phase, we can use the following temporary
@@ -9004,22 +9003,22 @@ implementation of the `StartFetchTodosAction` class:
 
 {title: "StartFetchTodosAction.ts"}
 ```ts
-import { TodoState } from "./TodoState";
-import AbstractTodoAction from "./AbstractTodoAction";
+import { TodoState } from '../state/TodoState';
+import AbstractTodoAction from './AbstractTodoAction';
 
-export default class StartFetchTodosAction extends
-                       AbstractTodoAction {
+
+export default class StartFetchTodosAction extends AbstractTodoAction {
   perform(state: TodoState): TodoState {
     return {
       todos: [
         {
           id: 1,
-          name: "Todo 1",
+          name: 'Todo 1',
           isDone: false,
         },
         {
           id: 2,
-          name: "Todo 2",
+          name: 'Todo 2',
           isDone: false,
         },
       ],
@@ -9034,17 +9033,13 @@ Now we can introduce a new view for todos, a `TodoTableView` which can utilize t
 {title: "TodoTableView.tsx"}
 ```tsx
 import { connect } from 'react-redux';
-import { useEffect } from "react";
-import { controller, ActionDispatchers, State }
-  from './todosController';
+import { useEffect } from 'react';
+import { controller, ActionDispatchers, State } from '../../todoController';
+
 
 type Props = ActionDispatchers & State;
 
-function TodoTableView({
-  toggleTodoDone,
-  startFetchTodos,
-  todos
-}: Props) {
+function TodosListView({ toggleTodoDone, startFetchTodos, todos }: Props) {
   useEffect(() => {
     startFetchTodos();
   }, [startFetchTodos]);
@@ -9053,23 +9048,22 @@ function TodoTableView({
     <tr key={id}>
       <td>{id}</td>
       <td>{name}</td>
-        <td>
-          <input
-            type="checkbox"
-            checked={isDone}
-            onChange={() => toggleTodoDone(id)}
-          />
-        </td>
+      <td>
+        <input type="checkbox" checked={isDone} onChange={() => toggleTodoDone(id)} />
+      </td>
     </tr>
   ));
 
-  return <table><tbody>{todoElements}</tbody></table>;
+  return (
+    <table>
+      <tbody>{todoElements}</tbody>
+    </table>
+  );
 }
 
-export default connect(
-  controller.getState,
-  () => controller.actionDispatchers
-)(TodoTableView);
+export default connect(controller.getState, () =>
+  controller.getActionDispatchers()
+)(TodosListView);
 ```
 
 We can notice some duplication in the `TodoListView` and `TodoTableView` components.
@@ -9078,16 +9072,17 @@ as parameter the type of a single todo view, either a list item or a table row v
 
 {title: "TodosView.tsx"}
 ```tsx
-import { useEffect } from "react";
-import { connect } from "react-redux";
-import ListItemTodoView from './ListItemTodoView';
-import TableRowTodoView from './TableRowTodoView';
-import { controller, ActionDispatchers, State }
-  from './todosController';
+import { useEffect } from 'react';
+import { connect } from 'react-redux';
+import ListItemTodoView from './list/ListItemTodoView';
+import TableRowTodoView from './table/TableRowTodoView';
+import { controller, ActionDispatchers, State } from '../todoController';
 
-type Props = ActionDispatchers & State & {
+
+type Props = ActionDispatchers &
+  State & {
     TodoView: typeof ListItemTodoView | typeof TableRowTodoView;
-};
+  };
 
 function TodosView({
   toggleTodoDone,
@@ -9096,25 +9091,20 @@ function TodosView({
   TodoView
 }: Props) {
   useEffect(() => {
-    startFetchTodos()
+    startFetchTodos();
   }, [startFetchTodos]);
 
-  const todoViews = todos.map((todo) =>
-    <TodoView
-      key={todo.id}
-      todo={todo}
-      toggleTodoDone={toggleTodoDone}
-    />
-  );
+  const todoViews = todos.map((todo) => (
+    <TodoView key={todo.id} todo={todo} toggleTodoDone={toggleTodoDone} />
+  ));
 
   return TodoView === ListItemTodoView
       ? <ul>{todoViews}</ul>
       : <table><tbody>{todoViews}</tbody></table>;
 }
 
-export default connect(
-  controller.getState,
-  () => controller.actionDispatchers
+export default connect(controller.getState, () =>
+  controller.getActionDispatchers()
 )(TodosView);
 ```
 
@@ -9122,59 +9112,82 @@ Below is the view for showing a single todo as a list item:
 
 {title: "TodosViewProps.ts"}
 ```ts
-import { Todo } from "./Todo";
+import { Todo } from '../model/state/Todo';
 
-export type TodoViewProps = {
-  toggleTodoDone: (id: number) => void,
-  todo: Todo
-}
+
+export type TodosViewProps = {
+  toggleTodoDone: (id: number) => void;
+  todo: Todo;
+};
+
 ```
 
 {title: "ListItemTodoView.tsx"}
 ```tsx
-import { TodoViewProps } from './TodoViewProps';
+import { TodosViewProps } from '../TodosViewProps';
+
 
 export default function ListItemTodoView({
   toggleTodoDone,
-  todo: { id, name, isDone }
-}: TodoViewProps) {
+  todo: { id, name, isDone },
+}: TodosViewProps) {
   return (
     <li>
       {id}&nbsp;
       {name}&nbsp;
-      { isDone ?
-        undefined :
-        <button onClick={() => toggleTodoDone(id)}>
-          Mark done
-        </button> }
+      {isDone || <button onClick={() => toggleTodoDone(id)}>Mark done</button>}
     </li>
   );
 }
+
 ```
 
 Below is the view for showing a single todo as a table row:
 
 {title: "TableRowTodoView.tsx"}
 ```tsx
-import { TodoViewProps } from './TodoViewProps';
+import { TodosViewProps } from '../TodosViewProps';
+
 
 export default function TableRowTodoView({
   toggleTodoDone,
-  todo: { id, name, isDone }
-}: TodoViewProps) {
+  todo: { id, name, isDone },
+}: TodosViewProps) {
   return (
     <tr>
       <td>{id}</td>
       <td>{name}</td>
       <td>
-        <input
-          type="checkbox"
-          checked={isDone}
-          onChange={() => toggleTodoDone(id)}
-        />
+        <input type="checkbox" checked={isDone} onChange={() => toggleTodoDone(id)} />
       </td>
-    </tr>);
+    </tr>
+  );
 }
+
+```
+
+In the `App` component, we can decide how to render todos:
+
+{title: "App.tsx"}
+```tsx
+import React from 'react';
+import {Provider} from 'react-redux';
+import store from '../common/model/store';
+import TodosView from '../todo/view/TodosView';
+import ListItemTodoView from '../todo/view/list/ListItemTodoView';
+
+function App() {
+  return (
+    <div>
+      <Provider store={store}>
+        { /*You can change the TodoView to TableRowTodoView */ }
+        <TodosView TodoView={ListItemTodoView} />
+      </Provider>
+    </div>
+  );
+}
+
+export default App;
 ```
 
 ![Figure 3.9 Frontend MVC Architecture with Redux](images/03-07.png)
