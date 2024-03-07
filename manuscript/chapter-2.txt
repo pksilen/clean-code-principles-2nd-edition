@@ -2242,6 +2242,8 @@ public class RestOrderController {
     this.orderService = orderService;
   }
 
+  // Controller methods should not contain any business logic
+  // Controller method should delegate to application services (use cases)
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   public final OutputOrder createOrder(
@@ -2361,7 +2363,7 @@ public interface OrderService {
 The below `OrderServiceImpl` class implements the `OrderService` protocol:
 
 {title: "OrderServiceImpl.java"}
-package com.example.orderservice.services;
+package com.example.orderservice.services.application;
 
 import com.example.orderservice.Application;
 import com.example.orderservice.dtos.InputOrder;
@@ -2372,11 +2374,12 @@ import com.example.orderservice.errors.EntityNotFoundError;
 import com.example.orderservice.repositories.OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.stream.StreamSupport;
 
+@Primary
 @Service
 public class OrderServiceImpl implements OrderService {
   private static final String ORDER = "Order";
@@ -2391,9 +2394,17 @@ public class OrderServiceImpl implements OrderService {
 
   @Override
   public final OutputOrder createOrder(final InputOrder inputOrder) {
-    // Creates domain object 'order' performing, e.g. dynamic validation
-    // according to business logic
+    // Input DTO is converted to valid domain entity
     final var order = Order.from(inputOrder);
+
+    // If your model had additional business logic, you
+    // could perform it here using domain entity and/or
+    // domain service methods
+    // Do not inline all the business logic code here, but
+    // create separate methods either in domain entity or
+    // domain service classes.
+    // This example does not have any additional business
+    // logic
 
     // Creates database entity which can be different from domain entity
     final var dbOrder = DbOrder.from(order);
@@ -2442,7 +2453,6 @@ public class OrderServiceImpl implements OrderService {
     }
   }
 }
-
 ```
 
 The `OrderServiceImpl` class has a dependency on an order repository. This dependency is also inverted. The `OrderServiceImpl` class depends only on the `OrderRepository` interface. The order repository is used to orchestrate the persistence of order entities.
