@@ -5823,10 +5823,7 @@ public class ConfigurationImpl implements Configuration {
   public InputConfig tryGetInputConfig() {
     return inputConfig.orElseGet(() -> {
       tryReadConfigIfNeeded();
-
-      inputConfig =
-        inputConfigParser.tryParseInputConfig(configString);
-
+      inputConfig = inputConfigParser.tryParseInputConfig(configString);
       return inputConfig;
     });
   }
@@ -5841,8 +5838,7 @@ public class ConfigurationImpl implements Configuration {
 
   private void tryReadConfigIfNeeded() {
     if (configString.isEmpty()) {
-      configString =
-        configReader.tryRead(...);
+      configString = configReader.tryRead(...);
     }
   }
 }
