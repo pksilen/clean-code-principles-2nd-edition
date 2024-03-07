@@ -7937,7 +7937,7 @@ public class Parser {
   public static class ParseError extends Exception {
   }
 
-  Expression tryParse(final String sentence) throws ParseError {
+  Expression parse(final String sentence) throws ParseError {
     try {
       final var literal = Integer.parseInt(sentence);
       return new LiteralExpression(literal);
@@ -8070,7 +8070,7 @@ class ParserTests {
 Let's make the test pass:
 
 ```java
-class Parser:
+class Parser {
   // ...
 
   Expression parse(final String sentence) throws ParseError {
@@ -8092,6 +8092,7 @@ class Parser:
   }
 
   // ...
+}
 ```
 
 The final four tests also pass:
