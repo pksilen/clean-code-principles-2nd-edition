@@ -9313,7 +9313,12 @@ the following benefits:
 - Easier debugging of state-related problems, e.g., using the Redux DevTools browser extension
 
 We can also change the view implementation from React to Angular without modifying the controller
-or model layer. This can be done, for example, using the _@angular-redux2/store_ library.
+or model layer. This can be done, for example, using the [@angular-redux2/store](https://www.npmjs.com/package/@angular-redux2/store) library.
+
+{aside}
+Source code for the below example is available [here](https://github.com/pksilen/clean-code-principles-code/tree/main/chapter2/mvvm_angular).
+{/aside}
+
 Below is a todos table view implemented as an Angular component:
 
 {title: "todos-table-view.component.ts"}
@@ -9321,12 +9326,12 @@ Below is a todos table view implemented as an Angular component:
 import { Component, OnInit } from "@angular/core";
 import { NgRedux, Select } from '@angular-redux2/store';
 import { Observable } from "rxjs";
-import { controller } from './todosController';
-import { TodoState } from "./TodoState";
-import { AppState } from "./AppState";
+import { controller } from '../todoController';
+import { TodoState } from "../model/state/TodoState";
+import { AppState } from "../../common/model/state/AppState";
 
 const { startFetchTodos,
-        toggleTodoDone } = controller.actionDispatchers;
+  toggleTodoDone } = controller.getActionDispatchers();
 
 @Component({
   selector: 'todos-table-view',
@@ -9347,6 +9352,7 @@ const { startFetchTodos,
   `
 })
 export class TodosTableView implements OnInit {
+  // @ts-ignore
   @Select(controller.getState) todoState: Observable<TodoState>;
 
   constructor(private ngRedux: NgRedux<AppState>) {}
@@ -9383,11 +9389,10 @@ export class AppComponent {
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { NgReduxModule, NgRedux } from '@angular-redux2/store';
-
 import { AppComponent } from './app.component';
-import store from './store';
-import { AppState } from "./AppState";
-import { TodosTableView } from "./todos-table-view.component";
+import store from '../common/model/state/store';
+import { AppState } from "../common/model/state/AppState";
+import { TodosTableView } from "../todo/view/todos-table-view.component";
 
 @NgModule({
   declarations: [
