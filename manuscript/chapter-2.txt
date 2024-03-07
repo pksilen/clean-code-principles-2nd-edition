@@ -6331,7 +6331,7 @@ We can create a `XyzLogger` adapter class for the new logging library and update
 {title: "XyzLogger.ts"}
 ```ts
 import xyzLogWriter from 'xyz-logging-library';
-import Logger from Logger;
+import Logger from 'Logger';
 import LogLevel from 'LogLevel';
 
 
@@ -6639,12 +6639,12 @@ function timed(func: any, context: ClassMethodDecoratorContext) {
 }
 
 
-  class Adder {
-    @timed
-    add(a: number, b: number): number {
-      return a + b;
-    }
+class Adder {
+  @timed
+  add(a: number, b: number): number {
+    return a + b;
   }
+}
 
 
 // Prints, for example: Exec of func "add" took 7500 ns
@@ -6692,6 +6692,17 @@ class Adder {
     return a + b;
   }
 }
+
+// Prints, e.g.:
+// Exec of func "add" took 7200 ns
+// Func "add" executed
+const result = new Adder().add(1, 2);
+
+// NOTE! Decorators are applied
+// in reverse order compared to order
+// they are listed above the decorated
+// function
+```
 
 #### Flyweight Pattern
 
