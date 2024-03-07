@@ -9226,6 +9226,55 @@ export default connect(controller.getState, () =>
 )(TodosView);
 ```
 
+We should improve the part where we call the `useEffect` hook to make the code more
+readable. Let's introduce a custom hook:
+
+{title: "afterMount.ts"}
+```ts
+import { useEffect } from "react";
+
+export default function afterMount(func: () => void) {
+  useEffect(() => func(), [func]);
+}
+```
+
+Note that you will get a React Hooks linter error from the above code, because the hook function name
+does not begin with "use". Disable that rule or rename the function to `useAfterMount`. I prefer the first alternative.
+
+{title: "TodosView.tsx"}
+```tsx
+import { useEffect } from "react";
+import { connect } from "react-redux";
+import ListItemTodoView from "./list/ListItemTodoView";
+import TableRowTodoView from "./table/TableRowTodoView";
+import { controller, ActionDispatchers, State } from "../todoController";
+import createTodosView from "./createTodosView";
+
+type Props = ActionDispatchers &
+  State & {
+    TodoView: typeof ListItemTodoView | typeof TableRowTodoView;
+  };
+
+function TodosView({
+  toggleTodoDone,
+  startFetchTodos,
+  todos,
+  TodoView,
+}: Props) {
+  afterMount(startFetchTodos);
+
+  const todoViews = todos.map((todo) => (
+    <TodoView key={todo.id} todo={todo} toggleTodoDone={toggleTodoDone} />
+  ));
+
+  return createTodosView(TodoView, todoViews);
+}
+
+export default connect(controller.getState, () =>
+  controller.getActionDispatchers()
+)(TodosView);
+```
+
 In the `App` component, we can decide how to render todos:
 
 {title: "App.tsx"}
