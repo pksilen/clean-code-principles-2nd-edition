@@ -8289,7 +8289,6 @@ public class UserStory {
 Let's have another example with an `Order` class. An order can have a state, like paid, packaged, delivered, etc.
 Below we implement the order states as classes:
 
-
 ```java
 public interface OrderState {
   String getMessage(String orderId);
@@ -8902,9 +8901,13 @@ Let's first implement the todo example with React and Redux and later show how t
 with an Angular view without any modification to the controller or the model layer. Note that the code for some classes
 is not listed below. You can assume those classes are the same as defined in _command/action pattern_ examples.
 
+{aside}
+Source code for the below example is available [here](https://github.com/pksilen/clean-code-principles-code/tree/main/chapter2/mvvm).
+{/aside}
+
 Let's implement a list view for todos:
 
-{title: "TodosListView.tsx"}
+{title: "TodoListView.tsx"}
 ```
 import { connect } from 'react-redux';
 import { useEffect } from "react";
@@ -8913,7 +8916,7 @@ import { controller, ActionDispatchers, State }
 
 type Props = ActionDispatchers & State;
 
-function TodosListView({
+function TodoListView({
   toggleTodoDone,
   startFetchTodos,
   todos
@@ -8942,7 +8945,7 @@ function TodosListView({
 export default connect(
   controller.getState,
   () => controller.actionDispatchers
-)(TodosListView);
+)(TodoListView);
 ```
 
 Below is the base class for controllers:
@@ -8967,7 +8970,7 @@ export default class Controller {
 
 Below is the controller for todos:
 
-{title: "todosController.ts"}
+{title: "todoController.ts"}
 ```ts
 import store from './store';
 import { AppState } from "./AppState";
@@ -8975,7 +8978,7 @@ import ToggleDoneTodoAction from "./ToggleDoneTodoAction";
 import StartFetchTodosAction from "./StartFetchTodosAction";
 import Controller from "./Controller";
 
-class TodosController extends Controller {
+class TodoController extends Controller {
   readonly actionDispatchers = {
     toggleTodoDone: (id: number) =>
       this.dispatch(new ToggleDoneTodoAction(id)),
@@ -9025,10 +9028,10 @@ export default class StartFetchTodosAction extends
 }
 ```
 
-Now we can introduce a new view for todos, a `TodosTableView` which can utilize the same controller as the
+Now we can introduce a new view for todos, a `TodoTableView` which can utilize the same controller as the
 `TodosListView`.
 
-{title: "TodosTableView.tsx"}
+{title: "TodoTableView.tsx"}
 ```tsx
 import { connect } from 'react-redux';
 import { useEffect } from "react";
@@ -9037,7 +9040,7 @@ import { controller, ActionDispatchers, State }
 
 type Props = ActionDispatchers & State;
 
-function TodosListView({
+function TodoTableView({
   toggleTodoDone,
   startFetchTodos,
   todos
@@ -9066,10 +9069,10 @@ function TodosListView({
 export default connect(
   controller.getState,
   () => controller.actionDispatchers
-)(TodosListView);
+)(TodoTableView);
 ```
 
-We can notice some duplication in the `TodosListView` and `TodosTableView` components.
+We can notice some duplication in the `TodoListView` and `TodoTableView` components.
 For example, both are using the same effect. We can create a `TodosView` for which we can give
 as parameter the type of a single todo view, either a list item or a table row view:
 
@@ -9117,7 +9120,7 @@ export default connect(
 
 Below is the view for showing a single todo as a list item:
 
-{title: "TodoViewProps.ts"}
+{title: "TodosViewProps.ts"}
 ```ts
 import { Todo } from "./Todo";
 
