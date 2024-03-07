@@ -7298,27 +7298,27 @@ interface UndoableAction extends Action {
 }
 
 
-class AddToListAction<T> implements UndoableAction {
-  private final T item;
-  private final List<T> items;
+class AddToSetAction<T> implements UndoableAction {
+    private final T item;
+    private final Set<T> items;
 
-  public AddToListAction(final T item, final List<T> items) {
-    this.item = item;
-    this.items = items;
-  }
+    public AddToSetAction(final T item, final Set<T> items) {
+        this.item = item;
+        this.items = items;
+    }
 
-  public void perform() {
-    items.add(item);
-  }
+    public void perform() {
+        items.add(item);
+    }
 
-  public void undo() {
-    items.remove(item);
-  }
+    public void undo() {
+        items.remove(item);
+    }
 }
 
 
-final var values = new ArrayList<>(List.of(1, 2));
-final var add3ToValuesAction = new AddToListAction<>(3, values);
+final var values = new HashSet<>(Set.of(1, 2));
+final var add3ToValuesAction = new AddToSetAction<>(3, values);
 add3ToValuesAction.perform();
 System.out.println(values);  //  Prints [1, 2, 3]
 add3ToValuesAction.undo();
@@ -7663,6 +7663,10 @@ function createReducer<S>(
   };
 }
 ```
+
+{aside}
+The above demonstrated way of handling Redux actions is presented in an example found [here](https://github.com/pksilen/clean-code-principles-code/tree/main/chapter2/mvvm).
+{/aside}
 
 Commands/Actions can also be defined without an object-oriented approach using a newly created function with a closure.
 In the below example, the function `() => toggleTodoDone(id)` is redefined for each todo. The function redefinition will
