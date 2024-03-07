@@ -9007,6 +9007,13 @@ import AbstractTodoAction from './AbstractTodoAction';
 
 
 export default class StartFetchTodosAction extends AbstractTodoAction {
+  // We return a static response for demonstration purposes
+  // In real-life, you would call a method of a class implementing
+  // TodoService interface to fetch todos from remote API
+  // You should use dependency injection to inject an instance
+  // implementing TodoService interface here.
+  // In that way, you can switch to a new todo service API implementation
+  // without modifying any existing code (open-closed principle)
   perform(state: TodoState): TodoState {
     return {
       todos: [
@@ -9160,6 +9167,63 @@ export default function TableRowTodoView({
     </tr>
   );
 }
+```
+
+In the above `TodosView.tsx` we used a conditional statement for rendering the component.
+As was told earlier, we should limit this kind of code mostly to factories only. Let's create
+a view factory method and make the `TodosView.tsx` to use it:
+
+{title: "createTodosView.tsx"}
+```tsx
+import ListItemTodoView from "./list/ListItemTodoView";
+import TableRowTodoView from "./table/TableRowTodoView";
+
+export default function createTodosView(
+    TodoView: typeof ListItemTodoView | typeof TableRowTodoView,
+    todoViews: JSX.Element[]
+): JSX.Element {
+    if (TodoView === ListItemTodoView) {
+        return <ul>{todoViews}</ul>;
+    } else {
+        return <table><tbody>{todoViews}</tbody></table>;
+    }
+}
+```
+
+{title: "TodosView.tsx"}
+```tsx
+import { useEffect } from "react";
+import { connect } from "react-redux";
+import ListItemTodoView from "./list/ListItemTodoView";
+import TableRowTodoView from "./table/TableRowTodoView";
+import { controller, ActionDispatchers, State } from "../todoController";
+import createTodosView from "./createTodosView";
+
+type Props = ActionDispatchers &
+  State & {
+    TodoView: typeof ListItemTodoView | typeof TableRowTodoView;
+  };
+
+function TodosView({
+  toggleTodoDone,
+  startFetchTodos,
+  todos,
+  TodoView,
+}: Props) {
+  useEffect(() => {
+    startFetchTodos();
+  }, [startFetchTodos]);
+
+  const todoViews = todos.map((todo) => (
+    <TodoView key={todo.id} todo={todo} toggleTodoDone={toggleTodoDone} />
+  ));
+
+  return createTodosView(TodoView, todoViews);
+}
+
+export default connect(controller.getState, () =>
+  controller.getActionDispatchers()
+)(TodosView);
 ```
 
 In the `App` component, we can decide how to render todos:
