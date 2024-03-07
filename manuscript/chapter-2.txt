@@ -6297,6 +6297,7 @@ a logger is needed. Here is how the DI module could look:
 import { Module } from 'noicejs';
 import AbcLogger from 'AbcLogger';
 
+
 class DiModule extends Module {
   public async configure(options) {
     await super.configure(options);
@@ -6311,13 +6312,15 @@ When you need the logger in any other class of the application, you can get it:
 ```ts
 import { Container, Inject } from 'noicejs';
 
+
 @Inject('logger')
-class SomeClass:
+class SomeClass {
   private readonly Logger logger;
 
   constructor(args) {
     this.logger = args.logger;
   }
+}
 ```
 
 Suppose that in the future, a better logging library is available called *xyz-logging-library*, and we
@@ -6345,6 +6348,7 @@ export default XyzLogger;
 ```ts
 import { Module } from 'noicejs';
 import XyzLogger from 'XyzLogger';
+
 
 class DiModule extends Module {
   public async configure(options) {
