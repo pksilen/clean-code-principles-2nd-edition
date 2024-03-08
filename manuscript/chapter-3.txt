@@ -3898,6 +3898,10 @@ async function fetchData() {
 
 #### Functional Exception Handling
 
+{aside}
+Source code for the below example is available [here]().
+{/aside}
+
 The below `Failable<T>` class can be used in functional error handling. A `Failable<T>` object represents either
 a value of type `T` or an instance of the `RuntimeException` class.
 
@@ -4022,7 +4026,6 @@ public void tryInitialize() {
       .orThrow(InitializationError.class);
 }
 ```
-</div>
 
 It is error-prone to use failable imperative code together with functional programming constructs.
 Let's assume we have the below TypeScript code that reads and parses multiple configuration files to
