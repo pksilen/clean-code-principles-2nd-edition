@@ -8963,8 +8963,8 @@ Below is the controller for todos:
 
 {title: "todoController.ts"}
 ```ts
-import store from '../common/model/store';
-import { AppState } from '../common/model/AppState';
+import store from '../common/model/state/store';
+import { AppState } from '../common/model/state/AppState';
 import ToggleDoneTodoAction from './model/actions/ToggleDoneTodoAction';
 import StartFetchTodosAction from './model/actions/StartFetchTodosAction';
 import Controller from '../common/Controller';
@@ -9277,7 +9277,7 @@ export default connect(controller.getState, () =>
 
 In the `App` component, we can decide how to render todos:
 
-{title: "App.tsx"}
+{title: "AppView.tsx"}
 ```tsx
 import React from 'react';
 import {Provider} from 'react-redux';
@@ -9285,7 +9285,7 @@ import store from '../common/model/store';
 import TodosView from '../todo/view/TodosView';
 import ListItemTodoView from '../todo/view/list/ListItemTodoView';
 
-function App() {
+function AppView() {
   return (
     <div>
       <Provider store={store}>
