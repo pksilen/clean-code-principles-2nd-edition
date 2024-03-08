@@ -3028,7 +3028,7 @@ from the `readFile` method name:
 ```java
 try {
   final var fileContents = fileReader.readFile(...);
-} catch (final FileReader.FileReadError error) {
+} catch (final FileReader.ReadFileError error) {
   // Handle error
 }
 ```
@@ -3040,7 +3040,7 @@ clause. The below two examples have the same effect.
 try {
   final var configFileContents = fileReader.readFile(...);
   return configParser.parse(configFileContents);
-} catch (final FileReader.FileReadError | ConfigParser.ParseError error) {
+} catch (final FileReader.ReadFileError | ConfigParser.ParseError error) {
   // Handle error situation
 }
 ```
@@ -3078,7 +3078,6 @@ try {
   // all exceptions and fatal errors
 }
 ```
-</div>
 
 Catch all exceptions only in special places in your code, like in the main function or the main loop, like the loop in a web service
 processing HTTP requests or the main loop of a thread. Below is an example of correctly catching the language's base exception class in the main function.
@@ -3350,7 +3349,8 @@ Now, if you use the `JsonParser`'s `tryParse` method, you can easily infer the c
 need to consult any documentation.
 
 When using a web framework, the framework usually provides an error-handling mechanism. The framework catches all possible errors and exceptions when
-processing a request and maps them to HTTP responses with HTTP status codes indicating a failure. Typically, the default status code is 500 *Internal Server Error*. When you utilize the web framework's error-handling mechanism,
+processing a request and maps them to HTTP responses with HTTP status codes indicating a failure. Typically, the default status code is 500 *Internal Server Error*.
+When you utilize the web framework's error-handling mechanism,
 there is no significant benefit in naming error-raising functions with the try-prefix because it won't be problematic if you forget to
 catch an error. So, you can opt out of the try-prefix rule. Many times, this is what you want to do: pass the error to the web framework's error handler. Usually,
 you provide your own error handler instead of using the default one, so you get responses in the format you want. We will discuss API error handling again in the *API design principles* chapter.
@@ -3500,7 +3500,7 @@ public class DataExporter {
     } catch (
       final DataFetcher.FetchDataError | ConfigParser.ParseError error
     ) {
-      throw new InitializationError(error);
+      throw new InitializeError(error);
     }
   }
 }
