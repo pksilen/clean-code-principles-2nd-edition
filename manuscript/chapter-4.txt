@@ -585,7 +585,7 @@ class MyStringTests {
   void testContains_whenStringsAreEqual() {
     // GIVEN
     final var string = new MyString("String");
-    final var another_string = "String";
+    final var anotherString = "String";
 
     // WHEN
     final var strContainsAnotherStr =
@@ -593,6 +593,7 @@ class MyStringTests {
 
     // THEN
     assertTrue(strContainsAnotherStr);
+  }
 }
 ```
 
@@ -631,6 +632,7 @@ class MyStringTests {
 
     // THEN
     assertTrue(strContainsAnotherStr);
+  }
 }
 ```
 
@@ -653,6 +655,7 @@ class MyStringTests {
 
     // THEN
     assertTrue(strContainsAnotherStr);
+  }
 }
 ```
 
@@ -675,6 +678,7 @@ class MyStringTests {
 
     // THEN
     assertFalse(strContainsAnotherStr);
+  }
 }
 ```
 
@@ -689,11 +693,7 @@ public class MyString {
   }
 
   boolean contains(final String anotherString) {
-    if (value.isEmpty() && !anotherString.isEmpty()) {
-      return false;
-    }
-
-    return true;
+    return !value.isEmpty() || anotherString.isEmpty();
   }
 }
 ```
@@ -716,6 +716,7 @@ class MyStringTests {
 
     // THEN
     assertTrue(strContainsAnotherStr);
+  }
 }
 ```
 
@@ -738,6 +739,7 @@ class MyStringTests {
 
     // THEN
     assertTrue(strContainsAnotherStr);
+  }
 }
 ```
 
@@ -759,6 +761,7 @@ class MyStringTests {
 
     // THEN
     assertFalse(strContainsAnotherStr);
+  }
 }
 ```
 
@@ -773,18 +776,13 @@ public class MyString {
   }
 
   boolean contains(final String anotherString) {
-    if (value.isEmpty() && !anotherString.isEmpty() ||
-        anotherString.length() > value.length()
-    ) {
-      return false;
-    }
-
-    return true;
+   return (!value.isEmpty() || anotherString.isEmpty()) &&
+            anotherString.length() <= value.length();
   }
 }
 ```
 
-Let's add a test for the eigth scenario:
+Let's add a test for the eighth scenario:
 
 ```java
 class MyStringTests {
@@ -802,6 +800,7 @@ class MyStringTests {
 
     // THEN
     assertTrue(strContainsAnotherStr);
+  }
 }
 ```
 
@@ -824,6 +823,8 @@ class MyStringTests {
 
     // THEN
     assertFalse(strContainsAnotherStr);
+
+  }
 }
 ```
 
@@ -838,14 +839,9 @@ public class MyString {
   }
 
   boolean contains(final String anotherString) {
-    if (value.isEmpty() && !anotherString.isEmpty() ||
-        anotherString.length() > value.length() ||
-        value.indexOf(anotherString) == -1
-    ) {
-      return false;
-    }
-
-    return true;
+    return (!value.isEmpty() || anotherString.isEmpty()) &&
+                    anotherString.length() <= value.length() &&
+                    value.indexOf(anotherString) != -1;
   }
 }
 ```
@@ -861,11 +857,7 @@ public class MyString {
   }
 
   boolean contains(final String anotherString) {
-    if (value.indexOf(anotherString) == -1) {
-      return false;
-    }
-
-    return true;
+    return value.indexOf(anotherString) != -1;
   }
 }
 ```
@@ -1054,9 +1046,10 @@ class ConfigParserTests {
   }
 
   @Test
-  void testParse_whenYamlParsingFails(self):
+  void testParse_whenYamlParsingFails() {
     // Should produce an error
     fail();
+  }
 }
 ```
 
