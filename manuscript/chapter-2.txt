@@ -9937,7 +9937,6 @@ void AnomalyDetectionEngine::runEngine()
 In the above example, we ask the anomaly detector if we should detect anomalies now. Then, depending
 on the result, we call another method on the anomaly detector to detect anomalies. This could be simplified by making the `detectAnomalies` method to check if anomalies should be detected using the `shouldDetectAnomalies` method. Then the `shouldDetectAnomalies` method can be made private, and we can simplify the above code as follows:
 
-
 ```cpp
 using namespace std::chrono_literals;
 
@@ -10386,7 +10385,7 @@ An application typically receives unvalidated input data from external sources i
 Make sure that you validate any data received from the sources mentioned above. Use a ready-made validation library or
 create your own validation logic if needed. Validate the input immediately after receiving it from an untrustworthy source and only pass valid values to other functions in the codebase. In this way, other functions in the codebase can trust the input they receive, and they don't have to validate it again. If you pass unvalidated data freely around in your application, you may need to implement validation logic in every function, which is unreasonable.
 
-Below is an example of using the *validated-types* library to create a validated integer type that allows values between 1 and 10.
+Below is an example of using the [validated-types](https://www.npmjs.com/package/validate-types) library to create a validated integer type that allows values between 1 and 10.
 The `VInt` generic type takes a type argument of string type, which defines the allowed value range in the following format:
 `<min-value>,<max-value>`
 
@@ -10563,7 +10562,7 @@ int main()
 ```
 
 {title: "Singleton.h"}
-```
+```cpp
 template<typename T>
 class Singleton
 {
@@ -10777,7 +10776,7 @@ export default diContainer;
 Then, you must configure the `diContainer` before the dependency injection can be used.
 In the below example, the `diContainer` is configured before a React application is rendered:
 
-{title: "app.ts"}
+{title: "index.ts"}
 ```ts
 import React from 'react';
 import ReactDOM from 'react-dom';
@@ -10930,6 +10929,10 @@ export default class Controller {
   }
 }
 ```
+
+{aside}
+An example of using dependency injection with *noicejs* library is available [here](https://github.com/pksilen/clean-code-principles-python-code/tree/main/chapter2/mvvm_di).
+{/aside}
 
 ## Avoid Code Duplication Principle
 
