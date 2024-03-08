@@ -9296,7 +9296,7 @@ function AppView() {
   );
 }
 
-export default App;
+export default AppView;
 ```
 
 ![Figure 3.9 Frontend MVC Architecture with Redux](images/03-07.png)
@@ -10796,7 +10796,7 @@ will be injected as the class constructor argument's property (with the same nam
 ```ts
 // Imports ...
 
-type ConstructorArgs = {
+type Args = {
   chartDataService: ChartDataService,
   chart: Chart,
   dispatch: Dispatch;
@@ -10805,38 +10805,34 @@ type ConstructorArgs = {
 export default
 @Inject('chartDataService')
 class StartFetchChartDataAction extends AbstractChartAreaAction {
-  private readonly chartDataService: ChartDataService;
-  private readonly chart: Chart;
-
-  constructor({ chart,
-                chartDataService,
-                dispatch }: ConstructorArgs) {
-    super(dispatch);
-    this.chartDataService = chartDataService;
-    this.chart = chart;
+  constructor(private readonly args: Args) {
+    super();
   }
 
   perform(currentState: ChartAreaState): ChartAreaState {
-    this.chartDataService
+    const { chartDataService, chart, dispatch } = this.args;
+
+    chartDataService
       .fetchChartData(
-        this.chart.dataSource,
-        this.chart.getColumns(),
-        this.chart.getFilters(),
-        this.chart.getSortBys()
+        chart.dataSource,
+        chart.getColumns(),
+        chart.getFilters(),
+        chart.getSortBys()
       )
       .then((columnNameToValuesMap: ColumnNameToValuesMap) => {
-        this.dispatch(
+        dispatch(
           new FinishFetchChartDataAction(columnNameToValuesMap,
-                                         this.chart.id)
+                                         chart.id)
         );
       })
       .catch((error) => {
         // Handle error
       });
 
-    this.chart.isFetchingChartData = true;
+    chart.isFetchingChartData = true;
+
     return ChartAreaStateUpdater
-            .getNewStateForChangedChart(currentState, this.chart);
+            .getNewStateForChangedChart(currentState, chart);
   }
 }
 ```
@@ -10873,33 +10869,24 @@ export default abstract class AbstractAction<S> {
 }
 ```
 
-{title: "AbstractDispatchingAction.ts"}
-```ts
-// Imports...
-
-export default abstract class AbstractDispatchingAction<S>
-    extends AbstractAction<S> {
-  constructor(protected readonly dispatch: Dispatch) {}
-}
-```
-
 {title: "AbstractChartAreaAction.ts"}
 ```ts
 // Imports...
 
 export default abstract class AbstractChartAreaAction
-         extends AbstractDispatchingAction<ChartAreaState> {
+         extends AbstractAction<ChartAreaState> {
 }
 ```
 
 {title: "Controller.ts"}
 ```ts
+export type Dispatch = (action: AbstractAction<any>) => void;
+
 export type ReduxDispatch =
   (reduxActionObject: { type: AbstractAction<any> }) => void;
 
 export default class Controller {
-  protected readonly dispatch:
-    (action: AbstractAction<any>) => void;
+  protected readonly dispatch: Dispatch;
 
   constructor(reduxDispatch: ReduxDispatch) {
     this.dispatch = (action: AbstractAction<any>) =>
@@ -10910,7 +10897,7 @@ export default class Controller {
     diContainer: { create: (...args: any[]) => Promise<any> },
     ActionClass:
       abstract new (...args: any[]) => AbstractAction<any>,
-    otherArgs: {}
+    otherArgs?: {}
   ) {
     // diContainer.create will create a new object of
     // class ActionClass.
@@ -10923,7 +10910,7 @@ export default class Controller {
     diContainer
       .create(ActionClass, {
         dispatch: this.dispatch,
-        ...otherArgs
+        ...(otherArgs ?? {})
       })
       .then((action: any) => this.dispatch(action));
   }
