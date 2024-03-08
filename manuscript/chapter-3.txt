@@ -36,7 +36,8 @@ it is over 20 characters long. You can abbreviate *environment* to *environ* and
 name `environVarName` that is short enough. Both abbreviations `environ` and `var` are commonly used and well understood.
 Let's have another example with a variable named `loyaltyBonusPercentage`. You cannot abbreviate *loyalty*. You cannot abbreviate
 *bonus*. But you can abbreviate *percentage* to *percent* or even *pct*. I would rather use *percent* instead of *pct*. Using
-*percent* makes the variable name shorter than 20 characters.
+*percent* makes the variable name shorter than 20 characters. The maximum length of a variable name should be less than the maximum
+length for a class/interface name, because variables are used in code more often and many times in a combination with a method name.
 
 If a variable name is less than 20 characters long, you don't need to shorten it. If you have several variables named in
 a similar wording and one or more of them needs abbreviating, you can use that abbreviation in all the variable names for
@@ -60,7 +61,7 @@ and thus can cause some confusion. This is because a variable named *failures* c
 
 If the unit of a variable is not self-evident, always add information about the unit to the end of the variable name. For example, instead of
 naming a variable *tooltipShowDelay*, you should name it *tooltipShowDelayInMillis* or *tooltipShowDelayInMs*. If you have a variable
-whose unit is self-evident, unit information is not needed. So, there is no need to name an *age* variable as *ageInYyears*. But if you are
+whose unit is self-evident, unit information is not needed. So, there is no need to name an *age* variable as *ageInYears*. But if you are
 measuring age in months, you must name the respective variable as *ageInMonths* so that people don't assume that age is measured in
 years.
 
@@ -828,6 +829,12 @@ sales-item-service
                      ├── SqlSalesItemRepository.java
                      └── MongoDbSalesItemRepository.java
 ```
+
+You can even go further and put the *controllers* and *repositories* directories under a *ifadapters* directory.
+You can even do it like this: *ifadapters/input/controllers* and *ifadapters/output/repositories*. If you microservices
+uses extrenal services, you can put those in *ifadapters/output/services* directories. If your domain model contains both
+application and domain services you can split the *businesslogic/service* directory into two directories: *businesslogic/services/application*
+and *businesslogic/services/domain*
 
 If you follow the *clean microservice design* principle and add or change an interface adapter (e.g., a controller or a repository),
 you should not need to make any code changes to the business logic part of the service (the *businesslogic* directory).
