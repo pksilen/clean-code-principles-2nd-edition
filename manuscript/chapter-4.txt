@@ -1369,7 +1369,6 @@ Let's have a unit testing example with JavaScript/TypeScript. We will write a un
 function using the Jest library:
 
 {title: "fetchTodos.ts"}
-
 ```ts
 import store from '../../store/store';
 import todoService from '../services/todoService';
@@ -1474,6 +1473,11 @@ describe('fetchTodos', async () => {
 
 Let's have an example with C++ and Google Test unit testing framework. In C++, you can define a mock class
 by extending a pure virtual base class ("interface") and using Google Mock macros to define mocked methods.
+
+{aside}
+Source code for below two C++ examples can be found [here](https://github.com/pksilen/clean-code-principles-code/tree/main/chapter4/cpptests).
+{/aside}
+
 Below is the definition of a `detectedAnomalies` method that we want to unit test:
 
 {title: "AnomalyDetectionEngine.h"}
