@@ -3647,7 +3647,13 @@ public interface DataStore {
 The above Java example is cumbersome to use, and the type definition looks long.
 We should use an `Either` type here, but Java does not have that. Either type contains one of two values, either
 a left value or a right value. The left value is the value returned by the function when the operation is successful, and the right value
-is an error. The `Either` type can be defined as follows:
+is an error.
+
+{aside}
+Source code for the below example is available [here](https://github.com/pksilen/clean-code-principles-code/tree/main/chapter3/either).
+{/aside}
+
+The `Either` type can be defined as follows:
 
 {title: "Either.java"}
 ```
