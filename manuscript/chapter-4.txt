@@ -38,7 +38,7 @@ denote both the integration of unit-tested modules and external interfaces.
 
 > ***Unit tests should test the functionality of public functions as isolated units with as high coverage as possible. The isolation means that dependencies (other classes/modules/services) are mocked.***
 
-A complete isolation is not a mandatory requirement, but you should mock at least all external dependencies like external services and databases.
+A complete isolation is not a mandatory requirement, but you should mock at least all external dependencies like external services and databases. This is required to keep the execution time of the unit tests as short as possible.
 In your unit tests, you can use other dependencies, like classes if they are already implemented and available. If not available, you can use mocks
 or implement the dependencies to be able to use them.
 
@@ -417,7 +417,7 @@ public interface ConfigParser {
 
 
 public class ConfigParserImpl implements ConfigParser {
-  Config parse(final String configString) {
+  public Config parse(final String configString) {
     return new ConfigImpl();
   }
 }
@@ -432,7 +432,7 @@ class ConfigParserTests {
   private final ConfigParser configParser = new ConfigParserImpl();
 
  @Test
-  def testParse_whenSuccessful() {
+  void testParse_whenSuccessful() {
     // GIVEN
     final var configString = "propName1=value1\npropName2=value2";
 
@@ -462,12 +462,13 @@ public class ConfigImpl implements Config {
   }
 }
 
+
 public class ConfigParserImpl implements ConfigParser {
   Config parse(final String configString) {
     // Parse configString and assign properties to
     // 'propNameToValue' variable
 
-    return ConfigImpl(propNameToValue);
+    return new ConfigImpl(propNameToValue);
   }
 }
 ```
@@ -482,7 +483,7 @@ class ConfigParserTests {
   @Test
   void testParse_whenParsingFails() {
     // GIVEN
-    final var configString = 'invalid';
+    final var configString = "invalid";
 
     try {
       // WHEN
@@ -490,8 +491,9 @@ class ConfigParserTests {
 
       // THEN
       fail("ConfigParser.ParseError should have been raised");
-    except ConfigParser.ParseError:
+    } catch(final ConfigParser.ParseError error) {
       // THEN error was successfully raised
+    }
   }
 }
 ```
