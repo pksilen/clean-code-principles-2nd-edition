@@ -832,7 +832,7 @@ sales-item-service
 
 You can even go further and put the *controllers* and *repositories* directories under a *ifadapters* directory.
 You can even do it like this: *ifadapters/input/controllers* and *ifadapters/output/repositories*. If you microservices
-uses extrenal services, you can put those in *ifadapters/output/services* directories. If your domain model contains both
+uses external services, you can put those in *ifadapters/output/services* directories. If your domain model contains both
 application and domain services you can split the *businesslogic/service* directory into two directories: *businesslogic/services/application*
 and *businesslogic/services/domain*
 
@@ -930,11 +930,8 @@ src
         ├── OutputMessageImpl.cpp
         └── OutputMessageImpl.h
 ```
-</div>
 
 Below is the Java version of the above directory structure:
-
-<div class="sourceCodeWithoutLabel">
 
 ```
 src
@@ -2382,7 +2379,6 @@ if (allSelectorsAreOpen) {
 
 Below is an example in C++ where we return a boolean expression:
 
-
 ```cpp
 bool AvroFieldSchema::equals(
   const std::shared_ptr<AvroFieldSchema>& otherFieldSchema
@@ -2569,8 +2565,6 @@ Below is a Python example with a negated boolean expression in the if-statement 
 Notice how difficult the boolean expression reads: `host_mount_folder is not None`. It is a double-negative statement
 and thus can be difficult to read.
 
-<div class="sourceCodeWithoutLabel">
-
 ```python
 import os
 
@@ -2594,7 +2588,7 @@ def get_behave_test_folder(relative_test_folder = ""):
 
 Let's refactor the above code so that the if and else statements are inverted:
 
-```
+```python
 def get_behave_test_folder(relative_test_folder = ""):
   host_mount_folder = os.environ.get("HOST_MOUNT_FOLDER")
 
