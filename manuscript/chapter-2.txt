@@ -8095,6 +8095,36 @@ class Parser {
 }
 ```
 
+We can refactor:
+
+Let's make the test pass:
+
+```java
+class Parser {
+  // ...
+
+  Expression parse(final String sentence) throws ParseError {
+    final var tokens = sentence.split("\\+");
+    return parse(tokens);
+  }
+
+  Expression parse(final String[] tokens) throws ParseError {
+    final var leftLiteral = parseLiteral(tokens[0].trim());
+
+    if (tokens.length == 1) {
+      return leftLiteral;
+    } else if (tokens.length == 2){
+      final var rightLiteral = parseLiteral(tokens[1].trim());
+      return new AddExpression(leftLiteral, rightLiteral);
+    } else {
+      final var restOfTokens = Arrays.copyOfRange(tokens, 1, tokens.length)
+      return new AddExpression(leftLiteral, parse(restOfTokens));
+    }
+  }
+
+  // ...
+}
+
 The final four tests also pass:
 
 ```java
@@ -8145,6 +8175,7 @@ class ParserTests {
 
 In the above example, I added new tests to existing methods. You can also put each test into a separate test method.
 I didn't do that because most test methods would have been only 1-2 statements long.
+
 
 {aside}
 If you are interested in creating a parser, read about [Recursive descent parser](https://en.wikipedia.org/wiki/Recursive_descent_parser).
