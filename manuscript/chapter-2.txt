@@ -2678,6 +2678,7 @@ Our example is for a travel booking microservice. After applying the DDD, we sho
 we can define our features using that language. We can end up with the following features:
 
 - Book a trip
+- View trips or a trip
 - Cancel a trip
 - Hotel reservation
     - Add hotel reservation to a trip
@@ -2704,6 +2705,12 @@ travel-booking-service
     │   ├── TripBookingServiceImpl.py
     │   ├── RestTripBookingController.py
     │   └── SqlTripBookingRepository.py
+    ├── tripview
+    │   ├── TripViewRepository.py
+    │   ├── TripViewService.py
+    │   ├── TripViewServiceImpl.py
+    │   ├── RestTripViewController.py
+    │   └── SqlTripViewRepository.py
     ├── tripcancellation
     │   ├── TripCancellationRepository.py
     │   ├── TripCancellationService.py
@@ -2751,7 +2758,7 @@ travel-booking-service
     │   └── CancelTripUseCase.py
     ├── makehotelreservation
     │   │   ...
-    │   └── MakeHotelReservationmUseCase.py
+    │   └── MakeHotelReservationUseCase.py
     ├── replacehotelreservation
     │   │   ...
     │   └── ReplaceHotelReservationUseCase.py
