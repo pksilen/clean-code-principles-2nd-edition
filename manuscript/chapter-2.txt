@@ -2730,6 +2730,49 @@ travel-booking-service
         └── SqlRentalCarReservationRepository.py
 ```
 
+Instead of using nouns, we can use sentences and use the term *use case* instead of *service* to denote application
+services, i.e., use cases:
+
+```
+travel-booking-service
+└── src
+    ├── common
+    ├── booktrip
+    │   │   ...
+    │   └── BookTripUseCase.py
+    ├── canceltrip
+    │   │   ...
+    │   └── CancelTripUseCase.py
+    ├── makehotelreservation
+    │   │   ...
+    │   └── MakeHotelReservationmUseCase.py
+    ├── replacehotelreservation
+    │   │   ...
+    │   └── ReplaceHotelReservationUseCase.py
+    ├── cancelhotelreservation
+    │   │   ...
+    │   └── CancelHotelReservationUseCase.py
+    ├── makeflightreservation
+    │   │   ...
+    │   └── MakeFlightReservationUseCase.py
+    ├── replaceflightreservation
+    │   │   ...
+    │   └── ReplaceFlightReservationUseCase.py
+    ├── cancelflightreservation
+    │   │   ...
+    │   └── CancelFlightReservationUseCase.py
+    ├── makerentalcarreservation
+    │   │   ...
+    │   └── MakeRentalCarReservationUseCase.py
+    ├── replacerentalcarreservation
+    │   │   ...
+    │   └── ReplaceRentalCarReservationUseCase.py
+    └── cancelrentalcarreservation
+        │   ...
+        └── CancelRentalCarReservationUseCase.py
+```
+
+
 ## Class Organization Principle
 
 A class should be organized in the following manner:
