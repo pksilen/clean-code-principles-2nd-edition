@@ -2785,6 +2785,8 @@ travel-booking-service
         └── CancelRentalCarReservationUseCase.py
 ```
 
+As can been seen from the above example, *vertical slice design* creates a very understandable and easily navigatable directory structure
+for the microservice source code.
 
 ## Class Organization Principle
 
