@@ -2740,6 +2740,9 @@ travel-booking-service
     ├── booktrip
     │   │   ...
     │   └── BookTripUseCase.py
+    ├── viewtrip
+    │   │   ...
+    │   └── ViewTripUseCase.py
     ├── canceltrip
     │   │   ...
     │   └── CancelTripUseCase.py
