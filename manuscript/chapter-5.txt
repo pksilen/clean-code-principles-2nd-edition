@@ -526,7 +526,7 @@ export default interface Authorizer {
       authHeader: string | undefined
     ): Promise<void>;
 
-    getUserId(self, authHeader: string | undefined): Promise<number>;
+    getUserId(authHeader: string | undefined): Promise<number>;
 }
 ```
 
@@ -596,7 +596,7 @@ export default class JwtAuthorizer implements Authorizer {
     }
   }
 
-  async getUserId(self, authHeader: string | undefined): Promise<number> {
+  async getUserId(authHeader: string | undefined): Promise<number> {
     const claims = await this.decodeJwtClaims(authHeader);
     const getUsersUrl = this.getUsersUrl + `?sub=${claims?.sub}&fields=id`
 

@@ -798,7 +798,7 @@ sales-item-service
                 └── SqlSalesItemRepository.java
 ```
 
-The *businesslogic* directory could also be named *core*, *model*, or even *usecases*, especially if you are also using the *vertical slice design* principle where you put each vertical slice (feature) in a subdirectory of the *usecases* directory.
+The *businesslogic* directory could also be named *core* or *model**.
 
 Or if we have multiple input interface adapters (controllers) and output interface adapters (repositories):
 
@@ -831,10 +831,9 @@ sales-item-service
 ```
 
 You can even go further and put the *controllers* and *repositories* directories under a *ifadapters* directory.
-You can even do it like this: *ifadapters/input/controllers* and *ifadapters/output/repositories*. If you microservices
-uses external services, you can put those in *ifadapters/output/services* directories. If your domain model contains both
-application and domain services you can split the *businesslogic/service* directory into two directories: *businesslogic/services/application*
-and *businesslogic/services/domain*
+You can even do it like this: *ifadapters/input/controllers* and *ifadapters/output/repositories*. If your microservices
+uses external services, you can put those in *ifadapters/output/services* directory. You can also name your application
+services as use cases, e.g., `businesslogic/usescases/SalesItemUseCases[Impl].java`.
 
 If you follow the *clean microservice design* principle and add or change an interface adapter (e.g., a controller or a repository),
 you should not need to make any code changes to the business logic part of the service (the *businesslogic* directory).
