@@ -2403,7 +2403,7 @@ new projects.
 ## 8 Fallacies of distributed computing
 
 When you are using a microservice architecture, you have a distributed computing environment and should be
-aware of the eigth fallacies of distributed computing:
+aware of the 8 fallacies of distributed computing:
 
 1. The network is reliable
    You don't have to prepare for network unreliability separately in each microservice.
