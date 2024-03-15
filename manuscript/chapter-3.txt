@@ -3352,7 +3352,10 @@ processing a request and maps them to HTTP responses with HTTP status codes indi
 When you utilize the web framework's error-handling mechanism,
 there is no significant benefit in naming error-raising functions with the try-prefix because it won't be problematic if you forget to
 catch an error. So, you can opt out of the try-prefix rule. Many times, this is what you want to do: pass the error to the web framework's error handler. Usually,
-you provide your own error handler instead of using the default one, so you get responses in the format you want. We will discuss API error handling again in the *API design principles* chapter.
+you provide your own error handler instead of using the default one, so you get responses in the format you want.
+Also, you don't have to declare your errors inside
+the respective class that can throw the errors. If you want, of course, you can still do that.
+We will discuss API error handling again in the *API design principles* chapter.
 
 It is usually a good practice to document the error handling mechanism used in the software component's documentation.
 
