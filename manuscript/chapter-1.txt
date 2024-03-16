@@ -201,8 +201,8 @@ system for telecom network analytics. This software system is divided into four 
 Radio network data ingestion, core network data ingestion, data aggregation, and data visualization. Each of these applications
 has a single dedicated purpose. Suppose we had coupled the data aggregation and visualization applications into a single
 application. In that case, replacing the data visualization part with a 3rd party application could be difficult.
-But when they are separate applications with a well-defined interface, replacing the data
-visualization application with a 3rd party application would be much easier, if needed.
+However, when they are separate applications with a well-defined interface, replacing the data
+visualization application with a 3rd party application would be much easier if needed.
 
 A software component should also have a single dedicated purpose. A service
 type of software component with a single responsibility is called a *microservice*. For example, in an e-commerce software system,
@@ -215,7 +215,7 @@ be larger if they are at a higher level of abstraction. A microservice is always
 The higher the level of abstraction the microservice is, the fewer microservice benefits you get.
 Depending on the software system size and its design, the number of microservices in it can vary from a handful to tens or even hundreds of microservices.
 
-The number of microservices can matter. When you have a lot of microservices, the drawbacks become more prominent, e.g., duplicate DevOps-related code in each microservice's source code repository, observability, troubleshooting, and testing will be more complicated and thus slower. Running a software system with many small microservices can be more expensive compared to fewer and larger microservices or a monolith. This is because you need to have at least one instance of each microservice running all the time. If you have 500 microservices (you can have additional on-demand microservices, like jobs and cronjobs), there will be 500 instances running. If every microservice requires a minimum of 0.1 vCPU, you need at least 50 vCPUs to run the system when the system load is at the lowest level, e.g., at night. However, you can reduce that cost by using a serverless containers-as-a-service (CaaS) solution. [Knative](https://knative.dev/docs/) is an open-source serverless CaaS solution that runs on top of Kubernetes. You can define your microservices as Knative *Service* custom resources that automatically scale your microservice in and out. When a microservice is not used for a while, it is automatically scaled to zero instances, and when the microservice is used again, it is scaled out to one or more instances. All of this happens automatically in the background. When you use Knative *Service* custom resources, you don't need to define Kubernetes *Deployment*, *Service*, and *Horizontal Pod Autoscaler* manifests separately. We talk more about these Kubernetes manifests later in this chapter. Consider the earlier example of 500 microservices. Let's say that only 10% of 500 microservices must be running all night. It would mean that Knative can scale 90% of the microservices to zero instances, meaning only five vCPUs are needed at night, reducing the cost to one-tenth.
+The number of microservices can matter. When you have a lot of microservices, the drawbacks become more prominent, e.g., duplicate DevOps-related code in each microservice's source code repository, observability, troubleshooting, and testing will be more complicated. Running a software system with many small microservices can be more expensive compared to fewer and larger microservices or a monolith. This is because you need to have at least one instance of each microservice running all the time. If you have 500 microservices (you can have additional on-demand microservices, like jobs and cronjobs), there will be 500 instances running. If every microservice requires a minimum of 0.1 vCPU, you need at least 50 vCPUs to run the system when the system load is at the lowest level, e.g., at night. However, you can reduce that cost by using a serverless containers-as-a-service (CaaS) solution. [Knative](https://knative.dev/docs/) is an open-source serverless CaaS solution that runs on top of Kubernetes. You can define your microservices as Knative *Service* custom resources that automatically scale your microservice in and out. When a microservice is not used for a while, it is automatically scaled to zero instances, and when the microservice is used again, it is scaled out to one or more instances. All of this happens automatically in the background. When you use Knative *Service* custom resources, you don't need to define Kubernetes *Deployment*, *Service*, and *Horizontal Pod Autoscaler* manifests separately. We talk more about these Kubernetes manifests later in this chapter. Consider the earlier example of 500 microservices. Let's say that only 10% of 500 microservices must be running all night. It would mean that Knative can scale 90% of the microservices to zero instances, meaning only five vCPUs are needed at night, reducing the cost to one-tenth.
 
 Let's have an example of an e-commerce software system that consists of the following functionality:
 
@@ -243,7 +243,7 @@ Instead of implementing shopping cart and order-related functionality as two sep
 as a single microservice. This is because shopping cart and order functionalities have high functional cohesion. For example, whenever
 a new order is placed, the items from the shopping cart should be read and removed. Also, the non-functional cohesion is high. Both
 services can use the same technology stack and scale together. We eliminate distributed transactions by putting the two functionalities in a single microservice and can use standard database transactions. That simplifies the codebase and testing of the microservice.
-We should not name the microservice as *shopping-cart-and-order-service*, because that name does not denote a single responsibility.
+We should not name the microservice *shopping-cart-and-order-service* because that name does not denote a single responsibility.
 We should name the microservice using a term on a higher level of abstraction. For example, we could name it *purchase-service* because the microservice is responsible for functionality related to a customer purchasing item(s) from the e-commerce store.
 In the future, if we notice that the requirement of high functional and non-functional cohesion is no longer met,
 it is possible to split the *purchase-service* into two separate microservices: *shopping-cart-service* and *order-service*.
@@ -276,7 +276,7 @@ There are many advantages to microservices:
 - Fewer dependencies
   - Lower probability for dependency conflicts
 - Enables "open-closed architecture", meaning architecture that is more open for extension and more closed for modification
-  - New functionality not related to any existing microservice can be put into a new microservice instead of modifying the current codebase.
+  - New functionality not related to any existing microservice can be added to a new microservice instead of modifying the current codebase.
 
 The main drawback of microservices is the complexity that a distributed architecture brings. Implementing transactions between microservices
 requires implementing distributed transactions, which are more complex than standard database transactions. Distributed transactions require more
