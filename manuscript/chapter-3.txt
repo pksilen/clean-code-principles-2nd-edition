@@ -2975,7 +2975,10 @@ if you have a `parse(configStr)` method in the `ConfigParser` class, define a ba
 i.e., `ConfigParser.ParseError`. If you have a `readFile` method in the `FileReader` class, define a base error class in the `FileReader` class
 with the name `ReadFileError`, i.e., `FileReader.ReadFileError`. If all the methods in a class can throw the same error, it is enough to define
 only one error at the class level. For example, if you have a `HttpClient` class where all methods like `get`, `post`, `put` etc., can throw
-an error, you can only define a single `Error` error class in the `HttpClient` class.
+an error, you can only define a single `Error` error class in the `HttpClient` class. The idea behind defining error classes next to
+the methods that can throw them is to make the method signatures clearer and better. By looking above the method definition, you can see
+the errors it can throw. This is a bit similar to Java's checked exceptions (which we will discuss a bit
+later) where you define thrown exceptions in the `throws` clause.
 
 Below is a Java example of errors defined for the data exporter microservice:
 
