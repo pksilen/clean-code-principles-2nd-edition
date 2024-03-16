@@ -70,16 +70,16 @@ devices like PCs, tablets, and phones. Backend software consists of *services*. 
 and *standalone applications* that do not use any backend services. An example of a standalone application is a calculator or a simple text editor.
 A service is something that provides a specific functionality and is running continuously.
 
-There are a couple of other types of programs in the backend. Programs that run once or on-demand are called [Jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job/), and programs that run on a schedule are called [CronJobs](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/).
+In addition to services, there are a couple of other types of backend programs, namely jobs and cron jobs. In a Kubernetes environment, programs that run once or on-demand are called [Jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job/), and programs that run on a schedule are called [CronJobs](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/).
 Jobs and CronJobs are typically related to services and perform administrative tasks related to a specific service. According to the *single responsibility
-principle*, the service itself should not perform administrative tasks but should be dedicated to providing a particular service only, like *order-service*
-provides operations on orders. For example, after the *order-service*  installation, an *order-db-init-job* could be triggered to initialize the *order-service*'s database.
-An *order-db-cleanup-cronjob* could be triggered on a schedule to perform cleanup actions on the *order-service*'s database.
+principle*, the service itself should not perform administrative tasks but should be dedicated to providing a particular service only, like an *order-service*
+provides operations on orders. Let's have an example of a job and cron job with the *order-service*: After the *order-service*  installation, an *order-db-init-job* could be triggered to initialize the *order-service*'s database, and
+an *order-db-cleanup-cronjob* could be triggered on a schedule to perform cleanup actions on the *order-service*'s database.
 
-A separate service can be created to control a service's deployment and lifecycle. In a Kubernetes environment, that service is called an [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/).
+A separate service can be created to control a service's deployment and lifecycle. In a Kubernetes environment, that kind of service is called an [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/).
 
 A command line interface (CLI) program is an additional program type. CLI programs are typically used for administrative tasks.
-For example, an *admin-cli* could be created to install and upgrade the software system.
+For example, an *admin-cli* could be created to install and upgrade a software system.
 
 The term *application* is often used to describe a single program designated for a specific purpose. In general,
 a software application is some software applied to solve a specific problem. From an end user's point of view, all clients are applications. But from a developer's
@@ -102,7 +102,7 @@ from the core network part of the mobile network. That configuration and the gen
 Computer programs and *libraries* are *software components*. A *software component* is something that can be individually
 packaged, tested, and delivered. It consists of one or more classes, and a class consists of one or more functions (class methods).
 (There are no traditional classes in purely functional languages, but software components consist only of functions.)
-A computer program can also be composed of one or more libraries, and a library can be composed of other libraries.
+A computer program can also be composed of one or more libraries and a library can be composed of other libraries.
 
 ![Software Components](resources/chapter1/images/software-components.png)
 
@@ -126,7 +126,7 @@ Never rely on implicit system-wide dependencies. Make all your microservice depe
 NPM or Maven to explicitly declare what your microservice needs. Regarding operating system dependencies, declare them in the
 Dockerfile for a containerized microservice. Use a minimal-size container base image and add only the dependencies you need. If you don't need
 any operating system dependencies, use a distroless image as the container base image. You should
-not have anything extra in your container when you don't need anything. This will minimize the surface for potential attacks.
+not have anything extra in your container. This will minimize the surface for potential attacks.
 
 3. **Configuration: Store configuration in the environment**
 
@@ -159,6 +159,7 @@ can then connect to your microservice using the well-known hostname and port com
 Do not scale up; scale out by adding more instances (processes) of your stateless microservice. This approach
 makes concurrency easy because you don't necessarily need to implement multithreading in your microservice.
 Correctly implementing multithreading can be complex. You can easily introduce concurrency issues in multithreaded code if you, for example, forget to implement locking when accessing a resource shared by multiple threads.
+Do not complicate your code with multithreading if it is not needed.
 
 9. **Disposability: Maximize robustness with fast startup and graceful shutdown**
 
@@ -181,7 +182,7 @@ The DevOps team will implement the rest of what is needed to collect and store t
 
 12. **Admin processes: Run admin/management tasks as one-off processes**
 
-Do not add administrative tasks to your microservices. Instead, create a separate microservice for each administrative task. Each microservice will be guaranteed a single responsibility. These administrative microservices can then be run on demand or schedule. Examples of administrative tasks are database initialization, database cleanup, and backup. In a Kubernetes environment, you can perform database initialization either in a Helm post-install hook or Pod's init container. Cleanup and backup tasks can be performed using a Kubernetes CronJob.
+Do not add administrative tasks to your microservices. Instead, create a separate microservice for each administrative task. Each microservice should be guaranteed a single responsibility. These administrative microservices can then be run on demand or schedule. Examples of administrative tasks are database initialization, database cleanup, and backup. In a Kubernetes environment, you can perform database initialization either in a Helm post-install hook or Pod's init container. Cleanup and backup tasks can be performed using a Kubernetes CronJob.
 
 ## Single Responsibility Principle
 
