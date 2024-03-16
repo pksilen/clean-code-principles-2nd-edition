@@ -1077,7 +1077,7 @@ of an error is in question. This property can be used on the server side as a la
 client side, special handling for particular error codes can be implemented.
 If you want, you can even add one more property to the above class, namely `recoveryAction`. This optional property contains
 information about recovery steps for an actionable error. For example, a database connection error might have a `recoveryAction` property value: *Please retry after a while. If the problem persists,
-contact the technical support at <email address>*.
+contact the technical support at &lt;email address&gt;*.
 
 Below is the base error class for the *sales-item-service*:
 
