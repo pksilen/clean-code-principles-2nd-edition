@@ -2756,33 +2756,33 @@ travel-booking-service
     ├── canceltrip
     │   │   ...
     │   └── CancelTripUseCase.py
-    ├── makehotelreservation
+    ├── addhotelreservation
     │   │   ...
-    │   └── MakeHotelReservationUseCase.py
+    │   └── AddHotelReservationUseCase.py
     ├── replacehotelreservation
     │   │   ...
     │   └── ReplaceHotelReservationUseCase.py
-    ├── cancelhotelreservation
+    ├── removehotelreservation
     │   │   ...
-    │   └── CancelHotelReservationUseCase.py
-    ├── makeflightreservation
+    │   └── RemoveHotelReservationUseCase.py
+    ├── addflightreservation
     │   │   ...
-    │   └── MakeFlightReservationUseCase.py
+    │   └── AddFlightReservationUseCase.py
     ├── replaceflightreservation
     │   │   ...
     │   └── ReplaceFlightReservationUseCase.py
-    ├── cancelflightreservation
+    ├── removeflightreservation
     │   │   ...
-    │   └── CancelFlightReservationUseCase.py
-    ├── makerentalcarreservation
+    │   └── RemoveFlightReservationUseCase.py
+    ├── addrentalcarreservation
     │   │   ...
-    │   └── MakeRentalCarReservationUseCase.py
+    │   └── AddRentalCarReservationUseCase.py
     ├── replacerentalcarreservation
     │   │   ...
     │   └── ReplaceRentalCarReservationUseCase.py
-    └── cancelrentalcarreservation
+    └── removerentalcarreservation
         │   ...
-        └── CancelRentalCarReservationUseCase.py
+        └── RemoveRentalCarReservationUseCase.py
 ```
 
 As can been seen from the above example, *vertical slice design* creates a very understandable and easily navigatable directory structure
