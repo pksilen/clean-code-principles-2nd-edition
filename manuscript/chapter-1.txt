@@ -290,7 +290,7 @@ A library-type software component should also have a single responsibility. Like
 call a single-responsibility library a *microlibrary*. For example, there could be a library for
 handling YAML-format content and another for handling XML-format content. We shouldn't try to bundle
 the handling of both formats into a single library. If we did and needed only the YAML-related functionality, we would also always get the XML-related functionality. Our code
-would always ship with the XML-related code, even if never used. This can introduce unnecessary code bloat. We would
+would always ship with the XML-related code, even if it was never used. This can introduce unnecessary code bloat. We would
 also have to take any security patch for the library into use, even if the patch was only for the XML-related functionality we don't use.
 
 ## Uniform Naming Principle
