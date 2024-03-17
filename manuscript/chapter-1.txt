@@ -2147,8 +2147,8 @@ system where users can transfer money from their accounts. We have a higher-leve
 *account-money-transfer-service*, which is used to make money transfers. The banking system also has two lower-level microservices
 called *account-balance-service* and *account-transaction-service*. The *account-balance-service* holds accounts'
 balance information while the *account-transaction-service* keeps track of all account transactions.
-The *account-money-transfer-service* acts as a saga orchestrator and utilizes both of the lower-level microservices to make
-a money transfer to happen. Do not confuse the distributed transaction with an account transaction. They are two separate things.
+The *account-money-transfer-service* acts as a saga orchestrator and utilizes both lower-level microservices to make
+a money transfer happen. Do not confuse the distributed transaction with an account transaction. They are two separate things.
 The distributed transaction spans the whole money transfer process, while an account transaction is a transaction related
 to a particular account, either a withdrawal or deposit transaction. An account transaction is an entity stored in the *account-transaction-service*'s database.
 
@@ -2377,7 +2377,7 @@ repository content for new microservice:
 
 - What is the name of the microservice?
 - To what cloud environment will microservice be deployed? (AWS, Azure, Google Cloud, etc.)
-- What are the inter-service communication methods used? Based on the answer, the utility can add dependencies, e.g., a Kafka client library dependency
+- What inter-service communication methods are used? Based on the answer, the utility can add dependencies, e.g., a Kafka client library dependency
 - Should microservice have a database, and what database?
 - What are the other dependent microservices?
 
@@ -2387,16 +2387,16 @@ Developers only need to know the link to the Jenkins job to kickstart a brand-ne
 
 Of course, decisions about the preferred technology stacks are not engraved in stone. They are not static.
 As time passes, new technologies arise, and new programming languages gain popularity. At some point, a decision
-could be made that a new technology stack should replace an existing preferred technology stack. Then, new projects should use the new stack and old software components will be gradually migrated to use the new technology stack or eventually retired.
+could be made that a new technology stack should replace an existing preferred technology stack. Then, new projects should use the new stack, and old software components will be gradually migrated to use the new technology stack or eventually retired.
 
 Many developers are keen on learning new things on a regular basis. They should be encouraged to work on hobby projects
 with technologies of their choice, and they should be able to utilize new programming languages and frameworks in selected
 new projects.
 
-## 8 Fallacies of distributed computing
+## 8 Fallacies Of Distributed Computing
 
 When you are using a microservice architecture, you have a distributed computing environment and should be
-aware of the 8 fallacies of distributed computing:
+aware of the eight fallacies of distributed computing:
 
 1. The network is reliable
    You don't have to prepare for network unreliability separately in each microservice.
@@ -2424,6 +2424,6 @@ aware of the 8 fallacies of distributed computing:
 8. The network is homogenous
    The network has many parts. If two communicating virtual machines are in the same rack, the latency and bandwidth are higher compared to connections
    between VMs in two different availability zones, let alone in two different regions. The network heterogeneity corresponds to varying levels of
-   latency. Microservices on the same node can communicate with a minimal latency, but microservices in different availability zones experience
-   a bit higher latency.
+   latency. Microservices on the same node can communicate with minimal latency, but microservices in different availability zones experience
+   higher latency.
 
