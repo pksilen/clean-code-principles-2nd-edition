@@ -1841,7 +1841,7 @@ npm uninstall common-ui-library
 npm install --save common-ui-library-2
 ```
 
-Consider when to create a new major version of a library. When you created the first library
+Consider when creating a new major version of a library is appropriate. When you created the first library
 version, you probably did not get everything right in the public API. That is normal. It is challenging
 to create a perfect API the first time. Before releasing the second major version of the library, I suggest reviewing
 the new API with a team, collecting user feedback, and waiting long enough to get the API "close to perfect" the second time.
@@ -1876,7 +1876,7 @@ There is also an older/legacy branching model called [GitFlow](https://www.atlas
 When you need to develop a new feature, it can be done using either of the following ways:
 
 1) Using a feature branch
-2) Using multiple feature branches and a feature toggle (or flag)
+2) Using multiple feature branches and a feature toggle (or flag) if needed
 
 ### Feature Branch
 
@@ -1945,7 +1945,7 @@ This pipeline run should push the final *release* artifacts to the artifact repo
 
 A feature toggle works in a similar way to a feature license. In the case of a feature license, the feature is available only when a user
 has the respective license activated in their environment. A toggleable feature is available only when the feature toggle is
-switched on. Feature toggles should be used for complex features spanning multiple program increments, microservices, or teams.
+switched on. Feature toggles should be used for complex features spanning multiple program increments, microservices, or teams. Use a feature toggle only if it is needed.
 Feature toggles are part of the configuration of an environment. For example, feature toggles can be stored in a Kubernetes
 ConfigMap that any microservice can access. When using a feature toggle, the toggle is initially switched off.
 Development of the feature happens in multiple feature branches in different teams. Teams merge their part of the feature
@@ -2009,14 +2009,13 @@ the same topic(s) using the same [consumer group](https://docs.confluent.io/plat
 > ***Offload shared microservice functionality to an API gateway.***
 
 Examples of functionality you can offload to the API Gateway are TLS termination, compression, request logging, standard HTTP response headers, and
-rate limiting. Using the API gateway for these purposes saves you from implementing them separately in each microservice.
+rate limiting. Using the API gateway for these purposes saves you from having to implement them separately in each microservice.
 
 ### Retry Pattern
 
 > ***Enable a microservice to handle transient failures when it tries to connect to a service by transparently retrying a failed operation.***
 
-For a Kubernetes pod, you can configure Istio to perform automatic transparent retries (and timeouts). When using this pattern
-you don't have to implement the retry logic in each microservice separately.
+For a Kubernetes pod, you can configure Istio to perform automatic transparent retries (and timeouts). When using this pattern, you don't have to implement the retry logic in each microservice separately.
 
 ### Static Content Hosting Pattern
 
@@ -2029,11 +2028,11 @@ Using this pattern can reduce the need for potentially expensive compute instanc
 
 > ***Use event sourcing to capture state changes as a sequence of events.***
 
-Event sourcing ensures that all changes to the state of a service are stored as an ordered sequence of events.
+Event sourcing ensures that all changes to a service's state are stored as an ordered sequence of events.
 Event sourcing makes it possible to query state changes. Also, the state change events act as an audit log. It is possible
 to reconstruct past states and rewind the current state to some earlier state. Unlike CRUD actions on resources,
-event sourcing is simpler and utilizes only CR (create and read) actions. It is only possible to create new events and read events.
-It is not possible to update an existing event or delete an event.
+event sourcing utilizes only CR (create and read) actions. It is only possible to create new events and read events.
+It is not possible to update or delete an existing event.
 
 Let's have an example of using event sourcing to store orders in an e-commerce software system.
 The *order-service* should be able to store the following events:
@@ -2066,12 +2065,11 @@ The *order-service* should be able to store the following events:
   - Contains information about the reimbursement for the returned order item(s) to the customer
 
 Event sourcing can be useful when an audit trail of events is wanted or needed. The data store used in event sourcing would then act as an audit logging system. When you use event sourcing, you create events that could also be used in various analytics and machine learning applications. Event sourcing can also help debug a complex system. Debugging events is easier compared to debugging entity modifications. Of course, those entity modifications could be logged, but that would mean a specific low logging level needs to be enabled, and still, not all data should be written to logs due to security reasons.
-The drawback of event sourcing is recreating the current state of entities from events in the event store. This can be a performance bottleneck if needed to be done often and the number of events is high. The potential performance bottleneck can be mitigated by creating a snapshot of an entity state, e.g., after a certain number of events created for a specific entity. Then, the current state of an entity can be recreated by finding the latest snapshot and replaying events created after that snapshot. Another alternative is to use partially materialized views and CQRS, as described in the next section.
+The drawback of event sourcing is recreating the current state of entities from events in the event store. This can be a performance bottleneck if it needs to be done often and the number of events is high. The potential performance bottleneck can be mitigated by creating a snapshot of an entity state, e.g., after a certain number of events created for a specific entity. Then, the current state of an entity can be recreated by finding the latest snapshot and replaying events created after that snapshot. Another alternative is to use partially materialized views and CQRS, as described in the next section.
 
 ### Command Query Responsibility Segregation (CQRS) Pattern
 
-> ***Use the CQRS pattern if you want to use a different model for create/update (= command) operations compared to***
-> ***the model you want to use to query information.***
+> ***Use the CQRS pattern if you want to use a different model for create/update (= command) operations than the one you want to use to query information.***
 
 Let's consider the previous *order-service* example that used event sourcing. In the *order-service*, all the commands
 are events. However, we want users to be able to query orders efficiently. We should have an additional
@@ -2082,22 +2080,21 @@ the CQRS pattern and divide the *order-service* into two different services: *or
 ![Order Services using CQRS](resources/chapter1/images/cqrs.png)
 
 The *order-command-service* is the same as the original *order-service* that uses event sourcing, and the *order-query-service* is
-a new service. The *order-query-service* has a database where it holds a materialized view of orders. The two
+a new service. The *order-query-service* has a database with a materialized view of orders. The two
 services are connected with a message broker. The *order-command-service* sends events to a
 topic in the message broker. The *order-query-service* reads events from the topic and applies
 changes to the materialized view. The materialized view is optimized to contain basic information about each order,
 including its current state, to be consumed by the e-commerce company staff and customers. Because customers query orders,
 the materialized view should be indexed by the customer's `id` column to enable fast retrieval. Suppose that, in some particular case, a customer
-needs more details about an order available in the materialized view. In that case, the *order-command-service* can
+needs more details about an order that is available in the materialized view. In that case, the *order-command-service* can
 be used to query the events of the order for additional information.
 
-Using event sourcing and CQRS offers availability over consistency, which the system end-users usually prefer, i.e.,
-the end users usually prefer to get information fast, even if it is not current but will eventually be up-to-date.
+Using event sourcing and CQRS offers availability over consistency, which the system end-users usually prefer, i.e., end users usually prefer to get information fast, even if it is not current but will eventually be up-to-date.
 *Availability over consistency principle* is one of the IDEALS microservice principles.
 
 It should be noted that using
 the CQRS pattern does not require the command and query models to use different databases. It is perfectly fine to use
-the same database. The main idea behind the CQRS pattern is that the models for queries and commands differ as shown
+the same database. The main idea behind the CQRS pattern is that the models for queries and commands differ, as shown
 in the below picture.
 
 ![CQRS](resources/chapter1/images/cqrs2.png)
