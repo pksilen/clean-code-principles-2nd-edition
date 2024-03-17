@@ -1150,7 +1150,7 @@ one or two other microservices. Sometimes, a microservice might need to use 3-4 
 In those cases, the probability of needing to implement distributed transactions becomes higher. Distributed transactions
 can be challenging to implement correctly and thoroughly test. If you require 100% consistency in all cases, carefully consider
 if you should use distributed transactions. For example, if you are implementing a banking software system, you need high consistency in many cases. You can be better off not using distributed transactions but grouping closely related microservices into a larger one
-where you can use ACID transactions instead.
+where you can use [ACID](https://en.wikipedia.org/wiki/ACID) transactions instead.
 
 ## Library Composition Principle
 
@@ -1158,11 +1158,10 @@ where you can use ACID transactions instead.
 
 Suppose you need a library for parsing configuration files (in particular syntax) in YAML or JSON format. In that case,
 you can first create the needed YAML and JSON parsing libraries (or use existing ones). Then, you can create
-the configuration file parsing library, which is composed of the YAML and JSON parsing libraries. You would then have
+the configuration file parsing library, composed of the YAML and JSON parsing libraries. You would then have
 three different libraries: one higher-level library and two lower-level libraries. Each library has a single
 responsibility: one for parsing JSON, one for parsing YAML, and one for parsing configuration files with a specific syntax, either in JSON or YAML.
-Software components can now use the higher-level library for parsing configuration files, and they need not be aware of
-the JSON/YAML parsing libraries at all.
+Software components can now use the higher-level library for parsing configuration files, and they need not be aware of the JSON/YAML parsing libraries at all.
 
 ## Avoid Duplication Principle
 
@@ -1193,7 +1192,7 @@ it might be possible that two departments have both developed a microservice for
 software duplication that no one is aware of. This is not an optimal situation. A software development company
 should do something to enable collaboration between the departments and break the silos. One good way to share software is to
 establish shared folders or organizations in the source code repository hosting service that the company uses.
-For example, in GitHub, you could create an organization for sharing source code repositories for common libraries
+For example, in GitHub, you could create an organization to share source code repositories for common libraries
 and another for sharing common services. Each software development department has access to
 those common organizations and can still develop its software inside its own GitHub organization. In this way,
 the company can enforce proper access control for the source code of different departments, if needed. When a team
@@ -1280,7 +1279,7 @@ it is possible to read the contents of the `/etc/config/LOG_LEVEL` file, which c
 {format: yaml, type: code}
 ![deployment.yaml](resources/chapter1/code/deployment2.yaml)
 
-In Kubernetes, editing of a ConfigMap is reflected in the respective mounted file. This means that you can listen to changes
+In Kubernetes, editing of a ConfigMap is reflected in the respective mounted file. This means you can listen to changes
 in the `/etc/config/LOG_LEVEL` file. Below is shown how to do it in Node.js with JavaScript:
 
 ```js
@@ -1338,7 +1337,7 @@ Configuration management can be made easier for administrators by building user 
 
 ## Service Substitution Principle
 
-> ***Make substituting a service's dependency for another service easy by making the dependencies transparent. A transparent service is exposed to other services by defining a host and port. Use *externalized service configuration principle* (e.g., environment variables) in your microservice to define the host and port (and possibly other needed parameters like a  database username/password) for a dependent service.***
+> ***Make substituting a service's dependency for another service easy by making the dependencies transparent. A transparent service is exposed to other services by defining a host and port. Use *externalized service configuration principle* (e.g., environment variables) in your microservice to define the host and port (and possibly other needed parameters like a database username/password) for a dependent service.***
 
 Let's have an example where a microservice depends on a MongoDB service. The MongoDB service should expose
 itself by defining a host and port combination. For the microservice, you can specify the following environment variables for
@@ -1368,7 +1367,7 @@ MONGODB_PORT=27017
 
 As shown with the above examples, you can easily substitute a different MongoDB service depending on
 your microservice's environment. If you want to use a different MongoDB service, you don't need
-to modify the microservice's source code but only change the *externalized configuration*.
+to modify the microservice's source code. You only need to change the *externalized configuration*.
 
 ## Inter-Service Communication Methods
 
@@ -1415,7 +1414,7 @@ also that can fail. However, the likelihood of such a situation is very low.
 
 The *API design principles* chapter describes designing APIs for inter-service communication in more detail.
 
-Event-driven architecture (EDA) may offer benefits over traditional synchronous point-to-point architecture. This is because, in EDA, the microservice can be loosely coupled so that they are not necessarily aware of each other but communicate via
+Event-driven architecture (EDA) may offer benefits over traditional synchronous point-to-point architecture. This is because, in EDA, microservices can be loosely coupled. They are not necessarily aware of each other but can communicate via
 a message broker using a set of events. Microservices in EDA can also process events in parallel. The *event-driven principle* is one of the IDEALS microservice principles.
 
 ### Shared Data Communication Method
@@ -1441,8 +1440,7 @@ system. The entrances in the house's facade represent the software system's exte
 of the software system. Like a microservice, a single room usually has a dedicated purpose. The architectural design of a software system
 encompasses the definition of external interfaces, microservices, and their interfaces to other services.
 
-The architectural design phase results in a ground plan for the software system. After the architectural design,
-you have the facade designed, and all the rooms are specified: the purpose of each room and how rooms interface with other rooms.
+The architectural design phase results in a ground plan for the software system. After the architectural design, the facade is designed, and all the rooms are specified: the purpose of each room and how rooms interface with other rooms.
 
 Designing an individual microservice is no longer architectural design, but it can be compared to the interior design of a single room.
 The microservice design is handled using object-oriented design principles, presented in the next chapter.
@@ -1451,7 +1449,7 @@ The microservice design is handled using object-oriented design principles, pres
 according to input from the domain experts. Usually, these experts come from the business and specifically from product management.
 The idea of DDD is to transfer the domain knowledge from the domain experts to individual software developers so that
 everyone participating in software development can share a common language that describes the domain. The idea of the common language
-is that people can understand each other, and no multiple terms are used to describe a single thing. If you have a banking related domain with an *account* entity,
+is that people can understand each other, and no multiple terms are used to describe a single thing. If you have a banking-related domain with an *account* entity,
 everyone should speak about *accounts*, not *money repositories*. This common language is also called the *ubiquitous language*.
 
 The domain knowledge is transferred from product managers and architects to lead developers and product owners (POs)
@@ -1462,7 +1460,7 @@ A software development team can also have a dedicated domain expert or experts.
 Strategical DDD starts from the top business/problem domain. The top domain is split into multiple *subdomains*, each on a lower abstraction level than the top domain. A domain should be divided into subdomains so there
 is minimal overlap between subdomains. Subdomains will be interfacing with other subdomains when needed using well-defined interfaces. Subdomains can be grouped into *bounded contexts*. The ideal mapping is one subdomain per bounded context, but a bounded context can also encompass multiple subdomains. A bounded context is a boundary created to define a shared vocabulary, i.e., a ubiquitous language. The implementation of a bounded context is one or more microservices. If a bounded context consists of multiple subdomains, those subdomains are manifested as software code placed in separate source code directories—more about that in the following chapters. For example, a *purchase-service* bounded context (a part of an e-commerce software system) can have a subdomain for managing shopping carts and another subdomain that handles orders.
 
-Subdomains can be divided into three types of subdomains: a core subdomain, a supporting subdomain, and a generic subdomain.
+Subdomains can be divided into three types: core subdomains, supporting subdomains, and generic subdomains.
 A core subdomain is core to your business. If you have an e-commerce business, things related to e-commerce are core subdomains.
 In core subdomains, you must excel and try to beat the competition. The core subdomains are the company's focus areas, and the best talent should be targeted to implement those subdomains. An example of a generic domain is the identity and access management (IAM) subdomain.
 It is an area where you don't have to excel, but you should use a 3rd party solution because IAM is some other company's core domain, and they know how to do it best!
@@ -1492,15 +1490,15 @@ The abstraction level of domain events should not be too high or too low. Events
 the implementation details. Event *order placed* might be on a too high abstraction level because it is masking the following lower-level
 events: payment processed, shopping cart emptied, sales item inventory updated, order created, for example. On the other hand, events like
 *button in order form pressed* and *order entity persisted in the database* are too low-level events. These events describe implementation details
-and are not part of big-picture events storming but are part of *software design-level event storming* which is part of tactical DDD described in the next chapter.
+and are not part of big-picture event storming but are part of *software design-level event storming* which is part of tactical DDD described in the next chapter.
 The most experienced and technically oriented participants should guide the domain events' abstraction level.
 
 Below is an example of an event storming workshop result where *domain events* are listed as solid-line boxes along the time axis. The domain events on the timeline usually do not form a single line of events but multiple lines, meaning that many events can happen at the same time.
 Different lines of events can be used to represent, e.g., failure scenarios and edge cases of a feature. A sticky note can be added before different lines of events to describe whether the event lines are parallel or
-represent different scenarios. After listing all the domain events, they are grouped into subdomains/bounded contexts shown with dotted lines. In addition to the domain events, opportunities and problems
+represent different scenarios. After listing all the domain events, they are grouped into subdomains/bounded contexts, as shown with dotted lines. In addition to the domain events, opportunities and problems
 related to them should listed so that they can be addressed later in the workshop or afterward, depending on the time reserved for the workshop. At the end of the event storming session, take several photos of the designs and stitch the photos together to form a document for future reference. If you want to read more about strategical DDD, I suggest you consult the following books: *Architecture Modernization* by *Nick Tune* and *Jean-Georges Perrin* and *Strategic Monoliths and Microservices* by *Vaughn Vernon* and *Jaskula Tomasz*.
 
-You should continue the event-storming process with *software design-level event-storming* for each bounded context to figure out additional DDD concepts related to the domain events.
+You should continue the event-storming process with *software design-level event storming* for each bounded context to figure out additional DDD concepts related to the domain events.
 The *software design-level event-storming* workshop is described in the next chapter.
 
 ![Event storming](resources/chapter1/images/event_storming.png)
@@ -1517,7 +1515,7 @@ the system in more detail, they end up figuring out at least the following domai
 4) Insights are presented to software system users
 
 Each of the high-level domain events can be considered
-own subdomain. Let's pick up some keywords from the above definitions and formulate short names for the subdomains:
+as a subdomain. Let's pick up some keywords from the above definitions and formulate short names for the subdomains:
 
 1) Radio network data ingester
 2) Core network data ingester
@@ -1526,8 +1524,7 @@ own subdomain. Let's pick up some keywords from the above definitions and formul
 
 The above four subdomains will also be our bounded contexts (a different team is responsible for developing each).
 The four bounded contexts have different vocabularies, i.e., ubiquitous languages. The first bounded context speaks
-in radio network terms, the second speaks in core network terms, the third speaks about counters and KPIs, and the last
-bounded context speaks about data visualization like dashboards and charts.
+in radio network terms, the second speaks in core network terms, the third speaks about counters and KPIs, and the last bounded context speaks about data visualization like dashboards and charts.
 
 ![Bounded Contexts](resources/chapter1/images/applications.png)
 
@@ -1559,11 +1556,11 @@ Microservices in the *Insights visualizer* application are:
 - insights-visualizer-configuration-service
 
 Now, we are ready with the microservice-level architectural design for the
-software system.
+software system:
 
 ![Microservices](resources/chapter1/images/02-05.png)
 
-The last part of architectural design is to define the inter-service communication methods, i.e., context mapping.
+The last part of architectural design defines inter-service communication methods, i.e., context mapping.
 The interface between radio and core networks and the *data-ingester-service* could be a *partnership*. The interface is
 planned together with both sides.
 
@@ -1617,13 +1614,13 @@ Let's add another feature: money can be transferred from external banks to a cus
 
 As can be noticed from the above pictures, the architecture of the banking software system evolved when
 new features were introduced. For example, two new bounded contexts were created: money transfer and external money transfer.
-There was not so much change in the microservices themselves, but how they are grouped logically to bounded contexts was altered.
+There was not much change in the microservices themselves, but how they are logically grouped into bounded contexts was altered.
 
 ## Autopilot Microservices Principle
 
 > ***Microservices should be architected to run on autopilot in their deployment environment.***
 
-An autopilot microservice means a microservice that runs in a deployment environment without human interaction, except in abnormal situations when the microservice should generate an alert to indicate that human intervention is required.
+An autopilot microservice is a microservice that runs in a deployment environment without human interaction, except in abnormal situations, when it should generate an alert to indicate that human intervention is required.
 
 Autopilot microservices principle requires that the following sub-principles are followed:
 
@@ -1663,8 +1660,8 @@ that Kubernetes must assign (for some reason which can be related to CPU/memory 
 to be run on that particular computing node, and your microservice won't fit there anymore and must be moved to
 another computing node.
 
-If a microservice pod crashes, Kubernetes will notice that and start a new pod so that there is always the desired
-number of microservice replicas (pods/instances) running. The replica count can be defined in the Kubernetes Deployment manifest for the microservice.
+If a microservice pod crashes, Kubernetes will notice that and start a new pod so that the desired
+number of microservice replicas (pods/instances) are always running. The replica count can be defined in the Kubernetes Deployment manifest for the microservice.
 
 But what if a microservice pod enters a deadlock and cannot serve requests? This situation can be remediated with the help of a
 [liveness probe](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/).
@@ -1740,7 +1737,7 @@ happens to that one instance, the microservice becomes temporarily unavailable u
 new instance has been started and is ready to serve requests. For this reason, you should run at least two or more instances
 for all business-critical microservices. You should also ensure
 these two instances don't run on the same computing node. The instances should run
-in different availability zones of the cloud provider. Then, a catastrophe in availability zone 1 won't necessarily affect
+in different cloud provider availability zones. Then, a catastrophe in availability zone 1 won't necessarily affect
 microservices running in availability zone 2.
 
 You can ensure that no two microservice instances run on the same computing node by defining an anti-affinity rule in the
@@ -1778,12 +1775,12 @@ a centralized log collection system where querying the logs is made quick and ea
 In a software system that consists of possibly hundreds of microservices, you should be able to deploy each of those
 microservices individually. This means that if you have made a correction to a single microservice, that correction
 can be deployed individually without affecting any other microservice running in the environment. When you deploy the
-correction, only that microservice instances must be restarted. In a Kubernetes environment, you can achieve
+correction, only the corrected microservice's instances must be restarted. In a Kubernetes environment, you can achieve
 individual deployment easily by creating a Helm chart for each microservice. The Helm chart should contain everything
 the microservice needs, e.g., the related configuration and services (like a database), including a Kubernetes Deployment manifest.
 
 When you craft a microservice, don't assume that its dependent services are always and immediately available. For example, if your
-microservice uses Kafka, the microservice must start and run even if Kafka is deployed only after your microservice is deployed.
+microservice uses Kafka, the microservice must start and run even if Kafka is deployed after your microservice is deployed.
 
 ## Software Versioning Principles
 
@@ -1816,8 +1813,8 @@ and sometimes, these changes can be considerable, resulting in a lot of refactor
 
 ### Don't Increase Major Version Principle
 
-In semantic versioning, you need to increase the major version when making backward-incompatible public API changes.
-But if possible and feasible, I advise not to make backward-incompatible changes, thus no major version increases.
+In semantic versioning, you must increase the major version when making backward-incompatible public API changes.
+However, if possible and feasible, I advise against making backward-incompatible changes. Thus, no major version increases need to be made.
 
 If you need to make a backward-incompatible public API change, you should create a totally new software component with
 a different name. For example, suppose you have a *common-ui-lib* and must make backward-incompatible changes.
@@ -1837,7 +1834,7 @@ If you were using Node.js and NPM, this would be safe:
 npm install --save common-ui-library@latest
 ```
 
-And when you are ready to migrate to the new major version of the library, you can uninstall the old version and install the new major version in the following way:
+When you are ready to migrate to the new major version of the library, you can uninstall the old version and install the new major version in the following way:
 
 ```bash
 npm uninstall common-ui-library
