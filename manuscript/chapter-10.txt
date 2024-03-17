@@ -53,8 +53,7 @@ management) and software development organizations.
 
 ### Code
 
-*Code* is the software implementation phase. It consists of designing and implementing software components and writing various automated tests, including unit tests,
-integration tests, and E2E tests. This phase also includes all other coding needed to make the software deployable.
+*Code* is the software implementation phase. It consists of designing and implementing software components and writing various automated tests, including unit, integration, and E2E tests. This phase also includes all other coding needed to make the software deployable.
 Most of the work is done in this phase, so it should be streamlined as much as possible.
 
 The key to shortening this phase is to parallelize everything to the maximum possible extent.
@@ -103,7 +102,7 @@ A CD pipeline should perform the following tasks:
 - Build a container image for the software component
 - Publish the container image to a container registry (e.g., Docker Hub, Artifactory, or a registry provided by your cloud provider)
 - Perform a container image vulnerability scan
-    - Remember to enable container vulnerability scanning at regular intervals in your container registry, also
+    - Remember also to enable container vulnerability scanning at regular intervals in your container registry
 - Perform static code analysis for deployment code. Tools like Helm's *lint* command, [Kubesec](https://kubesec.io/) and [Checkov](https://www.checkov.io/) can be used
 - Package and publish the deployment code (for example, package a Helm chart and publish it to a Helm chart repository)
 
@@ -612,7 +611,7 @@ replicates a production environment. It is an environment where end-to-end funct
 executed before the software is deployed to production. You can use multiple staging environments to speed up
 the continuous deployment to production. It is vital that all needed testing is completed
 before deploying to production. Testing can take a couple of days to validate the stability of the software.
-If testing in a staging environment requires three days and you set up three staging environments, you can deploy to production every day.
+If testing in a staging environment requires three days and you set up three staging environments, you can deploy to production daily.
 On the other hand, if testing in a staging environment takes one week and you have only one staging environment,
 you can deploy to production only once a week. (Assuming that all tests execute successfully)
 Deployment to a production environment can also be automated. Or it can be triggered manually after completing
@@ -651,8 +650,8 @@ The following needs to be implemented to make monitoring possible and easy:
 
 Each service must log to the standard output. If your microservice is using a 3rd party library that logs to the standard output,
 choose a library that allows you to configure the log format or request the log format configurability as an enhancement to the library.
-Choose a standardized log format and use it in all microservices, e.g., use  [Syslog](https://datatracker.ietf.org/doc/html/rfc5424) format or OpenTelemetry Log Data Model (defined in a later section).
-Collect logs from each microservice to a centralized location, like an ElasticSearch database, where they are easily queriable.
+Choose a standardized log format and use it in all microservices. For example, use [Syslog](https://datatracker.ietf.org/doc/html/rfc5424) format or the OpenTelemetry Log Data Model (defined in a later section).
+Collect logs from each microservice and store them in a centralized location, like an ElasticSearch database, where they are easily queriable.
 
 #### Distributed Tracing
 
@@ -701,9 +700,9 @@ If you are using Kubernetes and Prometheus, you can define alerts using the [Pro
 
 ### Software System Alerts Dashboard Example
 
-Below is an example of a Grafana dashboard to visualize active alerts in a software system.
+Below is an example of a Grafana dashboard that visualizes active alerts in a software system.
 
-![DevSecOps Diagram](resources/chapter10/images/alert_dashboard.png)
+![Alert Dashboard](resources/chapter10/images/alert_dashboard.png)
 
 ### Microservice Grafana Dashboard Example
 
@@ -711,7 +710,7 @@ Below is an example of a Grafana dashboard to visualize SLOs and SLIs for a sing
 being opened to reveal the charts inside it. When opened, each accordion reveals charts for a particular SLI category. Each chart presents a specific SLI. In the figure below, the SLO 2 is shown in red background, and it could
 indicate that the number of errors in the last hour is too high, for example.
 
-![DevSecOps Diagram](resources/chapter10/images/microservice_monitoring_dashboard.png)
+![Microservice Monitoring Dashboard](resources/chapter10/images/microservice_monitoring_dashboard.png)
 
 Software operations staff connects back to the software development side of the DevOps lifecycle in the following
 ways:
@@ -734,7 +733,7 @@ Implement logging in software components using the following logging severities:
 - DEBUG
 - TRACE
 
-I don't usually use the CRITICAL/FATAL severity at all. It might better to report all errors with the ERROR severity because
+I don't usually use the CRITICAL/FATAL severity at all. It might be better to report all errors with the ERROR severity because
 then it is easy to query logs for errors using a single keyword only, for example:
 
 ```bash
