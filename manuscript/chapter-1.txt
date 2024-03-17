@@ -421,7 +421,7 @@ We define that our *ecommerce-service* aggregates the following lower-level micr
 ![Service Aggregation in E-Commerce Software System](resources/chapter1/images/service-aggr-ecommerce.png)
 
 Most of the microservices described above can be implemented as REST APIs because they mainly contain
-basic CRUD (create, read, update and delete) operations for which a REST API is a good match. We will handle
+basic CRUD (create, read, update, and delete) operations for which a REST API is a good match. We will handle
 API design in more detail in a later chapter. Let's implement the _sales-item-service_ as a REST API
 using Java and [Spring Boot](https://spring.io/projects/spring-boot).
 
@@ -553,7 +553,7 @@ public interface SalesItemService {
 ```
 
 The below `SalesItemServiceImpl` class implements the `SalesItemService` interface.
-It will interact with a sales item repository to persist, fetch and delete data to/from a database.
+It will interact with a sales item repository to persist, fetch, and delete data to/from a database.
 
 {title: "SalesItemServiceImpl.java"}
 ```java
@@ -733,7 +733,7 @@ public class SalesItem {
 
 The below `InputSalesItem` class contains the same properties as the `SalesItem` entity class, except the `id` property.
 The `InputSalesItem` DTO class is used when creating a new sales item or updating an existing sales
-item. When creating a new sales item, the `id` property should not be given by the client because the microservice will automatically generate
+item. When creating a new sales item, the client should not give the' id' property because the microservice will automatically generate
 it (or the database will, actually, in this case).
 
 {title: "SalesItemArg.java"}
@@ -871,8 +871,7 @@ app.listen(4000);
 ```
 
 After you have started the above program with the `node server.js` command, you can access the GraphiQL endpoint with
-a browser at `http://localhost:4000/graphql`
-```
+a browser at `http://localhost:4000/graphql`.
 
 On the left-hand side pane, you can specify a GraphQL query. For example, to query the user identified with id 2:
 
@@ -895,7 +894,7 @@ On the left-hand side pane, you can specify a GraphQL query. For example, to que
 }
 ```
 
-Because we haven't implemented the lower-level microservices, let's modify the part of the *server_real.js* where lower level
+Because we haven't implemented the lower-level microservices, let's modify the part of the *server_real.js* where lower-level
 microservices are accessed to return dummy static results instead of accessing the real lower-level microservices:
 
 {title: "server_fake.js"}
@@ -934,8 +933,7 @@ const [
 // ...
 ```
 
-
-We should see the result below if we now execute the previously specified query. We assume that
+We should see the result below if we execute the previously specified query. We assume that
 *sales-item-service* returns a single sales item with id 1.
 
 ```json
