@@ -1054,7 +1054,7 @@ The result for the above query will be the following:
 }
 ```
 
-The above example lacks some features like authorization that is needed for production. Authorization
+The above example lacks some features like authorization, which is needed for production. Authorization
 should ensure users can only execute the `user` query to fetch their resources. The authorization should fail if
 a user tries to execute the `user` query using someone else's `id`. Security will be discussed more in the coming
 *security principles* chapter.
@@ -1062,7 +1062,7 @@ a user tries to execute the `user` query using someone else's `id`. Security wil
 The `user` query in the previous example spanned over multiple lower-level microservices:
 *user-account-service*, *sales-item-service*, and *order-service*. Because the query is not mutating anything, it can be
 executed without a distributed transaction. A distributed transaction is similar to a regular (database) transaction,
-with the difference that it spans multiple remote services.
+but the difference is that it spans multiple remote services.
 
 The API endpoint for placing an order in the *ecommerce-service* needs to create a new order using the *order-service*,
 mark purchased sales items as bought using the *sales-item-service*, empty the shopping cart using the *shopping-cart-service*,
@@ -1072,9 +1072,9 @@ Guidance on how to implement a distributed transaction is given later in this ch
 
 Service aggregation utilizes the [facade pattern](https://en.wikipedia.org/wiki/Facade_pattern).
 The facade pattern allows for hiding individual lower-level microservices behind a facade (the higher-level microservice).
-The clients of the software system access the system through the facade. They don't directly contact the individual lower-level
+The software system clients access the system through the facade. They don't directly contact the individual lower-level
 microservices behind the facade because it breaks the encapsulation of the lower-level microservices inside the higher-level microservice.
-A client accessing the lower-level microservices directly creates unwanted coupling between the client
+A client directly accessing the lower-level microservices creates unwanted coupling between the client
 and the lower-level microservices, which makes changing the lower-level microservices hard without affecting the client.
 
 Think about a post office counter as an example of a real-world facade. It serves as a facade for the post office and
