@@ -32,7 +32,7 @@ agile framework is used. An agile framework establishes a clear division of resp
 
 In the *SAFe*, for example, during a [program increment (PI) planning](https://scaledagileframework.com/pi-planning/), development teams plan features for the
 next [PI](https://v5.scaledagileframework.com/program-increment/) (consisting of 4 iterations, two weeks per iteration, a total of 8 weeks followed by an [IP iteration](https://scaledagileframework.com/innovation-and-planning-iteration/)). In the PI planning, teams split features
-into user stories and see which features fit the PI. Planned user stories will be assigned story points and stories will be placed into iterations.
+into user stories to see which features fit the PI. Planned user stories will be assigned story points, and stories will be placed into iterations.
 
 {aside}
 Story points can be measured in concrete units, like person days. Use a slightly modified Fibonacci sequence, like 1, 2, 3, 5, 8, 13, 20, 40, to estimate the size of a user story.
@@ -66,7 +66,7 @@ Teams and individuals estimate their work. There is no management involved. Mana
 much time you have for something. They don't come asking when something is ready or pressure you to complete
 tasks earlier than estimated. Also, they don't come to you with extra work to do. All of this will make your work feel less stressful.
 
-My personal experience with SAFe for over five years is mainly positive. I feel I can concentrate more on "the real work", which makes me happier.
+My personal experience with SAFe over the past five years has been mainly positive. I feel I can concentrate more on "the real work", which makes me happier.
 There are fewer meetings, fewer irrelevant emails, and fewer interruptions in the development flow in general. This is mainly because the team has a *product owner* and *scrum master* whose role is to protect the team members from any "waste" or "the management stuff" and allow them to concentrate on their work.
 
 If a team has work that does not require effort estimation, Kanban can be used instead of Scrum. For example, in my organization, the DevOps team
@@ -171,7 +171,7 @@ The top reasons for technical debt are the following (not in any particular orde
 - No unit tests, harder to refactor
 - Not practicing TDD
 - Duplicate code
-- Not conducting the boy scout rule
+- Not conducting the Boy Scout rule
 - Laziness (using what comes first in mind or constantly trying to find the easiest and quickest way to do things)
 
 ## Software Component Documentation Principle
@@ -182,13 +182,13 @@ It is crucial that setting up a development environment for a software component
 Another important thing is to let people easily understand the problem domain the software component
 tries to solve. Also, the object-oriented design of the software component should be documented.
 
-Software component documentation should reside in the same source code repository where the source code is.
+Software component documentation should reside in the same source code repository as the source code.
 The recommended way is to use a README.MD file in the root directory of the source code repository for documentation
 in [Markdown format](https://www.markdownguide.org/basic-syntax/). You should split the documentation into multiple files and store additional files in the *docs* directory of the source code repository.
 This way, it is less likely to face a merge conflict if multiple persons edit the documentation simultaneously.
 
 JetBrains offers a new tool called [Writerside](https://www.jetbrains.com/writerside/) to author software documentation
-in Markdown format. This tool will generate a table of contents for you automatically. It allows you to produce diagrams
+in Markdown format. This tool will automatically generate a table of contents for you. It allows you to produce diagrams
 using declarative code (with [Mermaid.js](https://mermaid.js.org/intro/)) instead of drawing them by hand. It offers tools to
 generate a documentation website for [GitHub Pages](https://pages.github.com/) or [GitLab Pages](https://docs.gitlab.com/ee/user/project/pages/) as part of the software component's CI/CD pipeline.
 
@@ -199,7 +199,7 @@ Below is an example table of contents that can be used when documenting a softwa
   - You can provide a link to Gherkin feature files here, and then you don't have to store the same information in two places.
 - Architecture (how the software component relates to other software components)
 - Data flow diagram
-- OOD diagrams describing different subdomains and interfaces/classes in each subdomain with their relationships and main public methods.
+- OOD diagrams describing different subdomains and the interfaces/classes in each subdomain, their relationships, and their main public methods.
   - Explanation of the design (if needed)
   - Don't create or generate a single class diagram for the whole microservice, but create or generate multiple
     class diagrams for various subdomains
@@ -255,8 +255,8 @@ user story or stories should be added to the team's backlog.
 
 ### Focus on Removal of Duplicate Information (DRY principle)
 
-The review material might contain duplicate information, e.g., code, that the author is unaware of. It might be a question
-about a library that can perform the same operations the author has implemented himself.
+The review material might contain duplicate information (code) the author is unaware of. It might be a question
+about a library that can perform the same operations the author has implemented himself. The author was not aware of the existence of the library.
 
 ### Focus on Spreading Knowledge
 
@@ -291,11 +291,11 @@ Code reviewers must ensure that the committed code does not contain malicious co
 Consistent source code formatting is vital because if team members have different source code formatting rules, one team member's small change
 to a file can reformat the whole file using their formatting rules, which can cause another developer to face a major merge conflict that
 slows down the development process. Always agree on common source code formatting rules and preferably use a tool like
-*Black* or *Blue* to enforce the formatting rules.
+*Prettier*, *Black* or *Blue* to enforce the formatting rules.
 
 ## Highly Concurrent Development Principle
 
-> ***Each team member can work with some piece of code. No one should be waiting long for someone else's work to finish.***
+> ***Each team member can work with a piece of code. No one should have to wait long for someone else's work to finish.***
 
 Concurrent development is enabled when different people modify different source code files. When
 several people need to alter the same files, it can cause merge conflicts. These merge conflicts cause extra work because they often must be resolved
@@ -305,7 +305,7 @@ This can be achieved in the ways described in the following sections.
 ### Dedicated Microservices and Microlibraries
 
 Microservices are small by nature, and it is possible to assign the responsibility of a microservice to a
-single team member. This team member can proceed with the microservice with full velocity, and rest
+single team member. This team member can proceed with the microservice at full velocity and rest
 assured that no one else is modifying the codebase. The same goes for libraries. You should
 create small microlibraries (= libraries with a single responsibility) and assign the responsibility of developing
 a microlibrary to a single person.
@@ -315,8 +315,8 @@ a microlibrary to a single person.
 Sometimes, assigning a single microservice or library to a single developer is impossible. It could be
 because the microservice or library is relatively large and it is not feasible
 to split it into multiple microservices or libraries.
-The microservice or library should be divided into several
-subdomains in those cases. Each source code directory reflects a different subdomain. It is then possible to assign
+In those cases, the microservice or library should be divided into several
+subdomains. Each source code directory reflects a different subdomain. It is then possible to assign
 the responsibility of a single subdomain to a single person. The assignment of subdomains need not be fixed
 but can and should change as time passes. To distribute the knowledge of different domains in the team,
 it is advisable to rotate the responsibilities amongst the team members. Let's say you have a team of three
@@ -344,7 +344,7 @@ conflicts rare or at least less frequent.
 
 Pair programming is something some developers like and other developers hate. It is not a one-fits-all solution.
 It is not take it or leave it, either. You can have a team where some developers program in pairs and others don't.
-Also, people's opinions about pair programming can be prejudiced. Perhaps they have never done pair programming, so how
+Also, people's opinions about pair programming can be prejudiced. They may have never done pair programming, so how
 do they know if they like it or not? It is also true that choosing the right partner to pair with can mean a lot.
 Some pairs have better chemistry than other pairs.
 
@@ -364,6 +364,8 @@ Mob programming is an extension of pair programming where the whole team or a pa
 to produce software. Mob programming brings the same benefits as pair programming, like a shared understanding of the domain and code, better design, less technical debt, and fewer bugs.
 Mob programming is also an excellent way to teach junior developers software development principles and practices in a very practical manner.
 Mob programming also completely removes the need for a code review.
+Mob programming is useful, especially when a team embarks on a new domain with little knowledge beforehand. Not needing code reviews is a real benefit. In code reviews, raising issues regarding major design flaws can be difficult because correcting such flaws can require major rework. Reviewers are sympathetic towards the author and do not bring up such issues as major design flaws.
+
 
 ## Ask and Offer Help Principle
 
