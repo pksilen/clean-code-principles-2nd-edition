@@ -9,7 +9,7 @@ This chapter presents principles for selecting and using databases. Principles a
 - Search engines
 
 Relational databases are also called SQL databases because accessing a relational database involves issuing SQL statements.
-Databases of the other database types are called [NoSQL](https://en.wikipedia.org/wiki/NoSQL) databases because they don't support SQL at all, or they support
+Databases of the other database types are called [NoSQL](https://en.wikipedia.org/wiki/NoSQL) databases because they don't support SQL at all or they support
 only a subset of it, possibly with some additions and modifications.
 
 ## Relational Databases
@@ -29,26 +29,25 @@ Data in a relational database is organized in the following hierarchy:
     - Columns
 
 A table consists of columns and rows. Data in a database is stored as rows in the tables. Each row has
-a value for each column in the table. A special 'NULL' value is used if a row does not have a value for a particular column. You can specify if null values are allowed for a column or not.
+a value for each column in the table. A special `NULL` value is used if a row does not have a value for a particular column. You can specify if null values are allowed for a column or not.
 
 A microservice should have a single logical database (or schema).
-Some relational databases have one logical database (or schema) available by default and in other databases,
-you must create a logical database (or schema) by yourself.
+Some relational databases have one logical database (or schema) available by default; in other databases, you must create a logical database (or schema) by yourself.
 
 ### Use Object Relational Mapper (ORM) Principle
 
-> ***Use an object-relational mapper (ORM) to avoid the need to write SQL and to avoid making your microservice potentially vulnerable to SQL injection attacks. Use an ORM to automatically map the database rows to objects that can be serialized to JSON.***
+> ***Use an object-relational mapper (ORM) to avoid writing SQL and to avoid making your microservice potentially vulnerable to SQL injection attacks. An ORM automatically maps the database rows to objects that can be serialized to JSON.***
 
 Many languages have ORM frameworks. Java has Java Persistence API (JPA, the most famous implementation of which is Hibernate),
-JavaScript/TypeScript has TypeORM, and Python has the Django framework, for example.
+JavaScript/TypeScript has TypeORM and Prisma, and Python has the Django framework and SQLAlchemy, for example.
 
 An ORM uses entities as building blocks for the database schema. Each entity class in a microservice is reflected as a table in the database. Use the same name for an entity and the database table, except the table name should
 be plural.
 
-The domain entity and database entity are not necessarily the same. A typical example is when the entity id in the database entity is numeric, a 64-bit integer (BIGINT), but the domain entity has it as a string so that it can be used by any client (including JavaScript, where number type is
+The domain entity and database entity are not necessarily the same. A typical example is when the entity id in the database entity is numeric, a 64-bit integer (BIGINT), but the domain entity has it as a string so that it can be used by any client (including JavaScript, where the number type is
 less than 64-bit).
 You often benefit from creating separate entity classes for a repository and the domain model. You might want to store domain entities in a database in a slightly different format. In that case, you
-must define separate entity classes for the domain and the repository. You can name database-related entities with a Db-prefix, e.g. `DbSalesItem`.
+must define separate entity classes for the domain and the repository. You can name database-related entities with a Db-prefix, e.g., `DbSalesItem`.
 In the `DbSalesItem` class, you need two conversion methods: from a domain entity and to a domain entity:
 
 ```java
@@ -59,11 +58,11 @@ DbSalesItem.from(salesItem)
 salesItem = dbSalesItem.toDomainEntity()
 ```
 
-If you need to change your database, you can have mixed format ids (e.g., from a relational database with BIGINT ids to a MongoDB with string-format ObjectIds). If you want uniform unique ids, you must generate them
+If you need to change your database, you can end up having mixed format ids (e.g., from a relational database with BIGINT ids to a MongoDB with string-format ObjectIds). If you want uniform unique ids, you must generate them
 in your software component, not by the database. This might be a good approach also from the security point of view to prevent [IDOR](https://cheatsheetseries.owasp.org/cheatsheets/Insecure_Direct_Object_Reference_Prevention_Cheat_Sheet.html).
 If you generate random UUIDs in your application, and you have accidentally broken authorization (IDOR), it is not possible for an attacker to guess UUIDs and try to access other users' resources using them.
 
-Below is an example of `DbSalesItem` entity class:
+Below is an example of a `DbSalesItem` entity class:
 
 {title: DbSalesItem.java"}
 ```java
@@ -75,8 +74,7 @@ public class DbSalesItem {
 }
 ```
 
-Store `SalesItem` entities in a table named `salesitems`. In this book, I use
-case-insensitive database identifiers and write all identifiers in lowercase. The case sensitivity of a database
+Store `DbSalesItem` entities in a table named `salesitems`. In this book, I write all identifiers in lowercase. The case sensitivity of a database
 depends on the database and the operating system it is running on. For example, MySQL is case-sensitive only on Linux
 systems.
 
@@ -88,8 +86,8 @@ the following columns:
 - price
 
 Each entity table must have a primary key defined. The primary key must be unique for each row in the table.
-In the below example, we are using the `@Id` annotation to define the `id` column as the primary key containing
-a unique value for each row. The `@GeneratedValue` annotation defines that the database should automatically generate
+In the example below, we use the `@Id` annotation to define the `id` column as the primary key containing
+a unique value for each row. The `@GeneratedValue` annotation states that the database should automatically generate
 a value for the `id` column using the supplied strategy.
 
 {title: "DbSalesItem.java"}
