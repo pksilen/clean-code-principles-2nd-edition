@@ -14,7 +14,7 @@ horizontally (scaling out and in via adding and removing processes). The role of
 consisted of monoliths running on bare metal servers, mainly capable of scaling up or down. Nowadays, you should use threading if it is a good optimization or otherwise needed.
 
 Suppose we have a software system with an event-driven architecture. Multiple microservices communicate with each other using asynchronous messaging. Each microservice instance has only a single thread that
-consumes messages from a message broker and then processes them. If the message broker's message queue for a microservice starts growing too long, the microservice should scale out by adding a new instance. When the load for the microservice diminishes, it can scale in by removing an instance. There is no need to use threading at all.
+consumes messages from a message broker and processes them. If the message broker's message queue for a microservice starts growing too long, the microservice should scale out by adding a new instance. When the load for the microservice diminishes, it can scale in by removing an instance. There is no need to use threading at all.
 
 We could use threading in the data exporter microservice if the input consumer and the output producer were synchronous. The reason for threading
 is optimization. If we had everything in a single thread and the microservice was performing network I/O (either input or output-related), the microservice would have
@@ -27,15 +27,15 @@ of thumb, consider using asynchronous code first, and if it is not possible or f
 
 You might need a microservice to execute housekeeping tasks on a specific schedule in the background. Instead of using threading and implementing the housekeeping functionality
 in the microservice, consider implementing it in a separate microservice to ensure that the *single responsibility principle* is followed.
-You can configure the housekeeping microservice to be run at regular intervals using a Kubernetes CronJob, for example.
+For example, you can configure the housekeeping microservice to be run at regular intervals using a Kubernetes CronJob.
 
-Threading also brings complexity to a microservice because the microservice must ensure thread safety. You will be in big trouble if you forget to implement thread safety. Threading and synchronization-related bugs are hard to find.
-Thread safety is a topic that is discussed later in this chapter. Threading also brings complexity to deploying a microservice because the number of vCPUs requested by the microservice can depend on the thread count.
+Threading also brings complexity to a microservice because the microservice must ensure thread safety. You will be in big trouble if you forget to implement thread safety, as threading and synchronization-related bugs are hard to find.
+Thread safety is discussed later in this chapter. Threading also brings complexity to deploying a microservice because the number of vCPUs requested by the microservice can depend on the thread count.
 
 ### Parallel Algorithms
 
 Parallel algorithms are similar to threading. With parallel algorithms, it is a question about implicit threading instead of explicit threading. Threads are created behind the scenes to enable an algorithm to execute
-in parallel on some data set. A parallel algorithm is usually something you don't necessarily need in a cloud-native microservice.
+in parallel on some data set. You don't necessarily need a parallel algorithm in a cloud-native microservice.
 You can often run algorithms without parallelization and instead scale out on demand.
 
 Many languages offer parallel algorithms. In Java, you can perform parallel operations with a parallel stream created with the `parallelStream` method:
@@ -137,7 +137,7 @@ public void doSomething() {
 ### Atomic Variables
 
 If you have some data shared between threads and that data is just a simple primitive variable, like a boolean or integer,
-you can use an atomic variable to guarantee thread safety and don't need to use any additional synchronization technique. Atomic variable reads and updates
+you can use an atomic variable to guarantee thread safety and don't need any additional synchronization. Atomic variable reads and updates
 are guaranteed to be atomic, so there is no possibility for a race condition between two threads. Some atomic variable implementations use locks.
 Consult the language's documentation to see if a certain atomic type is guaranteed to be lock-free.
 
@@ -167,7 +167,7 @@ private:
 }
 ```
 
-Multiple threads can increment a counter of the above type at the same time without a need for additional synchronization.
+Multiple threads can increment a counter of the above type simultaneously without additional synchronization.
 
 ### Concurrent Collections
 
@@ -243,10 +243,10 @@ private:
 };
 ```
 
-Mutexes are not usually used directly because there exists the risk that a mutex is forgotten to be unlocked.
+Mutexes are not usually directly used because the risk exists that a mutex is forgotten to be unlocked.
 Instead of using the plain `std::mutex` class, you can use a mutex with the `std::scoped_lock` class. The `std::scoped_lock`
-class wraps a mutex instance. It will lock the wrapped mutex on construction
-and unlock the mutex on destruction. In this way, you cannot forget to unlock a locked mutex. The mutex will be locked for
+class wraps a mutex instance. It will lock the wrapped mutex during construction
+and unlock it during destruction. In this way, you cannot forget to unlock a locked mutex. The mutex will be locked for
 the scope of the scoped lock variable. Below is the above example modified to use a scoped lock:
 
 {title: "ThreadSafeVector.h"}
@@ -355,7 +355,7 @@ private:
 };
 ```
 
-Similar to mutexes, we should not use raw spinlocks in our code but use a scoped lock.
+Like mutexes, we should not use raw spinlocks in our code; instead, we should use a scoped lock.
 Below is an implementation of a generic `ScopedLock` class that handles the locking
 and unlocking of a lockable object:
 
