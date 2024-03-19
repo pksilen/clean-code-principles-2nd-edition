@@ -364,19 +364,18 @@ Mob programming is an extension of pair programming where the whole team or a pa
 to produce software. Mob programming brings the same benefits as pair programming, like a shared understanding of the domain and code, better design, less technical debt, and fewer bugs.
 Mob programming is also an excellent way to teach junior developers software development principles and practices in a very practical manner.
 Mob programming also completely removes the need for a code review.
-Mob programming is useful, especially when a team embarks on a new domain with little knowledge beforehand. Not needing code reviews is a real benefit. In code reviews, raising issues regarding major design flaws can be difficult because correcting such flaws can require major rework. Reviewers are sympathetic towards the author and do not bring up such issues as major design flaws.
-
+Mob programming is useful, especially when a team embarks on an entirely new domain with little knowledge beforehand. Not needing code reviews is a real benefit. In code reviews, raising issues regarding major design flaws can be difficult because correcting such flaws can require major rework. Reviewers are sympathetic towards the author and do not bring up such issues as major design flaws.
 
 ## Ask and Offer Help Principle
 
 > ***Ask for help as soon as possible to speed yourself up. Offer help to your teammates in a proactive manner.***
 
 If a developer faces a problem that is hard to solve, there are typically two schools of people: The ones that
-ask for help and the others that try to solve the problem themselves, no matter how long it takes. I advise every developer to ask for help when they realize they cannot quickly solve a problem by themselves. It is possible that someone else has pondered the same issue and has the right answer for you immediately available. This will save you from headaches, stress, and possibly a lot of time.
+ask for help and the others that try to solve the problem themselves, no matter how long it takes. I advise every developer to ask for help when they realize they cannot quickly solve a problem by themselves. It is possible that someone else has pondered the same issue earlier and has the right answer for you immediately available. This will save you from headaches, stress, and a lot of time.
 
 If you are a senior developer, you typically have much more knowledge than the junior developers. Thus, you should make yourself
-available to the junior developers proactively. If you know someone who probably does not know something, offer your
-help immediately. Don't wait until help is asked, but try to be as proactive as possible. You can do it simply by asking: Do you
+available to the junior developers proactively. If you know someone who does not know something, offer your
+help immediately. Don't wait until help is asked, but try to be as proactive as possible. You can simply ask: Do you
 want some help with that thing *X*?
 
 ## Well-Defined Development Team Roles Principle
@@ -404,7 +403,7 @@ Let's discuss each role's responsibilities in detail in the following sections.
 
 The product owner (PO) acts as an interface between the development team and the business, which usually means product management (PM).
 The PO gathers requirements (non-functional and functional) from PM via discussions.
-The PO is responsible for prioritizing the team backlog according to the guidance from the PM and defining user stories with the team. The PO role is not usually full-time so that a single PO can serve two small teams.
+The PO is responsible for prioritizing the team backlog according to the PM's guidance and defining user stories with the team. The PO role is not usually full-time, so a single PO can serve two small teams.
 When the PO gathers requirements (non-functional and functional) from the PM, the PM does not usually list all the requirements,
 but the PO must determine all the requirements by asking the right questions and discussing them with the PM.
 The PO should be a technical person and should be able to create, e.g., Gherkin feature file(s) as the acceptance criteria for a backlog feature.
@@ -496,7 +495,7 @@ as part of the competence transfer:
 
 ## Inter-Team Communication Principle
 
-> ***Regardless of whether you have a distributed or modular monolithic software architecture, teams should have a high degree of organizational autonomy. This means self-directed and fast-paced teams with minimal communication overhead with other teams.***
+> ***Regardless of whether you have a distributed or modular monolithic software architecture, teams should have a high degree of organizational autonomy. This means self-directed, fast-paced teams with minimal communication overhead with other teams.***
 
 *Conway's law* describes how an organization's communication structure resembles the architectural structure of the produced software.
 The software architecture can be a big ball of mud-type monolith without a clear organizational communication structure.
@@ -504,9 +503,8 @@ If teams are siloed, the missing communication between the teams can produce com
 A team suitable for a modular monolith or microservices architecture mainly communicates internally but co-operates
 with other teams to agree upon interfaces (context mapping) between bounded contexts.
 
-There are some things when coordination between teams is needed. Those are the things that are visible to software's end-users and administrators.
+Some aspects require coordination between teams. Those are the things that are visible to software's end-users and administrators.
 Software should look and feel harmonious, not something that is crafted by siloed teams.
 For example, coordination is needed in UX/UI design, customer documentation, configuration, and observability (logging format, SLIs, metric dashboards, SLOs, and alarms).
-The team can decide what is best for things that are not visible to customers and users. The team can choose the programming language, framework, libraries, testing methods, and tools.
+The team can decide what is best for things that are not visible to customers and users. For example, the team can choose the programming language, framework, libraries, testing methods, and tools.
 High independence in teams and lack of inter-team communication can result in an inability to follow the *DRY principle*. There should always be enough communication to avoid unnecessary duplicated effort.
-
