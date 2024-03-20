@@ -2225,7 +2225,7 @@ describe('NumberInput') () => {
 In the above example, we used the [testing-library](https://testing-library.com/), which has implementations for all the common UI
 frameworks: React, Vue, and Angular. It means you can use mostly the same testing API regardless
 of your UI framework. There are tiny differences, basically only in the syntax of the `render` method.
-If you had implemented some UI components and unit tests for them with React, and you would like to reimplement them with Vue, you don't need to reimplement all the unit tests. You only
+If you have implemented some UI components and unit tests for them with React and would like to reimplement them with Vue, you don't need to reimplement all the unit tests. You only
 need to modify them slightly (e.g., make changes to the `render` function calls). Otherwise, the existing
 unit tests should work because the behavior of the UI component
 did not change, only its internal implementation technology from React to Vue.
@@ -2238,8 +2238,8 @@ did not change, only its internal implementation technology from React to Vue.
 The target of software component integration testing is that all public functions of the software component should be touched by at least one integration test.
 Not all functionality of the public functions should be tested because that has already been done in the unit testing phase. This is
 why there are fewer integration tests than unit tests. The term *integration testing* sometimes refers to integrating
-a complete software system or a product. However, it should be used to describe software
-component integration only. When testing a product or a software system, instead of *product integration* or *system integration*, the term *end-to-end testing* should be preferred to avoid
+a complete software system or a product. However, it should only be used to describe software
+component integration. When testing a product or a software system, instead of *product integration [testing]* or *system integration [testing]*, the term *end-to-end testing* should be preferred to avoid
 confusion and misunderstandings.
 
 The best way to do the integration testing is using [black-box testing](https://en.wikipedia.org/wiki/Black-box_testing).
@@ -2254,21 +2254,21 @@ should behave. In BDD and ATDD, behavioral specifications are the root of the in
 specifications for each backlog feature. The specifications are the basis for integration tests that also serve as acceptance tests for the feature.
 When the team demonstrates a complete feature in a system demo, they should also demonstrate the passing acceptance tests.
 This practice will shift the integration testing to the left, meaning writing the integration tests can start early and proceed in parallel with the actual implementation. The development
-team writes a failing integration test and only after that implement enough source code to make that test pass.
-BDD and ATDD also ensure that it is less likely to forget to test some functionality because the functionality is first formally specified as tests before any implementation begins.
+team writes a failing integration test and only after that implements enough source code to make that test pass.
+BDD and ATDD also ensure that it is less likely to forget to test some functionality because the functionality is first formally specified as tests before implementation begins.
 
 When writing behavioral specifications, happy-path scenarios and the main error scenarios should be covered. The idea is not to test every possible
 error that can occur.
 
 One widely used way to write behavioral specifications is the [Gherkin](https://cucumber.io/docs/gherkin/) language. However, it is not the only way. So, we cannot say that BDD equals Gherkin.
 You can even write integration tests using a unit testing framework if you prefer. An example of that approach is available in *Steve Freeman*'s and *Nat Pryce*'s book *Growing Object-Oriented Software, Guided by Tests*.
-The problem with using a unit testing framework for writing integration tests has been how to test the external dependencies, like a database. Finally, a clean and easy solution to this problem is available.
+The problem with using a unit testing framework for writing integration tests has been how to test external dependencies, such as a database. Finally, a clean and easy solution to this problem is available.
 It is called [testcontainers](https://testcontainers.com/).
 Testcontainers allow you to programmatically start and stop containerized external dependencies, like a database in test cases with only one or two lines of code.
 
 You can also write integration tests in two parts: component tests and external integration tests, where the component tests test internal integration (of unit-tested modules with faked external dependencies) and the external integration tests
 test integration to external services. The component tests could be written using a unit test framework, and external integration tests could be written by a test automation developer using tools like Behave and Docker Compose.
-I have also worked with the approach of creating just a handful of fast-executing component tests to act as smoke tests (focusing on the most essential part of business logic), and all integration tests are written using Behave and Docker Compose.
+I have also worked with the approach of creating just a handful of fast-executing component tests to act as smoke tests (focusing on the most essential part of business logic). All integration tests are written using Behave and Docker Compose.
 I can execute those smoke tests together with unit tests to quickly see if something is broken.
 The Behave + Docker Compose integration tests take longer to start and run, so they are not executed as often.
 Remember that if you want to be able to execute component tests with fake external dependencies, you need to follow the *clean microservice design principle (architecture)* so that you can create fake input/output interface adapter classes used in the tests.
