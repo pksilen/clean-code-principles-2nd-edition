@@ -1,13 +1,13 @@
 <template>
   <span>{{authInfoStore.firstName}}</span>
-  &nbsp;
+  &nbsp
   <button @click="logout">Logout</button>
 </template>
 
 <script setup>
 import { useRouter } from "vue-router";
 import authorizationService from "@/authService";
-import { useAuthInfoStore } from "@/stores/authInfoStore";
+import { useAuthInfoStore } from "@/authInfoStore";
 
 const authInfoStore = useAuthInfoStore();
 const router = useRouter();

@@ -1,12 +1,12 @@
 # Security Principles
 
-This chapter describes principles related to security and addresses the main security features from a software developer's point of view.
+This chapter describes security principles and addresses the main security features from a software developer's perspective.
 
 ## Shift Security to Left Principle
 
 > ***Shift security implementation to the left. Implement security-related features sooner rather than later.***
 
-Security is integral to production-quality software, like the source code itself and all the tests.
+Security is integral to production-quality software, like the source code and all the tests.
 Suppose that security-related features are implemented only in a very late project phase. In that case, there is a greater
 possibility of not finding time to implement them or forgetting to implement them. For that reason, security-related features should be implemented first rather than last.
 The threat modeling process described in the next section should be used to identify the potential threats and provide
@@ -14,7 +14,7 @@ a list of security features that need to be implemented as threat countermeasure
 
 ## Have a Product Security Lead Principle
 
-> ***Each product team should have a security lead appointed. The role of the security lead is to ensure that the product is secure.***
+> ***Each product team should have a security lead appointed. The security lead's role is to ensure that the product is secure.***
 
 The security lead works tightly with development teams. They educate teams on security-related processes and security features. The security lead facilitates the teams in the below-described threat modeling
 process, but following the process is the team's responsibility, as is the actual implementation of security features.
@@ -43,7 +43,7 @@ A threat categorization methodology should be used to determine possible threats
 
 #### STRIDE method
 
-The *STRIDE* method categorizes threats to the following categories:
+The *STRIDE* method categorizes threats into the following categories:
 
 | Category | Description                                                                             |
 |----------|-----------------------------------------------------------------------------------------|
@@ -110,7 +110,7 @@ features. These security features should eliminate or at least mitigate the thre
 or mitigated, you can accept the risk if the threat is categorized as a low-risk threat.
 A low-risk threat has a low impact on the application, and the probability of the threat
 realization is low. Suppose you have found a threat with a very high risk in your application, and you cannot eliminate
-or mitigate that threat. In that case, you should eliminate the threat by completely removing the threat-related features from the application.
+or mitigate that threat. In that case, you should eliminate the threat by removing the threat-related features from the application.
 
 ### Threat Modeling Example using STRIDE
 
@@ -190,7 +190,7 @@ after the countermeasure.
 10. Do not use regular expressions in validation or use regular expressions that cannot cause ReDoS (5.3.)
 11. Validate input data to the microservice, e.g., correct types, min/max of numeric values, and list of allowed values (5.4). Additionally, consider audit logging input validation failures
 12. Implement user authentication and authorization using JWTs (1.1, 1.2, 6.1). Consider audit logging authentication/authorization failures to detect possible attacks
-13. Verify that the JWT contains an admin role for administrator-only operations before allowing the operation (1.1, 1.2, 6.2). Additionally, configure the system so that admin operations are inaccessible from the internet unless needed.
+13. Verify that the JWT contains an admin role for administrator-only operations before allowing the operation (1.1, 1.2, 6.2). Additionally, configure the system so that admin operations are inaccessible from the Internet unless needed.
 14. For the containerized microservice, define the following:
     - Container should not be privileged
     - All capabilities are dropped
@@ -217,19 +217,19 @@ Here are the prioritized user stories from the highest priority index (PI) to th
 6. Implement request rate-limiting, e.g. in the API gateway (PI: 3)
 7. Validate input data to the microservice and define maximum allowed string and array lengths (PI: 3)
 8. Use parameterized SQL statements or ORM, and configure the least permissions for the database user (PI: 3). The normal database user should not be able to do anything that is only administrator-related, like deleting, creating/dropping tables, etc.
-9. Do not use regular expression in validation or use regular expression that cannot cause ReDoS (PI: 3)
+9. Do not use regular expressions in validation or use regular expressions that cannot cause ReDoS (PI: 3)
 10. Validate input data to the microservice, e.g., min/max numeric values, list of allowed values (PI: 3)
 11. Encrypt all sensitive information like Personally Identifiable Information (PII) and critical business data in the database (PI: 2)
 12. Implement mTLS between services using a service mesh like Istio (PI: 2)
 13. Do not return error stack traces when the microservice is running in production (PI: 2)
 14. For the containerized microservice, define the following: ... (PI: 2)
 
-The team should review the prioritized list of security user stories with the product security lead. Because security is an integral part of a software system, at least all the above user stories having a priority index greater than
+The team should review the prioritized list of security user stories with the product security lead. Because security is an integral part of a software system, at least all the above user stories with a priority index greater than
 two should be implemented before delivering the first production version. The user stories with PI <= 2 could be delivered
 immediately in the first feature package after the initial delivery. This is just an example. Everything depends on what
-level of security is wanted and required. The relevant stakeholders should be involved in making the decisions about the level of product security.
+level of security is wanted and required. The relevant stakeholders should be involved in making decisions about product security.
 
-We did not list threats for missing security-related HTTP response headers in the above example. This is because
+In the above example, we did not list threats for missing security-related HTTP response headers. This is because
 they are the same for any REST API. These security-related HTTP response headers are discussed in a later section of
 this chapter. The sending of these headers should be consolidated to the API gateway so that all API microservices don't
 have to implement sending security headers themselves.
@@ -285,7 +285,7 @@ secure algorithm and encryption key when implementing encryption.
 When implementing user authentication and authorization for an application, use a 3rd party authorization service.
 Don't try to build an authorization service by yourself. You can easily make mistakes. Also, it can be a security risk if your
 application handles plaint-text user credentials. It is better to use a battle-tested solution that has the most significant
-bugs corrected and can store user credentials securely. We use [Keycloak](https://www.keycloak.org/) as an authorization service in the coming examples.
+bugs corrected and can store user credentials securely. In the coming examples, we use [Keycloak](https://www.keycloak.org/) as an authorization service.
 
 Also, try using established 3rd party libraries as much as possible instead of writing all authorization-related code yourself.
 It is also helpful to create a single frontend authentication/authorization library and
@@ -307,7 +307,7 @@ of some insecure storing mechanisms:
 - Global variable
   - Easily stolen by malicious code (XSS threat)
 
-Storing secrets in closure variables is not inherently insecure, but secrets are lost on page refresh or new page.
+Storing secrets in closure variables is not inherently insecure, but secrets are lost when a page refreshes or a new page is opened.
 
 Below is an example that uses a [service worker](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API)
 to store secrets securely. The additional benefit of a service worker is that it does not allow
@@ -339,18 +339,22 @@ like that? Of course, it should not be possible, but unfortunately, it is.
 Let's create a [Vue.js](https://vuejs.org/) application that performs authentication and authorization using the [OpenID Connect](https://openid.net/developers/how-connect-works/) protocol,
 an extension of the [OAuth2](https://oauth.net/2/) protocol.
 
+{aside}
+Source code for the below example is available [here](https://github.com/pksilen/clean-code-principles-code/tree/main/chapter5/auth_frontend).
+{/aside}
+
 In the main module below, we set up the global `fetch` to always return an error and only allow our `tryMakeHttpRequest` function
 to use the original global `fetch` method. Then, we register a service worker. If the service worker has already been registered, it
-is not registered again. Finally, we create the application (`App` component), activate the router, activate the [Pinia](https://pinia.vuejs.org/) middleware for state management, and mount the application to a DOM node:
+is not registered again. Finally, we create the application (`AppView` component), activate the router, activate the [Pinia](https://pinia.vuejs.org/) middleware for state management, and mount the application to a DOM node:
 
 {format: ts}
 ![main.ts](resources/chapter5/code/main.ts)
 
-Below is the definition of the `App` component. After mounting, it will check whether the user is already authorized.
+Below is the definition of the `AppView` component. After mounting, it will check whether the user is already authorized.
 
 If the user is authorized, their authorization information
 will be fetched from the service worker, and the user's first name will be updated in the authorization information store. The user will
-be forwarded to the *Home* page. If the user is not authorized, authorization will be performed.
+be forwarded to the *HomeView* page. If the user is not authorized, authorization will be performed.
 
 {format: vue, type: code}
 ![App.vue](resources/chapter5/code/App.vue)

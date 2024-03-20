@@ -1400,8 +1400,7 @@ startStandaloneServer(server, {
 
 After starting the server with the `node server.js` command, you can browse to _http://localhost:4000_ and
 try to execute some of the implemented queries or mutations.
-You will see the GraphiQL UI, where you can execute queries and mutations. Enter the following query to the
-left pane in the UI.
+You will see the GraphiQL UI, where you can execute queries and mutations. Enter the following query in the left pane of the UI.
 
 ```graphql
 query salesItems {
@@ -1897,7 +1896,7 @@ HTTP connection.
 Let's showcase the SSE capabilities with a real-life example. The below example defines a *subscribe-to-loan-app-summaries* API endpoint
 for clients to subscribe to loan application summaries. A client will show loan application summaries in a list view in its UI.
 Whenever a new summary for a loan application is available, the server will send a loan application summary event
-to clients that will update their UIs by adding a new loan application summary. The below example uses FastAPI and the [sse-starlette](https://github.com/sysid/sse-starlette) library.
+to clients that will update their UIs by adding a new loan application summary.
 
 {title: "server.js"}
 ```js
@@ -2134,10 +2133,10 @@ export default function SubscribedPostCommentsView({ postId }) {
 
 ### WebSocket Example
 
-Below is a chat messaging application consisting of a WebSocket server implemented with Node.js and the _ws_ NPM library, and a WebSocket client implemented with React. There can be multiple instances of the server
+Below is a chat messaging application consisting of a WebSocket server implemented with Node.js and the [ws](https://www.npmjs.com/package/ws) NPM library and a WebSocket client implemented with React. There can be multiple instances of the server
 running. These instances are stateless except for storing WebSocket connections for locally connected clients.
 
-We implement the example using *clean microservice design (or architecture)* principle as shown in the below picture.
+We implement the example using the *clean microservice design (or architecture)* principle, as shown in the picture below.
 
 ![WebSocket Example Clean Architecture](resources/chapter6/images/websocket_clean_arch.png)
 
@@ -2150,10 +2149,9 @@ On the interface adapter layer, we have multiple interface adapters:
 - WebSocketChatMsgServer
 - WebSocketConnection
 
-The above classes depend on the microservice model consisting of `ChatMessageService` and `ChatMessage`.
+The above classes depend on the microservice model, which consists of `ChatMessageService` and `ChatMessage`.
 The `RedisPhoneNbrToInstanceUuidCache` implements the `PhoneNbrToInstanceUuidCache` interface and is responsible
-for storing the chat server instance UUID for each end-user (according to their phone number). The `KafkaChatMsgBrokerAdminProducer`
-implements the `ChatMsgBrokerAdminProducer` interface and is responsible for sending a chat message to Kafka to be handled
+for storing the chat server instance UUID for each end-user (according to their phone number). The `KafkaChatMsgBrokerAdminProducer` implements the `ChatMsgBrokerAdminProducer` interface and is responsible for sending a chat message to Kafka to be handled
 by another chat server instance. The `KafkaChatMsgBrokerAdminConsumer` implements the `ChatMsgBrokerAdminConsumer` interface
 and is responsible for reading chat messages belonging to the particular chat server from the Kafka.
 The `ChatMsgStoreService` is responsible for contacting a remote *chat-message-store-service* for persistent storage of
@@ -2161,7 +2159,7 @@ chat messages. The `WebSocketChatMsgServer` implements a chat message server usi
 for creating `WebSocketConnection` instances.
 
 First, we list the source code files for the server side.
-A new Kafka client is created using the _kafkajs_ NPM library:
+A new Kafka client is created using the [kafkajs](https://www.npmjs.com/package/kafkajs) NPM library:
 
 {title: kafkaClient.ts"}
 ```ts
@@ -2175,7 +2173,7 @@ const kafkaClient = new Kafka({
 export default kafkaClient;
 ```
 
-A new Redis client is created using the _ioredis_ NPM library:
+A new Redis client is created using the [ioredis](https://www.npmjs.com/package/ioredis) NPM library:
 
 {title: "redisClient.ts"}
 ```ts
@@ -2608,7 +2606,7 @@ The `ContactChatView` component renders chat messages between a user and a conta
 
 Inter-microservice APIs can be divided into two categories based on the type of communication: synchronous and asynchronous.
 Synchronous communication should be used when an immediate response to an issued request is expected. Asynchronous
-communication can be used when no response to a request is expected, or the response is not immediately required.
+communication can be used when no response to a request is expected or the response is not immediately required.
 
 ### Synchronous API Design Principle
 
@@ -2880,7 +2878,7 @@ the response has a `response` or `result` property instead of the `parameters` p
 ```
 
 Below is an example where a *loan-application-service* requests a *loan-eligibility-assessment-service*
-to assess a loan eligibility. The *loan-application-service* sends the following JSON-format request to
+to assess loan eligibility. The *loan-application-service* sends the following JSON-format request to
 the message broker's *loan-eligibility-assessment-service* topic:
 
 ```json
@@ -3023,11 +3021,10 @@ the `salesItemCreated` event contains an additional `id` property.
 
 ## API Design Example
 
-Let's have a concrete example of design an API for a trip booking service.
-The first feature, as presented by the product management, is a user to be able to *book a trip*. We don't not concern
-ourselves with the frontend development here, but only focus on the backend (API) side.
+Let's have a concrete example of designing an API for a trip booking service.
+The first feature, as presented by product management, is for a user to be able to *book a trip*. We do not concern ourselves with frontend development here; we only focus on the backend (API) side.
 
-The team uses domain-driven design and starts with an event storming session which results in the following output.
+The team uses domain-driven design and starts with an event-storming session, which results in the following output.
 
 ![Event Storming Result](resources/chapter6/images/api_design_example.png)
 
@@ -3036,7 +3033,7 @@ From the above picture, we can infer our user stories for the backend API:
 - As a user I want flight(s) to be reserved for my trip
 - As a user I want hotel room(s) to be reserved for my trip
 - As a user I want rental car(s) to be reserved for my trip
-- As a user I want my trip persisted
+- As a user I want my trip to be persisted
 
 From the above picture, we can infer our classes and put them in the following directory layout:
 
@@ -3085,11 +3082,10 @@ trip-booking-service
 Next, we should use BDD and ATDD to define acceptance tests for the trip booking feature. We will skip that step
 here because it was already well covered in the testing principles chapter.
 
-After we have implemented our acceptance tests, we need to start implementing our API microservice in order to get those
-acceptance tests pass. For the implementation, we should use TDD, either Detroit/Chicago or London style. We choose the London
-style and start from the outer layer, i.e., from controller. I am not presenting the TDD steps here but only what the implementation
-should look like. We have already covered the TDD steps in several examples and you should be familiar with it.
-We should use the bounded context-specific ubiquoitous language in our code. For example, instead of speaking about creating a trip, we
+After we have implemented our acceptance tests, we need to start implementing our API microservice to get those
+acceptance tests passed. For the implementation, we should use either Detroit/Chicago or London-style TDD. We choose the London
+style and start from the outer layer, i.e., from the controller. I am not presenting the TDD steps here; I am only presenting the implementation. We have already covered the TDD in several examples.
+We should use the bounded context-specific ubiquitous language in our code. For example, instead of speaking about creating a trip, we
 use the term "book a trip".
 
 {aside}
@@ -3122,8 +3118,8 @@ class RestTripBookingController:
         return self.__trip_booking_use_cases.book_trip(input_trip)
 ```
 
-Notice below how we put behavior into domain entities and our use case class is not crowded
-with business logic code but delegates to entity class and repository for achieving a business use case.
+Notice below how we put behavior into domain entities, and our use case class is not crowded
+with business logic code but delegate to entity class and repository to achieve a business use case.
 
 {title: "TripBookingUseCasesImpl"}
 ```python
@@ -3166,7 +3162,7 @@ class MongoDbTripRepository(TripRepository):
         # ...
 ```
 
-Below is code for the domain entities:
+Below is the code for the domain entities:
 
 {title: "Trip.py"}
 ```python
@@ -3408,12 +3404,12 @@ class DiContainer(containers.DeclarativeContainer):
 ```
 
 Let's see how we can further develop the trip booking service. Let's assume that product management requests us
-to allow user to reserve tour and activities during their trip. We can implement this feature by mostly using the *open-closed
-principle*. For tour and activities reservations, we should introduce input and output DTO classes, an entity class deriving
-from the `Reservation` class and finally a service class for performing the actual reservations. Then we only need to modify the `Trip` class factory method to create instances of
+to allow users to reserve tours and activities during their trip. We can implement this feature by mostly using the *open-closed
+principle*. For tour and activities reservations, we should introduce input and output DTO classes, an entity class derived
+from the `Reservation` class, and a service class for performing the actual reservations. Then, we only need to modify the `Trip` class factory method to create instances of
 the newly created tour and activities reservation entity class.
 
-After booking a trip, product management wants users to be able to modify their reservations, like adding, replacing and
+After booking a trip, product management wants users to be able to modify their reservations, like adding, replacing, and
 removing reservations. Let's have an example of a feature for adding a rental car reservation to an existing trip.
 
 {title: "RestTripBookingController"}
@@ -3517,6 +3513,5 @@ class Trip:
         self.__reservations.remove(reservation)
 ```
 
-In the above examples, we did not use the convention of adding a *try*-prefix to method that can raise an error.
-But in this case, it could have been beneficial due to distributed transactions. *Try*-prefixed methods would have made
-it clear where our distributed transactions can fail and execution of e.g. compensating actions is required.
+In the above examples, we did not use the convention of adding a *try*-prefix to a method that can raise an error.
+However, it could have been beneficial in this case due to distributed transactions. *Try*-prefixed methods would have clarified where our distributed transactions can fail and execution of, e.g., compensating actions, is required.
