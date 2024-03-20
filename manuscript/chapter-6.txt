@@ -255,6 +255,8 @@ system. Below is an example of an error response:
 {
   "statusCode": 500,
   "statusText": "Internal Server Error",
+  "endpoint": "POST /sales-item-service/sales-items",
+  "timestamp": "2024-03-10T13:31:40+0000",
   "errorCode": "IAMError",
   "errorMessage": "Unable to connect to the Identity and Access Management service"
   "errorDescription": "Describe the error in more detail here, if relevant/needed..."
@@ -413,7 +415,7 @@ For example:
 sort-by=price:asc,images.rank:asc
 ```
 
-In the above example, the resources are returned sorted first by ascending price and secondarily by image's rank.
+In the above example, the resources are returned as sorted first by ascending price and secondarily by image rank.
 
 The *limit* and *offset* parameters are used for pagination. The *limit* query parameter defines the maximum
 number of resources that can be returned. The *offset* query parameter specifies the offset from which resources are returned.
@@ -426,7 +428,7 @@ offset=0&limit=50,images:5
 
 The above query parameters define that the first page of 50 sales items is fetched, and each sales item contains
 the first five images of the sales item. Instead of *offset* and *limit* parameters, you can use *page* and *page-size* parameters.
-The *page* parameter defines the page number, and the *page-size* defines how many resources a page should contain.
+The *page* parameter defines the page number, and the *page-size* parameter defines the number of resources a page should contain.
 
 Remember to validate user-supplied data to prevent SQL injection attacks when implementing the server side and adding data
 from URL query parameters to an SQL query. For example, field names in
@@ -437,8 +439,8 @@ You should also validate the *limit/page-size* parameter against the maximum all
 to fetch too many resources at a time.
 
 Some HTTP servers log the URL of an HTTP GET request. For this reason, it is not recommended to put sensitive information in the URL.
-Sensitive information should be put into the request body. Also, browsers can have a limit for
-the maximum length of a URL. If you have a query string that is thousands of characters
+Sensitive information should be included in the request body. Also, browsers can have a limit for
+the maximum length of a URL. If you have a query string thousands of characters
 long, you should give parameters in the request body instead. You should not put a request body to an HTTP GET request.
 What you should do is issue the request using the HTTP POST method instead, for example:
 
@@ -537,7 +539,7 @@ whether your update is still relevant or not, and retry the update.
 The server should assign the resource version value to the HTTP response header [ETag](https://en.wikipedia.org/wiki/HTTP_ETag). A client can use the received ETag
 value in a conditional HTTP GET request by assigning the received ETag value to the request header [If-None-Match](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-None-Match). The server
 will return the requested resource only if it has a newer version. Otherwise, the server returns nothing with the HTTP status code 304 *Not Modified*. This brings the advantage of not re-transferring an unmodified resource from the
-server to the client, which can be especially beneficial when the resource is large, or the connection between the server and the client is slow.
+server to the client, which can be especially beneficial when the resource is large or the connection between the server and the client is slow.
 
 #### Deleting Resources
 
@@ -643,7 +645,7 @@ the following request:
 GET /sales-item-image-service/sales-item-images?salesItemId=<salesItemId> HTTP/1.1
 ```
 
-You can notice that the *sales-item_service* and *sales-item-image-service* are now linked by the *salesItemId*.
+You can notice that the *sales-item-service* and *sales-item-image-service* are now linked by the *salesItemId*.
 
 Note that the *sales-item-image-service* should be a service aggregated by the *sales-item-service*. The higher-level *sales-item-service* calls the lower-level *sales-item-image-service* because a sales item is a root aggregate, and sales item images are child entities that should not
 be accessed directly but only via the root aggregate, according to DDD. This helps with enforcing business rules. For example, let's hypothesize that
@@ -744,8 +746,8 @@ When fetching a collection of sales items for page 3 using HAL, we can get the f
 }
 ```
 
-The above response contains links to fetch the first, current, previous, and last page of sales items. It
-also contains information that there are 1500 sales items, and a page lists 25. The `_embedded` property contains a `salesItems` property containing the 25 sales items with links to themselves and the
+The above response contains links to fetch sales items' first, current, previous, and last pages. It
+also states that there are 1500 sales items, and a page lists 25. The `_embedded` property contains a `salesItems` property containing the 25 sales items with links to themselves and the
 sales item data.
 
 #### API Versioning
@@ -939,7 +941,7 @@ For example, string and list attributes should have maximum length validators to
 service attacks. Output DTOs should have validation as well. This is important because of security.
 Output validation can protect against injection attacks that try to return data that has an invalid shape.
 With Nest.js, the output DTOs are not validated (at the moment of writing this book). You need to implement it by yourself, e.g.,
-in your application service class using the `validateOrReject` function from the *class-validator* library:``await validateOrReject(outputDto)`.
+in your application service class using the `validateOrReject` function from the *class-validator* library: `await validateOrReject(outputDto)`.
 
 The `SalesItemService` interface looks like the following:
 
@@ -1028,7 +1030,7 @@ For error handling, we depend on the `catch` block provided by the Nest.js web f
 errors of the Nest.js `HTTPException` type in our business logic, but then we would be coupling our web framework
 with business logic, which is not desired. Remember how in the *clean microservice design principle*, the dependency goes only
 from the web framework (controller) towards business logic, not vice versa. If we used web framework-specific
-error classes in our business and logic, and we would like to migrate the microservice to a different web framework, we would
+error classes in our business and logic, and we would like to migrate the microservice to a different web framework; we would
 have to refactor the whole business logic concerning raised errors.
 
 What we should do is introduce a base error class for our microservice and provide a custom exception filter for
@@ -1050,11 +1052,12 @@ export default class ApiError extends Error {
       timestamp = new Date();
     }
 
-    toResponseObject {
+    toResponseObject(request: Request) {
       return {
         statusCode: error.statusCode,
         statusText: error.statusText,
         timestamp: new Date().toISOString(),
+        endpoint: `${request.method} ${request.url}`
         errorCode: error.code,
         errorMessage: error.message,
         errorDescription: error.description,
@@ -1099,7 +1102,7 @@ export default class EntityNotFoundError extends SalesItemServiceError {
 ```
 
 Let's implement a custom exception filter for our API. Notice how the exception filter is general purpose and
-can be used with any API having its errors derived from the `ApiError`.
+It can be used with any API with its errors derived from the `ApiError`.
 
 {title: "SalesItemServiceErrorFilter.ts"}
 ```ts
@@ -1119,9 +1122,8 @@ export class SalesItemServiceErrorFilter implements ExceptionFilter {
     // status_code=error.statusCode
     // error_code=error.code
 
-    response.status(error.statusCode).json({
-      endpoint: `${request.method} ${request.url}`,
-      ...error.toResponseObject
+    response.status(error.statusCode).json(
+      error.toResponseObject(request)
     });
   }
 }
@@ -1222,7 +1224,11 @@ The rest of the API service source code files look like the following:
 ```ts
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(
+    new ValidationPipe(),
+    new SalesItemServiceErrorFilter()
+  );
+
   await app.listen(3000);
 }
 
