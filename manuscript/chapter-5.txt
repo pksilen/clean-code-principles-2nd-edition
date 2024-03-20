@@ -500,33 +500,49 @@ More information about those is available in [OWASP Authorization Cheat Sheet](h
 {title: "Authorizer.ts"}
 ```ts
 export default interface Authorizer {
-    // An example implementation for 'ApiError' class is given
-    // in API principles chapter
-    static UnauthenticatedError = class extends ApiError {
-      // ...
-    }
+  authorize(authHeader: string | undefined): Promise<void>;
 
-    static UnauthorizedError = class extends ApiError {
-      // ...
-    }
+  authorizeForSelf(
+    userId: number,
+    authHeader: string | undefined
+  ): Promise<void>;
 
-    static IamError = class extends ApiError {
-      // ...
-    }
+  authorizeIfUserHasOneOfRoles(
+    allowedRoles: string[],
+    authHeader: string | undefined
+  ): Promise<void>;
 
-    authorize(authHeader: string | undefined): Promise<void>;
+  getUserId(authHeader: string | undefined): Promise<number>;
+}
+```
 
-    authorizeForSelf(
-      userId: number,
-      authHeader: string | undefined
-    ): Promise<void>;
+{title: "AbstractAuthorizer.ts"}
+```ts
+export default abstract class AbstractAuthorizer implements Authorizer {
+  // An example implementation for 'ApiError' class is given
+  // in API principles chapter
+  static readonly UnauthenticatedError = class extends ApiError {
+  };
 
-    authorizeIfUserHasOneOfRoles(
-      allowedRoles: string[],
-      authHeader: string | undefined
-    ): Promise<void>;
+  static readonly UnauthorizedError = class extends ApiError {
+  };
 
-    getUserId(authHeader: string | undefined): Promise<number>;
+  static readonly IamError = class extends ApiError {
+  };
+
+  abstract authorize(authHeader: string | undefined): Promise<void>;
+
+  abstract authorizeForSelf(
+    userId: number,
+    authHeader: string | undefined
+  ): Promise<void>;
+
+  abstract authorizeIfUserHasOneOfRoles(
+    allowedRoles: string[],
+    authHeader: string | undefined
+  ): Promise<void>;
+
+  abstract getUserId(authHeader: string | undefined): Promise<number>;
 }
 ```
 
@@ -541,7 +557,7 @@ import Authorizer from './Authorizer';
 import throwError from './throwError';
 import throwException from './throwException';
 
-export default class JwtAuthorizer implements Authorizer {
+export default class JwtAuthorizer extends AbstractAuthorizer {
   private readonly oidcConfigUrl: string;
   private readonly rolesClaimPath: string;
   private readonly getUsersUrl: string;
@@ -648,14 +664,15 @@ Below is an example API service that utilizes the above-defined `JwtAuthorizer`:
 
 {title: "app.js"}
 ```js
-import express, { Response, Request } from 'express';
+import express from 'express';
 import cors from 'cors';
-import { authorizer } from './JwtAuthorizer';
+import { authorizer } from './jwt_authorizer';
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
+// @ts-ignore
 app.use((error, request, response, next) => {
   // Error handler for converting a thrown error
   // to an error response
@@ -663,32 +680,33 @@ app.use((error, request, response, next) => {
   // is given in API principles chapter
 });
 
-app.get('/sales-item-service/sales-items', () => {
+app.get('/api/sales-item-service/sales-items', () => {
   // No authorization needed
   // Send sales items
 });
 
-app.post('/messaging-service/messages', (request, response) => {
+app.post('/api/messaging-service/messages', (request, response) => {
   authorizer.authorize(request.headers.authorization);
   // Authorized user can create a message
+  console.log('Message created');
 });
 
-app.get('/order-service/orders/:id', (request, response) => {
-    const userIdFromJwt = authorizer.getUserId(request.headers.authorization);
-    const id = request.params.id;
+app.get('/api/order-service/orders/:id', (request, response) => {
+  const userIdFromJwt = authorizer.getUserId(request.headers.authorization);
+  const id = request.params.id;
 
-    // Try get order using 'userIdFromJwt' as user id and 'id'
-    // as order id, e.g. orderService.getOrder(id, userIdFromJwt)
-    // It is important to notice that when trying to retrieve
-    // the order from database, both 'id' and 'userIdFromJwt'
-    // are used as query filters
-    // If the user is not allowed to access the resource
-    // 404 Not Found is returned from the service method
-    // This approach has the security benefit of not revealing
-    // to an attacker whether an order with 'id' exists or not
+  // Try get order using 'userIdFromJwt' as user id and 'id'
+  // as order id, e.g. orderService.getOrder(id, userIdFromJwt)
+  // It is important to notice that when trying to retrieve
+  // the order from database, both 'id' and 'userIdFromJwt'
+  // are used as query filters
+  // If the user is not allowed to access the resource
+  // 404 Not Found is returned from the service method
+  // This approach has the security benefit of not revealing
+  // to an attacker whether an order with 'id' exists or not
 });
 
-app.post('/order-service/orders', (request, response) => {
+app.post('/api/order-service/orders', (request, response) => {
   authorizer.authorizeForSelf(
     request.body.userId,
     request.headers.authorization
@@ -698,7 +716,7 @@ app.post('/order-service/orders', (request, response) => {
   // User cannot create orders for other users
 });
 
-app.delete('/api/sales-items', (request, response) => {
+app.delete('/api/sales-item-service/sales-items', (request, response) => {
   authorizer.authorizeIfUserHasOneOfRoles(
     ['admin'],
     request.headers.authorization
@@ -707,31 +725,7 @@ app.delete('/api/sales-items', (request, response) => {
   // Only admin user can delete all sales items
 });
 
-app.listen(3000);
-```
-
-The authorization is separately coded inside each request handler in the above example. We could extract the authorization code
-from the request handler methods to decorators that can be used with the methods. The decorators could be implemented in a
-separate library, and they can accept any authorizer that implements the `Authorizer` protocol, not just the `JwtAuthorizer`.
-Below is a partial example how decorators could be used. The implementation of decorators is not shown here, but if you are
-interested, you can find a Python implementation of the decorators in my other book: *Clean Code Principles And Patterns:
-Python Edition*.
-
-```js
-// ...
-
-@allowAnyUser
-app.get('/sales-item-service/sales-items', () => {
-  // Send sales items
-});
-
-@allowAuthorizedUser
-app.post('/messaging-service/messages', (request, response) => {
-  authorizer.authorize(request.headers.authorization);
-  // Authorized user can create a message
-});
-
-// ...
+app.listen(8000);
 ```
 
 Below is a simple example of implementing an OAuth2 resource server using Spring Boot. First, you need to add
