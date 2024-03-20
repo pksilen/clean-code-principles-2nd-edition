@@ -11,15 +11,11 @@ For subscription-based APIs, use Server-Sent Events (SSE) or GraphQL subscriptio
 communication, use WebSocket. If you transfer a lot of data or binary data between the frontend and backend, consider implementing the API using gRPC and [gRPC Web](https://github.com/grpc/grpc-web).
 gRPC Web is not covered in this book. gRPC uses Protocol Buffers to binary encode data and is thus more efficient than JSON encoding.
 
-In the coming examples, we use *camelCase* for JSON property names as it is a de-facto standard in APIs. Additional
-benefit of using camelCase instead of *snake_case* is that the implementation programming language (Python) is not immediately revealed to clients.
-It is always good to keep implementation details as hidden as possible.
-
 ### JSON-based RPC API Design Principle
 
 > ***Design a JSON-based RPC API to perform a single action (procedure) for an API endpoint.***
 
-As the name suggests, JSON-RPC APIs are for executing remote procedure calls using JSON-encoded payloads. The remote procedure
+As the name suggests, JSON-based RPC APIs are for executing remote procedure calls using JSON-encoded payloads. The remote procedure
 argument is a JSON object in the HTTP request body. The remote procedure return value is a JSON object in the HTTP response body.
 A client calls a remote procedure by issuing an HTTP POST request where it specifies the procedure's name in the URL path
 and gives the argument for the remote procedure call in the request body in JSON.
@@ -53,7 +49,7 @@ Content-Type: application/json
 
 {aside}
 A [JSON-RPC specification](https://www.jsonrpc.org/specification) exists that defines one way to create JSON-based RPC APIs.
-I do not follow that specification in the examples below because one can create a JSON-based RPC API in many ways.
+I do not follow that specification in the examples below because there are many ways to create a JSON-based RPC API.
 But as an example, the above example rewritten using the *JSON-RPC specification* would look like the following:
 
 ```http
@@ -97,7 +93,7 @@ Content-Type: application/json
 }
 ```
 
-Response:
+The response could look like as follows:
 
 ```http
 HTTP/1.1 200 OK
@@ -208,9 +204,8 @@ Many APIs fall into the category of performing CRUD operations on resources. Let
 for performing CRUD operations on sales items. You can also define non-CRUD endpoints for a REST API. For example, you can define some JSON-based RPC endpoints
 if needed.
 
-You can also remodel an RPC-style API to support CRUD operations. Suppose you need to create an API for starting and stopping some processes.
-Instead of creating a JSON-based RPC API with `start-process` and `stop-process` procedures, you can create a CRUD-based REST API where you create a resource to start a process and delete a resource to
-stop a process, i.e., a process is a resource you can perform CRUD operations on.
+You can also remodel an RPC-style API to support CRUD operations. For example, suppose you need to create an API to start and stop some processes.
+Instead of creating a JSON-based RPC API with `start-process` and `stop-process` procedures, you can create a CRUD-based REST API where you create a resource to start a process and delete a resource to stop a process, i.e., a process is a resource you can perform CRUD operations on.
 
 #### Creating a Resource
 
