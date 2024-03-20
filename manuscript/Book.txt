@@ -12,4 +12,3 @@ chapter-9.txt
 chapter-10.txt
 conclusion.txt
 appendix-a.txt
-appendix-b.txt

@@ -357,7 +357,7 @@ will be fetched from the service worker, and the user's first name will be updat
 be forwarded to the *HomeView* page. If the user is not authorized, authorization will be performed.
 
 {format: vue, type: code}
-![App.vue](resources/chapter5/code/App.vue)
+![AppView.vue](resources/chapter5/code/AppView.vue)
 
 {format: ts}
 ![authInfoStore.ts](resources/chapter5/code/authInfoStore.ts)
@@ -394,8 +394,7 @@ The query parameters in the above URL are the following:
 * *code_challenge* - PKCE extension: URL-safe base64-encoded SHA256 hash of the code verifier. A code verifier is a random string secret you generate
 * *code_challenge_method=S256* - PKCE extension: indicates which hashing method is used (S256 means SHA256)
 
-We should use the [PKCE](https://oauth.net/2/pkce/) extension as an additional security measure. PKCE extends
-the Authorization Code Flow to prevent CSRF and authorization code injection attacks.
+We should use the [PKCE](https://oauth.net/2/pkce/) extension as an additional security measure. PKCE extends the Authorization Code Flow to prevent CSRF and authorization code injection attacks.
 
 If authorization is successful, the authorization server will redirect the browser to the above-given *redirect_uri* with
 *code* and *state* given as URL query parameters, for example:
@@ -444,20 +443,20 @@ Below is an example response you get when you execute the `tryMakeHttpRequest` f
 }
 ```
 
-The `AuthorizationCallback` component is the component that will be rendered when the authorization
+The `AuthCallbackView` component is the component that will be rendered when the authorization
 server redirects the browser back to the application after successful authorization. This component
 stores the authorization code and the received state in the service worker and
 initiates a token request. After receiving tokens, it will route the application to the
 home page. As an additional security measure, the token request will only be performed if the original *state* and *received state* are equal.
-This check is done in the service worker code.
+This check is done using the service worker code.
 
 {format: vue, type: code}
-![AuthorizationCallback.vue](resources/chapter5/code/AuthorizationCallback.vue)
+![AuthCallbackView.vue](resources/chapter5/code/AuthCallbackView.vue)
 
 Other UI components the application uses are defined below:
 
 {format: vue, type: code}
-![AuthorizationError.vue](resources/chapter5/code/AuthorizationError.vue)
+![AuthErrorView.vue](resources/chapter5/code/AuthErrorView.vue)
 
 {format: vue, type: code}
 ![LoginView.vue](resources/chapter5/code/LoginView.vue)
@@ -490,16 +489,20 @@ implement authorization is to deny access to resources by default. For example, 
 `@allow_any_user` could be used. An exception should be thrown if a controller method lacks an authorization decorator. This way, you can never forget to add an authorization annotation to a controller method.
 
 Broken access control is number one in the [OWASP Top 10 for 2021](https://owasp.org/www-project-top-ten/). Remember to
-disallow users to create resources for other users. Also, you must disallow users to view, edit, or delete resources belonging to someone else
+disallow users from creating resources for other users. Also, you must disallow users to view, edit, or delete resources belonging to someone else
 (also known as [Insecure Direct Object Reference (IDOR) prevention](https://cheatsheetseries.owasp.org/cheatsheets/Insecure_Direct_Object_Reference_Prevention_Cheat_Sheet.html)).
-It is not enough to use universally unique ids (UUIDs) as ids for resources
-instead of basic integers. This is because if an attacker can obtain a URL for an object with a UUID, he can access the
+Using universally unique ids (UUIDs) as ids for resources
+instead of basic integers is not enough. This is because if an attacker can obtain a URL for an object with a UUID, he can access the
 object behind the URL because there is no access control in place.
 
-Below is a JWT-based authorizer class that can be used in a backend API service implemented with the Express framework.
+Below is a [JWT](https://jwt.io/)-based authorizer class that can be used in a backend API service implemented with the Express framework.
 The below example utilizes role-based access control (RBAC), but
 there are more modern alternatives, including attribute-based access control (ABAC) and relationship-based access control (ReBAC).
 More information about those is available in [OWASP Authorization Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html)
+
+{aside}
+Source code for the below example is available [here](https://github.com/pksilen/clean-code-principles-code/tree/main/chapter5/auth_backend).
+{/aside}
 
 {title: "Authorizer.ts"}
 ```ts
@@ -550,7 +553,7 @@ export default abstract class AbstractAuthorizer implements Authorizer {
 }
 ```
 
-{title: "JwtAuthorizer.ts"}
+{title: "jwt_authorizer.ts"}
 ```ts
 import _ from 'lodash';
 import { decode, verify } from 'jsonwebtoken';
@@ -664,7 +667,7 @@ export default class JwtAuthorizer extends AbstractAuthorizer {
 export const authorizer = new JwtAuthorizer();
 ```
 
-Below is an example API service that utilizes the above-defined `JwtAuthorizer`:
+Below is an example API service that utilizes the above-defined `JwtAuthorizer` class:
 
 {title: "app.js"}
 ```js
@@ -733,10 +736,8 @@ app.listen(8000);
 ```
 
 The authorization is separately coded inside each request handler in the above example. We could extract the authorization code
-from the request handler methods to decorators that can be used with the methods. You can then write code that forces each
-of the request handler method to have an authorization decorator in order not to forget add authorization to your backend.
-If some of the methods do not require authorization, you can use a specific decorator that allows any user to invoke
-the request handler. Below is a short example with Nest.js with a authorization decorator in one controller method.
+from the request handler methods and use decorators to perform authorization. You can then write code that forces each
+request handler method to have an authorization decorator in order not to forget to add authorization to your backend. Below is a short example of an authorization decorator in one controller method using Nest.js.
 
 {aside}
 Source code for the below example is available [here](https://github.com/pksilen/clean-code-principles-code/tree/main/chapter5/auth_backend_nest).
@@ -817,9 +818,8 @@ spring:
           issuer-uri: http://localhost:8080/realms/master/
 ```
 
-
-Then you will configure which API endpoints need to be authorized with a valid JWT.
-The below example requires requests to all API endpoints to contain a valid JWT.
+Then, you will configure which API endpoints must be authorized with a valid JWT.
+The example below requires requests to all API endpoints to contain a valid JWT.
 
 {title: "SecurityConfiguration.java"}
 ```java
@@ -876,8 +876,8 @@ public class SalesItemController {
 ### Password Policy
 
 Implement a password policy requiring strong passwords and prefer passphrases over passwords. A passphrase is supposed
-to contain multiple words. Passphrases are harder to guess by attackers and easier to remember
-by users than strong passwords. Allow passphrases to contain Unicode characters. This allows
+to contain multiple words. Passphrases are harder for attackers to guess and easier for users to remember
+than strong passwords. Allow passphrases to contain Unicode characters. This allows
 users to create passphrases using their mother tongue.
 
 You should require that passwords are strong and match the following criteria:
@@ -957,7 +957,7 @@ DoS prevention should happen at least in the following ways:
 ### OS Command Injection Prevention
 
 You should not allow user-supplied data to be used when executing OS commands in a shell.
-For example in Python, don't allow the following:
+For example, in Python, don't allow the following:
 
 ```python
 import os
@@ -1090,7 +1090,7 @@ Remember to validate data from all untrusted sources:
 - Input from the user interface (UI)
 
 You don't need to validate function arguments in all functions, but always validate data from an untrusted source before passing that value to other functions in the software component.
-For example, don't access environment variables directly (using `os.environ`) all over the code, but create a dedicated class that provides controlled access to environment variables. That class should validate the environment variable values (correct type, allowed values, allowed value range, etc.). If the validation fails, a default value can be returned or an error raised.
+For example, don't access environment variables directly (using `os.environ`) all over the code, but create a dedicated class that provides controlled access to environment variables. That class should validate the environment variable values (correct type, allowed values, allowed value range, etc.). If the validation fails, a default value can be returned, or an error will be raised.
 
 #### Validating Numbers
 
