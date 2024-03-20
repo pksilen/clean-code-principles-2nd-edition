@@ -871,7 +871,7 @@ A database relation is often described as "normalized" if it meets the first, se
 
 #### First Normal Form (1NF)
 
-The first normal form requires that a single value exists at every intersection of a row and column, never a list of values.
+The first normal form requires that a single value exists at every row and column intersection, never a list of values.
 When considering a sales item, the first normal form states that there cannot be two different price values in
 the `price` column or more than one name for the sales item in the `name` column. If you need multiple names for a sales item, you
 must establish a one-to-many relationship between a `SalesItem` entity and `SalesItemName` entities. What this means in practice
@@ -886,7 +886,7 @@ The second normal form requires that each non-key column entirely depends on the
 - `productid` (primary key)
 - `orderstate`
 
-The `orderstate` column only depends on the `orderid` column, not the entire primary key. The `orderstate` column is in the wrong table.
+The `orderstate` column depends only on the `orderid` column, not the entire primary key. It is in the wrong table.
 It should, of course, be in the `orders` table.
 
 #### Third Normal Form (3NF)
@@ -949,12 +949,12 @@ Below is an example sales item as a JSON object:
 }
 ```
 
-A document database usually has a size limit for a single document. Therefore, the above example does not store sales item images
-directly inside the document but only URLs for the images. Actual images are stored in another data store more suitable for storing
+A document database usually has a size limit for a single document. Therefore, the above example does not store images of sales items
+directly inside the document; it only stores URLs for the images. Actual images are stored in another data store that is more suitable for storing
 images, like Amazon S3.
 
 When creating a microservice for sales items, we can choose a document database because we usually store and access whole documents.
-When sales items are created, they are created as JSON objects of the above shape with the `reviews` array being empty and `averageRatingInStars` being `null`.
+When sales items are created, they are created as JSON objects of the above shape, with the `reviews` array empty and `averageRatingInStars` `null`.
 When a sales item is fetched, the whole document is retrieved from the database. When a client
 adds a review for a sales item, the sales item is fetched from the database. The new review is appended to the `reviews` array, a new average
 rating is calculated, and finally, the document is persisted with the modifications.
@@ -993,13 +993,13 @@ When a client wants to add a new review for a sales item, you first fetch the do
 db.salesItems.find({ _id: ObjectId("507f191e810c19729de860ea") })
 ```
 
-Then you calculate a new value for the `averageRatingInStars` field using the existing ratings and the new rating
+Then, you calculate a new value for the `averageRatingInStars` field using the existing ratings and the new rating
 and add the new review to the `reviews` array and then update the document with the following command:
 
 ```js
 db.salesItems.updateOne(
   { _id: ObjectId("507f191e810c19729de860ea")  },
-  { $set: {averageRatingInStars: 5},
+  { $set: { averageRatingInStars: 5 },
     $push: { reviews: {
       reviewerName: "John Doe",
       date: "2022-09-01",
@@ -1119,12 +1119,11 @@ export default class MongoDbSalesItemRepository implements SalesItemRepository {
 > ***Use a key-value database for fast real-time access to data stored by a key. Key-value stores usually store data in memory with a possibility for persistence.***
 
 A simple use case for a key-value database is to use it as a cache for a relational database. For example, a microservice can store SQL query results
-from a relational database in the cache. _Redis_ is a popular open-source key-value store. Let's have an example with JavaScript and Redis
+from a relational database in the cache. _Redis_ is a popular open-source key-value store. Let's have an example using JavaScript and Redis
 to cache an SQL query result. In the below example, we assume that the SQL query result is available as a JavaScript object:
 
 ```js
-redisClient.set(sqlQueryStatement,
-                JSON.stringify(sqlQueryResult));
+redisClient.set(sqlQueryStatement, JSON.stringify(sqlQueryResult));
 ```
 
 The cached SQL query result can be fetched from Redis:
@@ -1164,7 +1163,7 @@ Table structures of a wide-column database are optimized for specific queries.
 With a wide-column database, storing duplicate data is okay to make the queries
 faster. Wide-column databases also scale horizontally well, making them suitable for storing a large amount of data.
 
-This section uses [Apache Cassandra](https://cassandra.apache.org/_/index.html) as an example wide-column database. Cassandra is
+This section uses [Apache Cassandra](https://cassandra.apache.org/_/index.html) as an example of a wide-column database. Cassandra is
 a scalable multi-node database engine. In Cassandra, the data of a table is divided into
 partitions according to the table's [partition key](https://www.baeldung.com/cassandra-keys). A partition key is composed of one or more
 columns of the table. Each partition is stored on a single Cassandra node. You can think that Cassandra is a key-value store where the key is the partition key, and the value is another
@@ -1251,7 +1250,7 @@ CREATE TABLE availability_by_hotel_id (
 );
 ```
 
-The above table is updated whenever a room for a specific day is booked, or a booking for a room
+The above table is updated whenever a room for a specific day is booked or a booking for a room
 is canceled. The `available_room_count` column value is either decremented or incremented by one in the update procedure.
 
 Let's say that the following query has been executed:
@@ -1337,10 +1336,9 @@ WHERE measure_name = 'dropped_call_percentage' AND
 LIMIT 50;
 ```
 
-The above query returns the top 50 cells with the highest dropped call percentage for the given minute.
+The above query returns the top 50 cells with the highest dropped call percentage for the givenWe can create another table to hold measurements for a selected dimension value, e.g., for a particular cell id. This table can be used to drill down to a particular dimension and measure values in history. minute.
 
-We can create another table to hold measurements for a selected dimension value, e.g., for a particular cell id. This table can be used to
-drill down to a particular dimension and see measure values in the history.
+We can create another table to hold measurements for a selected dimension value, e.g., for a particular cell id. This table can be used to drill down to a particular dimension and measure values in history.
 
 ```cql
 CREATE TABLE measurements_by_dimension (
