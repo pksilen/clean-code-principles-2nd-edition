@@ -885,18 +885,17 @@ TDD, the following section presents an alternative to TDD that is still better t
 
 #### Unit Specification-Driven Development (USDD)
 
-For some of you, the above-described TDD cycle may sound cumbersome, or you may not be fully convinced about the benefits it brings.
-For this reason, I am presenting an alternative to TDD that you can use until you feel ready to try TDD out.
-The approach I am presenting is inferior to TDD but superior to the traditional "test-last" approach because it reduces
-the number of bugs by concentrating on the unit (function) specification before the implementation.
-There are clear benefits in specifying the function behavior beforehand. I call this approach *unit specification-driven development* (USDD).
+For some of you, the above-described TDD cycle may sound cumbersome, or you may not be fully convinced of its benefits.
+For this reason, I am presenting an alternative to TDD that you can use until you are ready to try it.
+The approach I am presenting is inferior to TDD but superior to the traditional "test-last" approach because it reduces the number of bugs by concentrating on the unit (function) specification before the implementation.
+Specifying the function behavior beforehand has clear benefits. I call this approach *unit specification-driven development* (USDD).
 When function behavior is defined first, one is usually less likely to forget to test or implement something.
 The USDD approach forces you to consider the function specification: happy path(s), possible security issues, edge, and failure cases.
 
 If you don't practice USDD and always do the implementation first, it is more likely you will forget an edge case or a particular
-failure/security scenario. When you don't practice USDD, you go straight to the implementation, and you tend to think about
-the happy path(s) only and strive to get them working. When focusing 100% on getting the happy path(s) working,
-you don't consider the edge cases and failure/security scenarios. You might forget to implement them or at least some of them.
+failure/security scenario. When you don't practice USDD, you go straight to the implementation, and you tend to think only about
+the happy path(s) and strive to get them working. When focusing 100% on getting the happy path(s) working,
+you don't consider the edge cases and failure/security scenarios. You might forget to implement them or some of them.
 If you forget to implement an edge case or failure scenario, you don't also test it. You
 can have 100% unit test coverage for a function, but a particular edge case or failure/security scenario is left
 unimplemented and untested. This is what has happened to me, also. And it has happened more than once. After realizing that the USDD approach
@@ -1079,7 +1078,7 @@ class ConfigParserTests {
 Once we have implemented the change, we can run all the tests and ensure they pass.
 
 I have presented two alternative methods for writing unit tests: TDD and USDD.
-As a professional developer, you should use either of them. TDD brings more benefits, but USDD is much better than *test-last*,
+As a professional developer, you should use either of them. TDD brings more benefits because it is also a design tool, but USDD is much better than *test-last*,
 i.e., writing unit tests only after implementation is ready. If you think you are not ready for TDD yet, try USDD first and reconsider TDD at some point in the future.
 
 #### Naming Conventions
@@ -1092,8 +1091,7 @@ implementation class easy.
 If you are naming your test methods according to the method they test, use the following naming convention.
 For example, if the tested method is `tryParse`, the test method name should be `testParse`.
 There are usually several tests for a single function. All test method
-names should begin with *test&lt;function-name&gt;*, but the test method name should also contain a description
-of the specific scenario the test method tests, for example: `testParse_whenParsingFails`. The method name and
+names should begin with *test&lt;function-name&gt;*, but the test method name should also describe the specific scenario the test method tests, for example: `testParse_whenParsingFails`. The method name and
 the scenario should be separated by a single underscore to enhance readability.
 
 When using the BDD-style Jest testing library with JavaScript or TypeScript, unit tests are organized and named in the following
@@ -1132,6 +1130,7 @@ describe('ConfigParser', () => {
 ```
 
 #### Mocking
+
 Mocks are one form of *test doubles*. Test doubles are any kind of pretend objects used in place of real objects for testing purposes.
 The following kinds of test doubles can be identified:
 
@@ -1177,7 +1176,7 @@ dependencies {
 }
 ```
 
-Now, we can create unit tests using JUnit, and we can use the [Mockito](https://site.mockito.org/) library for mocking. Looking at the above code, we can notice
+Now, we can create unit tests using JUnit and use the [Mockito](https://site.mockito.org/) library for mocking. The above code shows
 that the `SalesItemServiceImpl` service depends on a `SalesItemRepository`. According to the unit testing principle, we should mock
 that dependency. Similarly, we should also mock the `SalesItemFactory` dependency:
 
@@ -1444,7 +1443,7 @@ export default async function fetchTodos(
 }
 ```
 
-Now the mocking would look like the following:
+Now, the mocking would look like the following:
 
 {title: "fetchTodos.test.ts"}
 ```
@@ -1473,8 +1472,7 @@ describe('fetchTodos', async () => {
 });
 ```
 
-Let's have an example with C++ and Google Test unit testing framework. In C++, you can define a mock class
-by extending a pure virtual base class ("interface") and using Google Mock macros to define mocked methods.
+Let's have an example using C++ and Google Test unit testing framework. In C++, you can define a mock class by extending a pure virtual base class ("interface") and using Google Mock macros to define mocked methods.
 
 {aside}
 Source code for below two C++ examples can be found [here](https://github.com/pksilen/clean-code-principles-code/tree/main/chapter4/cpptests).
@@ -1877,7 +1875,7 @@ public:
 };
 ```
 
-Next, we define `ConfigFactory` and `ConfigFactoryImpl` classes:
+Next, we define the `ConfigFactory` and `ConfigFactoryImpl` classes:
 
 {title: "ConfigFactory.h"
 ```cpp
@@ -1913,7 +1911,7 @@ public:
 };
 ```
 
-Then we define a dependency injector class:
+Then, we define a dependency injector class:
 
 {title: "DependencyInjector.h"}
 ```cpp
@@ -2142,7 +2140,7 @@ TEST_F(ConfigParserImplTests, testParseConfig)
 You can also make sure that implementation class instances can be created only in the `DependencyInjector` class by declaring
 implementation class constructors private and making the `DependencyInjector` class a friend of the implementation classes.
 In this way, no one can accidentally create an instance of an implementation class. Instances of implementation classes should be created
-by the dependency injector only. Below is a implementation class where the constructor is made private, and the dependency
+by the dependency injector only. Below is an implementation class where the constructor is made private, and the dependency
 injector is made a friend of the class:
 
 {title: "AnomalyDetectionRulesParserImpl.h"}
