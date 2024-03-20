@@ -38,33 +38,38 @@ denote both the integration of unit-tested modules and external interfaces.
 
 > ***Unit tests should test the functionality of public functions as isolated units with as high coverage as possible. The isolation means that dependencies (other classes/modules/services) are mocked.***
 
-A complete isolation is not a mandatory requirement, but you should mock at least all external dependencies like external services and databases. This is required to keep the execution time of the unit tests as short as possible.
-In your unit tests, you can use other dependencies, like classes if they are already implemented and available. If not available, you can use mocks
-or implement the dependencies to be able to use them.
+Complete isolation is not a mandatory requirement, but you should mock at least all external dependencies, such as external services and databases. This is required to keep the execution time of the unit tests as short as possible.
+In your unit tests, you can use other dependencies, like other classes, if they are already implemented and available. If not available, you can use mocks or implement the dependencies on the go to be able to use them.
 
 #### TDD Schools: London vs. Detroit/Chicago
 
-There exists two schools of thought regarding unit testing and test-driven development (TDD): *London* and *Detroit/Chicago*. In the London school
-of TDD, unit tests are created from top to bottom (from higher-level classes to lower-level classes) or from outside to inside (when considering
-clean architecture). What this means in practice is that you must to create mocks for lower-level classes when you implement unit tests for
-the high-level classes, because the low-level classes do not exists yet. London school of TDD is also called *Mockist*. It focuses on interactions between objects and ensuring correct messages are sent
-between them. On the other hand, in the Detroit or Chicago school of TDD, unit tests are created from bottom to top (from lower-level classes to
-higher level classes) or from inside to outside when considering clean architecture. This TDD style is also called *Classic*. What this means in practice is that you don't necessarily need
-to create so many mocks. When you test a higher-level class, you have already implemented the needed lower-level classes and you can use their
-implementation in your higher-level class tests. This would make the higher-level class tests as partial integration tests. There are benefits
-and drawbacks in both schools of TDD. These styles are not mutually exclusive. The drawback of London school of TDD is that mocks create tight
-coupling to lower-level interfaces and changing them requires changes to tests. The benefit is that you can follow the natural path from
-creating higher-level classes first and lower-level classes later as needed. The drawback of Detroit/Chicago school of TDD is that you need
-figure out the lower level classes first and implement them first which might be slow and feel unnatural. In theory, the Detroit/Chicago school
-tests can be slower if they test dependencies, also a bug in a single unit can cause many tests to fail. The benefit of Detroit/Chicago school
-of TDD is that code refactoring is easier and tests don't break easily if they are not relying on mocks. Which of the schools of TDD is better?
-It is hard to say. London school of TDD (or unit testing in general) is probably more popular in general but it does not make it necessarily better.
-Many TDD veterans favor the classic approach, i.e. Detroit/Chicago school.
-Hybrid approaches, where elements from both schools are taken, are also popular. Many developers don't even know these two schools exists.
-Later in the chapter I will give you an example of using both of these schools using the same example.
+Two schools of thought exist regarding unit testing and test-driven development (TDD): *London* and *Detroit/Chicago*. In the London school
+of TDD, unit tests are created from top to bottom (from higher to lower-level classes) or from outside to inside (considering
+clean architecture). In practice, this means that you must create mocks for lower-level classes when you implement unit tests for
+the high-level classes because the low-level classes do not exist yet. London school of TDD is also called *Mockist*. It focuses on interactions between objects and ensuring correct messages are sent
+between them.
+
+On the other hand, in the Detroit or Chicago school of TDD, unit tests are created from bottom to top (from lower-level classes to
+higher-level classes) or from inside to outside when considering clean architecture. This TDD style is also called *Classic*. Using the Detroit/Chicago school of TDD means you don't necessarily need
+to create so many mocks. When you test a higher-level class, you have already implemented the needed lower-level classes, and you can use their
+implementation in your higher-level class tests. This will make the higher-level class tests partial integration tests.
+
+There are benefits
+and drawbacks in both TDD schools. These styles are not mutually exclusive. The drawback of the London school of TDD is that mocks create tight
+coupling to lower-level interfaces, and changing them requires changes to tests. The benefit is that you can follow the natural path of
+creating higher-level classes first and lower-level classes later as needed. The drawback of the Detroit/Chicago school of TDD is that you need
+to figure out and implement the lower-level classes first, which might be slow and feel unnatural. In theory, the Detroit/Chicago school
+tests can be slower if they test dependencies, especially in cases where a high-level class depends on many levels of lower-level classes. Also, a bug in a single unit can cause many tests to fail. The benefit of the Detroit/Chicago school
+of TDD is that code refactoring is easier, and tests don't break easily because they do not heavily rely on mocks.
+
+Which of the TDD schools is better?
+It is hard to say. London school of TDD (or unit testing in general) is probably more popular, but it does not make it necessarily better.
+Many TDD veterans favor the classic approach, i.e., Detroit/Chicago school.
+Hybrid approaches, where elements from both schools are taken, are also popular. Many developers don't even know these two schools exist.
+Later in this chapter, I will show you how both schools are used.
 
 Unit tests should be written for public functions only. Do not try to test private functions separately. They
-should be tested indirectly when testing public functions. Unit tests should test the function specification, i.e., what
+should be indirectly tested when testing public functions. Unit tests should test the function specification, i.e., what
 the function is expected to do in various scenarios, not how the function is implemented. When you unit test only public functions,
 you can easily refactor the function implementation, e.g., rewrite the private functions that the public function uses without
 modifying the related unit tests (or with minimal changes).
@@ -86,14 +91,13 @@ export default function parseConfig(...) {
  // ...
 }
 
-In the above module, there is one public function, `parseConfig`, and one private function, `readFile`. In unit testing,
+The above module has one public function, `parseConfig`, and one private function, `readFile`. In unit testing,
 you should test the public `parseConfig` function in isolation and mock the `doSomething` function, which is imported from another module.
-And you indirectly test the private `readFile` function when testing the public `parseConfig` function.
+You indirectly test the private `readFile` function when testing the public `parseConfig` function.
 
 Below is the above example written in Java. You test the Java version in a similar way as the JavaScript version. You
 write unit tests for the public `parseConfig` method only. Those tests will test the private `readFile` function indirectly.
-You must supply a mock instance of the `OtherInterface` interface for the `ConfigParser` constructor. This is because you
-should not be testing dependencies of the `ConfigParser` class in the unit tests of the `ConfigParser` class.
+You can supply a mock instance of the `OtherInterface` interface for the `ConfigParser` constructor when you don't want to test dependencies of the `ConfigParser` class in the unit tests of the `ConfigParser` class.
 
 ```java
 public interface OtherInterface {
@@ -140,7 +144,7 @@ refactoring step that should not be forgotten. It helps keep both the source cod
 The unit test code must be the same high quality as the source. Unit test code should use type annotations and the same linter rules as the source code itself.
 The unit test code should not contain duplicate code. A unit test method should be a maximum of 5-9 statements long.
 Aim for a single assertion or put assertions in one well-named private method.
-If you have more than 5-6 expectations on mocks, you need to refactor the source code as described above to reduce the number of expectations and to make the test method shorter.
+If you have more than 5-6 expectations on mocks, you need to refactor the source code the way described above to reduce the number of expectations and shorten the test method.
 
 Unit tests should test all the functionality of a public function: happy path(s),
 possible failure situations, security issues, and edge/corner cases so that each code line of the function is covered by at least one unit test.
@@ -154,10 +158,10 @@ if (isEmpty() || !isInitialized()) {
 ```
 
 To fully cover the functionality of the above unit, you need to write three tests: one for the `isEmpty()` condition to be true,
-one for the `!isInitialized()` to be true and a test where the if-statement's condition is evaluated to false. If you use a test coverage tool, it will report about
+one for the `!isInitialized()` to be true, and a test where the if-statement's condition is evaluated to false. If you use a test coverage tool, it will report about
 untested sub-conditions of boolean expressions. You should always use a test coverage tool.
 
-Security issues in functions are mostly related to the input the function gets. Is that input secure? If your function receives unvalidated
+Security issues in functions are mostly related to the input the function gets. You should ask yourself if the input is secure. If your function receives unvalidated
 input data from an end-user, that data must be validated against a possible attack by a malicious end-user.
 
 Below are some examples of edge/corner test cases listed:
@@ -175,18 +179,17 @@ Below are some examples of edge/corner test cases listed:
 - Test with an extremely small floating-point value
 - Test with an extremely large floating-point value
 
-Unit tests should not test the functionality of dependencies. That is something to be tested
-with integration tests. A unit test should test a function in isolation. If a function has one
-or more dependencies on other functions defined in different classes (or modules), those
-dependencies should be mocked. A *mock* is something that mimics the behavior of a real object or function. Mocking
+Unit tests should not test the functionality of external dependencies. That is something to be tested
+with integration tests. A unit test should test a function in isolation from external dependencies. If a function depends on another module that performs database operations, that
+dependency should be mocked. A *mock* is something that mimics the behavior of a real object or function. Mocking
 will be described in more detail later in this section.
 
-Testing functions in isolation has two benefits. It makes tests faster. This is a real benefit because
+Testing functions in isolation from external dependencies has two benefits. It makes tests faster. This is a real benefit because
 you can have a lot of unit tests, and you run them often, so the execution time of the unit tests must be as short as possible.
-Another benefit is that you don't need to set up external dependencies, like a database, a message broker, and other microservices, because you are mocking the functionality
+Another benefit is that you don't need to set up external dependencies, like a database, a message broker, and other microservices because you are mocking the functionality
 of the dependencies.
 
-Unit tests give you protection against introducing accidental bugs when refactoring code. Unit tests ensure that the implementation code meets the
+Unit tests protect you against introducing accidental bugs when refactoring code. Unit tests ensure that the implementation code meets the
 function specification. It should be remembered that it is hard to write the perfect code
 on the first try. You are bound to practice refactoring to keep your code base clean and free of technical debt.
 And when you refactor, the unit tests are on your side to prevent accidentally introducing bugs.
@@ -207,21 +210,20 @@ The benefits of TDD are many:
 - You don't write unnecessary code because you only write code that makes the tests pass (you can follow the [YAGNI principle](https://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it))
 - Less need for debugging
 
-TDD's main benefit is not finding bugs early but improved design due to constant refactoring. You can consider TDD as an effective design tool. TDD aims to maximize the external and internal quality of the software. External quality is the quality the users see, e.g., a minimal number of bugs and correct features.
+TDD's main benefit is not finding bugs early but improving design due to constant refactoring. TDD is both an effective design tool and a testing tool. TDD aims to maximize the software's external and internal quality. External quality is the quality the users see, e.g., a minimal number of bugs and correct features.
 Internal quality is what the developers see: good design and lack of technical debt. If internal quality is low, it is more likely that a developer can introduce bugs (i.e., cause low external quality) to
 the software. High internal quality can be achieved with TDD. You have a comprehensive set of tests and a good design with low technical debt.
 It will be easy for any developer to maintain and develop such software further.
-
 I have been in the industry for almost 30 years, and when I began coding, there were no automated tests or
 test-driven development. Only since around 2010 have I been writing automated unit tests. Due to this
 background, TDD has been quite difficult for me because there is something I have grown accustomed to: Implement
 the software first and then do the testing. I assume many of you have also learned it like that, which can make switching to TDD
-rather difficult. Little material exists that teaches topics using TDD. The internet is full of books, courses, videos, blogs, and
+rather difficult. Little material exists that teaches topics using TDD. The Internet is full of books, courses, videos, blogs, and
 other posts that don't teach you the proper way of development: TDD. The same applies to this book, also. I present code samples in the book but don't always use
 TDD because it would make everything complicated and more verbose.
 We are constantly taught to program test-last!
 When asking people who have conducted TDD, they say the main benefit is that it reduces stress because you don't have to achieve multiple goals simultaneously,
-like designing the function and thinking of and implementing (and remembering to implement) all possible execution paths.
+like designing the function, thinking of and implementing (and remembering to implement) all possible execution paths.
 
 TDD can feel unnatural at the beginning. It can slow you down at first. You just have to keep practicing it systematically. In that way, you can start gradually seeing the benefits and
 build a habit of always using TDD. Later, you will notice that it begins to feel natural, and it does not slow you down anymore but brings you the many benefits depicted above.
@@ -247,16 +249,16 @@ ensure the following in your unit tests:
   Try to keep the assertion phase as simple as possible. The best is to have only a single assertion, but that is not always possible.
   You can also extract multiple assertions into a well-named private method and call that method from the test method in the assertion phase.
 
-Some TDD practitioners suggest you name a test method after the feature it is testing, including a description of the scenario and expected outcome.
+Some TDD practitioners suggest naming a test method after the feature it tests, including a description of the scenario and expected outcome.
 That approach can easily make the test method names too long and hard to read. You can always see the expected result by looking at the end of the test method,
 which should preferably contain only a single assertion. I also like to put test methods in a test class in the same order I have in the tested class.
 Also, the scenarios can be ordered from a more specialized scenario to a more generalized scenario (or vice versa).
-All this makes navigating between test methods a breeze. Also, there is not much difference between a class's features and its public methods.
+This makes navigating between test methods a breeze. Also, there is not much difference between a class's features and its public methods.
 Each public method should implement a single feature only (remember the *single responsibility principle*).
 A single feature (method) consists of one or more scenarios. For example, a `Stack` class has four features:
 You can `push` an item to the stack and `pop` an item from the stack. You can also ask if the stack `isEmpty` or ask its `size`.
 These features have multiple scenarios: for example, how they behave if the stack is empty versus the stack with items in it.
-When you add features to a class, you should put them into new methods or, preferably, use the *open-closed principle* and put them in a totally new class.
+When you add features to a class, you should either put them into new methods or, preferably, use the *open-closed principle* and introduce a totally new class.
 
 Below are two Java examples of test method names in a `StackTests` class. The first one contains the method name that is tested, and the second one is named after the feature:
 
@@ -397,7 +399,7 @@ class ConfigParserTests {
 
 If we run the test, we get a compilation error, meaning the test case we wrote won't pass. Next,
 we shall write the simplest possible code to make the test case both compile and pass. We can make shortcuts like using a fixed value (constant) instead of a more generalized solution. That is called
-*faking it*. We can fake it until we make it, which happens when we add a new test that forces us to eliminate the constant value and write more generalized code. The part of TDD where you add more
+*faking it*. We can fake it until we make it. We "make it" when we add a new test that forces us to eliminate the constant value and write more generalized code. The part of TDD where you add more
 tests to drive for a more generalized solution is called *triangulation*.
 
 ```java
@@ -427,7 +429,7 @@ public class ConfigParserImpl implements ConfigParser {
 
 Let's write a test for a 'happy path' scenario where we have two properties. This forces us to make the
 implementation more generalized. We cannot use a constant anymore, and we should not use two constants with
-an if/else-statement because if we want to parse more than two properties, the approach using constants does not scale.
+an if/else statement because if we want to parse more than two properties, the approach using constants does not scale.
 
 ```java
 class ConfigParserTests {
@@ -542,24 +544,24 @@ happy paths, edge cases, and failure/security scenarios. For example, for a sing
   - Scenario F
 
 Listing all scenarios is an important step in order not to forget to test something because if you don't write a test for something,
-it's highly likely you won't implement it either. During the TDD process, you should
-add any missing scenarios to that list. Always add it to the list immediately so that you don't forget it. Order the list so that the most specialized scenarios are listed first.
+it's highly likely you won't implement it either. During the TDD process, you often come up with additional scenarios and should
+add any missing scenarios to the list. Always immediately add a new scenario to the list so you don't forget it. Order the list so that the most specialized scenarios are listed first.
 Then, start the TDD process by following the ordered list. The most specialized scenarios are typically the easiest to implement,
 and this is why you should start with them. Specialized scenarios typically include edge cases and failure scenarios.
 
 In the simplest case, a specialized scenario can be implemented, for example, by returning a constant from a function.
 An example of a specialized scenario with a `List` class's `isEmpty` method is when the list is empty after creating a new `List` object.
-Test that first, and only after that test a scenario where something is added to the list, and it is no longer empty.
+Test that first, and only after that test a scenario in which something is added to the list, and it is no longer empty.
 
-At the end of the scenario list are the generalized scenarios that should make the function work with any input.
+The generalized scenarios that should make the function work with any input are at the end of the scenario list.
 To summarize, during the TDD process, you work from a specialized implementation towards a more generalized implementation.
 
 The drawback of TDD is that you cannot always be 100% sure if you have a generalized enough implementation.
 You can only be 100% sure that your implementation works with the input used in the tests, but you cannot be sure if any input works correctly.
 To ensure that, you would have to test all possible input values (like all integer values), which is typically unreasonable.
 
-Let's have another TDD example with a function that has edge cases. We should implement a `contains` method for a Java string class
-(we assume here that the Java String class's `contains` method does not exists). The method should do the following:
+Let's have another TDD example with a function that has edge cases. We should implement a `contains` method for a Java string class.
+(we assume here that the Java String class's `contains` method does not exist). The method should do the following:
 
 > *The method takes a string argument, and if that string is found in the string the string object represents, then `true` is returned. Otherwise, `false` is returned.*
 
@@ -569,15 +571,15 @@ case:
 * Edge cases
     1) Strings are equal
     2) Both strings are empty
-    3) Argument string is empty
+    3) The argument string is empty
     4) The string under test is empty
-    5) Argument string is found at the beginning of the other string
-    6) Argument string is found at the end of the other string
-    7) Argument string is longer than the other string
+    5) The argument string is found at the beginning of the other string
+    6) The argument string is found at the end of the other string
+    7) The argument string is longer than the other string
 
 * Happy paths
-    8) Argument string is found in the middle of the other string
-    9) Argument string is not found in the other string
+    8) The argument string is found in the middle of the other string
+    9) The argument string is not found in the other string
 
 Let's start with the first scenario:
 
@@ -599,7 +601,7 @@ class MyStringTests {
 }
 ```
 
-Next, we do as much implementation as is needed to make the above test pass. The simplest thing to do is to return
+Next, we implement as much as needed to make the above test pass. The simplest thing to do is to return
 a constant:
 
 ```java
@@ -684,7 +686,7 @@ class MyStringTests {
 }
 ```
 
-Let's modify the implementation to make the above (and earlier tests) to pass:
+Let's modify the implementation to make the above (and earlier tests) pass:
 
 ```java
 public class MyString {
@@ -830,7 +832,7 @@ class MyStringTests {
 }
 ```
 
-Let's modify the implementation to make the above (and, of course, earlier tests) to pass:
+Let's modify the implementation to make the above (and, of course, earlier tests) pass:
 
 ```java
 public class MyString {
@@ -871,10 +873,8 @@ will be removed/replaced when making a test for the next scenario pass. This is 
 The above example is
 a bit contrived because we finally used the `indexOf` method, which we could have done already in the first test case,
 but we didn't because we were supposed to write the simplest implementation to make the test pass.
-Consider the same example when no `indexOf` method is available, and we must implement the `indexOf` method functionality
-(looping through the characters, etc.) in the `contains` method ourselves. Then, all the tests start to make sense.
-Many of them are testing edge/corner cases that are important to test. If you are still in doubt, think about implementing
-the `contains` method in a language that does not have a range-based for-loop, but you must use character indexes.
+Consider the same example when no `indexOf` method is available, and we must implement the `indexOf` method functionality (looping through the characters, etc.) in the `contains` method ourselves. Then, all the tests start to make sense.
+Many of them are testing edge/corner cases that are important to test. If you are still in doubt, think about implementing the `contains` method in a language that does not have a range-based for-loop, but you must use character indexes.
 Then, you would finally understand the importance of testing the edge cases: reveal possible off-by-one errors, for example.
 
 When you encounter a bug, it is usually due to a missing scenario: An edge case is not considered, or implementation for a failure scenario or happy path is missing.
