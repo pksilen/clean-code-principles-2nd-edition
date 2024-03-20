@@ -860,8 +860,7 @@ public class SalesItemController {
     @RequestBody final SalesItemArg salesItemArg,
     @AuthenticationPrincipal final Jwt jwt
   ) {
-    log.info("Username: {}",
-             jwt.getClaimAsString("preferred_username"));
+    log.info("Username: {}", jwt.getClaimAsString("preferred_username"));
 
     // You can now use the "jwt" object to get a claim about
     // user's roles and verify a needed role, for example.
