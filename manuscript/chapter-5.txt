@@ -738,6 +738,58 @@ the request handler. Below is a short example with Nest.js with a authorization 
 Source code for the below example is available [here](https://github.com/pksilen/clean-code-principles-code/tree/main/chapter5/auth_backend_nest).
 {/aside}
 
+{title: "app.controller.ts"}
+```ts
+import { Controller, Post, Req, UseGuards } from '@nestjs/common';
+import { AllowForAuthorized } from './AllowForAuthorized';
+
+@Controller()
+export class AppController {
+  constructor() {
+  }
+
+  @UseGuards(AllowForAuthorized)
+  @Post('/api/messaging-service/messages')
+  createMessage(@Req() request: Request): void {
+    console.log('Message created');
+  }
+}
+```
+
+{title: "AllowForAuthorized.ts"}
+```ts
+import { CanActivate, ExecutionContext, Inject, Injectable } from '@nestjs/common';
+import Authorizer from './Authorizer';
+
+@Injectable()
+export class AllowForAuthorized implements CanActivate {
+  constructor(@Inject('authorizer') private authorizer: Authorizer) {
+  }
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest();
+    await this.authorizer.authorize(request.headers.authorization);
+    console.log('Authorized');
+    return true;
+  }
+}
+```
+
+{title: "app.module.ts"}
+```ts
+import { Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AllowForAuthorized } from './AllowForAuthorized';
+import JwtAuthorizer from './JwtAuthorizer';
+
+@Module({
+  imports: [],
+  controllers: [AppController],
+  providers: [{ provide: 'authorizer', useClass: JwtAuthorizer }, AllowForAuthorized],
+})
+export class AppModule {
+}
+```
 
 Below is a simple example of implementing an OAuth2 resource server using Spring Boot. First, you need to add
 the OAuth2 resource server dependency:
