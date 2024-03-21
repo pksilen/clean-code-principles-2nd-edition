@@ -4992,8 +4992,8 @@ The software system we want to E2E test must reside in a production-like test en
 Usually, E2E testing is done in both the CI and the staging environment(s). Before running the E2E tests, the software needs
 to be deployed to the test environment.
 
-If we consider the first feature above, implementing the E2E test steps
-can be done so that the steps in the `Given` part of the scenario are implemented using an externalized configuration. If our software
+Considering the first feature above, the E2E test steps
+can be implemented so that the steps in the `Given` part of the scenario are implemented using an externalized configuration. If our software
 system runs in a Kubernetes cluster, we can configure the microservices by creating
 the needed ConfigMaps. The southbound interface simulator can be controlled by launching a Kubernetes Job
 or, if it is a microservice with an API, commanding it via its API.
@@ -5061,8 +5061,8 @@ from data ingestion to data export, for example.
 
 The goal of data volume testing is to measure the performance of a database by comparing an empty database to
 a database with a sizeable amount of data stored in it. With data volume testing, we can measure the impact of data volume
-on a software component's performance. Usually, an empty database has better performance than a database
-containing a high amount of data. This depends on the database and how it scales with large amounts of data.
+on a software component's performance. Usually, an empty database performs better than a database
+containing a large amount of data. This depends on the database and how it scales with large amounts of data.
 
 ### Stability Testing
 
@@ -5097,7 +5097,7 @@ one pod is missing, it will create a new pod on a new node, and
 there will be the original number of pods running, and the recovery from the node down is successful.
 
 Many parts of the reliability testing can be automated. You can use ready-made chaos engineering tools or create and use
-your tools. Use a tool to induce failures in the environment. Then verify based on the service's business-criticality that the service remains highly available or swiftly recovers from a failure.
+your tools. Use a tool to induce failures in the environment. Then, based on the service's business criticality, verify that the service remains highly available or swiftly recovers from a failure.
 
 Considering the telecom network analytics software system, we could introduce a test case where the message broker (e.g., Kafka) is shut down. Then, we expect alerts to be triggered
 after a while by the microservices that try to use the unavailable message broker. After the message broker is restarted, the alerts should
@@ -5150,7 +5150,7 @@ spec:
 ```
 
 It is also possible to specify the autoscaling to use an external metric. An external metric could be Kafka consumer lag, for instance.
-If the Kafka consumer lag grows too high, the HPA can scale the microservice out for more processing power for the Kafka consumer group.
+If the Kafka consumer lag grows too high, the HPA can scale the microservice out to provide more processing power for the Kafka consumer group.
 When the Kafka consumer lag decreases below a defined threshold, HPA can scale in the microservice to reduce the number of pods.
 
 ### Security Testing
