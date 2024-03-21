@@ -3729,204 +3729,195 @@ Let's write a unit test for the first scenario when all rumors are shared after 
 The `driveUntilAllRumorsShared` method
 makes drivers drive to the next bus stop (the same for both drivers) and share rumors there.
 
-```python
-class GossipingBusDriversTests(unittest.TestCase):
-    rumor1 = Rumor()
-    rumor2 = Rumor()
-    all_rumors = {rumor1, rumor2}
+```java
+class GossipingBusDriversTests {
+  final Rumor rumor1 = new Rumor();
+  final Rumor rumor2 = new Rumor();
+  final Set<Rumor> allRumors = Set.of(rumor1, rumor2);
 
-    def test_drive_until_all_rumors_shared__after_one_stop(self):
-        # GIVEN
-        bus_stop = BusStopImpl()
-        bus_route = CircularBusRoute([bus_stop])
-        bus_driver1 = BusDriverImpl(bus_route, {self.rumor1})
-        bus_driver2 = BusDriverImpl(bus_route, {self.rumor2})
+  @Test
+  void testDriveUntilAllRumorsShared_afterOneStop() {
+    // GIVEN
+    final var busStop = new BusStopImpl();
+    final var busRoute = new CircularBusRoute(List.of(busStop));
+    final var busDriver1 = new BusDriverImpl(busRoute, Set.of(rumor1));
+    final var busDriver2 = new BusDriverImpl(busRoute, Set.of(rumor2));
 
-        gossiping_bus_drivers = GossipingBusDrivers([bus_driver1, bus_driver2])
+    final var gossipingBusDrivers = new GossipingBusDrivers(List.of(busDriver1, busDriver2));
 
-        # WHEN
-        all_rumors_were_shared = (
-            gossiping_bus_drivers.drive_until_all_rumors_shared()
-        )
+    // WHEN
+    boolean allRumorsWereShared = gossipingBusDrivers.driveUntilAllRumorsShared();
 
-        # THEN
-        self.assertTrue(all_rumors_were_shared)
-        self.assertEqual(bus_driver1.get_rumors(), self.all_rumors)
-        self.assertEqual(bus_driver2.get_rumors(), self.all_rumors)
+    // THEN
+    assertTrue(allRumorsWereShared);
+    assertEquals(busDriver1.getRumors(), allRumors);
+    assertEquals(busDriver2.getRumors(), allRumors);
+  }
+}
 ```
 
 Let's make the above test pass with the below code.
 
-```python
-class GossipingBusDrivers:
-    def __init__(self, bus_drivers: list[BusDriver]):
-        self.__bus_drivers = bus_drivers.copy()
-        self.__all_rumors = self.__get_all_rumors()
+```java
+public class GossipingBusDrivers {
+  private final List<BusDriver> busDrivers;
+  private final Set<Rumor> allRumors;
 
-    def drive_until_all_rumors_shared(self) -> bool:
-        while True:
-            for bus_driver in self.__bus_drivers:
-                bus_stop = bus_driver.drive_to_next_bus_stop()
-                bus_stop.share_rumors_with_drivers()
+  public GossipingBusDrivers(final List<BusDriver> busDrivers) {
+    this.busDrivers = List.copyOf(busDrivers);
+    this.allRumors = getAllRumors();
+  }
 
-            if self.__all_rumors_are_shared():
-                return True
+  public boolean driveUntilAllRumorsShared() {
+    while (true) {
+      for (final var busDriver : busDrivers) {
+        final var busStop = busDriver.driveToNextBusStop();
+        busStop.shareRumorsWithDrivers();
+      }
 
-    def __get_all_rumors(self) -> set[Rumor]:
-        return {
-            rumor
-            for bus_driver in self.__bus_drivers
-            for rumor in bus_driver.get_rumors()
-        }
+      if (allRumorsAreShared()) {
+        return true;
+      }
+    }
+  }
 
-    def __all_rumors_are_shared(self) -> bool:
-        return all(
-            [
-                bus_driver.get_rumors() == self.__all_rumors
-                for bus_driver in self.__bus_drivers
-            ]
-        )
+  private Set<Rumor> getAllRumors() {
+    return busDrivers.stream()
+      .flatMap(driver -> driver.getRumors().stream())
+      .collect(Collectors.toSet());
+  }
+
+  private boolean allRumorsAreShared() {
+    return busDrivers.stream()
+      .allMatch(driver -> driver.getRumors().equals(allRumors));
+  }
+}
 ```
 
 Let's add a test for a scenario where two bus drivers drive from their starting bus stops to two different bus stops and must continue driving
 because all rumors were not shared at the first bus stop. Rumors are shared when drivers continue driving to their next bus stop, which is the same for both drivers.
 
-```python
-class GossipingBusDriversTests(unittest.TestCase):
-    # ...
+```java
+class GossipingBusDriversTests {
+  // ...
 
-    def test_drive_until_all_rumors_shared__after_two_stops(self):
-        # GIVEN
-        bus_stop_a = BusStopImpl()
-        bus_stop_b = BusStopImpl()
-        bus_stop_c = BusStopImpl()
-        bus_route1 = CircularBusRoute([bus_stop_a, bus_stop_c])
-        bus_route2 = CircularBusRoute([bus_stop_b, bus_stop_c])
-        bus_driver1 = BusDriverImpl(bus_route1, {self.rumor1})
-        bus_driver2 = BusDriverImpl(bus_route2, {self.rumor2})
-        gossiping_bus_drivers = GossipingBusDrivers([bus_driver1, bus_driver2])
+  @Test
+  void testDriveUntilAllRumorsShared_afterTwoStops() {
+    // GIVEN
+    final var busStopA = new BusStopImpl();
+    final var busStopB = new BusStopImpl();
+    final var busStopC = new BusStopImpl();
+    final var busRoute1 = new CircularBusRoute(List.of(busStopA, busStopC));
+    final var busRoute2 = new CircularBusRoute(List.of(busStopB, busStopC));
+    final var busDriver1 = new BusDriverImpl(busRoute1, Set.of(rumor1));
+    final var busDriver2 = new BusDriverImpl(busRoute2, Set.of(rumor2));
 
-        # WHEN
-        all_rumors_were_shared = (
-            gossiping_bus_drivers.drive_until_all_rumors_shared()
-        )
+    final var gossipingBusDrivers = new GossipingBusDrivers(List.of(busDriver1, busDriver2));
 
-        # THEN
-        self.assertTrue(all_rumors_were_shared)
-        self.assertEqual(bus_driver1.get_rumors(), self.all_rumors)
-        self.assertEqual(bus_driver2.get_rumors(), self.all_rumors)
+    // WHEN
+    boolean allRumorsWereShared = gossipingBusDrivers.driveUntilAllRumorsShared();
+
+    // THEN
+    assertTrue(allRumorsWereShared);
+    assertEquals(busDriver1.getRumors(), allRumors);
+    assertEquals(busDriver2.getRumors(), allRumors);
+  }
+}
 ```
 
 Let's modify the implementation:
 
-```python
-class GossipingBusDrivers:
-    # ...
+```java
+public class GossipingBusDrivers {
+  // ...
 
-    def drive_until_all_rumors_shared(self) -> bool:
-        while True:
-            bus_stops = {
-                bus_driver.drive_to_next_bus_stop()
-                for bus_driver in self.__bus_drivers
-            }
+  public boolean driveUntilAllRumorsShared() {
+    while (true) {
+      Set<BusStop> busStops = busDrivers.stream()
+        .map(BusDriver::driveToNextBusStop)
+        .collect(Collectors.toSet());
 
-            for bus_stop in bus_stops:
-                bus_stop.share_rumors_with_drivers()
+      for (final var busStop : busStops) {
+        busStop.shareRumorsWithDrivers();
+      }
 
-            if self.__all_rumors_are_shared():
-                return True
-    # ...
+      if (allRumorsAreShared()) {
+        return true;
+      }
+    }
+  }
+
+  // ...
+}
 ```
 
 Next, we should implement a test where drivers don't have common bus stops and they have driven the maximum number of bus stops:
 
-```python
-class GossipingBusDriversTests(unittest.TestCase):
-    # ...
+```java
+class GossipingBusDriversTests {
+  // ...
 
-    def test_drive_until_all_rumors_shared__when_rumors_are_not_shared(self):
-        # GIVEN
-        bus_stop_a = BusStopImpl()
-        bus_stop_b = BusStopImpl()
-        bus_route1 = CircularBusRoute([bus_stop_a])
-        bus_route2 = CircularBusRoute([bus_stop_b])
-        bus_driver1 = BusDriverImpl(bus_route1, {self.rumor1})
-        bus_driver2 = BusDriverImpl(bus_route2, {self.rumor2})
-        gossiping_bus_drivers = GossipingBusDrivers([bus_driver1, bus_driver2])
-        max_driven_stop_count = 2
+  @Test
+  void testDriveUntilAllRumorsShared_whenRumorsAreNotShared() {
+    // GIVEN
+    final var busStopA = new BusStopImpl();
+    final var busStopB = new BusStopImpl();
+    final var busRoute1 = new CircularBusRoute(List.of(busStopA));
+    final var busRoute2 = new CircularBusRoute(List.of(busStopB));
+    final var busDriver1 = new BusDriverImpl(busRoute1, Set.of(rumor1));
+    final var busDriver2 = new BusDriverImpl(busRoute2, Set.of(rumor2));
+    final var gossipingBusDrivers = new GossipingBusDrivers(List.of(busDriver1, busDriver2));
+    final int maxDrivenStopCount = 2;
 
-        # WHEN
-        all_rumors_were_shared = (
-            gossiping_bus_drivers.drive_until_all_rumors_shared(
-                max_driven_stop_count
-            )
-        )
+    // WHEN
+    boolean allRumorsWereShared = gossipingBusDrivers.driveUntilAllRumorsShared(maxDrivenStopCount);
 
-        # THEN
-        self.assertFalse(all_rumors_were_shared)
-        self.assertEqual(bus_driver1.get_rumors(), {self.rumor1})
-        self.assertEqual(bus_driver2.get_rumors(), {self.rumor2})
+    // THEN
+    assertFalse(allRumorsWereShared);
+    assertEquals(busDriver1.getRumors(), Set.of(rumor1));
+    assertEquals(busDriver2.getRumors(), Set.of(rumor2));
+  }
+}
 ```
 
 Let' modify the implementation to make the above test to pass:
 
 ```python
-class GossipingBusDrivers:
-    def __init__(self, bus_drivers: list[BusDriver]):
-        self.__bus_drivers = bus_drivers.copy()
-        self.__all_rumors = self.__get_all_rumors()
-        self.__nbr_of_stops_driven = 0
+public class GossipingBusDrivers {
+  private final List<BusDriver> busDrivers;
+  private final Set<Rumor> allRumors;
+  private int drivenStopCount = 0;
 
-    def drive_until_all_rumors_shared(
-        self, max_driven_stop_count: int
-    ) -> bool:
-        while True:
-            bus_stops = {
-                bus_driver.drive_to_next_bus_stop()
-                for bus_driver in self.__bus_drivers
-            }
+  public GossipingBusDrivers(List<BusDriver> busDrivers) {
+    this.busDrivers = List.copyOf(busDrivers);
+    this.allRumors = getAllRumors();
+  }
 
-            self.__nbr_of_stops_driven += 1
+  public boolean driveUntilAllRumorsShared(int maxDrivenStopCount) {
+    while (true) {
+      Set<BusStop> busStops = busDrivers.stream()
+        .map(BusDriver::driveToNextBusStop)
+        .collect(Collectors.toSet());
 
-            for bus_stop in bus_stops:
-                bus_stop.share_rumors_with_drivers()
+      drivenStopCount++;
+      shareRumors(busStops);
 
-            if self.__all_rumors_are_shared():
-                return True
-            elif self.__nbr_of_stops_driven == max_driven_stop_count:
-                return False
-    # ...
-```
+      if (allRumorsAreShared()) {
+        return true;
+      } else if (drivenStopCount == maxDrivenStopCount) {
+        return false;
+      }
+    }
+  }
 
-Let's refactor the method slightly so that it is not too long (max 5-9 statements):
+  private static void shareRumors(Set<BusStop> busStops) {
+    for (final var busStop : busStops) {
+      busStop.shareRumorsWithDrivers();
+    }
+  }
 
-```python
-class GossipingBusDrivers:
-    # ...
-
-    def drive_until_all_rumors_shared(
-        self, max_driven_stop_count: int
-    ) -> bool:
-        while True:
-            bus_stops = {
-                bus_driver.drive_to_next_bus_stop()
-                for bus_driver in self.__bus_drivers
-            }
-
-            self.__driven_stop_count += 1
-            self.__share_rumors(bus_stops)
-
-            if self.__all_rumors_are_shared():
-                return True
-            elif self.__driven_stop_count == max_driven_stop_count:
-                return False
-
-    @staticmethod
-    def __share_rumors(bus_stops: set[BusStop]):
-        for bus_stop in bus_stops:
-            bus_stop.share_rumors_with_drivers()
-
-    # ...
+  // ...
+}
 ```
 
 Next, we shall implement the `MaxDrivenStopCountParser` and its 'parse' method. Let's create a failing test:
