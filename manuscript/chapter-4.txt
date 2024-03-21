@@ -3298,7 +3298,7 @@ class CircularBusRouteTests {
 }
 ```
 
-Let's implement the `getNextBusStop` method to make the above test to pass:
+Let's implement the `getNextBusStop` method to make the above test pass:
 
 ```java
 public interface BusRoute {
@@ -3540,7 +3540,7 @@ public class BusDriverImpl implements BusDriver {
 }
 ```
 
-We also need to add `setRumors` method to the `BusDriver` interface.
+We must also add the `setRumors` method to the `BusDriver` interface.
 Let's make a unit test for the `setRumors` method, which should override the rumors given in the constructor:
 
 ```java
@@ -3725,7 +3725,7 @@ public class BusDriverImpl implements BusDriver {
 ```
 
 Finally, we should implement the `GossipingBusDrivers` class and its `driveUntilAllRumorsShared`.
-Let's write a unit test for the first scenario when all rumors are shared after driving from one bus stop to the next.
+Let's write a unit test for the first scenario, in which all rumors are shared after driving from one bus stop to the next.
 The `driveUntilAllRumorsShared` method
 makes drivers drive to the next bus stop (the same for both drivers) and share rumors there.
 
@@ -3851,7 +3851,7 @@ public class GossipingBusDrivers {
 }
 ```
 
-Next, we should implement a test where drivers don't have common bus stops and they have driven the maximum number of bus stops:
+Next, we should implement a test where drivers don't have common bus stops, and they have driven the maximum number of bus stops:
 
 ```java
 class GossipingBusDriversTests {
@@ -3880,7 +3880,7 @@ class GossipingBusDriversTests {
 }
 ```
 
-Let' modify the implementation to make the above test to pass:
+Let's modify the implementation to make the above test pass:
 
 ```java
 public class GossipingBusDrivers {
@@ -3920,7 +3920,7 @@ public class GossipingBusDrivers {
 }
 ```
 
-Next, we shall implement the `MaxDrivenStopCountParser` and its 'parse' method. Let's create a failing test:
+Next, we shall implement the `MaxDrivenStopCountParser` class and its 'parse' method. Let's create a failing test:
 
 ```java
 class MaxDrivenStopCountParserTests {
@@ -3939,7 +3939,7 @@ class MaxDrivenStopCountParserTests {
 }
 ```
 
-Now we can implement the class to make the above test to pass:
+Now we can implement the class to make the above test pass:
 
 ```java
 public interface MaxDrivenStopCountParser {
@@ -4043,7 +4043,7 @@ public class BusDriversParserImpl implements BusDriversParser {
 }
 ```
 
-Let's create a test for a scenario where we have multiple drivers with one bus stop and one rumor each; both the bus stops
+Let's create a test for a scenario where we have multiple drivers with one bus stop and one rumor each; both bus stops
 and rumors for drivers are different:
 
 ```java
@@ -4133,7 +4133,7 @@ public class BusDriversParserImpl implements BusDriversParser {
 }
 ```
 
-Let's create a test for a scenario where we have multiple drivers with one rumor each and the rumors are the same:
+Let's create a test for a scenario where we have multiple drivers with one rumor each, and the rumors are the same:
 
 ```java
 class BusDriversParserTests {
@@ -4315,7 +4315,7 @@ public class BusDriversParserImpl implements BusDriversParser {
 }
 ```
 
-Finally we need to implement the *main.py*:
+Finally, we need to implement the main class:
 
 ```java
 public class Main {
@@ -4354,11 +4354,11 @@ Let's say that product management wants a new feature and puts the following use
 
 Because we used the *program against interfaces principle* earlier, we can implement this new feature using the
 *open-closed principle* by implementing a new `BackNForthBusRoute` class that implements the `BusRoute` interface.
-How about integrating that new class with existing code? Can we also do it by following the *open-closed principle*?
+How about integrating that new class with existing code? Can we also follow the *open-closed principle*?
 For the most part, yes. As I have mentioned earlier, it is challenging and often impossible to 100% follow
 the *open-closed principle* principle. And that is not the goal. However, we should use it as much as we can. In the above code,
-the `CircularBusRoute` class was hardcoded in the `BusDriversParserImpl` class. We should create a 
-bus route factory that creates either circular or back-and-forth bus routes. Here, we again follow the *open-closed principle*.
+the `CircularBusRoute` class was hardcoded in the `BusDriversParserImpl` class. We should create a
+bus route factory that creates circular or back-and-forth bus routes. Here, we again follow the *open-closed principle*.
 Then, we use that factory in the `BusDriversParserImpl` class instead of the hard-coded `CircularBusRoute` constructor.
 The `BusDriversParserImpl` class's `parse` method should get the bus route type as a parameter and forward it to the bus route factory.
 These last two modifications are not following the *open-closed principle* because we were obliged to modify an existing class.
@@ -4373,7 +4373,7 @@ Similarly, we could later introduce other new features using the *open-closed pr
 As another example, let's consider implementing a simple API containing CRUD operations. Product management has defined the following feature (or epic)
 in the backlog:
 
-> *Sales item API creates, reads, updates, and deletes sales items. Sales items are stored in a persistent storage. Each sales item consists of the following attributes: unique ID, name, and price. Sales items can be created, updated, and deleted only by administrators.*
+> *The sales item API creates, reads, updates, and deletes sales items. Sales items are stored in persistent storage and consist of the following attributes: unique ID, name, and price. Sales items can be created, updated, and deleted only by administrators.*
 
 First, the architecture team should provide technical guidance on implementing the backlog feature (or epic). The guidance could be the
 following: API should be a REST API, MySQL database should be used as persistent storage, and Keycloak should be used as the IAM system.
@@ -4607,7 +4607,7 @@ Feature: Delete sales item
 In the above features, we have considered the main failure scenarios in addition to the happy path scenario. Remember that you
 should also test the most common failure scenarios as part of integration testing.
 
-All of the above features include a `Background` section defining steps executed before each scenario.
+The above features include a `Background` section defining steps executed before each scenario.
 In the `Background` section, we first ensure the database is available. This is needed because some scenarios make
 the database unavailable on purpose. Then, we clean the sales items table in the database. This can be done by connecting
 to the database and executing SQL statements like `DELETE FROM sales_items` and `ALTER TABLE sales_items AUTO_INCREMENT=1`.
