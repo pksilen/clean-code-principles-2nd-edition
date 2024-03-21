@@ -3234,25 +3234,20 @@ public class Rumor {
 ```
 
 Next, we can implement the `CircularBusRoute` class using TDD. Let's start with the simplest case, which is also a failure scenario:
-If the bus route has no bus stops, a `ValueError` with an informative message should be raised. Let's implement a unit test for that scenario:
+If the bus route has no bus stops, an `IllegalArgumentException` with an informative message should be raised. Let's implement a unit test for that scenario:
 
 ```java
 class CircularBusRouteTests {
+
   @Test
   void testConstructor_whenNoBusStops() {
-    try {
-      // WHEN
-      final var busStops = List.of();
-      new CircularBusRoute(busStops);
+    // GIVEN
+    final List<BusStop> noBusStops = List.of();
 
-      fail("'IllegalArgumentException should have been raised");
-    } catch(final IllegalArgumentException exception) {
-      # THEN
-      assertEquals(
-        "'Bus route must have at least one bus stop",
-        exception.getMessage()
-      );
-    }
+    // WHEN + THEN
+    assertThrows(IllegalArgumentException.class, () -> {
+      new CircularBusRoute(noBusStops);
+    }, "Bus route must have at least one bus stop");
   }
 }
 ```
@@ -3269,10 +3264,14 @@ public interface BusRoute {
 
 
 public class CircularBusRoute implements BusRoute {
+  private final List<BusStop> busStops;
+
   public CircularBusRoute(final List<BusStop> busStops) {
-    if (busStops.isEmpty()) {
-      throw IllegalArgumentException("Bus route must have at least one bus stop");
+    if (busStops == null || busStops.isEmpty()) {
+      throw new IllegalArgumentException("Bus route must have at least one bus stop");
     }
+
+    this.busStops = List.copyOf(busStops);
   }
 }
 ```
@@ -3281,18 +3280,21 @@ The unit test for the next scenario is the following: if there is only one stop 
 return that bus stop (because the bus route is circular).
 
 ```java
-public class CircularBusRouteTests {
+class CircularBusRouteTests {
+  // ...
+
   @Test
   void testGetNextBusStop_whenOneBusStop() {
     // GIVEN
-    final var busStop = new BusStopImpl();
-    final var busRoute = new CircularBusRoute(List.of(bus_stop));
+    BusStop busStop = new BusStopImpl();
+    CircularBusRoute busRoute = new CircularBusRoute(List.of(busStop));
 
     // WHEN
-    final var nextBusStop = busRoute.getNextBusStop(busStop);
+    BusStop nextBusStop = busRoute.getNextBusStop(busStop);
 
     // THEN
-    assertEquals(busStop, nextBusStop);
+    assertEquals(nextBusStop, busStop);
+  }
 }
 ```
 
@@ -3304,68 +3306,56 @@ public interface BusRoute {
 }
 
 
-class CircularBusRoute implements BusRoute:
-  private final List<BusStop> busStops;
+public class CircularBusRoute implements BusRoute {
+  // ...
 
-  public CircularBusRoute(final List<BusStop> busStops) {
-    if (busStops.isEmpty()) {
-      throw IllegalArgumentException("Bus route must have at least one bus stop");
-    }
-
-    // ImmutableList is from Google Guava library
-    busStops = new ImmutableList.copyOf(busStops);
-  }
-
+  @Override
   public BusStop getNextBusStop(final BusStop currentBusStop) {
-    return bus_stops.get(0);
-  }
-```
-
-Let's implement a unit test for the following scenario: If the `getNextBusStop` method's argument is a bus stop not belonging
-to the bus route, an `IllegalArgumentException` with an informative message should be raised.
-
-```java
-class CircularBusRouteTests {
-  @Test
-  void testGetNextBusStop_whenBusStopDoesNotBelongToRoute() {
-     // GIVEN
-     final var busStopA = new BusStopImpl();
-     final var busRoute = new CircularBusRoute(List.of(bus_stop_a));
-     final var busStopB = new BusStopImpl();
-
-    try {
-      // WHEN
-      busRoute.getNextBusStop(busStopB);
-
-      fail('IllegalArgumentException should have been raised');
-    } catch (final IllegalArgumentException exception) {
-      // THEN
-      assertEquals(
-        "Bus stop does not belong to bus route",
-        exception.getMessage()
-      );
-    }
+    return busStops.get(0);
   }
 }
 ```
 
-Let's modify the `getNextBusStop` implementation:
+Let's implement a unit test for the following scenario: If the `getNextBusStop` method's argument is a bus stop not belonging to the bus route,
+an `IllegalArgumentException` with an informative message should be raised.
+
+```java
+class CircularBusRouteTests {
+  // ...
+
+  @Test
+  void testGetNextBusStop_whenBusStopDoesNotBelongToRoute() {
+    // GIVEN
+    BusStop busStopA = new BusStopImpl();
+    BusStop busStopB = new BusStopImpl();
+    CircularBusRoute busRoute = new CircularBusRoute(List.of(busStopA));
+
+    // WHEN + THEN
+    assertThrows(IllegalArgumentException.class, () -> {
+      busRoute.getNextBusStop(busStopB);
+    }, "Bus stop does not belong to bus route");
+  }
+}
+```
+
+Let's modify the `getNextBusStop` method implementation:
 
 ```java
 public class CircularBusRoute implements BusRoute {
   // ...
 
+  @Override
   public BusStop getNextBusStop(final BusStop currentBusStop) {
-    if (!busStops.contains(currentBusStop) {
+    if (!busStops.contains(currentBusStop)) {
       throw new IllegalArgumentException("Bus stop does not belong to bus route");
     }
 
-    return busStop.get(0);
+    return busStops.get(0);
   }
 }
 ```
 
-Next, we specify two scenarios of how the `getNextBusStop` method should behave when there is more than one stop in the bus route:
+Next, we specify two scenarios of how the `getNextBusSstop` method should behave when there is more than one stop in the bus route:
 
 > *When a current bus stop is given, the `getNextBusStop` method should return the next bus stop in a list of bus stops for the route.*
 
@@ -3373,18 +3363,20 @@ Let's write a failing unit test for the above scenario:
 
 ```java
 class CircularBusRouteTests {
+  // ...
+
   @Test
-  void testGetNextBusStop_whenNextBusStopExists() {
+  void testGetNextBusStop_whenNextBusStopInListExists() {
     // GIVEN
-    final var busStopA = new BusStopImpl();
-    final var busStopB = new BusStopImpl();
-    final var busRoute = new CircularBusRoute(List.of(bus_stop_a, bus_stop_b));
+    BusStop busStopA = new BusStopImpl();
+    BusStop busStopB = new BusStopImpl();
+    CircularBusRoute busRoute = new CircularBusRoute(List.of(busStopA, busStopB));
 
     // WHEN
-    final var nextBusStop = busRoute.getNextBusStop(busStopA);
+    BusStop nextBusStop = busRoute.getNextBusStop(busStopA);
 
     // THEN
-    self.assertEqual(busStopB, nextBusStop);
+    assertEquals(nextBusStop, busStopB);
   }
 }
 ```
@@ -3395,16 +3387,17 @@ Let's modify the source code to make the above test pass:
 public class CircularBusRoute implements BusRoute {
   // ...
 
+  @Override
   public BusStop getNextBusStop(final BusStop currentBusStop) {
-    if (!busStops.contains(currentBusStop) {
-      throw new IllegalArgumentError("Bus stop does not belong to bus route";
+    if (!busStops.contains(currentBusStop)) {
+      throw new IllegalArgumentException("Bus stop does not belong to bus route");
     }
 
     if (busStops.size() == 1) {
       return busStops.get(0);
     }
 
-    final var currBusStopIndex = busStops.indexOf(currentBusStop);
+    final int currBusStopIndex = busStops.indexOf(currentBusStop);
     return busStops.get(currBusStopIndex + 1);
   }
 }
@@ -3416,18 +3409,20 @@ Let's add a test for the following scenario:
 
 ```java
 class CircularBusRouteTests {
+  // ...
+
   @Test
-  void testGetNextBusStop_whenNoNextBusStop() {
+  void testGetNextBusStop_whenNoNextBusStopInList() {
     // GIVEN
-    final var busStopA = new BusStopImpl();
-    final var busStopB = new BusStopImpl();
-    final var busRoute = new CircularBusRoute(List.of(bus_stop_a, bus_stop_b));
+    BusStop busStopA = new BusStopImpl();
+    BusStop busStopB = new BusStopImpl();
+    CircularBusRoute busRoute = new CircularBusRoute(List.of(busStopA, busStopB));
 
     // WHEN
-    final var nextBusStop = busRoute.getNextBusStop(busStopB);
+    BusStop nextBusStop = busRoute.getNextBusStop(busStopB);
 
     // THEN
-    assertEquals(busStopA, nextBusStop);
+    assertEquals(nextBusStop, busStopA);
   }
 }
 ```
@@ -3436,61 +3431,32 @@ Let's make the above test pass:
 
 ```java
 public class CircularBusRoute implements BusRoute {
-  // ...
-
-  public BusStop getNextBusStop(final BusStop currentBusStop) {
-    if (!busStops.contains(currentBusStop) {
-      throw new IllegalArgumentError("Bus stop does not belong to bus route";
-    }
-
-    final busStopCount = busStops.length();
-
-    if (busStopCount == 1) {
-      return busStops.get(0);
-    }
-
-    final var currBusStopIndex = busStops.indexOf(currentBusStop);
-    final var nextBusStopIndex = currBusStopIndex + 1;
-
-    if (nextBusStopIndex <= busStopCount - 1) {
-      return bus_stops.get(nextBusStopIndex);
-    } else {
-      return bus_stops.get(0);
-    }
-}
-```
-
-Our code could benefit from refactoring. With the help of existing
-unit tests, we can safely refactor the code to the following:
-
-```java
-public class CircularBusRoute implements BusRoute {
   private final List<BusStop> busStops;
   private final int busStopCount;
 
   public CircularBusRoute(final List<BusStop> busStops) {
-    if (busStops.isEmpty()) {
-      throw IllegalArgumentException("Bus route must have at least one bus stop");
+    if (busStops == null || busStops.isEmpty()) {
+      throw new IllegalArgumentException("Bus route must have at least one bus stop");
     }
 
-    busStops = new ImmutableList.copyOf(busStops);
-    busStopCount = busStops.size();
+    this.busStops = List.copyOf(busStops);
+    this.busStopCount = busStops.size();
   }
 
+  @Override
   public BusStop getNextBusStop(final BusStop currentBusStop) {
-    final currBusStopIndex = busStops.indexOf(currentBusStop);
-
-    if (currBusStopIndex == -1) {
+    if (!busStops.contains(currentBusStop)) {
       throw new IllegalArgumentException("Bus stop does not belong to bus route");
     }
 
-    final var nextBusStopIndex = (currBusStopIndex + 1) % busStopCount;
-    return bus_stops.get(nextBusStopIndex);
+    final int currBusStopIndex = busStops.indexOf(currentBusStop);
+    final int nextBusStopIndex = (currBusStopIndex + 1) % busStopCount;
+    return busStops.get(nextBusStopIndex);
   }
 }
 ```
 
-Next, we shall implement the `BusStopImpl` class and the `shareRumorsWithDrivers` method. Let's start by specifying
+Next, we shall implement the `BusStopImpl` class and the `shareRumorsWithDdrivers` method. Let's start by specifying
 what that method should do: After the execution of the method is completed, all the drivers at the bus stop should have the same set of rumors
 that is a union of all the rumors that the drivers at the bus stop have.
 
@@ -3499,131 +3465,86 @@ are implemented in a separate class, we will use mocks for the drivers.
 
 ```java
 class BusStopImplTests {
-  @Mock
-  private BusDriver mockBusDriver1;
-
-  @Mock
-  private BusDriver mockBusDriver2;
-
-  @Mock
-  private BusDriver mockBusDriver3;
-
   @Test
-  void testShareRumorsWithDrivers():
+  void testShareRumorsWithDrivers() {
     // GIVEN
-    final var busDrivers = List.of(mockBusDriver1, mockBusDriver2, mockBusDriver3);
-
     final var rumor1 = new Rumor();
     final var rumor2 = new Rumor();
     final var rumor3 = new Rumor();
     final var allRumors = Set.of(rumor1, rumor2, rumor3);
 
-    when(mockBusDriver1.getRumors()).thenReturn(Set.of(rumor1, rumor2));
-    when(mockBusDriver2.getRumors()).thenReturn(Set.of(rumor2));
-    when(mockBusDriver3.getRumors()).thenReturn(Set.of(rumor2, rumor3));
+    final var busRoute = new CircularBusRoute(List.of(new BusStopImpl()));
+    final var busDriver1 = new BusDriverImpl(busRoute, Set.of(rumor1, rumor2));
+    final var busDriver2 = new BusDriverImpl(busRoute, Set.of(rumor2));
+    final var busDriver3 = new BusDriverImpl(busRoute, Set.of(rumor2, rumor3));
 
     final var busStop = new BusStopImpl();
-    busStop.add(mockBusDriver1);
-    busStop.add(mockBusDriver2);
-    busStop.add(mockBusDriver3);
+    busStop.add(busDriver1);
+    busStop.add(busDriver2);
+    busStop.add(busDriver3);
 
     // WHEN
     busStop.shareRumorsWithDrivers();
 
     // THEN
-    assertRumorsAreSet(allRumors, busDrivers);
-
-  private void assertRumorsAreSet(
-    final Set<Rumor> rumors,
-    final List<BusDriver> mockBusDrivers
-  ) {
-    for (final var mockBusDriver : mockBusDrivers) {
-      verify(mockBusDriver).setRumors(all_rumors);
+    for (final BusDriver busDriver : List.of(busDriver1, busDriver2, busDriver3)) {
+      assertEquals(busDriver.getRumors(), allRumors);
     }
+  }
 }
 ```
 
-Let's implement the `BusStopImpl` class to make the above test pass:
+We need to add `getRrumors` method to the `BusDriver` interface.
+Let's make a unit test for the `getRrumors` method, which returns the rumors given for the driver in the constructor:
 
 ```java
-public interface BusDriver {
-  Set<Rumor> getRumors();
-  void setRumors(final Set<Rumor> rumors);
-}
-
-
-public interface BusStop {
-  void shareRumorsWithDrivers();
-  void addBusDriver(final BusDriver busDriver);
-}
-
-
-public class BusStopImpl implement BusStop {
-  private final Set<BusDriver> busDrivers = Set.of();
-
-  public void share_rumors_with_drivers() {
-    final Set<Rumor> allRumors = new HashSet<>();
-
-    for (final var busDriver : busDrivers) {
-      for (final var rumor : busDriver.getRumors()) {
-        allRumors.add(rumor);
-    }
-
-    for (final var busDriver in busDrivers) {
-      busDriver.setRumors(allRumors);
-    }
-  }
-
-  public void add(final BusDriver busDriver) {
-    busDrivers.add(busDriver);
-  }
-}
-```
-
-Let's implement the `BusDriverImpl` class next. As shown above, we needed to add two methods, `getRumors` and `setRumors`, to the `BusDriver` interface.
-Let's make a unit test for the `getRumors` method, which returns the rumors given for the driver in the constructor:
-
-```python
-class BusDriveImplTests {
-  @Mock
-  private BusRoute mockBusRoute;
-
-  private final Rumor rumor1 = new Rumor();
-  private final Rumor rumor2 = new Rumor();
+class BusDriverImplTests {
+  final Rumor rumor1 = new Rumor();
+  final Rumor rumor2 = new Rumor();
 
   @Test
   void testGetRumors() {
     // GIVEN
-    final busDriver = new BusDriverImpl(mockBusRoute, Set.of(self.rumor1, self.rumor2));
+    final var busDriver = new BusDriverImpl(
+      new CircularBusRoute(List.of(new BusStopImpl())), Set.of(rumor1, rumor2)
+    );
 
     // WHEN
     final var rumors = busDriver.getRumors();
 
     // THEN
-    assertEqual(Set.of(self.rumor1, self.rumor2), rumors);
+    assertEquals(rumors, Set.of(rumor1, rumor2));
   }
 }
 ```
 
-Now we can implement the `getRumors` method to make the above test pass:
+Now we can implement the `getRrumors` method to make the above test pass:
 
-```python
+```java
+public interface BusDriver {
+  Set<Rumor> getRumors();
+}
+
+
 public class BusDriverImpl implements BusDriver {
-  private final Set<Rumor> rumors;
+  private Set<Rumor> rumors;
 
-  public BusDriverImpl(final Set<Rumor> rumors):
-    rumors = new ImmutableSet.copyOf(rumors);
+  public BusDriverImpl(final BusRoute busRoute, final Set<Rumor> rumors) {
+    this.rumors = Set.copyOf(rumors);
+  }
 
+  @Override
   public Set<Rumor> getRumors() {
     return rumors;
   }
 }
 ```
 
+We also need to add `setRumors` method to the `BusDriver` interface.
 Let's make a unit test for the `setRumors` method, which should override the rumors given in the constructor:
 
 ```java
-class BusDriveImplTests {
+class BusDriverImplTests {
   // ...
 
   @Test
@@ -3632,80 +3553,116 @@ class BusDriveImplTests {
     final var rumor3 = new Rumor();
     final var rumor4 = new Rumor();
 
-    final var busDriver = new BusDriverImpl(mockBusRoute, Set.of(self.rumor1, self.rumor2));
+    final var busDriver = new BusDriverImpl(
+      new CircularBusRoute(List.of(new BusStopImpl())), Set.of(rumor1, rumor2)
+    );
 
     // WHEN
     busDriver.setRumors(Set.of(rumor3, rumor4));
 
     // THEN
-    assertEquals({rumor3, rumor4}, busDriver.getRumors());
+    assertEquals(busDriver.getRumors(), Set.of(rumor3, rumor4));
   }
 }
 ```
 
-Now we can implement the `getRumors` method to make the above test pass:
+Here is the implementation for the `setRumors` method:
 
 ```java
+public interface BusDriver {
+  // ...
+
+  void setRumors(Set<Rumor> rumors);
+}
+
+
 public class BusDriverImpl implements BusDriver {
   // ...
 
+  @Override
   public void setRumors(final Set<Rumor> rumors) {
-    rumors = new ImmutableSet.copyOf(rumors);
+    this.rumors = Set.copyOf(rumors);
   }
 }
 ```
 
+Let's implement the `BusStopImpl` class to make the above test pass:
+
+```java
+public interface BusStop {
+  void shareRumorsWithDrivers();
+
+  void add(final BusDriver busDriver);
+}
+
+
+public class BusStopImpl implements BusStop {
+  private final Set<BusDriver> busDrivers = new HashSet<>();
+
+  @Override
+  public void shareRumorsWithDrivers() {
+    final Set<Rumor> allRumors = new HashSet<>();
+
+    for (final BusDriver busDriver : busDrivers) {
+      allRumors.addAll(busDriver.getRumors());
+    }
+
+    for (final BusDriver busDriver : busDrivers) {
+      busDriver.setRumors(allRumors);
+    }
+  }
+
+  @Override
+  public void add(final BusDriver busDriver) {
+    busDrivers.add(busDriver);
+  }
+}
+```
+
+Let's finalize the `BusDriverImpl` class next.
 We need to implement the `driveToNextBusSstop` method in the `BusDriverImpl` class: A bus driver
 has a current bus stop that is initially the first bus stop of the route. The driver drives to the next bus stop according to its route. When the driver
 arrives at the next bus stop, the driver is added to the bus stop. The driver is removed from the current bus stop, which is changed to the next bus stop.
 
 ```java
 class BusDriverImplTests {
-  @Mock
-  private BusStop mockBusStopA;
-
-  @Mock
-  private BusStop mockBusStopB;
-
-  @Mock
-  private BusRoute mockBusRoute;
+  final Rumor rumor1 = new Rumor();
+  final Rumor rumor2 = new Rumor();
 
   @Test
-  void testDriveToNextBusStop():
+  void testDriveToNextBusStop() {
     // GIVEN
-    when(mockBusRoute.getFirstBusStop()).thenReturn(mockBusStopA);
-    when(mockBusRute.getNextBusStop()).thenReturn(mockBusStopB);
-    final var busDriver = new BusDriverImpl(busRouteMock, Set.of());
+    final var busStopA = new BusStopImpl();
+    final var busStopB = new BusStopImpl();
+    final var busRoute = new CircularBusRoute(List.of(busStopA, busStopB));
+    final var busDriver = new BusDriverImpl(busRoute, Set.of());
 
     // WHEN
     busDriver.driveToNextBusStop();
 
     // THEN
-    verify(mockBusStopA).remove(busDriver);
-    verify(mockBusStopB).add(busDriver);
-    assertEqual(mockBusStopB, busDriver.getCurrentBusStop());
+    assertSame(busDriver.getCurrentBusStop(), busStopB);
   }
 }
 ```
 
-Let's implement the `BusDriverImpl` class to make the above test pass. Before that, we must add a test for the new `getFirstBusStop` method in the `BusRouteImpl` class.
+Let's implement the `BusDriverImpl` class to make the above test pass.
+Before that, we must add a test for the new `getFirstBusStop` method in the `BusRouteImpl` class.
 
 ```java
 class CircularBusRouteTests {
-  // ...
-
   @Test
   void testGetFirstBusStop() {
     // GIVEN
     final var busStopA = new BusStopImpl();
-    final var busStopB = new BusStopImpl();
-    final var busRoute = new CircularBusRoute(List.of(bus_stop_a, bus_stop_b));
+    final varbusStopB = new BusStopImpl();
+    final var busRoute = new CircularBusRoute(List.of(busStopA, busStopB));
 
     // WHEN
     final var firstBusStop = busRoute.getFirstBusStop();
 
-    // THEN
-    assertEquals(busStopA, firstBusStop);
+    / THEN
+    assertSame(firstBusStop, busStopA);
   }
 }
 ```
@@ -3714,48 +3671,56 @@ Let's modify the `CircularBusRoute` class to make the above test pass:
 
 ```java
 public interface BusRoute {
-  // ...
-
   BusStop getFirstBusStop();
+
+  // ...
 }
 
 
 public class CircularBusRoute implements BusRoute {
   // ...
 
-  public BusStop getFirstBus_stop() {
-    return bus_stops.get(0);
+  public BusStop getFirstBusStop() {
+    return busStops.get(0);
   }
+
+  // ...
 }
 ```
 
 Here is the implementation of the `driveToNextBusStop` method in the `BusDriverImpl` class:
 
-```java
+```python
 public class BusDriverImpl implements BusDriver {
   private final BusRoute busRoute;
-  private final Rumors rumors;
   private BusStop currentBusStop;
+  private Set<Rumor> rumors;
 
-  public BusDriverImpl(final BusRoute busRoute, final Set<Rumor> rumors) {
+  public BusDriverImpl(BusRoute busRoute, Set<Rumor> rumors) {
     this.busRoute = busRoute;
-    rumors = new ImmutableSet.copyOf(rumors);
-    currentBusStop = busRoute.getFirstBusSstop();
-    currentBusStop.add(self);
+    this.currentBusStop = busRoute.getFirstBusStop();
+    this.currentBusStop.add(this);
+    this.rumors = Set.copyOf(rumors);
   }
 
   public BusStop driveToNextBusStop() {
-    currentBusStop.remove(self);
-    currentBusStop = busRoute.getNextBusStop(currentBusStop);
-    currentBusStop.add(self);
-    return currentBusStop;
+    this.currentBusStop.remove(this);
+    this.currentBusStop = busRoute.getNextBusStop(this.currentBusStop);
+    this.currentBusStop.add(this);
+    return this.currentBusStop;
   }
 
   public BusStop getCurrentBusStop() {
-    return currentBusStop;
+    return this.currentBusStop;
   }
 
-  // ...
+  public Set<Rumor> getRumors() {
+    return rumors;
+  }
+
+  public void setRumors(Set<Rumor> rumors) {
+    this.rumors = Set.copyOf(rumors);
+  }
 }
 ```
 
@@ -3764,443 +3729,324 @@ Let's write a unit test for the first scenario when all rumors are shared after 
 The `driveUntilAllRumorsShared` method
 makes drivers drive to the next bus stop (the same for both drivers) and share rumors there.
 
-```java
-class GossipingBusDriversTests {
-  @Mock
-  private BusStop mockBusStop;
+```python
+class GossipingBusDriversTests(unittest.TestCase):
+    rumor1 = Rumor()
+    rumor2 = Rumor()
+    all_rumors = {rumor1, rumor2}
 
-  @Mock
-  private BusDriver mockBusDriver1;
+    def test_drive_until_all_rumors_shared__after_one_stop(self):
+        # GIVEN
+        bus_stop = BusStopImpl()
+        bus_route = CircularBusRoute([bus_stop])
+        bus_driver1 = BusDriverImpl(bus_route, {self.rumor1})
+        bus_driver2 = BusDriverImpl(bus_route, {self.rumor2})
 
-  @Mock
-  private BusDriver mockBusDriver2;
+        gossiping_bus_drivers = GossipingBusDrivers([bus_driver1, bus_driver2])
 
-  private final Rumor rumor1 = new Rumor();
-  private final Rumor rumor2 = new Rumor();
-  private final Set<Rumor> allRumors = Set.of(rumor1, rumor2);
+        # WHEN
+        all_rumors_were_shared = (
+            gossiping_bus_drivers.drive_until_all_rumors_shared()
+        )
 
-  @Test
-  void testDriveUntilAllRumorsShared_afterOneStop() {
-    // GIVEN
-    when(mockBusDriver1.driveToNextBusStop()).thenReturn(mockBusStop);
-    when(mockBusDriver2.driveToNextBusStop()).thenReturn(mockBusStop);
-    when(mockBusDriver1.getRumors()).thenReturn(Set.of(rumor1), allRumors);
-    when(mockBusDriver2.getRumors()).thenReturn(Set.of(rumor2), allRumors);
-
-    final var gossipingBusDrivers = new GossipingBusDrivers(
-        List.of(mockBusDriver1, mockBusDriver2)
-    );
-
-    // WHEN
-    final var allRumorsWereShared =
-        gossipingBusDrivers.driveUntilAllRumorsShared();
-
-    // THEN
-    assertTrue(allRumorsWereShared);
-    verify(mockBusStop).shareRumorsWithDrivers();
-  }
-}
+        # THEN
+        self.assertTrue(all_rumors_were_shared)
+        self.assertEqual(bus_driver1.get_rumors(), self.all_rumors)
+        self.assertEqual(bus_driver2.get_rumors(), self.all_rumors)
 ```
 
 Let's make the above test pass with the below code.
 
-```java
-public class GossipingBusDrivers {
-  private final List<BusDriver> busDrivers;
-  private final Set<Rumor> allRumors;
+```python
+class GossipingBusDrivers:
+    def __init__(self, bus_drivers: list[BusDriver]):
+        self.__bus_drivers = bus_drivers.copy()
+        self.__all_rumors = self.__get_all_rumors()
 
-  public GossipingBusDrivers(final List<BusDriver> busDrivers) {
-    busDrivers = new ImmutableList.copyOf(busDrivers);
-    allRumors = getAllRumors();
-  }
+    def drive_until_all_rumors_shared(self) -> bool:
+        while True:
+            for bus_driver in self.__bus_drivers:
+                bus_stop = bus_driver.drive_to_next_bus_stop()
+                bus_stop.share_rumors_with_drivers()
 
-  public boolean driveUntilAllRumorsShared() {
-    while(true) {
-      for (final var busDriver : busDrivers) {
-        final var busStop = busDriver.driveToNextBusStop()
-        busStop.shareRumorsWithDrivers();
-      }
+            if self.__all_rumors_are_shared():
+                return True
 
-      if (allRumorsAreShared()) {
-        return true;
-      }
-    }
+    def __get_all_rumors(self) -> set[Rumor]:
+        return {
+            rumor
+            for bus_driver in self.__bus_drivers
+            for rumor in bus_driver.get_rumors()
+        }
 
-    return false;
-  }
-
-  private Set<Rumor> getAllRumors() {
-    final Set<Rumor> allRumors = new HashSet<>();
-
-    for(final var busDriver : busDrivers) {
-      for(final var rumors : busDriver.getRumors()) {
-          allRumors.addAll(rumors);
-      }
-    }
-
-    return allRumors;
-  }
-
-  private boolean allRumorsAreSshared {
-    return busDrivers.stream()
-      .allMatch(busDriver -> busDriver.getRumors().equals(allRumors));
-  }
+    def __all_rumors_are_shared(self) -> bool:
+        return all(
+            [
+                bus_driver.get_rumors() == self.__all_rumors
+                for bus_driver in self.__bus_drivers
+            ]
+        )
 ```
 
 Let's add a test for a scenario where two bus drivers drive from their starting bus stops to two different bus stops and must continue driving
 because all rumors were not shared at the first bus stop. Rumors are shared when drivers continue driving to their next bus stop, which is the same for both drivers.
 
-```java
-class GossipingBusDriversTests {
-   @Mock
-   private BusStop mockBusStop1;
+```python
+class GossipingBusDriversTests(unittest.TestCase):
+    # ...
 
-   @Mock
-   private BusStop mockBusStop2;
+    def test_drive_until_all_rumors_shared__after_two_stops(self):
+        # GIVEN
+        bus_stop_a = BusStopImpl()
+        bus_stop_b = BusStopImpl()
+        bus_stop_c = BusStopImpl()
+        bus_route1 = CircularBusRoute([bus_stop_a, bus_stop_c])
+        bus_route2 = CircularBusRoute([bus_stop_b, bus_stop_c])
+        bus_driver1 = BusDriverImpl(bus_route1, {self.rumor1})
+        bus_driver2 = BusDriverImpl(bus_route2, {self.rumor2})
+        gossiping_bus_drivers = GossipingBusDrivers([bus_driver1, bus_driver2])
 
-   @Mock
-   private BusStop mockBusStop3;
+        # WHEN
+        all_rumors_were_shared = (
+            gossiping_bus_drivers.drive_until_all_rumors_shared()
+        )
 
-   @Mock
-   private BusDriver mockBusDriver1;
-
-   @Mock
-   private BusDriver mockBusDriver2;
-
-   @Test
-   void testDriveUntilAllRumorsShared_afterTwoStops() {
-     // GIVEN
-     final var mockBusStops = List.of(mockBusStop1, mockBusStop2, mockBusStop3);
-
-     when(mockBusDriver1.driveToNextBusStop()).thenReturn(
-       mockBusStop1,
-       mockBusStop3
-     );
-
-     when(mockBusDriver2.driveToNextBusStop()).thenReturn(
-       mockBusStop2,
-       mockBusStop3
-     );
-
-    when(mockBusDriver1.getRumors).thenReturn(
-      Set.of(rumor1),
-      Set.of(rumor1),
-      allRumors
-    );
-
-    when(mockBusDriver2.getRumors).thenReturn(
-      Set.of(rumor2),
-      Set.of(rumor2),
-      allRumors
-    );
-
-    final var gossipingBusDrivers = new GossipingBusDrivers(
-        List.of(mockBusDriver1, mockBusDriver2]
-    )
-
-    // WHEN
-    final var allRumorsWereShared =
-        gossipingBusDrivers.driveUntilAllRumorsShared();
-
-    // THEN
-    assertTrue(all_rumors_were_shared)
-
-    for (final var mockBusStop : mockBusStops) {
-      verify(mockBusStop).shareRumorsWithDrivers();
-    }
-  }
-}
+        # THEN
+        self.assertTrue(all_rumors_were_shared)
+        self.assertEqual(bus_driver1.get_rumors(), self.all_rumors)
+        self.assertEqual(bus_driver2.get_rumors(), self.all_rumors)
 ```
 
 Let's modify the implementation:
 
-```java
-public class GossipingBusDrivers {
-  // ...
+```python
+class GossipingBusDrivers:
+    # ...
 
-  public boolean driveUntilAllRumorsShared() {
-    while(true) {
-      final var Set<BusStop> busStops = new HashSet<>();
+    def drive_until_all_rumors_shared(self) -> bool:
+        while True:
+            bus_stops = {
+                bus_driver.drive_to_next_bus_stop()
+                for bus_driver in self.__bus_drivers
+            }
 
-      for (final var busDriver : busDrivers) {
-        final var busStop = busDriver.driveToNextBusStop();
-        busStops.add(busStop);
-      }
+            for bus_stop in bus_stops:
+                bus_stop.share_rumors_with_drivers()
 
-      for (final var busStop : busStops) {
-        busStop.shareRumorsWithDrivers();
-      }
-
-      if (allRumorsAreShared()) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-}
+            if self.__all_rumors_are_shared():
+                return True
+    # ...
 ```
 
 Next, we should implement a test where drivers don't have common bus stops and they have driven the maximum number of bus stops:
 
 ```python
-class GossipingBusDriversTests {
-  // ...
+class GossipingBusDriversTests(unittest.TestCase):
+    # ...
 
-  @Test
-  def testDriveUntilAllRumorsShared_whenBusRoutesDontCross(
-    // GIVEN
-    final var mockBusStops = List.of(mockBusStop1, mockBusStop2);
+    def test_drive_until_all_rumors_shared__when_rumors_are_not_shared(self):
+        # GIVEN
+        bus_stop_a = BusStopImpl()
+        bus_stop_b = BusStopImpl()
+        bus_route1 = CircularBusRoute([bus_stop_a])
+        bus_route2 = CircularBusRoute([bus_stop_b])
+        bus_driver1 = BusDriverImpl(bus_route1, {self.rumor1})
+        bus_driver2 = BusDriverImpl(bus_route2, {self.rumor2})
+        gossiping_bus_drivers = GossipingBusDrivers([bus_driver1, bus_driver2])
+        max_driven_stop_count = 2
 
-    when(mockBusDriver1.driveToNextBusStop()).thenReturn(
-      mockBusStop1
-    );
+        # WHEN
+        all_rumors_were_shared = (
+            gossiping_bus_drivers.drive_until_all_rumors_shared(
+                max_driven_stop_count
+            )
+        )
 
-    when(mockBusDriver2.driveToNextBusStop()).thenReturn(
-      mockBusStop2
-    );
-
-    when(mockBusDriver1.getRumors).thenReturn(Set.of(self.rumor1));
-    when(mockBusDriver2.getRumors).thenReturn(Set.of(self.rumor2));
-
-    final var gossipingBusDrivers = new GossipingBusDrivers(
-      List.of(mockBusDriver1, mockBusDriver2)
-    );
-
-    final var MAX_DRIVEN_STOP_COUNT = 2;
-
-    // WHEN
-    final var allRumorsWereShared =
-        gossipingBusDrivers.driveUntilAllRumorsShared(
-          MAX_DRIVEN_STOP_COUNT
-        );
-
-    // THEN
-    assertFalse(allRumorsWereShared);
-
-    for (final var mockBusStop : busStopMocks) {
-      verify(mockBusStop, times(2)).shareRumorsWithDrivers();
-    }
-}
+        # THEN
+        self.assertFalse(all_rumors_were_shared)
+        self.assertEqual(bus_driver1.get_rumors(), {self.rumor1})
+        self.assertEqual(bus_driver2.get_rumors(), {self.rumor2})
 ```
 
 Let' modify the implementation to make the above test to pass:
 
-```java
-public class GossipingBusDrivers {
-  private final List<BusDriver> busDrivers;
-  private final Set<Rumor> allRumors;
-  private int drivenStopCount = 0;
+```python
+class GossipingBusDrivers:
+    def __init__(self, bus_drivers: list[BusDriver]):
+        self.__bus_drivers = bus_drivers.copy()
+        self.__all_rumors = self.__get_all_rumors()
+        self.__nbr_of_stops_driven = 0
 
-  public GossipingBusDrivers(final List<BusDriver> busDrivers) {
-    busDrivers = new ImmutableList.copyOf(busDrivers);
-    allRumors = getAllRumors();
-  }
+    def drive_until_all_rumors_shared(
+        self, max_driven_stop_count: int
+    ) -> bool:
+        while True:
+            bus_stops = {
+                bus_driver.drive_to_next_bus_stop()
+                for bus_driver in self.__bus_drivers
+            }
 
-  public boolean driveUntilAllRumorsShared(final int maxDrivenStopCount) {
-    while(true) {
-      final var Set<BusStop> busStops = new HashSet<>();
+            self.__nbr_of_stops_driven += 1
 
-      for (final var busDriver : busDrivers) {
-        final var busStop = busDriver.driveToNextBusStop();
-        busStops.add(busStop);
-      }
+            for bus_stop in bus_stops:
+                bus_stop.share_rumors_with_drivers()
 
-      drivenStopCount++;
-
-      for (final var busStop : busStops) {
-        busStop.shareRumorsWithDrivers();
-      }
-
-      if (allRumorsAreShared()) {
-        return true;
-      } else if (drivenStopCount == maxDrivenStopCount) {
-        return false;
-      }
-    }
-  }
-}
+            if self.__all_rumors_are_shared():
+                return True
+            elif self.__nbr_of_stops_driven == max_driven_stop_count:
+                return False
+    # ...
 ```
 
 Let's refactor the method slightly so that it is not too long (max 5-9 statements):
 
-```java
-public class GossipingBusDrivers {
-  // ...
+```python
+class GossipingBusDrivers:
+    # ...
 
-  public boolean driveUntilAllRumorsShared(final int maxDrivenStopCount) {
-    while(true) {
-      final var busStops = busDriversDriveToNextBusStop();
-      drivenStopCount++;
-      shareRumors(busStops);
+    def drive_until_all_rumors_shared(
+        self, max_driven_stop_count: int
+    ) -> bool:
+        while True:
+            bus_stops = {
+                bus_driver.drive_to_next_bus_stop()
+                for bus_driver in self.__bus_drivers
+            }
 
-      if (allRumorsAreShared()) {
-        return true;
-      } else if (drivenStopCount == maxDrivenStopCount) {
-        return false;
-      }
-    }
-  }
+            self.__driven_stop_count += 1
+            self.__share_rumors(bus_stops)
 
-  private Set<BusStop> busDriversDriveToNextBusStop() {
-    final var Set<BusStop> busStops = new HashSet<>();
+            if self.__all_rumors_are_shared():
+                return True
+            elif self.__driven_stop_count == max_driven_stop_count:
+                return False
 
-    for (final var busDriver : busDrivers) {
-      final var busStop = busDriver.driveToNextBusStop();
-      busStops.add(busStop);
-    }
+    @staticmethod
+    def __share_rumors(bus_stops: set[BusStop]):
+        for bus_stop in bus_stops:
+            bus_stop.share_rumors_with_drivers()
 
-    return busStops;
-  }
-
-  private void shareRumors(final Set<BusStop> busStops) {
-    for (final var busStop : busStops) {
-      busStop.shareRumorsWithDrivers();
-    }
-  }
-}
+    # ...
 ```
 
 Next, we shall implement the `MaxDrivenStopCountParser` and its 'parse' method. Let's create a failing test:
 
-```java
-class MaxDrivenStopCountParserTests {
-  @Test
-  void testParse_whenSuccessful() {
-    // GIVEN
-    final var MAX_DRIVEN_STOP_COUNT_STR = "2";
+```python
+class MaxDrivenStopCountParserTests(unittest.TestCase):
+    def test_parse__when_it_succeeds(self):
+        # GIVEN
+        max_driven_stop_count_as_str = '2'
 
-    // WHEN
-    maxDrivenStopCount = new MaxDrivenStopCountParserImpl().parse(
-        MAX_DRIVEN_STOP_COUNT_STR
-    )
+        # WHEN
+        max_driven_stop_count = MaxDrivenStopCountParserImpl().parse(
+            max_driven_stop_count_as_str
+        )
 
-    // THEN
-    assertEqual(2, maxDrivenStopCount);
-  }
-}
+        # THEN
+        self.assertEqual(max_driven_stop_count, 2)
 ```
 
 Now we can implement the class to make the above test to pass:
 
 ```python
-public interface MaxDrivenStopCountParser {
-  int parse(final String maxDrivenStopCountStr);
-}
+class MaxDrivenStopCountParser(Protocol):
+    def parse(self, max_driven_stop_count_as_str: str) -> int:
+        pass
 
 
-public class MaxDrivenStopCountParserImpl extends MaxDrivenStopCountParser {
-  public int parse(final String maxDrivenStopCountStr) {
-    return Integer.parseInt(maxDrivenStopCountStr);
-  }
+class MaxDrivenStopCountParserImpl(MaxDrivenStopCountParser):
+    def parse(self, max_driven_stop_count_as_str: str) -> int:
+        return int(max_driven_stop_count_as_str)
 ```
 
-Next, we specify that the `parse` method should throw a `NumberFormatException` if the parsing fails:
+Next, we specify that the `parse` method should throw a `ValueError` if the parsing fails:
 
-```java
-class MaxDrivenStopCountParserTests {
-  @Test
-  void testParse_whenItFails() {
-    // GIVEN
-    final var MAX_DRIVEN_STOP_COUNT_STR = "invalid";
+```python
+class MaxDrivenStopCountParserTests(unittest.TestCase):
+     def test_parse__when_it_fails(self):
+         # GIVEN
+         max_driven_stop_count_as_str = 'invalid'
 
-    // WHEN + THEN
-    assertThrows(
-      NumberFormatException.class,
-      () -> new MaxDrivenStopCountParserImpl().parse(
-        MAX_DRIVEN_STOP_COUNT_STR
-      )
-    );
-  }
-}
+         # WHEN + THEN
+         self.assertRaises(
+             ValueError,
+             MaxDrivenStopCountParserImpl().parse,
+             max_driven_stop_count_as_str,
+         )
 ```
 
 The above test will pass without modification to the implementation.
 
-Next, we shall implement the `BusDriversParser` and its 'parse' method. To keep the example shorter, we will skip the failure scenarios,
-like when a bus driver
+Next, we shall implement the `BusDriversParser` and its 'parse' method. We will skip the failure scenarios, like when a bus driver
 specification does not contain at least one bus stop and one rumor. Let's first create
 a failing test for a scenario where we have only one driver with one bus stop and one rumor:
 
-```java
-class BusDriversParserImplTests {
-  @Test
-  void testParse_withOneDriverThatHasOneBusStopAndOneRumor() {
-    // GIVEN
-    final var busDriverSpec = "bus-stop-a;rumor1";
+```python
+class BusDriversParserImplTests(unittest.TestCase):
+    def test_parse__with_one_driver_that_has_one_bus_stop_and_one_rumor(self):
+        # GIVEN
+        bus_driver_spec = 'bus-stop-a;rumor1'
 
-    // WHEN
-    final var busDrivers =
-      new BusDriversParserImpl().parse(List.of(busDriverSpec));
+        # WHEN
+        bus_drivers = BusDriversParserImpl().parse([bus_driver_spec])
 
-    // THEN
-    assertEquals(1, busDrivers.size());
-    busDriver = busDrivers.get(0);
-    assertHasCircularBusRouteWithOneStop(busDriver);
-    assertEquals(1, busDriver.getRumors().size());
-  }
+        # THEN
+        self.__assert_has_circular_bus_route_with_one_stop(bus_drivers)
+        self.assertEqual(len(bus_drivers[0].get_rumors()), 1)
 
-  private void assertHasCircularBusRouteWithOneStop(
-    final BusDriver bus_driver
-  ) {
-    final var currentbusStop = busDriver.getCurrentBusStop();
-    final var nextBusStop = busDriver.driveToNextBusStop();
-    assertEquals(currentBusStop, nextBusStop);
-  }
-}
+    def __assert_has_circular_bus_route_with_one_stop(
+        self,
+        bus_drivers: list[BusDriver]
+    ):
+        self.assertEquals(len(bus_drivers), 1)
+        bus_stop = bus_drivers[0].get_current_bus_stop()
+        next_bus_stop = bus_drivers[0].drive_to_next_bus_stop()
+        self.assertEqual(bus_stop, next_bus_stop)
 ```
 
 Let's implement the `parse` method to make the above test pass:
 
-```java
-public interface BusDriversParser(Protocol) {
-  List<BusDriver> parse(final List<String> busDriverSpecs);
-}
+```python
+class BusDriversParser(Protocol):
+    def parse(self, bus_driver_specs: list[str]) -> list[BusDriver]:
+        pass
 
 
-public class BusDriversParserImpl implements BusDriversParser:
-  public List<BusDriver> parse(final List<String> busDriverSpecs) {
-    return busDriverSpecs.stream().map(busDriverSpec ->
-      new BusDriverImpl(
-        new CircularBusRoute(List.of(new BusStopImpl()), Set.of(new Rumor()))
-      )
-    ).toList();
-  }
+class BusDriversParserImpl(BusDriversParser):
+    def parse(self, bus_driver_specs: list[str]) -> list[BusDriver]:
+        return [
+            self.__get_bus_driver(bus_driver_spec)
+            for bus_driver_spec in bus_driver_specs
+        ]
+
+    def __get_bus_driver(self, bus_driver_spec: str) -> BusDriver:
+        return BusDriverImpl(CircularBusRoute([BusStopImpl()]), {Rumor()})
 ```
 
 Let's create a test for a scenario where we have multiple drivers with one bus stop and one rumor each; both the bus stops
 and rumors for drivers are different:
 
-```java
-class BusDriversParserImplTests {
-  @Test
-  def testParse_withMultipleDriversWithDifferentBusStopAndRumor() {
-    // GIVEN
-    final var busDriverSpecs = List.of("bus-stop-a;rumor1", "bus-stop-b;rumor2");
+```python
+class BusDriversParserImplTests(unittest.TestCase):
+    def test_parse__with_multiple_drivers_with_different_bus_stop_and_rumor(self):
+        # GIVEN
+        bus_driver_specs = ['bus-stop-a;rumor1', 'bus-stop-b;rumor2']
 
-    // WHEN
-    final var busDrivers = new BusDriversParserImpl().parse(busDriverSpecs);
+        # WHEN
+        bus_drivers = BusDriversParserImpl().parse(bus_driver_specs)
 
-    // THEN
-    assertEqual(2, busDrivers.size());
-    assertBusStopsAreDifferent(bus_drivers);
-    assertRumorsAreDifferent(bus_drivers);
-  }
+        # THEN
+        self.__assert_bus_stops_are_not_same(bus_drivers)
 
-  private void assertBusStopsAreDifferent(final List<BusDriver> busDrivers) {
-    assertNotEqual(
-      busDrivers.get(0).getCurrentBusStop(),
-      busDrivers.get(1).getCurrentBusStop()
-    );
-  }
+        self.assertNotEqual(
+            bus_drivers[0].get_rumors(), bus_drivers[1].get_rumors()
+        )
 
-  private void assertRumorsAreDifferent(final List<BusDriver> busDrivers) {
-    assertNotEqual(
-      busDrivers.get(0).getRunors(),
-      busDrivers.get(1).getRumors()
-    );
-  }
-}
+    def __assert_bus_stops_are_not_same(self, bus_drivers: list[BusDriver]):
+        self.assertEqual(len(bus_drivers), 2)
+        driver1_stop1 = bus_drivers[0].get_current_bus_stop()
+        driver2_stop1 = bus_drivers[1].get_current_bus_stop()
+        self.assertNotEqual(driver1_stop1, driver2_stop1)
 ```
 
 The above test will pass without modifications to the implementation.
@@ -4209,333 +4055,284 @@ Let's create a test for a scenario where we have multiple drivers with one bus s
 are the same, but rumors are different:
 
 ```python
-class BusDriversParserImplTests {
-  @Test
-  def testParse_withMultipleDriversWithCommonBusStop() {
-    // GIVEN
-    final var busDriverSpecs = List.of("bus-stop-a;rumor1", "bus-stop-a;rumor2");
+class BusDriversParserImplTests(unittest.TestCase):
+    def test_parse__with_multiple_drivers_with_a_common_bus_stop(self):
+        # GIVEN
+        bus_driver_specs = ['bus-stop-a;rumor1', 'bus-stop-a;rumor2']
 
-    // WHEN
-    final var busDrivers = new BusDriversParserImpl().parse([bus_driver_specs]);
+        # WHEN
+        bus_drivers = BusDriversParserImpl().parse(bus_driver_specs)
 
-    // THEN
-    assertEquals(2, busDrivers.size());
-    assertBusStopsAreSame(bus_drivers);
-    assertRumorsAreDifferent(bus_drivers);
-  }
+        # THEN
+        self.__assert_bus_stops_are_same(bus_drivers)
 
-  private void assertBusStopsAreSame(final List<BusDriver> busDrivers) {
-    assertEquals(
-       busDriver.get(0).getCurrentBusStop(),
-       busDriver.get(1).getCurrentBusStop()
-    )
-  }
-}
+    def __assert_bus_stops_are_same(self, bus_drivers: list[BusDriver]):
+        driver1_stop = bus_drivers[0].get_current_bus_stop()
+        driver2_stop = bus_drivers[1].get_current_bus_stop()
+        self.assertEqual(driver1_stop, driver2_stop)
 ```
 
 Let's modify the implementation to make the above test pass:
 
-```java
-public class BusDriversParserImpl implements BusDriversParser {
-  private final Map<String, BusStop> busStopNameToBusStop = new HashMap<>();
+```python
+class BusDriversParserImpl(BusDriversParser):
+    def __init__(self):
+        self.__name_to_bus_stop = {}
 
-  public List<BusDriver> parse(final List<String> busDriverSpecs) {
-    return busDriverSpecs.stream()
-      .map(busDriverSpec -> parseBusDriver(busDriverSpec))
-      .toList();
-  }
+    def parse(self, bus_driver_specs: list[str]) -> list[BusDriver]:
+        return [
+            self.__get_bus_driver(bus_driver_spec)
+            for bus_driver_spec in bus_driver_specs
+        ]
 
-  private BusDriver parseBusDriver(final String busDriverSpec) {
-    final var busDriverSpecParts = busDriverSpec.split(";");
-    final var busStopName = busDriverSpecParts[0];
+    def __get_bus_driver(self, bus_driver_spec: str) -> BusDriver:
+        bus_stop_name, _ = bus_driver_spec.split(';')
 
-    if (busStopNameToBusStop.get(busStopName) == null) {
-      busStopNameToBusStop.put(busStopName, new BusStopImpl());
-    }
+        if self.__name_to_bus_stop.get(bus_stop_name) is None:
+            self.__name_to_bus_stop[bus_stop_name] = BusStopImpl()
 
-    return mew BusDriverImpl(
-        CircularBusRoute(List.of(busStopNameToBusStop.get(busStopName))),
-        Set.of(Rumor())
-    );
-  }
-}
+        return BusDriverImpl(
+            CircularBusRoute([self.__name_to_bus_stop[bus_stop_name]]),
+            {Rumor()},
+        )
 ```
 
-Let's create a test for a scenario where we have multiple drivers with one rumor each. This time the rumors are the same:
+Let's create a test for a scenario where we have multiple drivers with one rumor each and the rumors are the same:
 
-```java
-class BusDriversParserImplTests {
-  @Test
-  void testParse_withMultipleDriversAndCommonRumor() {
-    // GIVEN
-    final var busDiverSpecs = List.of("bus-stop-a;rumor1", "bus-stop-b;rumor1");
+```python
+class BusDriversParserImplTests(unittest.TestCase):
+    def test_parse__with_multiple_drivers_and_a_common_rumor(
+        self,
+    ):
+        # GIVEN
+        bus_driver_specs = ['bus-stop-a;rumor1', 'bus-stop-b;rumor1']
 
-    // WHEN
-    final var busDrivers = new BusDriversParserImpl().parse(busDriverSpecs);
+        # WHEN
+        bus_drivers = BusDriversParserImpl().parse(bus_driver_specs)
 
-    // THEN
-    assertRumorsAreSame(busDrivers);
-  }
-
-  private void assertRumorsAreSame(final List<BusDriver> busDrivers) {
-    assertEquals(
-        busDrivers.get(0).getRumors(), busDrivers.get(1).getRumors()
-    )
-  }
-}
+        # THEN
+        self.assertEqual(
+            bus_drivers[0].get_rumors(), bus_drivers[1].get_rumors()
+        )
 ```
 
 Let's modify the implementation to make the test pass:
 
-```java
-public class BusDriversParserImpl implements BusDriversParser {
-  private final Map<String, BusStop> busStopNameToBusStop = new HashMap<>();
-  private final Map<String, Rumor> rumorNameToRumor = new HashMap<>();
+```python
+class BusDriversParserImpl(Protocol):
+    def __init__(self):
+        self.__name_to_bus_stop = {}
+        self.__name_to_rumor = {}
 
-  public List<BusDriver> parse(final List<String> busDriverSpecs) {
-    return busDriverSpecs.stream()
-      .map(busDriverSpec -> parseBusDriver(busDriverSpec))
-      .toList();
-  }
+    def parse(self, bus_driver_specs: list[str]) -> list[BusDriver]:
+        return [
+            self.__get_bus_driver(bus_driver_spec)
+            for bus_driver_spec in bus_driver_specs
+        ]
 
-  private BusDriver parseBusDriver(final String busDriverSpec) {
-    final var busDriverSpecParts = busDriverSpec.split(";");
-    final var busStopName = busDriverSpecParts[0];
-    final var rumorName = busDriverSpecParts[1];
+    def __get_bus_driver(self, bus_driver_spec: str) -> BusDriver:
+        bus_stop_name, rumor_name = bus_driver_spec.split(';')
 
-    if (busStopNameToBusStop.get(busStopName) == null) {
-      busStopNameToBusStop.put(busStopName, new BusStopImpl());
-    }
+        if self.__name_to_bus_stop.get(bus_stop_name) is None:
+            self.__name_to_bus_stop[bus_stop_name] = BusStopImpl()
 
-    if (rumorNameToRumor.get(rumorName) == null) {
-      rumorNameToRumor.put(rumorName, new Rumor());
-    }
+        if self.__name_to_rumor.get(rumor_name) is None:
+            self.__name_to_rumor[rumor_name] = Rumor()
 
-    return mew BusDriverImpl(
-        CircularBusRoute(List.of(busStopNameToBusStop.get(busStopName))),
-        Set.of(rumorNameToRumor.get(rumorName))
-    );
-  }
-}
+        return BusDriverImpl(
+            CircularBusRoute([self.__name_to_bus_stop[bus_stop_name]]),
+            {self.__name_to_rumor[rumor_name]},
+        )
 ```
 
 Let's create a test for a scenario where we have multiple drivers with multiple bus stops (the first bus stop is the same):
 
-```java
-class BusDriversParserImplTests {
-  @Test
-  void testParse_withMultipleDriversAndMultipleBusStopsWhereOneIsSame() {
-    // GIVEN
-    final var busDriverSpecs = List.of(
-        "bus-stop-a,bus-stop-b;rumor1",
-        "bus-stop-a,bus-stop-c;rumor2",
-    );
+```python
+class BusDriversParserImplTests(unittest.TestCase):
+    def test_parse__with_multiple_drivers_and_multiple_bus_stops_where_first_is_common(self):
+        # GIVEN
+        bus_driver_specs = [
+            'bus-stop-a,bus-stop-b;rumor1',
+            'bus-stop-a,bus-stop-c;rumor2',
+        ]
 
-    // WHEN
-    final var busDrivers = new BusDriversParserImpl().parse(busDriverSpecs);
+        # WHEN
+        bus_drivers = BusDriversParserImpl().parse(bus_driver_specs)
 
-    // THEN
-    assertOnlyOneBusStopIsSame(busDrivers);
-  }
+        # THEN
+        self.__assert_only_first_bus_stop_is_same(bus_drivers)
 
-  private void assertOnlyOneBusStopIsSame(final List<BusDriver> busDrivers) {
-    assertEquals(
-      busDrivers.get(0).getCurrentBusStop(),
-      busDrivers.get(1).getCurrentBusStop()
-    );
 
-    assertNotEqual(
-      busDrivers.get(0).driveToNextBusStop(),
-      busDrivers.get(1).driveToNextBusStop()
-    );
-  }
-}
+    def assert_only_first_bus_stop_is_same(self, bus_drivers: list[BusDriver]):
+        driver1_stop1 = bus_drivers[0].get_current_bus_stop()
+        driver2_stop1 = bus_drivers[1].get_current_bus_stop()
+        self.assertEqual(driver1_stop1, driver2_stop1)
+
+        driver1_stop2 = bus_drivers[0].drive_to_next_bus_stop()
+        driver2_stop2 = bus_drivers[1].drive_to_next_bus_stop()
+        self.assertNotEqual(driver1_stop2, driver2_stop2)
 ```
 
 Let's make the above test pass:
 
-```java
-public class BusDriversParserImpl implements BusDriversParser {
-  // ...
+```python
+class BusDriversParserImpl(Protocol):
+    # ...
 
-  private BusDriver parseBusDriver(final String busDriverSpec) {
-    final var busDriverSpecParts = busDriverSpec.split(";");
-    final var busRouteSpec = busDriverSpecParts[0];
-    final var rumorName = busDriverSpecParts[1];
-    final var busStopNames = busRouteSpec.split(",");
-    final List<BusStop> busStops = new ArrayList<>();
+    def parse(self, bus_driver_specs: list[str]) -> list[BusDriver]:
+        return [
+            self.__get_bus_driver(bus_driver_spec)
+            for bus_driver_spec in bus_driver_specs
+        ]
 
-    for (final var busStopName : busStopNames) {
-      var busStop = busStopNameToBusStop.get(busStopName);
+    def __get_bus_driver(self, bus_driver_spec: str) -> BusDriver:
+        bus_route_spec, rumor_name = bus_driver_spec.split(';')
+        bus_stop_names = bus_route_spec.split(',')
 
-      if (busStop == null) {
-        busStop = new BusStopImpl();
-        busStopNameToBusStop.put(busStopName, busStop);
-      }
+        for bus_stop_name in bus_stop_names:
+            if self.__name_to_bus_stop.get(bus_stop_name) is None:
+                self.__name_to_bus_stop[bus_stop_name] = BusStopImpl()
 
-      busStops.add(busStop);
-    }
+        bus_stops = [
+            self.__name_to_bus_stop[bus_stop_name]
+            for bus_stop_name in bus_stop_names
+        ]
 
-    if (rumorNameToRumor.get(rumorName) == null) {
-      rumorNameToRumor.put(rumorName, new Rumor());
-    }
+        if self.__name_to_rumor.get(rumor_name) is None:
+            self.__name_to_rumor[rumor_name] = Rumor()
 
-    return mew BusDriverImpl(
-        CircularBusRoute(busStops)),
-        Set.of(rumorNameToRumor.get(rumorName))
-    );
-  }
-}
+        return BusDriverImpl(
+            CircularBusRoute(bus_stops), {self.__name_to_rumor[rumor_name]}
+        )
 ```
 
-Let's create the final test for a scenario where we have multiple drivers with multiple rumors (one of which is the same):
+Let's create a test for a scenario where we have multiple drivers with multiple rumors (one of which is the same):
 
-```java
-class BusDriversParserImplTests {
-  @Test
-  void testParse_withMultipleDriversAndMultipleRumorsWhereOneIsSame() {
-    // GIVEN
-    final var busDriverSpecs = List.of(
-        "bus-stop-a;rumor1,rumor2,rumor3",
-        "bus-stop-b;rumor1,rumor3",
-    );
+```python
+class BusDriversParserImplTests(unittest.TestCase):
+    def test_parse__with_multiple_drivers_and_multiple_rumors(self):
+        # GIVEN
+        bus_driver_specs = [
+            'bus-stop-a;rumor1,rumor2,rumor3',
+            'bus-stop-b;rumor1,rumor3',
+        ]
 
-    // WHEN
-    final var busDrivers = new BusDriversParserImpl().parse(busDriverSpecs);
+        # WHEN
+        bus_drivers = BusDriversParserImpl().parse(bus_driver_specs)
 
-    // THEN
-    assertBusStopsAreSame(busDrivers);
-    assertRumorsDifferByOne(busDrivers);
-  }
+        # THEN
+        self.__assert_rumors_differ_by_one(bus_drivers)
 
-  private void assertRumorsDifferByOne(final List<BusDriver> busDrivers) {
-    assertEquals(3, busDrivers.get(0).getRumors().size());
-    assertEquals(2, busDrivers.get(1).getRumors().size());
+    def __assert_rumors_differ_by_one(self, bus_drivers: list[BusDriver]):
+        self.assertEqual(len(bus_drivers[0].get_rumors()), 3)
+        self.assertEqual(len(bus_drivers[1].get_rumors()), 2)
 
-    // Sets.difference is from Google Guava library
-    final var rumorDifference = Sets.difference(
-      busDrivers.get(0).getRumors(),
-      busDrivers.get(1).getRumors(),
-    );
+        rumor_diff = (
+            bus_drivers[0]
+            .get_rumors()
+            .difference(bus_drivers[1].get_rumors())
+        )
 
-    assertEqual(1, rumorDifference.size());
-  }
-}
+        self.assertEqual(len(rumor_diff), 1)
 ```
 
 Let's modify the implementation to make the above test pass:
 
-```java
-public class BusDriversParserImpl implements BusDriversParser {
-  // ...
+```python
+class BusDriversParserImpl(Protocol):
+    # ...
 
-  private BusDriver parseBusDriver(final String busDriverSpec) {
-    final var busDriverSpecParts = busDriverSpec.split(";");
-    final var busRouteSpec = busDriverSpecParts[0];
-    final var busStopNames = busRouteSpec.split(",");
-    final List<BusStop> busStops = new ArrayList<>();
+    def parse(self, bus_driver_specs: list[str]) -> list[BusDriver]:
+        return [
+            self.__get_bus_driver(bus_driver_spec)
+            for bus_driver_spec in bus_driver_specs
+        ]
 
-    for (final var busStopName : busStopNames) {
-      var busStop = busStopNameToBusStop.get(busStopName);
+    def __get_bus_driver(self, bus_driver_spec: str) -> BusDriver:
+        bus_route_spec, rumors_spec = bus_driver_spec.split(';')
+        bus_stop_names = bus_route_spec.split(',')
 
-      if (busStop == null) {
-        busStop = new BusStopImpl();
-        busStopNameToBusStop.put(busStopName, busStop);
-      }
+        for bus_stop_name in bus_stop_names:
+            if self.__name_to_bus_stop.get(bus_stop_name) is None:
+                self.__name_to_bus_stop[bus_stop_name] = BusStopImpl()
 
-      busStops.add(busStop);
-    }
+        bus_stops = [
+            self.__name_to_bus_stop[bus_stop_name]
+            for bus_stop_name in bus_stop_names
+        ]
 
-    final var rumorsSpec = busDriverSpecParts[1];
-    final var rumorNames = rumorsSpec.split(",");
-    final Set<Rumor> rumors = new HashSet<>();
+        rumor_names = rumors_spec.split(',')
 
-    for (final var rumorName : rumorNames) {
-      var rumor = rumorNameToRumor.get(rumorName);
+        for rumor_name in rumor_names:
+            if self.__name_to_rumor.get(rumor_name) is None:
+                self.__name_to_rumor[rumor_name] = Rumor()
 
-      if (rumor == null) {
-        rumor = new Rumor();
-        rumorNameToRumor.put(rumorName, rumor);
-      }
+        rumors = {
+            self.name_to_rumor[rumor_name] for rumor_name in rumor_names
+        }
 
-      rumors.add(rumor);
-    }
-
-    return mew BusDriverImpl(CircularBusRoute(busStops), rumors));
-  }
-}
+        return BusDriverImpl(CircularBusRoute(bus_stops), rumors)
 ```
 
 Now that we have implemented all tests, we can refactor the `parse` to the following:
 
-```java
-public class BusDriversParserImpl implements BusDriversParser {
-  // ...
+```python
+class BusDriversParserImpl(Protocol):
+    def __init__(self):
+        self.__name_to_bus_stop = {}
+        self.__name_to_rumor = {}
 
-  private BusDriver parseBusDriver(final String busDriverSpec) {
-    final var busDriverSpecParts = busDriverSpec.split(";");
-    final var busRouteSpec = busDriverSpecParts[0];
-    final var busStopNames = busRouteSpec.split(",");
-    final var busStops = parseBusStops(busStopNames);
-    final var rumorsSpec = busDriverSpecParts[1];
-    final var rumorNames = rumorsSpec.split(",");
-    final var rumors = parseRumors(rumorNames);
-    return mew BusDriverImpl(CircularBusRoute(busStops), rumors));
-  }
+    def parse(self, bus_driver_specs: list[str]) -> list[BusDriver]:
+        return [
+            self.__get_bus_driver(bus_driver_spec)
+            for bus_driver_spec in bus_driver_specs
+        ]
 
-  private List<BusStop> parseBusStops(final List<String> busStopNames) {
-    final List<BusStop> busStops = new ArrayList<>();
+    def __get_bus_driver(self, bus_driver_spec: str) -> BusDriver:
+        bus_route_spec, rumors_spec = bus_driver_spec.split(';')
+        bus_stop_names = bus_route_spec.split(',')
+        bus_stops = self.__get_bus_stops(bus_stop_names)
+        rumor_names = rumors_spec.split(',')
+        rumors = self.__get_rumors(rumor_names)
+        return BusDriverImpl(CircularBusRoute(bus_stops), rumors)
 
-    for (final var busStopName : busStopNames) {
-      var busStop = busStopNameToBusStop.get(busStopName);
+    def __get_bus_stops(self, bus_stop_names: list[str]) -> list[BusStop]:
+        for name in bus_stop_names:
+            if self.__name_to_bus_stop.get(name) is None:
+                self.__name_to_bus_stop[name] = BusStopImpl()
 
-      if (busStop == null) {
-        busStop = new BusStopImpl();
-        busStopNameToBusStop.put(busStopName, busStop);
-      }
+        return [self.__name_to_bus_stop[name] for name in bus_stop_names]
 
-      busStops.add(busStop);
-    }
+    def __get_rumors(self, rumor_names: list[str]) -> set[Rumor]:
+        for name in rumor_names:
+            if self.__name_to_rumor.get(name) is None:
+                self.__name_to_rumor[name] = Rumor()
 
-    return busStops;
-  }
-
-  private Set<Rumor> parseRumors(final List<String> rumorNames) {
-    final Set<Rumor> rumors = new HashSet<>();
-
-    for (final var rumorName : rumorNames) {
-      var rumor = rumorNameToRumor.get(rumorName);
-
-      if (rumor == null) {
-        rumor = new Rumor();
-        rumorNameToRumor.put(rumorName, rumor);
-      }
-
-      rumors.add(rumor);
-    }
-  }
-}
+        return {self.__name_to_rumor[name] for name in rumor_names}
 ```
 
 Finally we need to implement the *main.py*:
 
-```java
-public class Main {
-  public static void main(String[] args):
-    final var maxDrivenStopCount =
-      new MaxDrivenStopCountParserImpl().parse(args[1]);
+```
+class Main:
+    @staticmethod
+    def run():
+        max_driven_stop_count = MaxDrivenStopCountParserImpl().parse(
+            sys.argv[1]
+        )
 
-    final var busDriverSpecs = Arrays.stream(args, 2, args.length())
-      .toArray(String[]::new);
+        bus_drivers = BusDriversParserImpl().parse(sys.argv[2:])
 
-    final var busDrivers = new BusDriversParserImpl().parse(busDriverSpecs);
+        all_rumors_were_shared = GossipingBusDrivers(
+            bus_drivers
+        ).drive_until_all_rumors_shared(max_driven_stop_count)
 
-    final var allRumorsWereShared = new GossipingBusDrivers(
-        busDrivers
-    ).driveUntilAllRumorsShared(maxDrivenStopCount)
+        code = 0 if all_rumors_were_shared else 1
+        sys.exit(code)
 
-    System.exit(allRumorsWereShared ? 0 : 1);
-}
+
+if __name__ == '__main__':
+    Main().run()
 ```
 
 Let's say that product management wants a new feature and puts the following user story on the backlog:
