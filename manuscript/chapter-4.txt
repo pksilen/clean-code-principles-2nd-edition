@@ -3882,7 +3882,7 @@ class GossipingBusDriversTests {
 
 Let' modify the implementation to make the above test to pass:
 
-```python
+```java
 public class GossipingBusDrivers {
   private final List<BusDriver> busDrivers;
   private final Set<Rumor> allRumors;
@@ -3922,48 +3922,64 @@ public class GossipingBusDrivers {
 
 Next, we shall implement the `MaxDrivenStopCountParser` and its 'parse' method. Let's create a failing test:
 
-```python
-class MaxDrivenStopCountParserTests(unittest.TestCase):
-    def test_parse__when_it_succeeds(self):
-        # GIVEN
-        max_driven_stop_count_as_str = '2'
+```java
+class MaxDrivenStopCountParserTests {
+  @Test
+  void testParse_whenItSucceeds() {
+    // GIVEN
+    final var maxDrivenStopCountStr = "2";
+    final var parser = new MaxDrivenStopCountParserImpl();
 
-        # WHEN
-        max_driven_stop_count = MaxDrivenStopCountParserImpl().parse(
-            max_driven_stop_count_as_str
-        )
+    // WHEN
+    final var maxDrivenStopCount = parser.parse(maxDrivenStopCountStr);
 
-        # THEN
-        self.assertEqual(max_driven_stop_count, 2)
+    // THEN
+    assertEquals(2, maxDrivenStopCount);
+  }
+}
 ```
 
 Now we can implement the class to make the above test to pass:
 
-```python
-class MaxDrivenStopCountParser(Protocol):
-    def parse(self, max_driven_stop_count_as_str: str) -> int:
-        pass
+```java
+public interface MaxDrivenStopCountParser {
+  int parse(final String maxDrivenStopCountStr);
+}
 
 
-class MaxDrivenStopCountParserImpl(MaxDrivenStopCountParser):
-    def parse(self, max_driven_stop_count_as_str: str) -> int:
-        return int(max_driven_stop_count_as_str)
+public class MaxDrivenStopCountParserImpl implements MaxDrivenStopCountParser {
+
+  @Override
+  public int parse(String maxDrivenStopCountStr) {
+    try {
+      return Integer.parseInt(maxDrivenStopCountStr);
+    } catch (NumberFormatException e) {
+      throw new InputMismatchException(
+        "Invalid max driven stop count: " + maxDrivenStopCountStr
+      );
+    }
+  }
+}
 ```
 
-Next, we specify that the `parse` method should throw a `ValueError` if the parsing fails:
+Next, we specify that the `parse` method should throw an `InputMismatchException` if the parsing fails:
 
-```python
-class MaxDrivenStopCountParserTests(unittest.TestCase):
-     def test_parse__when_it_fails(self):
-         # GIVEN
-         max_driven_stop_count_as_str = 'invalid'
+```java
+class MaxDrivenStopCountParserTests {
+  // ...
 
-         # WHEN + THEN
-         self.assertRaises(
-             ValueError,
-             MaxDrivenStopCountParserImpl().parse,
-             max_driven_stop_count_as_str,
-         )
+  @Test
+  void testParse_whenItFails() {
+    // GIVEN
+    final var maxDrivenStopCountStr = "invalid";
+    final var parser = new MaxDrivenStopCountParserImpl();
+
+    // WHEN + THEN
+    assertThrows(InputMismatchException.class, () -> {
+      parser.parse(maxDrivenStopCountStr);
+    });
+  }
+}
 ```
 
 The above test will pass without modification to the implementation.
@@ -3972,72 +3988,92 @@ Next, we shall implement the `BusDriversParser` and its 'parse' method. We will 
 specification does not contain at least one bus stop and one rumor. Let's first create
 a failing test for a scenario where we have only one driver with one bus stop and one rumor:
 
-```python
-class BusDriversParserImplTests(unittest.TestCase):
-    def test_parse__with_one_driver_that_has_one_bus_stop_and_one_rumor(self):
-        # GIVEN
-        bus_driver_spec = 'bus-stop-a;rumor1'
+```java
+class BusDriversParserTests {
 
-        # WHEN
-        bus_drivers = BusDriversParserImpl().parse([bus_driver_spec])
+  @Test
+  void testParse_withOneDriverOneBusStopAndOneRumor() {
+    // GIVEN
+    final var busDriverSpec = "bus-stop-a;rumor1";
+    final var parser = new BusDriversParserImpl();
 
-        # THEN
-        self.__assert_has_circular_bus_route_with_one_stop(bus_drivers)
-        self.assertEqual(len(bus_drivers[0].get_rumors()), 1)
+    // WHEN
+    final var busDrivers = parser.parse(List.of(busDriverSpec));
 
-    def __assert_has_circular_bus_route_with_one_stop(
-        self,
-        bus_drivers: list[BusDriver]
-    ):
-        self.assertEquals(len(bus_drivers), 1)
-        bus_stop = bus_drivers[0].get_current_bus_stop()
-        next_bus_stop = bus_drivers[0].drive_to_next_bus_stop()
-        self.assertEqual(bus_stop, next_bus_stop)
+    // THEN
+    assertHasCircularBusRouteWithOneStop(busDrivers);
+    assertEquals(1, busDrivers.get(0).getRumors().size());
+  }
+
+  private void assertHasCircularBusRouteWithOneStop(
+    final List<BusDriver> busDrivers
+  ) {
+    assertEquals(1, busDrivers.size());
+
+    final var busDriver = busDrivers.get(0);
+    final var originalBusStop = busDriver.getCurrentBusStop();
+    final var nextBusStop = busDriver.driveToNextBusStop();
+
+    assertSame(originalBusStop, nextBusStop);
+  }
+}
 ```
 
 Let's implement the `parse` method to make the above test pass:
 
-```python
-class BusDriversParser(Protocol):
-    def parse(self, bus_driver_specs: list[str]) -> list[BusDriver]:
-        pass
+```java
+public interface BusDriversParser {
+  List<BusDriver> parse(final List<String> busDriverSpecs);
+}
 
 
-class BusDriversParserImpl(BusDriversParser):
-    def parse(self, bus_driver_specs: list[str]) -> list[BusDriver]:
-        return [
-            self.__get_bus_driver(bus_driver_spec)
-            for bus_driver_spec in bus_driver_specs
-        ]
+public class BusDriversParserImpl implements BusDriversParser {
 
-    def __get_bus_driver(self, bus_driver_spec: str) -> BusDriver:
-        return BusDriverImpl(CircularBusRoute([BusStopImpl()]), {Rumor()})
+  @Override
+  public List<BusDriver> parse(final List<String> busDriverSpecs) {
+    return busDriverSpecs.stream().map(this::getBusDriver).toList();
+  }
+
+  private BusDriver getBusDriver(final String busDriverSpec) {
+    return new BusDriverImpl(
+      new CircularBusRoute(List.of(new BusStopImpl())),
+      Set.of(new Rumor())
+    );
+  }
+}
 ```
 
 Let's create a test for a scenario where we have multiple drivers with one bus stop and one rumor each; both the bus stops
 and rumors for drivers are different:
 
-```python
-class BusDriversParserImplTests(unittest.TestCase):
-    def test_parse__with_multiple_drivers_with_different_bus_stop_and_rumor(self):
-        # GIVEN
-        bus_driver_specs = ['bus-stop-a;rumor1', 'bus-stop-b;rumor2']
+```java
+class BusDriversParserTests {
+  // ...
 
-        # WHEN
-        bus_drivers = BusDriversParserImpl().parse(bus_driver_specs)
+  @Test
+  void testParse_withMultipleDriversDifferentBusStopAndRumor() {
+    // GIVEN
+    final var busDriverSpec1 = "bus-stop-a;rumor1";
+    final var busDriverSpec2 = "bus-stop-b;rumor2";
+    final var parser = new BusDriversParserImpl();
 
-        # THEN
-        self.__assert_bus_stops_are_not_same(bus_drivers)
+    // WHEN
+    final var busDrivers = parser.parse(List.of(busDriverSpec1, busDriverSpec2));
 
-        self.assertNotEqual(
-            bus_drivers[0].get_rumors(), bus_drivers[1].get_rumors()
-        )
+    // THEN
+    assertBusStopsAreNotSame(busDrivers);
+    assertNotEquals(busDrivers.get(0).getRumors(), busDrivers.get(1).getRumors());
+  }
 
-    def __assert_bus_stops_are_not_same(self, bus_drivers: list[BusDriver]):
-        self.assertEqual(len(bus_drivers), 2)
-        driver1_stop1 = bus_drivers[0].get_current_bus_stop()
-        driver2_stop1 = bus_drivers[1].get_current_bus_stop()
-        self.assertNotEqual(driver1_stop1, driver2_stop1)
+  // ...
+
+  private void assertBusStopsAreNotSame(final List<BusDriver> busDrivers) {
+    assertEquals(2, busDrivers.size());
+    final var driver1Stop1 = busDrivers.get(0).getCurrentBusStop();
+    final var driver2Stop1 = busDrivers.get(1).getCurrentBusStop();
+    assertNotSame(driver1Stop1, driver2Stop1);
+  }
+}
 ```
 
 The above test will pass without modifications to the implementation.
@@ -4045,285 +4081,272 @@ The above test will pass without modifications to the implementation.
 Let's create a test for a scenario where we have multiple drivers with one bus stop and one rumor each; the bus stops
 are the same, but rumors are different:
 
-```python
-class BusDriversParserImplTests(unittest.TestCase):
-    def test_parse__with_multiple_drivers_with_a_common_bus_stop(self):
-        # GIVEN
-        bus_driver_specs = ['bus-stop-a;rumor1', 'bus-stop-a;rumor2']
+```java
+class BusDriversParserTests {
+  // ...
 
-        # WHEN
-        bus_drivers = BusDriversParserImpl().parse(bus_driver_specs)
+  @Test
+  void testParse_withMultipleDriversWithCommonBusStop() {
+    // GIVEN
+    final var busDriverSpec1 = "bus-stop-a;rumor1";
+    final var busDriverSpec2 = "bus-stop-a;rumor2";
+    final var parser = new BusDriversParserImpl();
 
-        # THEN
-        self.__assert_bus_stops_are_same(bus_drivers)
+    // WHEN
+    final var busDrivers = parser.parse(List.of(busDriverSpec1, busDriverSpec2));
 
-    def __assert_bus_stops_are_same(self, bus_drivers: list[BusDriver]):
-        driver1_stop = bus_drivers[0].get_current_bus_stop()
-        driver2_stop = bus_drivers[1].get_current_bus_stop()
-        self.assertEqual(driver1_stop, driver2_stop)
+    // THEN
+    assertBusStopsAreSame(busDrivers);
+  }
+
+  // ...
+
+  private void assertBusStopsAreSame(final List<BusDriver> busDrivers) {
+    final var driver1Stop = busDrivers.get(0).getCurrentBusStop();
+    final var driver2Stop = busDrivers.get(1).getCurrentBusStop();
+    assertSame(driver1Stop, driver2Stop);
+  }
+}
 ```
 
 Let's modify the implementation to make the above test pass:
 
-```python
-class BusDriversParserImpl(BusDriversParser):
-    def __init__(self):
-        self.__name_to_bus_stop = {}
+```java
+public class BusDriversParserImpl implements BusDriversParser {
+  private final Map<String, BusStop> nameToBusStop = new HashMap<>();
 
-    def parse(self, bus_driver_specs: list[str]) -> list[BusDriver]:
-        return [
-            self.__get_bus_driver(bus_driver_spec)
-            for bus_driver_spec in bus_driver_specs
-        ]
+  @Override
+  public List<BusDriver> parse(final List<String> busDriverSpecs) {
+    return busDriverSpecs.stream().map(this::getBusDriver).toList();
+  }
 
-    def __get_bus_driver(self, bus_driver_spec: str) -> BusDriver:
-        bus_stop_name, _ = bus_driver_spec.split(';')
+  private BusDriver getBusDriver(final String busDriverSpec) {
+    final var parts = busDriverSpec.split(";");
+    final var busStopName = parts[0];
+    nameToBusStop.computeIfAbsent(busStopName, key -> new BusStopImpl());
 
-        if self.__name_to_bus_stop.get(bus_stop_name) is None:
-            self.__name_to_bus_stop[bus_stop_name] = BusStopImpl()
-
-        return BusDriverImpl(
-            CircularBusRoute([self.__name_to_bus_stop[bus_stop_name]]),
-            {Rumor()},
-        )
+    return new BusDriverImpl(
+      new CircularBusRoute(List.of(nameToBusStop.get(busStopName))),
+      Set.of(new Rumor())
+    );
+  }
+}
 ```
 
 Let's create a test for a scenario where we have multiple drivers with one rumor each and the rumors are the same:
 
-```python
-class BusDriversParserImplTests(unittest.TestCase):
-    def test_parse__with_multiple_drivers_and_a_common_rumor(
-        self,
-    ):
-        # GIVEN
-        bus_driver_specs = ['bus-stop-a;rumor1', 'bus-stop-b;rumor1']
+```java
+class BusDriversParserTests {
+  // ...
 
-        # WHEN
-        bus_drivers = BusDriversParserImpl().parse(bus_driver_specs)
+  @Test
+  void testParse_withMultipleDriversAndCommonRumor() {
+    // GIVEN
+    final var busDriverSpec1 = "bus-stop-a;rumor1";
+    final var busDriverSpec2 = "bus-stop-b;rumor1";
+    final var parser = new BusDriversParserImpl();
 
-        # THEN
-        self.assertEqual(
-            bus_drivers[0].get_rumors(), bus_drivers[1].get_rumors()
-        )
+    // WHEN
+    final var busDrivers = parser.parse(List.of(busDriverSpec1, busDriverSpec2));
+
+    // THEN
+    assertEquals(busDrivers.get(0).getRumors(), busDrivers.get(1).getRumors());
+  }
+}
 ```
 
 Let's modify the implementation to make the test pass:
 
-```python
-class BusDriversParserImpl(Protocol):
-    def __init__(self):
-        self.__name_to_bus_stop = {}
-        self.__name_to_rumor = {}
+```java
+public class BusDriversParserImpl implements BusDriversParser {
+  private final Map<String, BusStop> nameToBusStop = new HashMap<>();
+  private final Map<String, Rumor> nameToRumor = new HashMap<>();
 
-    def parse(self, bus_driver_specs: list[str]) -> list[BusDriver]:
-        return [
-            self.__get_bus_driver(bus_driver_spec)
-            for bus_driver_spec in bus_driver_specs
-        ]
+  @Override
+  public List<BusDriver> parse(final List<String> busDriverSpecs) {
+    return busDriverSpecs.stream().map(this::getBusDriver).toList();
+  }
 
-    def __get_bus_driver(self, bus_driver_spec: str) -> BusDriver:
-        bus_stop_name, rumor_name = bus_driver_spec.split(';')
+  private BusDriver getBusDriver(final String busDriverSpec) {
+    final var parts = busDriverSpec.split(";");
+    final var busStopName = parts[0];
+    final var rumorName = parts[1];
+    nameToBusStop.computeIfAbsent(busStopName, key -> new BusStopImpl());
+    nameToRumor.computeIfAbsent(rumorName, key -> new Rumor());
 
-        if self.__name_to_bus_stop.get(bus_stop_name) is None:
-            self.__name_to_bus_stop[bus_stop_name] = BusStopImpl()
-
-        if self.__name_to_rumor.get(rumor_name) is None:
-            self.__name_to_rumor[rumor_name] = Rumor()
-
-        return BusDriverImpl(
-            CircularBusRoute([self.__name_to_bus_stop[bus_stop_name]]),
-            {self.__name_to_rumor[rumor_name]},
-        )
+    return new BusDriverImpl(
+      new CircularBusRoute(List.of(nameToBusStop.get(busStopName))),
+      Set.of(nameToRumor.get(rumorName))
+    );
+  }
+}
 ```
 
 Let's create a test for a scenario where we have multiple drivers with multiple bus stops (the first bus stop is the same):
 
-```python
-class BusDriversParserImplTests(unittest.TestCase):
-    def test_parse__with_multiple_drivers_and_multiple_bus_stops_where_first_is_common(self):
-        # GIVEN
-        bus_driver_specs = [
-            'bus-stop-a,bus-stop-b;rumor1',
-            'bus-stop-a,bus-stop-c;rumor2',
-        ]
+```java
+class BusDriversParserTests {
+  // ...
 
-        # WHEN
-        bus_drivers = BusDriversParserImpl().parse(bus_driver_specs)
+  @Test
+  void testParse_withMultipleDriversAndMultipleBusStopsWhereFirstIsCommon() {
+    // GIVEN
+    final var busDriverSpec1 = "bus-stop-a,bus-stop-b;rumor1";
+    final var busDriverSpec2 = "bus-stop-a,bus-stop-c;rumor2";
+    final var parser = new BusDriversParserImpl();
 
-        # THEN
-        self.__assert_only_first_bus_stop_is_same(bus_drivers)
+    // WHEN
+    final var busDrivers = parser.parse(List.of(busDriverSpec1, busDriverSpec2));
 
+    // THEN
+    assertOnlyFirstBusStopIsSame(busDrivers);
+  }
 
-    def assert_only_first_bus_stop_is_same(self, bus_drivers: list[BusDriver]):
-        driver1_stop1 = bus_drivers[0].get_current_bus_stop()
-        driver2_stop1 = bus_drivers[1].get_current_bus_stop()
-        self.assertEqual(driver1_stop1, driver2_stop1)
+  // ...
 
-        driver1_stop2 = bus_drivers[0].drive_to_next_bus_stop()
-        driver2_stop2 = bus_drivers[1].drive_to_next_bus_stop()
-        self.assertNotEqual(driver1_stop2, driver2_stop2)
+  private void assertOnlyFirstBusStopIsSame(final List<BusDriver> busDrivers) {
+    final var driver1Stop1 = busDrivers.get(0).getCurrentBusStop();
+    final var driver2Stop1 = busDrivers.get(1).getCurrentBusStop();
+    assertSame(driver1Stop1, driver2Stop1);
+
+    final var driver1Stop2 = busDrivers.get(0).driveToNextBusStop();
+    final var driver2Stop2 = busDrivers.get(1).driveToNextBusStop();
+    assertNotSame(driver1Stop2, driver2Stop2);
+  }
+}
 ```
 
 Let's make the above test pass:
 
-```python
-class BusDriversParserImpl(Protocol):
-    # ...
+```java
+public class BusDriversParserImpl implements BusDriversParser {
+  // ...
 
-    def parse(self, bus_driver_specs: list[str]) -> list[BusDriver]:
-        return [
-            self.__get_bus_driver(bus_driver_spec)
-            for bus_driver_spec in bus_driver_specs
-        ]
+  private BusDriver getBusDriver(final String busDriverSpec) {
+    final var parts = busDriverSpec.split(";");
+    final var busRouteSpec = parts[0];
+    final var rumorName = parts[1];
 
-    def __get_bus_driver(self, bus_driver_spec: str) -> BusDriver:
-        bus_route_spec, rumor_name = bus_driver_spec.split(';')
-        bus_stop_names = bus_route_spec.split(',')
+    final var busStops = Arrays.stream(busRouteSpec.split(","))
+      .map(busStopName -> {
+        nameToBusStop.computeIfAbsent(busStopName, key -> new BusStopImpl());
+        return nameToBusStop.get(busStopName);
+      })
+      .toList();
 
-        for bus_stop_name in bus_stop_names:
-            if self.__name_to_bus_stop.get(bus_stop_name) is None:
-                self.__name_to_bus_stop[bus_stop_name] = BusStopImpl()
+    nameToRumor.computeIfAbsent(rumorName, key -> new Rumor());
 
-        bus_stops = [
-            self.__name_to_bus_stop[bus_stop_name]
-            for bus_stop_name in bus_stop_names
-        ]
-
-        if self.__name_to_rumor.get(rumor_name) is None:
-            self.__name_to_rumor[rumor_name] = Rumor()
-
-        return BusDriverImpl(
-            CircularBusRoute(bus_stops), {self.__name_to_rumor[rumor_name]}
-        )
+    return new BusDriverImpl(
+      new CircularBusRoute(busStops),
+      Set.of(nameToRumor.get(rumorName))
+    );
+  }
+}
 ```
 
 Let's create a test for a scenario where we have multiple drivers with multiple rumors (one of which is the same):
 
-```python
-class BusDriversParserImplTests(unittest.TestCase):
-    def test_parse__with_multiple_drivers_and_multiple_rumors(self):
-        # GIVEN
-        bus_driver_specs = [
-            'bus-stop-a;rumor1,rumor2,rumor3',
-            'bus-stop-b;rumor1,rumor3',
-        ]
+```java
+class BusDriversParserTests {
+  // ...
 
-        # WHEN
-        bus_drivers = BusDriversParserImpl().parse(bus_driver_specs)
+  @Test
+  void testParse_withMultipleDriversAndMultipleRumors() {
+    // GIVEN
+    final var busDriverSpec1 = "bus-stop-a;rumor1,rumor2,rumor3";
+    final var busDriverSpec2 = "bus-stop-b;rumor1,rumor3";
+    final var parser = new BusDriversParserImpl();
 
-        # THEN
-        self.__assert_rumors_differ_by_one(bus_drivers)
+    // WHEN
+    final var busDrivers = parser.parse(List.of(busDriverSpec1, busDriverSpec2));
 
-    def __assert_rumors_differ_by_one(self, bus_drivers: list[BusDriver]):
-        self.assertEqual(len(bus_drivers[0].get_rumors()), 3)
-        self.assertEqual(len(bus_drivers[1].get_rumors()), 2)
+    // THEN
+    assertRumorsDifferByOne(busDrivers);
+  }
 
-        rumor_diff = (
-            bus_drivers[0]
-            .get_rumors()
-            .difference(bus_drivers[1].get_rumors())
-        )
+  // ...
 
-        self.assertEqual(len(rumor_diff), 1)
+  private void assertRumorsDifferByOne(final List<BusDriver> busDrivers) {
+    assertEquals(3, busDrivers.get(0).getRumors().size());
+    assertEquals(2, busDrivers.get(1).getRumors().size());
+    final var rumorDiff = new HashSet<>(busDrivers.get(0).getRumors());
+    rumorDiff.removeAll(busDrivers.get(1).getRumors());
+    assertEquals(1, rumorDiff.size());
+  }
+}
 ```
 
 Let's modify the implementation to make the above test pass:
 
-```python
-class BusDriversParserImpl(Protocol):
-    # ...
+```java
+public class BusDriversParserImpl implements BusDriversParser {
+  // ...
 
-    def parse(self, bus_driver_specs: list[str]) -> list[BusDriver]:
-        return [
-            self.__get_bus_driver(bus_driver_spec)
-            for bus_driver_spec in bus_driver_specs
-        ]
+  private BusDriver getBusDriver(final String busDriverSpec) {
+    final var parts = busDriverSpec.split(";");
+    final var busRouteSpec = parts[0];
+    final var rumorsSpec = parts[1];
+    final var busStops = getBusStops(List.of(busRouteSpec.split(",")));
+    final var rumors = getRumors(List.of(rumorsSpec.split(",")));
 
-    def __get_bus_driver(self, bus_driver_spec: str) -> BusDriver:
-        bus_route_spec, rumors_spec = bus_driver_spec.split(';')
-        bus_stop_names = bus_route_spec.split(',')
+    return new BusDriverImpl(
+      new CircularBusRoute(busStops),
+      rumors
+    );
+  }
 
-        for bus_stop_name in bus_stop_names:
-            if self.__name_to_bus_stop.get(bus_stop_name) is None:
-                self.__name_to_bus_stop[bus_stop_name] = BusStopImpl()
+  private List<BusStop> getBusStops(final List<String> busStopNames) {
+    return busStopNames.stream()
+      .map(busStopName -> {
+        nameToBusStop.computeIfAbsent(busStopName, key -> new BusStopImpl());
+        return nameToBusStop.get(busStopName);
+      })
+      .toList();
+  }
 
-        bus_stops = [
-            self.__name_to_bus_stop[bus_stop_name]
-            for bus_stop_name in bus_stop_names
-        ]
-
-        rumor_names = rumors_spec.split(',')
-
-        for rumor_name in rumor_names:
-            if self.__name_to_rumor.get(rumor_name) is None:
-                self.__name_to_rumor[rumor_name] = Rumor()
-
-        rumors = {
-            self.name_to_rumor[rumor_name] for rumor_name in rumor_names
-        }
-
-        return BusDriverImpl(CircularBusRoute(bus_stops), rumors)
-```
-
-Now that we have implemented all tests, we can refactor the `parse` to the following:
-
-```python
-class BusDriversParserImpl(Protocol):
-    def __init__(self):
-        self.__name_to_bus_stop = {}
-        self.__name_to_rumor = {}
-
-    def parse(self, bus_driver_specs: list[str]) -> list[BusDriver]:
-        return [
-            self.__get_bus_driver(bus_driver_spec)
-            for bus_driver_spec in bus_driver_specs
-        ]
-
-    def __get_bus_driver(self, bus_driver_spec: str) -> BusDriver:
-        bus_route_spec, rumors_spec = bus_driver_spec.split(';')
-        bus_stop_names = bus_route_spec.split(',')
-        bus_stops = self.__get_bus_stops(bus_stop_names)
-        rumor_names = rumors_spec.split(',')
-        rumors = self.__get_rumors(rumor_names)
-        return BusDriverImpl(CircularBusRoute(bus_stops), rumors)
-
-    def __get_bus_stops(self, bus_stop_names: list[str]) -> list[BusStop]:
-        for name in bus_stop_names:
-            if self.__name_to_bus_stop.get(name) is None:
-                self.__name_to_bus_stop[name] = BusStopImpl()
-
-        return [self.__name_to_bus_stop[name] for name in bus_stop_names]
-
-    def __get_rumors(self, rumor_names: list[str]) -> set[Rumor]:
-        for name in rumor_names:
-            if self.__name_to_rumor.get(name) is None:
-                self.__name_to_rumor[name] = Rumor()
-
-        return {self.__name_to_rumor[name] for name in rumor_names}
+  private Set<Rumor> getRumors(final List<String> rumorNames) {
+    return rumorNames.stream()
+      .map(rumorName -> {
+        nameToRumor.computeIfAbsent(rumorName, key -> new Rumor());
+        return nameToRumor.get(rumorName);
+      })
+      .collect(Collectors.toSet());
+  }
+}
 ```
 
 Finally we need to implement the *main.py*:
 
-```
-class Main:
-    @staticmethod
-    def run():
-        max_driven_stop_count = MaxDrivenStopCountParserImpl().parse(
-            sys.argv[1]
-        )
+```java
+public class Main {
+  public static void main(final String[] args) {
+    if (args.length < 3) {
+      System.err.println(
+        "Usage: Main <maxDrivenStopCount> <busDriverSpec1> <busDriverSpec2> ..."
+      );
 
-        bus_drivers = BusDriversParserImpl().parse(sys.argv[2:])
+      System.exit(1);
+    }
 
-        all_rumors_were_shared = GossipingBusDrivers(
-            bus_drivers
-        ).drive_until_all_rumors_shared(max_driven_stop_count)
+    try {
+      final var maxDrivenStopCount = new MaxDrivenStopCountParserImpl().parse(args[0]);
+      final var busDriverSpecs = List.of(args).subList(1, args.length);
+      final var busDrivers = new BusDriversParserImpl().parse(busDriverSpecs);
 
-        code = 0 if all_rumors_were_shared else 1
-        sys.exit(code)
+      boolean allRumorsWereShared = new GossipingBusDrivers(busDrivers)
+        .driveUntilAllRumorsShared(maxDrivenStopCount);
 
+      System.exit(allRumorsWereShared ? 0 : 1);
 
-if __name__ == '__main__':
-    Main().run()
+    } catch (final NumberFormatException exception) {
+      System.err.println("Invalid max driven stop count: " + args[0]);
+      System.exit(1);
+    } catch (final Exception exception) {
+      System.err.println("Exception: " + exception.getMessage());
+      System.exit(1);
+    }
+  }
+}
 ```
 
 Let's say that product management wants a new feature and puts the following user story on the backlog:
