@@ -4323,25 +4323,25 @@ implementation is not forgotten.
 
 > ***Don't try to make multiple distinct changes at the same time.***
 
-If you try to make multiple unrelated changes simultaneously, you are focusing on too many things, and you are more likely to introduce a bug or bugs. Don't try to implement two distinct features at the same time. Don't try to
+If you try to make multiple unrelated changes simultaneously, you are focusing on too many things and are more likely to introduce a bug or bugs. Don't try to implement two distinct features at the same time. Don't try to
 make two distinct refactorings at the same time. Don't try to implement a new feature and do refactoring simultaneously.
-Try to make a single change as small and isolated as possible. I have violated this principle so many times. I have thought,
-okay, this is a small change I can do together with this other change. But later, I realized that the changes were not so
+Try to make a single change as small and isolated as possible. I have violated this principle so many times. I thought,
+okay, this is a small change I can make together with this other change. But later, I realized that the changes were not so
 small after all and that I had created some bugs. I didn't know which of the many changes caused the bug. That made the bug hunting more difficult than it should have been.
 So, resist the urge to make multiple distinct changes simultaneously. Have all changes that need to be made as separate user stories in the team backlog or list small changes to be done in a TODO.MD file so that they are not forgotten.
 
 If you need to implement a new feature, analyze if you should refactor the code first to make the feature implementation
 easier. If the refactoring is not necessary for the feature and the feature is important, you can implement the feature first and refactor the code later.
-If you gain benefit by refactoring first and the feature is not time-critical, refactor first and only after that implement the feature.
+If you gain benefit by refactoring first and the feature is not time-critical, refactor first and only after that, implement the feature.
 
 ## Choosing Right 3rd Party Component Principle
 
-When choosing the right 3rd party component, you should take the following into account:
+When choosing the suitable 3rd party component, you should take the following into account:
 
 - It provides the needed functionality
 - If you are looking for an open-source component, check that the license is appropriate, e.g., without a viral effect (GPL)
-- Prefer a well-established component over a brand new component because the new component may have bugs, and there is a smaller community that can offer you support.
-  You shouldn't determine a well-established component by the number of GitHub stars only. Check the component download statistics from the package manager.
+- Prefer a well-established component over a brand new component because the brand new component may have bugs, and a smaller community can offer you support.
+  You shouldn't determine a well-established component solely by its number of GitHub stars. Instead, check the component download statistics from the package manager.
 - Prefer a component that has a higher number of contributors because you can have your reported bugs corrected faster and also new features
   implemented faster.
 - Ensure that dependencies are up-to-date. It is a red flag if the component has its dependencies updated like several years ago
@@ -4350,34 +4350,32 @@ When choosing the right 3rd party component, you should take the following into 
 
 Next, the main built-in data structures with their use cases will be presented.
 
-### List
+Use a list when you need an ordered collection or should be able to store the same item multiple times.
 
-> *Use a list when you need an ordered collection or should be able to store the same item multiple times.*
-
-To implement lists, JavaScript has arrays, C++ has the `std::vector` class and Java has the `ArrayList` class.
-Java has also a `Vector` class, but it is advised
+To implement lists, JavaScript has arrays, C++ has the `std::vector` class, and Java has the `ArrayList` class.
+Java also has a `Vector` class, but it is advised
 to use `ArrayList` unless you need synchronization (vectors are synchronized). Lists are mutable
 and can contain duplicate elements. Each element can be accessed by its index in a performant way. If you need to add or remove
 elements at the beginning of the list, that is not a cheap operation because all existing elements in the list must be
 moved by one index to the right or left. Similarly, if you add an element to the end of a list and the allocated space for
-the list is full, new space for the list must be allocated, and the list elements must be copied to the newly allocated space.
+the list is full, new space must be allocated, and the list elements must be copied to the newly allocated space.
 
 ### Map
 
 > *Use a map when you need quick access to a value by a key.*
 
-To implement maps, you can use a plain object or the `Map` class in JavaScript, `HashMap` in Java and `std::ordered_map` or `std::unordered_map` in C++.
-Accessing a value by its key is always a cheap operation. In Java, you can use an `EnumMap`, if the map keys are of an enumerated type.
+To implement maps, you can use a plain object or the `Map` class in JavaScript, `HashMap` in Java, and `std::ordered_map` or `std::unordered_map` in C++.
+Accessing a value by its key is always a cheap operation. In Java, you can use an `EnumMap` when the map keys are of an enumerated type.
 For a synchronized map in Java, you can use `ConcurrentHashMap`.
 You can iterate over a JavaScript object using one of the following methods: `keys()`, `values()`, or `entries()`.
-You can iterate over a Java `Map` using one of the following methods: `keySet()`, `values()` or `entrySet()`.
+You can iterate over a Java `Map` using one of the following methods: `keySet()`, `values()`, or `entrySet()`.
 
 ### Tuple
 
 > *Use a tuple for a fixed size ordered collection.*
 
 In a tuple, each element can be accessed by its index in a performant way. In TypeScript, you don't have tuples separately,
-but you can use fixed size arrays. In C++, you can use `std::pair` and `std::tuple`. In Java, you must use a library, like
+but you can use fixed-size arrays. In C++, you can use `std::pair` and `std::tuple`. In Java, you must use a library like
 [javatuples](https://www.javatuples.org/index.html).
 
 ### Set
@@ -4386,8 +4384,7 @@ but you can use fixed size arrays. In C++, you can use `std::pair` and `std::tup
 
 Accessing a set by a value is cheap when the set is implemented as a hash table. On the contrary, if you have a list,
 the whole list may need to be gone through to find a specific value. If you have a list and want to remove
-duplicates from it, you can convert the list into a set. You can do that with the `HashSet` constructor in Java or
-with the `Set` constructor in JavaScript. The `unordered_set` and `ordered_set` classes provide set functionality in C++.
+duplicates from it, you can convert the list into a set. You can do that with the `HashSet` constructor in Java or the `Set` constructor in JavaScript. The `unordered_set` and `ordered_set` classes provide set functionality in C++.
 
 ### String
 
@@ -4409,27 +4406,25 @@ C++ and the `ArrayDeque` class in Java.
 
 > *A stack can be implemented using a deque.*
 
-You can push an element into the stack with the deque's push back method and pop an element out of the stack with the deque's pop back method.
+You can push an element into the stack with the deque's push-back method and pop an element out of the stack with the deque's pop-back method.
 You can also implement a stack using a list, but operations can be slower sometimes, especially if the stack is large.
-C++ has a `std::stack` class that by default utilizes `std::deque` as the implementation of a stack. Java has also a `Stack` class,
-but that should not be used, but you should use the `ArrayDeque` class to implement a stack.
+C++ has a `std::stack` class that, by default, utilizes the `std::deque` class to implement a stack. Java also has a `Stack` class,
+which should not be used, but you should use the `ArrayDeque` class to implement a stack in Java.
 
 ### Queue (FIFO Queue)
 
 > *A queue can be implemented using a deque.*
 
-You can add an element to a queue with the deque's push back method and pop an element from the queue with the deque's pop front method.
+You can add an element to a queue with the deque's push-back method and pop an element from the queue with the deque's pop-front method.
 You can also implement a queue using a list, but operations can be slower sometimes, especially if the queue is large.
-C++ has a `std::queue` class that by default utilizes `std::deque` as the implementation of a queue. In Java, you can use
-`ArrayDeque` or a `LinkedList` to implement a queue. Java also provides concurrent blocking queues, like `ArrayBlockingQueue` that
-is useful to implement multithreaded applications with one or more producer and consumer threads.
+C++ has a `std::queue` class that, by default, utilizes the `std::deque` class to implement a queue. In Java, you can use
+`ArrayDeque` or a `LinkedList` to implement a queue. Java also provides concurrent blocking queues, like `ArrayBlockingQueue`, useful for implementing multithreaded applications with one or more producer and consumer threads.
 
 ### Priority Queue
 
 > *Use a priority queue to retrieve elements based on their priority.*
 
-In C++, you can use the `std::priority_queue` class and in Java you can use `PriorityQueue` or `PriorityBlockingQueue`.
-
+In C++, you can use the `std::priority_queue` class. In Java, you can use `PriorityQueue` or `PriorityBlockingQueue`.
 
 ## Optimization Principle
 
@@ -4481,7 +4476,7 @@ The data exporter microservice has the following functionality in its busy loop:
 transformations, and encode an output message. Decoding an input message requires
 decoding each field in the message. Let's say there are 10000 messages handled per second, each with 100 fields.
 During one second, 100,000 fields must be decoded. This reveals that the optimization of the decoding functionality
-is crucial. The same applies to output message encoding. We at Nokia have implemented the decoding and encoding Avro binary fields ourselves.
+is crucial. The same applies to output message encoding. We at Nokia have implemented the decoding and encoding of Avro binary fields ourselves.
 We were able to make them faster than what was provided by a 3rd party library.
 
 #### Remove Unnecessary Functionality Pattern
@@ -4490,7 +4485,7 @@ Removing unnecessary functionality is something that will boost performance. Eve
 Is my software component doing only the necessary things considering all circumstances?
 
 Let's consider the data exporter's functionality in a special case. It is currently decoding an input message to an internal message.
-This internal message is used when making various transformations to the data. Transformed data is encoded to a wanted output format.
+This internal message is used when making various transformations to the data. Transformed data is encoded in a desired output format.
 The contents of the final output message can be a small subset
 of the original input message. This means that only a tiny part of the decoded message is used. In that case, it is unnecessary
 to decode all the fields of an input message if, for example, only 10% of the fields are used in the transformations and
@@ -4533,8 +4528,7 @@ values = [value for value in range(20_000)]
 ```
 
 If we don't need all the 20,000 values in the memory at the same time,
-we could use a different algorithm (generator expression) which consumes much less memory,
-because not all the 20,000 values are in the memory:
+we could use a different algorithm (generator expression) which consumes much less memory because not all the 20,000 values are in the memory:
 
 ```python
 values = (value for value in range(20_000))
@@ -4567,7 +4561,7 @@ print(make_expensive_calc(1))
 ```
 
 `@cache` is the same as `@lru_cache(maxsize=None)`, i.e., the cache does not have a maximum size limit.
-With a relative ease, you can implement a caching decorator in JavaScript/TypeScript.
+With relative ease, you can implement a caching decorator in JavaScript/TypeScript.
 
 #### Buffer File I/O Pattern
 
@@ -4625,6 +4619,6 @@ checking the _vtable_ to decide which method should be called.
 
 If you are using shared pointers, they need to keep the reference count to the shared pointer up to date. In a busy loop, if you use a shared pointer, say a hundred thousand times a second, it starts to show
 a difference whether you use a shared pointer or a unique pointer (`std::unique_ptr`). A unique pointer has little to no overhead compared to
-a raw pointer. For this reason, there is no need to use a raw pointer in modern C++. It would not bring much to the table performance-wise. And if you use a raw pointer, you must remember to release the allocated memory associated with the raw pointer by yourself. If you don't need
+a raw pointer. For this reason, there is no need to use a raw pointer in modern C++. It would not bring much to the table performance-wise. If you use a raw pointer, you must remember to release the allocated memory associated with the raw pointer by yourself. If you don't need
 a pointed object to be shared by multiple other objects, you can optimize your code in busy loops by changing shared pointers
 to unique pointers. Unique pointers always have only one owner, and multiple objects cannot share them.
