@@ -1527,6 +1527,7 @@ public class Value<T> {
   }
 }
 
+
 public class CounterIndex extends Value<Integer> {
   // ...
 }
@@ -1535,13 +1536,12 @@ public class CounterIndex extends Value<Integer> {
 We can improve the above metrics example a lot. First, we should avoid the primitive type obsession. We should not be returning an index
 from the `addCounter` method, but we should rename the method as `createCounter` and return an instance of a `Counter` class from
 the method. Then we should make the example more object-oriented by moving the `incrementCounter` method to the `Counter` class
-and naming it just `increment`. Also, the name of the `Metrics` class should be changed to `MetricFactory`. And finally,
+and naming it just `increment`. Also, the name of the `Metrics` class should be changed to `MetricFactory`. Finally,
 we should make the `MetricFactory` class a singleton instead of containing static methods.
 
 ### Extract Constant for Boolean Expression
 
-By extracting a constant for a boolean expression, we can eliminate comments. Below is an example where a comment is written
-below an if-statement and its boolean expression:
+By extracting a constant for a boolean expression, we can eliminate comments. Below is an example where a comment is written after an if-statement and its boolean expression:
 
 {title: "MessageBuffer.cpp"}
 ```cpp
@@ -1882,7 +1882,7 @@ configFileLongestLineLength = $(getFileLongestLineLength $configFilePathName)
 
 A single return statement with a named value at the end of a function clearly communicates the return value semantics
 if the return value type does not directly communicate it. For example, if you return a value of a primitive
-type like an integer or boolean from a function, it is not necessarily 100% clear what the return value means. But when you return a named value at the end of the
+type like an integer or string from a function, it is not necessarily 100% clear what the return value means. But when you return a named value at the end of the
 function, the name of the returned variable communicates the semantics.
 
 You might think that being unable to return a value in the middle of a function would make
@@ -1892,7 +1892,7 @@ a single function.
 
 Having a single return statement at the end of a function makes refactoring the function easier. You can use automated
 refactoring tools provided by your IDE. It is always harder to extract a new function from code containing
-a return statement. The same is true for loops with a _break_ or _continue_ statement. It is easier to refactor code
+a return statement. The same applies to loops with a _break_ or _continue_ statement. It is easier to refactor code
 inside a loop that does not contain a break or continue statement.
 
 In some cases, returning a single value at the end of a function makes the code more straightforward and requires fewer lines of code.
@@ -1961,8 +1961,8 @@ bool TransformThread::transform(
 ```
 
 As an exception to this rule, you can have multiple return statements in a function when the function has optimal length and would become too long if it is refactored to contain a single return statement.
-Additionally, it is required that the semantic meaning of the return value is clear from the function name or the return type of the function. This is usually true if the return value is a boolean value or
-an object. In case of multiple return statements, you can use so-called [guard clauses](https://en.wikipedia.org/wiki/Guard_(computer_science)) at the beginning of the function. These guard clauses are if-statements that can return early from the function if a
+Additionally, it is required that the semantic meaning of the return value is evident from the function name or the return type of the function. This is usually true if the return value is a boolean value or
+an object. You can use so-called [guard clauses](https://en.wikipedia.org/wiki/Guard_(computer_science)) at the beginning of the function. These guard clauses are if-statements that can return early from the function if a
 certain condition is met. You can have multiple guard clauses. Here is a Java example of a guard clause:
 
 ```java
@@ -1974,8 +1974,7 @@ public Optional<Session> getSession(final String userName){
     // Rest of the method code follows here...
 }
 
-Below is an example of a function with multiple return statements. It is also clear
-from the function name what the return value means. Also, the length of the function is optimal: seven statements.
+Below is an example of a function with multiple return statements. It is also clear from the function name what the return value means. Also, the length of the function is optimal: seven statements.
 
 ```ts
 private areEqual(
@@ -1997,7 +1996,7 @@ private areEqual(
 }
 ```
 
-If we refactored the above code to contain a single return statement, the code would become too long (10 statements) to fit in one function, as shown below. In this case, we should prefer the above code over the below code.
+If we refactored the above code to contain a single return statement, the code would become too long (10 statements) to fit in one function, as shown below. In this case, we would prefer the above code over the code below.
 
 ```ts
 private areEqual(
@@ -2074,11 +2073,11 @@ public:
 };
 ```
 
-## Use Type Annotations for Production Code Principle
+## Prefer a Statically Typed Language for Production Code Principle
 
-> ***Use type annotations when implementing production software. You can use untyped Python for non-production code like integration, end-to-end, and automated non-functional tests.***
+> ***Prefer a statically typed language when implementing production software. You can use an untyped language like Python for non-production code like integration, end-to-end and automated non-functional tests. And you can use Bash shell scripting for small scripts.
 
-You can manage with a trivial software component without types, but when it grows bigger, and more people are involved, the benefits of static typing become evident.
+You can manage with a trivial software component without types, but when it grows bigger and more people are involved, the benefits of static typing become evident.
 
 Let's analyze what potential problems using an untyped language might incur:
 
@@ -2098,7 +2097,7 @@ Those parameter hints might reveal cases where arguments for a function are not 
 ### Function Argument Might Be Given with Wrong Type
 
 You can give a function argument with the wrong type when type annotations are not used. For example,
-a function requires a string representation of a number, but you provide a number. Naming function arguments correctly can help. Instead of
+a function requires a string representation of a number, but you provide a number. Correctly naming function arguments can help. Instead of
 naming a string argument, *amount*, the argument should be named as *amountString* or *amountAsString*.
 
 ### Function Return Value Type Might Be Misunderstood
@@ -2119,10 +2118,10 @@ would have to manually find all the places where a change is needed, which is cl
 ### Forced to Write Public API Comments
 
 You might be forced to document a public API using comments when not using type annotations.
-This is additional work that could be avoided by using type annotations. Writing API documentation with
+That is additional work that could be avoided by using type annotations. Writing API documentation with
 comments is error-prone. You can accidentally write wrong information in the API documentation or
 forget to update the documentation when you make changes to the API code itself. Similarly, the
-API documentation readers can make mistakes. They might not read the API documentation at all. Or they have read it earlier but later misremember it.
+API documentation readers can make mistakes. They might not read the API documentation at all. Or they have read it earlier but later misremembered it.
 
 ### Type Errors Are Not Found in Testing
 
@@ -2145,7 +2144,7 @@ change code without changing the actual functionality. After refactoring, most t
 pass, the code is organized differently, and you have a better object-oriented design and improved naming of things.
 Refactoring does not usually affect integration tests but can affect unit tests depending on the type and scale
 of refactoring. Keep this in mind when estimating refactoring effort. When you practice test-driven development (TDD), you
-are bound to refactor. Refactoring is a practice built into the TDD process. In TDD, the final function implementation is a result of a series of
+are bound to refactor. Refactoring is a practice built into the TDD process. In TDD, the final function implementation results from a series of
 refactorings. This is one of the biggest benefits of TDD. We will discuss TDD more in the next chapter.
 
 Software developers don't necessarily reserve any or enough time for refactoring when they plan things.
@@ -2194,7 +2193,7 @@ When a public method is too long, you should extract one or more private methods
 from the public method. Every modern IDE has an *extract method* refactoring tool that allows you to extract
 private methods easily. Select the code lines you want to extract to a new method and press the IDE's shortcut key
 for the *extract method* functionality. Then, give a descriptive name for the extracted method, and you are
-done. (An additional thing you can do is to organize the arguments of the extracted method in better order
+done. (An additional thing you can do is organize the arguments for the extracted method in better order
 before completing the extraction in the IDE). In some cases, the refactoring is not automatic. For example, if the code to be extracted contains a *return*, *break*,
 or *continue* statement, that affects the execution flow of the function (causing multiple return points). To keep
 your code refactorable, avoid using *break* and *continue* statements and have only a single return statement
