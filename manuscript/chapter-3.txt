@@ -37,12 +37,11 @@ name `environVarName` that is short enough. Both abbreviations `environ` and `va
 Let's have another example with a variable named `loyaltyBonusPercentage`. You cannot abbreviate *loyalty*. You cannot abbreviate
 *bonus*. But you can abbreviate *percentage* to *percent* or even *pct*. I would rather use *percent* instead of *pct*. Using
 *percent* makes the variable name shorter than 20 characters. The maximum length of a variable name should be less than the maximum
-length for a class/interface name, because variables are used in code more often and many times in a combination with a method name.
+length for a class/interface name because variables are used in code more often and often in combination with a method name.
 
 If a variable name is less than 20 characters long, you don't need to shorten it. If you have several variables named in
-a similar wording and one or more of them needs abbreviating, you can use that abbreviation in all the variable names for
-consistency. For example, if you have variables `configurationFile` and `configurationFilePparser`, you
-can abbreviate the both to `configFile` and `configFileParser`.
+similar wording and one or more need abbreviating, you can use that abbreviation for consistency in all the variable names. For example, if you have variables `configurationFile` and `configurationFilePparser`, you
+can abbreviate both to `configFile` and `configFileParser`.
 
 In the following sections, naming conventions for different types of variables are proposed.
 
@@ -55,8 +54,7 @@ name to indicate its type. It already tells you its type.
 One of the most used categories of integer variables is a count or number of something. You see those kinds of variables in every piece
 of code. I recommend using the following convention for naming those variables: *numberOf&lt;something&gt;* or alternatively
 *&lt;something&gt;Count*. For example, *numberOfFailures* or *failureCount*. You should not use a variable named *failures*
-to designate a failure count. The problem with that variable name is it does not clearly specify the variable type
-and thus can cause some confusion. This is because a variable named *failures* can be misunderstood as a collection variable
+to designate a failure count. The problem with that variable name is that it does not specify the variable type, which can confuse. This is because a variable named *failures* can be misunderstood as a collection variable
 (e.g., a list of failures).
 
 If the unit of a variable is not self-evident, always add information about the unit to the end of the variable name. For example, instead of
@@ -86,7 +84,7 @@ true or false, or yes or no. Typical boolean variable naming patterns are: *is&l
 *should&lt;something&gt;*, *can&lt;something&gt;, or *will&lt;something&gt;*. Some examples of variable names following the above patterns are
 *isDisabled*, *hasErrors*, *didUpdate*, *shouldUpdate*, and *willUpdate*.
 
-The verb in the boolean variable name does not have to be at the beginning. It can and should be in the middle if it makes the code read better.
+The verb in the boolean variable name does not have to be at the beginning. It can and should be in the middle if it improves the code's readability.
 Boolean variables are often used in if-statements where changing the word order in the variable name can make the code read
 better. Remember that, at best, code reads like beautiful prose and is read more often than written.
 
@@ -119,7 +117,7 @@ It is unclear if the variable name is a noun (a field that was inserted) that na
 Instead, use either *didInsertField* or *fieldWasInserted*.
 
 Below is a Go language example of the incorrect naming of a variable used to store a function return value. Someone might think
-that `tablesDropped` means a list of dropped table names. So, the name of the variable is obscure and should be changed.
+`tablesDropped` means a list of dropped table names. So, the name of the variable is obscure and should be changed.
 
 ```go
 tablesDropped := dropRedundantTables(prefix,
@@ -154,6 +152,7 @@ When you read code containing a negated boolean variable, it usually reads terri
 ```java
 final var appWasStarted = app.start();
 
+// Reads: if not app was started
 if (!appWasStarted) {
   // ...
 }
@@ -191,7 +190,7 @@ sonar.shouldBreakBuildOnQualityGateFailure = true
 String variables are prevalent, and many things are intrinsically strings, like _name_, _title_, _city_, _country_, or _topic_.
 When you need to store numerical data in a string variable, tell the code reader clearly that it is a question about a number in
 string format, and use a variable name in the following format: _&lt;someValue&gt;String_ or _&lt;someValue&gt;AsString_. It makes
-the code more prominent and easier to understand. For example in JavaScript:
+the code more prominent and easier to understand. Here is an example in JavaScript:
 
 ```js
 const year = parseInt(yearAsString, 10);
@@ -206,7 +205,7 @@ final var schema = schemaParser.parse(schemaString);
 
 ### Naming Enum Variables
 
-Name enum variables with the same name as the enum type. E.g., a `CarType` enum variable should be named `carType`.
+Name enum variables using the same name as the enum type. E.g., a `CarType` enum variable should be named `carType`.
 If the name of an enum type is very generic, like `Result`, you might benefit from declaring an enum variable with some
 detail added to the variable name. Below is an example of a very generic enum type name:
 
@@ -277,10 +276,10 @@ vmsCategories, error = vmsClient.GetCategories(vmsUrl, logger)
 
 ### Naming Map Variables
 
-Maps are accessed by requesting a _value_ for a certain _key_. This is why I recommend naming maps using the pattern _keyToValue_ or keyToValueMap_.
+Maps are accessed by requesting a _value_ for a certain _key_. I recommend naming maps using the pattern _keyToValue_ or keyToValueMap_.
 Let’s say we have a map containing order counts for customer ids. This map should be named `customerIdToOrderCount` or `customerIdToOrderCountMap`.
 Or if we have a list of suppliers for product names, the map variable should be named `productNameToSuppliers` or `productNameToSuppliersMap`.
-I prefer to use the shorter version, it is enough to tell that a variable is a map because of the `to` word in the middle.
+I prefer the shorter version because it is enough to tell that a variable is a map because of the `to` word in the middle.
 Below is an example of accessing maps in Java:
 
 ```java
@@ -315,18 +314,17 @@ Object variables refer to an instance of a class. Class names are nouns written 
 the *Person* class, an *account* object of the *Account* class, etc. You can freely decorate the object’s name, for example, with
 an adjective: *completedTask*. Including the class name or at least a significant part of it at the end of the variable name is useful because looking at the end of the variable name tells what kind of object is in question.
 
-Do not add an article `a` or `an` to an object variable's name. This is redundant because you usually know if it is
-a question about an object variable when you follow all the naming conventions presented in this book.
+Do not add an article `a` or `an` to an object variable's name. This is redundant because you usually know if it is a question about an object variable when you follow all the naming conventions presented in this book.
 
 ```java
-// Not so good
+// Not so good, explicit articles and prepositions and wrong order of arguments
 writeTo(aBuffer, aMessage)
 
-// Better
+// Better, implicit articles and prepositions and correct order of arguments
 write(message, buffer)
 ```
 
-Sometimes you might want to name an object variable so that the name of its class is implicit, for example:
+Sometimes, you might want to name an object variable so that the name of its class is implicit, for example:
 
 ```java
 // The class of the function parameters, 'Location', is implicit
@@ -336,7 +334,7 @@ drive(home, destination);
 In the above example, the classes of `home` and `destination` objects are not explicit. In most cases, it is preferable to make the class name
 explicit in the variable name when it does not make the variable name too long. This is because of the variable type deduction.
 The types of variables are not necessarily visible in the code, so the type of a variable should be communicated by the
-variable name. Below is an example where the types of function parameters are explicit.<div class="sourceCodeWithoutLabel">
+variable name. Below is an example where the types of function parameters are explicit.
 
 ```java
 // The class of the function parameters, 'Location', is now explicit
