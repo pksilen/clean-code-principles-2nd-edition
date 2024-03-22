@@ -333,8 +333,8 @@ drive(home, destination);
 
 In the above example, the classes of `home` and `destination` objects are not explicit. In most cases, it is preferable to make the class name
 explicit in the variable name when it does not make the variable name too long. This is because of the variable type deduction.
-The types of variables are not necessarily visible in the code, so the type of a variable should be communicated by the
-variable name. Below is an example where the types of function parameters are explicit.
+The types of variables are not necessarily visible in the code, so the
+variable name should communicate the type of a variable. Below is an example where the types of function parameters are explicit.
 
 ```java
 // The class of the function parameters, 'Location', is now explicit
@@ -343,8 +343,7 @@ drive(homeLocation, destLocation);
 
 ### Naming Optional Variables
 
-How to name optional variables depends on the programming language and how the optional types are implemented. An optional
-variable name should be prefixed with _maybe_ in languages where you need to unwrap the possible value from an optional object.
+How to name optional variables depends on the programming language and how the optional types are implemented. An optional variable name should be prefixed with _maybe_ in languages where you must unwrap the possible value from an optional object.
 
 In Java, when using Optional&lt;T&gt;, name variables of this type using the following pattern: _maybe&lt;Something&gt;_:
 
@@ -353,7 +352,7 @@ maybeLoggedInUser.ifPresent(loggedInUser -> loggedInUser.logout());
 final User currentUser = maybeLoggedInUser.orElse(guestUser);
 ```
 
-In TypeScript and other languages where optional types are created using type unions, you don’t need any prefixes
+In TypeScript and other languages where optional types are created using type unions, you don’t need prefixes
 in optional variable names. In the below example, the `discount` parameter is optional, and its type is `number | undefined`:
 
 ```ts
@@ -371,8 +370,7 @@ const priceWithTax = addTax(priceWithoutTax);
 
 Callback functions are functions supplied to other functions to be called at some point. If a callback function returns a value,
 it can be named according to the returned value, but it should still contain a verb.
-If the callback function does not return a value, you should name the callback function like any other function:
-Indicating what the function does. Suppose you have a variable storing a function object, like a Java `Function` instance. In that case, you need to name the variable according to the rules for an object variable, i.e., the variable name should be a noun. For example, if you have a Java `Function` object currently named `map`, you should correct the name to be a noun, like `mapper`.
+If the callback function does not return a value, you should name the callback function like any other function, indicating what the function does. Suppose you have a variable storing a function object, like a Java `Function` instance. In that case, you need to name the variable according to the rules for an object variable, i.e., the variable name should be a noun. For example, if you have a Java `Function` object currently named `map`, you should correct the name as a noun, like `mapper`.
 
 ```js
 const doubled = value => 2 * value;
@@ -458,7 +456,7 @@ public class Order {
 ```
 
 If you have a class property to store a callback function (e.g., event handler or lifecycle callback), you should name it so that it tells on what occasion the stored
-callback function is called. Name properties storing event handlers using the
+callback function is called. You should name properties storing event handlers using the
 following pattern: `on` + `<event-type>`, e.g., `onClick` or `onSubmit`. Name properties storing lifecycle callbacks in a similar way you
 would name a lifecycle method, for example: `onInit`, `afterMount`, or `beforeMount`.
 
@@ -478,20 +476,22 @@ like _message_, for example, and use it consistently throughout the microservice
 
 Suppose you need to figure out a term to indicate a property of a class. You should pick just
 one term, like _property_, and use it consistently everywhere. You should not use multiple terms like
-_attribute_, _field_, and _member_ to describe a property of a class.
+_attribute_, _field_, and _member_ to describe a class property.
+
+If you have `person` objects, do not add them to a `peopleList`; add them to a `persons` list. Do not use the terms person and people interchangeably.
 
 #### Avoid Obscure Abbreviations
 
 Many abbreviations are commonly used, like *str* for a string, *num/nbr* for a number, *prop* for a property, or *val* for a value.
-Most programmers use these, and I use them to make long names shorter. If a variable name is short, the full name should be used instead,
-like *numberOfItems* instead of *nbrOfItems*. Use abbreviations in cases where the variable name otherwise becomes too long (20 or more characters).
-What you should especially try to avoid is using uncommon abbreviations. For example, do not abbreviate *amount* to *amnt* or *discount* to *dscnt* because those abbreviations are not really used.
+Most programmers use these, and I use them to make long names shorter. If a variable name is short, the full name should be used,
+like *numberOfItems* instead of *nbrOfItems*. Use abbreviations when the variable name becomes too long (20 or more characters).
+You should especially avoid using uncommon abbreviations. For example, do not abbreviate *amount* to *amnt* or *discount* to *dscnt* because those abbreviations are not used.
 
 #### Avoid Too Short Or Meaningless Names
 
-Names that are too short do not communicate what the variable is about. Variable names like *tmp*, *temp*, *ret* or *retval* are all meaningless. You should
-figure out a name that describes the value a variable holds. This is not always an easy task and it should be remembered that naming things is
-hard and actually one of the hardest things in software engineering. Good news is that you get the better in it the more you practice. As loop counters, use a variable name like _index_ or _&lt;something&gt;Index_ if the loop variable is used to index something, like
+Names that are too short do not communicate what the variable is about. Variable names like *tmp*, *temp*, *ret*, or *retval* are all meaningless. You should
+figure out a name that describes the value a variable holds. This is not always an easy task, and naming things is
+hard and one of the hardest things in software engineering. The good news is that you get better at it with more practice. As loop counters, use a variable name like _index_ or _&lt;something&gt;Index_ if the loop variable is used to index something, like
 an array, for example. An indexing variable should start from zero. If the loop variable is counting the number of things, use _number_ or
 _&lt;something&gt;Number_ as the variable name, and start the loop counter from value one instead of zero. For example,
 a loop to start five threads should be written in C++ in the following way:
@@ -513,12 +513,12 @@ for (size_t count{1U}; count <= objectCount; ++count)
 ```
 
 Let's have another example. Suppose you have a class named `ImageGetter` with a method `getImage`. Both of the names are
-too abstract and can mean several things in practice, like the image could be gotten from local disk, local cache, database or remote location.
-If the `ImageGetter` is always getting image from a remote location, it is better name the class with a descriptive name, like `ImageDownloader`
+too abstract and can mean several things in practice, like the image could be gotten from a local disk, local cache, database, or remote location.
+If the `ImageGetter` is always getting images from a remote location, it is better to name the class with a descriptive name, like `ImageDownloader`,
 and have a method `downloadImage` in it.
 You should not use abstract names with concrete classes, but you can create an interface named `ImageGetter` with a method `getImage`.
-This is because by nature interfaces are abstract and you cannot create an instance of them. You can then create concrete implementations
-of the `ImageGetter` interface, like `LocalDiskImageGetter`, `LocalCacheImageGetter`, `MySqlDbImageGetter` or `RemoteUrlImageGetter`.
+This is because, by nature, interfaces are abstract, and you cannot create an instance of them. You can then create concrete implementations
+of the `ImageGetter` interface, like `LocalDiskImageGetter`, `LocalCacheImageGetter`, `MySqlDbImageGetter`, or `RemoteUrlImageGetter`.
 
 Even if you don't agree with all naming conventions presented here and in the previous chapter, I recommend you create rules for naming code entities, like classes, functions, and variables. That would make your code look
 consistent and professional. It makes the code look pretty bad if no naming conventions are used, and naming inside a single module or even a function varies dramatically. For example, a 'customers' variable is used somewhere, while a `customer_list` variable is used elsewhere, and the `customers` variable is used to store a list of customers in some place and the number of customers in another place. It is preferable if a whole development team or, even better, all development teams could share a common set of naming conventions.
@@ -528,8 +528,10 @@ consistent and professional. It makes the code look pretty bad if no naming conv
 > ***Structuring a source code repository systematically in a certain way makes it easy for other developers to discover wanted information quickly.***
 
 Below are examples of ways to structure source code repositories for Java, C++, and JavaScript/TypeScript microservices.
-In the below examples, a containerized (Docker) microservice deployed to a Kubernetes cluster is assumed. Your CI tool might require
-that the CI/CD pipeline code must reside in a specific directory. But if not, place the CI/CD pipeline code in a _cicd_ directory.
+In the below examples, a containerized (Docker) microservice deployed to a Kubernetes cluster is assumed. Your CI tool might require that the CI/CD pipeline code reside in a specific directory. If not, place it in a _ci-cd_ directory.
+
+Top-level source code repository directory names can contain dashes, but package/directory names inside the *src* directory
+should not contain separator characters. This is not mandatory in all languages, but it is in Java.
 
 ### Java Source Code Repository Structure
 
@@ -667,9 +669,9 @@ Unit test modules should be in the same directory as source code modules, but yo
 
 ## Domain-Based Source Code Structure Principle
 
-> ***Structure source code tree primarily by domains, not by technical details. Each source code directory should have a single responsibility at its abstraction level.***
+> ***Structure the source code tree primarily by domains (or feature sets), not by technical details. Each source code directory should have a single responsibility at its abstraction level.***
 
-Below is an example of a Spring Boot microservice's _src_ directory that is not organized by domains but is
+Below is an example of a Spring Boot microservice's _src_ directory that is not organized by domains (or feature sets) but is
 incorrectly organized according to technical details:
 
 ```
@@ -699,7 +701,7 @@ spring-example-service/
                 └── BService.java
 ```
 
-Below is the above example modified so that directories are organized by domains:
+Below is the above example modified so that directories are organized by domains (or feature sets):
 
 ```
 spring-example-service/
@@ -828,23 +830,23 @@ sales-item-service
                      └── MongoDbSalesItemRepository.java
 ```
 
-You can even go further and put the *controllers* and *repositories* directories under a *ifadapters* directory.
+You can even put the *controllers* and *repositories* directories under a *ifadapters* directory.
 You can even do it like this: *ifadapters/input/controllers* and *ifadapters/output/repositories*. If your microservices
-uses external services, you can put those in *ifadapters/output/services* directory. You can also name your application
+uses external services, you can put those in the *ifadapters/output/services* directory. You can also name your application
 services as use cases, e.g., `businesslogic/usescases/SalesItemUseCases[Impl].java`.
 
 If you follow the *clean microservice design* principle and add or change an interface adapter (e.g., a controller or a repository),
 you should not need to make any code changes to the business logic part of the service (the *businesslogic* directory).
 
 Below is the source code directory structure for the data exporter microservice designed in the previous
-chapter. There are subdirectories for the four subdomains: input, internal message, transformer, and output. There is a subdirectory created for each common
+chapter. There are subdirectories for the four subdomains: input, internal message, transformer, and output. A subdirectory is created for each common
 nominator in the class names. It is effortless to navigate the directory
 tree when locating a particular file. Also, the number of source code files in each directory is low.
 You can grasp the contents of a directory with a glance. The problem with directories containing many files
 is that it is not easy to find the wanted file. For this reason, a single directory should ideally have 2-4 files. The absolute
 maximum is 5-7 files.
 
-Note that below, a couple of directories are left unexpanded to shorten the example. It should be easy for the reader
+Note that a couple of directories are left unexpanded below to shorten the example. It should be easy for the reader
 to infer the contents of the unexpanded directories.
 
 ```
@@ -1044,11 +1046,10 @@ Any change we want or need to make in the *ifadapters* directory should not affe
 *businesslogic* directory.
 
 Below is the source code directory structure for the anomaly detection microservice designed in the previous
-chapter. The _anomaly_ directory is expanded. We can see that our implementation is using
-JSON for various parsing activities and self-organizing maps (SOM) is used for anomaly detection. JSON and Kafka are used
+chapter. The _anomaly_ directory is expanded. Our implementation uses JSON for various parsing activities and self-organizing maps (SOM) is used for anomaly detection. JSON and Kafka are used
 to publish anomaly indicators outside the microservice. Adding
 new concrete implementations to the below directory structure is straightforward. For example, if we wanted to add YAML support
-for configuration files, we could create _yaml_ subdirectories where we could place YAML-specific implementation classes.
+for configuration files, we could create _yaml_ subdirectories to place YAML-specific implementation classes.
 
 ```
 src
@@ -1212,14 +1213,14 @@ The service directory contains one or more services that use the respective back
 
 ## Avoid Comments Principle
 
-> ***Avoid comments in code. The only exception is when documenting the public API of a library.***
+> ***Avoid code comments. The only exception is when documenting the public API of a library.***
 
 Comments can be problematic. You cannot trust them 100% because they can be misleading, outdated, or downright wrong. You can only
 trust the source code itself. Comments are often entirely unnecessary and only make the code more verbose. Allowing comments can produce
-unreadable code containing bad names, which are explained by attaching comments. The code typically also contains long functions where functionality blocks
+unreadable code containing bad names explained by comments. The code typically also contains long functions where functionality blocks
 are described with attached comments instead of refactoring the code by extracting well-named functions. The idea behind this principle is that
 when writing comments is disallowed, you are forced to communicate better with the code only.
-The following sections describe several ways to avoid writing comments and still keep your code understandable. The following things
+The following sections describe several ways to avoid writing comments while keeping your code understandable. The following things
 can be done to avoid writing comments:
 
 - Name things like classes, functions, and variables properly
@@ -1233,7 +1234,7 @@ can be done to avoid writing comments:
 - Don't comment out the code. Just remove the unused code. The removed code will be available in the version control system forever
 - You don't have to comment on a function's logic. Code readers should be able to infer that information from the code itself
   and the related unit tests. Complex code logic and behavior do not usually need comments if you have practiced *test-driven development* and a complete set of well-named unit tests is available.
-  You should not comment e.g., what value a function should return with certain input. Create a test case for that.
+  You should not comment on what value a function should return with certain input. Create a test case for that.
 
 Code comments often duplicate information already available in the code itself or related tests. This is called information duplication, which should be avoided according to the *don't repeat yourself* (DRY) principle. This principle was introduced in the *Pragmatic Programmer* book by *David Thomas* and *Andrew Hunt*.
 
@@ -1274,8 +1275,8 @@ public:
 ```
 
 Dropping the comment alone is not the best solution because some crucial information is now missing. What does that boolean return
-value mean? It is not 100% clear. We can assume that returning `true` means that message was successfully written, but
-nothing is communicated about returning `false`. We can only assume it is some error, but not sure what error.
+value mean? It is not 100% clear. We can assume that returning `true` means the message was successfully written, but
+nothing is communicated about returning `false`. We can only assume it is some error, but we are not sure what error.
 
 In addition to removing the comment, we should give a better name for the function and rename it as follows:
 
@@ -1290,10 +1291,9 @@ public:
 }
 ```
 
-Now the purpose of the function is clear, and we can be sure what the boolean return value means. It
+Now, the purpose of the function is clear, and we can be sure of what the boolean return value means. It
 means whether the message was written to the buffer. Now we also know why the writing of a message can fail: the
-buffer is full. This will give the function caller sufficient information about what to do next. It should
-probably wait a while so that the buffer reader has enough time to read messages from the buffer
+buffer is full. This will give the function caller sufficient information about what to do next. It should probably wait a while so that the buffer reader has enough time to read messages from the buffer
 and free up some space.
 
 Below is a real-life example of C++ code where the comment and the function name do not match.
@@ -1314,7 +1314,7 @@ Below is a real-life example of C++ code where the comment and the function name
   );
 ```
 
-In the above example, the function name tells it adds a counter, but the comment says it adds or gets an existing counter.
+In the above example, the function name says that it adds a counter, but the comment says it adds or gets an existing counter.
 The real problem is that once someone first reads the function name `addCounter`, they do not necessarily
 read the 'brief' in the comments because they immediately understand what the function does after reading its name: it should add a counter.
 We could improve the function's name and rename it to `addOrGetExistingCounter` as a solution.
@@ -1370,9 +1370,10 @@ public interface Mediator {
 
 ### Single Return Of Named Value At The End Of Function
 
-> ***A function should have a single return statement and return a named value at the end of the function. This allows the code reader to infer the meaning of the return value by looking at the end of the function.***
+> ***A function should have a single return statement and return a named value at the end. This allows the code reader to infer the meaning of the return value by looking at the end of the function.*
 
-This principle is relevant for return types that do not convey enough semantic meaning like a number or a string.
+This principle is relevant for return types that do not convey enough semantic meaning, such as numbers or strings.
+Boolean and object type return values often convey semantic meaning.
 
 Consider the following C++ example:
 
@@ -1419,11 +1420,9 @@ uint32_t Metrics::addCounter(
 }
 ```
 
-In the above implementation, we have a single return of a named value at the end of the function. All we have to do is to look
+In the above implementation, we have a single return of a named value at the end of the function. All we have to do is look
 at the end of the function and spot the return statement, which should tell us the meaning of the mysterious `uint32_t`
-typed return value: It is a counter index. And we can spot that the `increaseCounter` function requires a `counterIndex` argument
-and this establishes a connection between calling the `addCounter` function first, storing the returned counter index, and
-later using that stored counter index in calls to the `increaseCounter` function.
+typed return value: It is a counter index. We can spot that the `increaseCounter` function requires a `counterIndex` argument, and this establishes a connection between calling the `addCounter` function first, storing the returned counter index, and later using that stored counter index in calls to the `increaseCounter` function.
 
 ### Return Type Aliasing
 
@@ -1454,7 +1453,7 @@ public:
 }
 ```
 
-And here is the same example in TypeScript:
+Here is the same example in TypeScript:
 
 {title: "Metrics.ts"}
 ```ts
@@ -1475,10 +1474,10 @@ export default class Metrics {
 }
 ```
 
-Some languages, like Java, don't have type aliases. Then you can introduce a wrapper class for the returned value. Here is the same example in Java:
+Some languages, like Java, don't have type aliases. In that case, you can introduce a wrapper class for the returned value. Here is the same example in Java:
 
 {title: "CounterIndex.java"}
-```
+```java
 public class CounterIndex {
   private final int value;
 
