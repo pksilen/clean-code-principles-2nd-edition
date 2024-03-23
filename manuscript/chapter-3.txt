@@ -2310,7 +2310,7 @@ public class Bird {
 }
 ```
 
-The above solution allows us to use the *strategy pattern*. We can introduce new classes that implement the `BirdMover` and `BirdSoundMaker` protocols and supply them to the `Bird` class constructor.
+The above solution allows us to use the *strategy pattern*. We can introduce new classes that implement the `BirdMover` and `BirdSoundMaker` interfaces and supply them to the `Bird` class constructor.
 We can now modify the behavior of the `Bird` class using the *open-closed principle*.
 
 ### Extract Constant

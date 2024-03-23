@@ -957,7 +957,7 @@ export default interface SalesItemService {
 }
 ```
 
-Next, we can implement the above protocol:
+Next, we can implement the above interface:
 
 {title: "SalesItemServiceImpl.ts"}
 ```ts
@@ -1008,7 +1008,7 @@ export default class SalesItemServiceImpl implements SalesItemService {
 }
 ```
 
-Below is the definition of the `SalesItemRepository` protocol:
+Below is the definition of the `SalesItemRepository` interface:
 
 {title: "SalesItemRepository.ts"}
 ```ts
