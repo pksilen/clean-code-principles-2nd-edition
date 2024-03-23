@@ -9,7 +9,7 @@ This chapter describes principles related to object-oriented design. The followi
 - Clean microservice design (architecture) principle
 - Vertical slice design (architecture) principle
 - Class organization principle
-- Package, class and function sizing principle
+- Package, class, and function sizing principle
 - Uniform naming principle
 - Encapsulation principle
 - Prefer composition over inheritance principle
@@ -22,7 +22,7 @@ This chapter describes principles related to object-oriented design. The followi
 - Avoid duplication principle
 
 We start the chapter by defining object-oriented programming (OOP) concepts and discussing different programming paradigms:
-object-oriented, imperative, and functional. We also analyze why OOP can be hard to master even though the concepts and fundamental principles are not so difficult to grasp.
+Object-oriented, imperative, and functional. We also analyze why OOP can be hard to master even though the concepts and fundamental principles are not so difficult to grasp.
 
 ## Object-Oriented Programming Concepts
 
@@ -69,7 +69,7 @@ security and avoidance of data corruption. More about that in the *encapsulation
 ### Abstraction
 
 Objects only reveal relevant internal mechanisms to other objects, hiding any unnecessary implementation code.
-Callers of the object methods don't need to know the object's internal workings. They adhere only to the public API of the object.
+Callers of object methods don't need to know the object's internal workings. They adhere only to the object's public API.
 This makes it possible to change the implementation details without affecting any external code.
 
 ### Inheritance
@@ -86,9 +86,9 @@ C++ also supports multiple inheritance, where a child class can have multiple pa
 the child class can inherit different versions of a method with the same name. By default, multiple inheritance should be avoided whenever
 possible. Some languages, like Java, don't support multiple inheritance at all. Inheritance will cram additional functionality into a
 child class, making the class large and possibly not having a single responsibility. A better way to add functionality to a class is to compose
-the class of multiple other classes (the mixins). In that way, there is no need to worry about possible clashing of method names.
+the class of multiple other classes (the mixins). In that way, there is no need to worry about the possibility of clashing method names.
 
-Multiple inheritance is always allowed for interfaces. More about interfaces in the next section.
+Multiple inheritance is always allowed for interfaces. Interfaces will be discussed in the next section.
 
 ### Interface
 
@@ -96,7 +96,7 @@ An interface specifies a contract that classes that implement the interface must
 which will be described in the next section. An interface consists of one or more methods that classes must implement.
 You cannot instantiate an interface. It is just a contract specification.
 
-Below are two interfaces and two classes that implements the interfaces:
+Below are two interfaces and two classes that implement the interfaces:
 
 ```java
 public interface Drawable {
@@ -145,7 +145,7 @@ true in cases where the implementing classes are something you cannot or don't w
 
 Let's imagine you have a `Message` interface with `getData` and `getLengthInBytes` methods, and you have classes
 implementing the `Message` interface, but you cannot modify the classes.
-You want to add `setQueuedAtInstant` and `getQueuedAtInstant` methods to the interface.
+You want to add the `setQueuedAtInstant` and `getQueuedAtInstant` methods to the interface.
 You can add the methods to the interface but must provide a default implementation, like raising an error
 indicating the method is not implemented.
 
@@ -215,7 +215,7 @@ button.draw();
 
 ## Programming Paradigms
 
-The most popular programming languages, including C++, Java and JavaScript, are multi-paradigm programming languages. Multi-paradigm languages
+The most popular programming languages, including C++, Java, and JavaScript, are multi-paradigm. Multi-paradigm languages
 support the following programming paradigms:
 
 - Imperative programming
@@ -233,21 +233,21 @@ Below is a code sample using imperative programming in JavaScript:
 
 ```js
 const numbers = [1, 2, 3, 4, 5];
-const doubledEvenNumbers = [];
+const squaredEvenNumbers = [];
 
 for (const number of numbers) {
   if (number % 2 == 0) {
-    doubledEvenNumbers.push(number**2)
+    squaredEvenNumbers.push(number**2)
   }
 }
 
-console.log(doubledEvenNumbers)
+console.log(squaredEvenNumbers)
 
 // Output:
 // [4, 16]
 ```
 
-In the above example, although the `doubled_even_numbers` variable is declared as `const`, it is still a mutable list and
+In the above example, although the `squaredEvenNumbers` variable is declared as `const`, it is still a mutable list and
 we mutate the list inside the `for` loop.
 
 ### Functional Programming
@@ -287,7 +287,7 @@ As you can see, the above code is much safer, shorter, and more straightforward 
 Both the `is_even` and `squared` are pure functions because they return the same output for the same input without
 any side effects.
 
-There is another way to implement the above code using a composition of functions. We can define reusable functions and
+There is another way to implement the above code, which is by using a composition of functions. We can define reusable functions and
 compose more specific ones from general-purpose ones. Below is an example of function composition using the
 `compose` function from the [ramda](https://ramdajs.com/) library. The example also uses the `partial`
 function from the same library to create
@@ -362,9 +362,9 @@ Below are listed things that can make OOP hard:
     - It can be challenging to create optimal-sized classes and functions with a single responsibility
         - For example, you might have a single-responsibility class, but the class is too big. You must realize that you must split the class into smaller classes the original class is composed of. Each of these smaller classes has a single responsibility on a lower level of abstraction compared to the original class
     - Understanding and following the open-closed principle can be challenging
-      - The idea of the open-closed principle is to avoid modifying existing code and thus avoid breaking any existing working code. For example, If you have a collection class and need a thread-safe collection class, don't modify the existing one, e.g., by adding a constructor flag to tell if a collection should be thread-safe. Instead, create a totally new class for thread-safe collections.
+      - The open-closed principle aims to avoid modifying existing code and thus avoid breaking any existing working code. For example, if you have a collection class and need a thread-safe collection class, don't modify the existing one, e.g., by adding a constructor flag to tell if a collection should be thread-safe. Instead, create a totally new class for thread-safe collections.
     - Liskov's substitution principle is not as simple as it looks
-      - For example, suppose you have a base class `Circle` with a `draw` method. If you derive a `FilledCircle` class from the `Circle` class, you must implement the `draw` function so that it first calls the base class method. In some cases, it is possible to override the base class method with the derived class method
+      - Suppose you have a base class `Circle` with a `draw` method. If you derive a `FilledCircle` class from the `Circle` class, you must implement the `draw` function so that it first calls the base class method. In some cases, it is possible to override the base class method with the derived class method
     - Interface segregation is usually left undone if it is not immediately needed. This might hinder the extensibility of the codebase in the future
     - In many texts, the dependency inversion principle is explained in complicated terms. The dependency inversion principle generally means programming against interfaces instead of concrete class types.
 - You don't understand the value of dependency injection and are not using it
@@ -411,8 +411,8 @@ classes like `JsonConfigParser`, `YamlConfigParser`, `TomlConfigParser`, `XmlCon
 
 Single responsibility helps to achieve *high cohesion*, which
 is the target of good design (another target is *low coupling*, which we will discuss later). If your class or function has multiple distinct responsibilities (and reasons for change),
-then the class or function does not have high cohesion. Cohesion, in a class, for example, means the level that class methods belong together (i.e., change for the same reason).
-If you have a class that performs user authentication and configuration parsing, you have a class with two distinct responsibilities at the same abstraction level. That class is against the *single responsibility principle*,
+then the class or function does not have high cohesion. Cohesion in a class, for example, means the level to which class methods belong together (i.e., change for the same reason).
+If you have a class that performs user authentication and configuration parsing, you have a class with two distinct responsibilities at the same abstraction level. That class is against the *single responsibility principle*
 and has lower cohesion because it has two reasons to change. One great sign of a class possibly having multiple responsibilities is that it can be hard to figure out a good name for the class, or if you could put an *and* word in the class name, like `UserAuthenticatorAndConfigParser`.
 *High cohesion* and *low coupling* are both part of the [GRASP](https://en.wikipedia.org/wiki/GRASP_(object-oriented_design)) principles.
 
@@ -432,7 +432,7 @@ An employee (who can have a bank account). Object composition is covered in more
 
 At the function level, each function should perform a single task. The function name should describe what task the function
 performs, meaning each function name should contain a verb. The function name should not contain the word *and*
-because it can mean that the function is doing more than one thing or you haven't named the function on a correct abstraction level.
+because it can mean that the function is doing more than one thing or you haven't named the function at the correct abstraction level.
 You should not name a function according to the steps it performs (e.g., `doThisAndThatAndThenSomeThirdThing`) but
 instead, use wording on a higher level of abstraction.
 
@@ -451,7 +451,7 @@ void deletePageAndAllReferences(Page page) {
 ```
 
 In the above example, the function does two things: delete a page and remove all the references to that page.
-But if we look at the code inside the function, we can realize that it is also doing a third thing: deleting a page key from configuration keys.
+But if we look at the code inside the function, we can realize that it also does a third thing: deleting a page key from configuration keys.
 So should the function be named `deletePageAndAllReferencesAndConfigKey`? It does not sound reasonable.
 The problem with the function name is that it is at the same level of abstraction as the function statements.
 The function name should be at a higher level of abstraction than the statements inside the function.
@@ -548,7 +548,7 @@ export default function ButtonClickCounter() {
 The intentions of the above React functional component are pretty clear: It will update the click count in the
 document title after every render.
 
-Let's optimize our example so that the click count update happens only if the click count has changed:
+Let's optimize our example so that the click count update only happens if the click count has changed:
 
 ```jsx
 import { useEffect, useState } from "react";
@@ -566,8 +566,7 @@ export default function ButtonClickCounter() {
 }
 ```
 
-Notice how `clickCount` is now added to the dependencies array of the `useEffect` function. This means
-the effect is not executed after every render but only when the click count is changed.
+Notice how `clickCount` is now added to the dependencies array of the `useEffect` function. This means the effect is not executed after every render but only when the click count is changed.
 
 Let's imagine how we could improve the above example. We could once again extract functionality from the `useEffect` function and introduce a new function that handles dependencies:
 `afterEveryRenderIfChanged`. Our hypothetical example would now look like this:
@@ -731,14 +730,13 @@ An existing class can be safely modified by adding a new method in the following
 2) The added method is read-only and tread-safe, i.e., it does not modify the object's state and accesses the object's state in a thread-safe manner in the case of multithreaded code. An example of a read-only method in the `Shape` class would be a method that calculates a shape's area.
 3) Class is immutable, i.e., the added method (or any other method) cannot modify the object's state
 
-There are a couple of cases where the modification of existing code is needed. One example is factories. When you
-introduce a new class, you need to modify the related factory to be able to create an instance of that new class.
+There are a couple of cases where the modification of existing code is needed. One example is factories. When you introduce a new class, you need to modify the related factory to be able to create an instance of that new class.
 For example, if we had a `ShapeFactory` class, we would need to modify it to support the creation of `SquareShape` objects.
-Fortunately, this modification is simple: Just adding a new case branch. The probability of introducing a bug is very low.
+Fortunately, this modification is simple: Just add a new case branch. The probability of introducing a bug is very low.
 Factories are discussed later in this chapter.
 
 Another case is adding a new enum constant. You typically need to modify existing code to handle the new enum constant.
-If you forget to add the handling of the new enum constant somewhere in the existing code, typically, a bug will arise. For this reason,
+If you forget to add the handling of the new enum constant somewhere in the existing code, a bug will typically arise. For this reason,
 You should always safeguard switch-case statements with a *default* case that throws an exception and safeguard if/else if structures with an else branch that throws an exception.
 You can also enable your static code analysis tool to report an issue if a switch statement's *default* case or
 an else branch is missing from an if/else if structure. Also, some static code analysis tools can report an issue if you miss handling
@@ -1135,7 +1133,7 @@ public class ClassC {
 }
 ```
 
-The `ClassB` is depending on `method4` and `method5` even if it does not use them. We need to apply the *interface segregation principle* and segregate a smaller interface from the `InterfaceA`:
+The `ClassB` depends on `method4` and `method5` even if it does not use them. We need to apply the *interface segregation principle* and segregate a smaller interface from the `InterfaceA`:
 
 ```java
 public interface InterfaceA1 {
@@ -1169,7 +1167,7 @@ public class ClassC() {
 
 *Interface segregation principle* is a way to reduce coupling in your software component. A software component's design
 is considered the most optimal when it has *low coupling* between classes and *high cohesion* in classes. In the above example, the `ClassB`
-only depends on the three methods provided by the `ProtocolA1`, not all the five methods provided by the `ProtocolA`.
+only depends on the three methods provided by the `InterfaceA1` interface, not all the five methods provided by the `InterfaceA` interface.
 
 Next, we will have examples of an extreme case of the *interface segregation principle*: Segregating larger interfaces to
 microinterfaces with a single capability/behavior and constructing larger interfaces by
@@ -1209,7 +1207,7 @@ public class Excavator implements ExcavatingAutomobile {
 
 Notice how the `Automobile` interface has two methods declared. This can limit our software if we
 later want to introduce other vehicles that could be just driven but unable to carry cargo. We should
-segregate two microinterfaces from the `Automobile` protocol in an early phase. A microinterface defines a single capability
+segregate two microinterfaces from the `Automobile` interface in an early phase. A microinterface defines a single capability
 or behavior. After segregation, we will have the following two microinterfaces:
 
 ```java
@@ -1223,9 +1221,9 @@ public interface CargoCarrying {
 }
 ```
 
-Now that we have two interfaces, we can use these protocols separately in our codebase. For example, we can have
+Now that we have two interfaces, we can use these interfaces separately in our codebase. For example, we can have
 a list of drivable objects or a list of objects that can carry cargo. We still want to have an interface
-for automobiles, though. We can use *interface multiple inheritance* to redefine the `Automobile` protocol to extend
+for automobiles, though. We can use *interface multiple inheritance* to redefine the `Automobile` interface to extend
 the two microinterfaces:
 
 ```java
@@ -1243,7 +1241,7 @@ public interface Excavating {
 }
 ```
 
-We can once again use the interface multiple inheritance to redefine the `ExcavatingAutomobile` protocol as follows:
+We can once again use the interface multiple inheritance to redefine the `ExcavatingAutomobile` interface as follows:
 
 ```java
 public interface ExcavatingAutomobile
@@ -1309,8 +1307,7 @@ abstract class AbstractCollection<T> implements Collection<T> {
   equals(anotherCollection: Collection<T>): boolean {
     const iterator = this.createIterator();
     const anotherIterator = anotherCollection.createIterator();
-    let collectionsAreEqual =
-      this.areEqual(iterator, anotherIterator);
+    let collectionsAreEqual = this.areEqual(iterator, anotherIterator);
 
     if (anotherIterator.hasNextElement()) {
       collectionsAreEqual = false;
@@ -1325,8 +1322,7 @@ abstract class AbstractCollection<T> implements Collection<T> {
   ): boolean {
     while (iterator.hasNextElement()) {
       if (anotherIterator.hasNextElement()) {
-        if (iterator.getNextElement() !==
-            anotherIterator.getNextElement()) {
+        if (iterator.getNextElement() !== anotherIterator.getNextElement()) {
          return false;
         }
       } else {
@@ -1349,7 +1345,7 @@ interface Comparable<T> {
 }
 ```
 
-Now, we can introduce a comparable collection protocol that allows comparing two collections
+Now, we can introduce a comparable collection interface that allows comparing two collections
 of the same type:
 
 ```ts
@@ -1392,8 +1388,8 @@ interface Collection<T> extends InsertingIterable<T> {
 Next, we introduce two generic algorithms for collections: `map` and `filter`. We can realize that those algorithms work
 with more abstract objects than collections. We benefit from interface segregation because instead of
 the `Collection<T>` interface, we can use the `MyIterable<T>` and
-`InsertingIterable<T>` interfaces to create generic `map` and `filter` algorithms. Later it is possible to introduce some additional non-collection iterable
-objects that can utilize the algorithms as well. Below is the implementation of the `map` and `filter` functions:
+`InsertingIterable<T>` interfaces to create generic `map` and `filter` algorithms. Later, it is possible to introduce some additional non-collection iterable
+objects that can also utilize the algorithms. Below is the implementation of the `map` and `filter` functions:
 
 ```ts
 function map<T, U>(
@@ -1563,7 +1559,7 @@ try {
 ```
 
 Python's standard library utilizes interface segregation and multiple interface inheritance in an exemplary
-way. For example, the Python standard library defines the below listed abstract base classes (or interfaces) that implement a single
+way. For example, the Python standard library defines the abstract base classes (or interfaces) listed below that implement a single
 method only. I.e., they are microinterfaces.
 
 | Abstract base class |  Method        |
@@ -1588,9 +1584,9 @@ Python standard library also contains the below abstract base classes that inher
 ### Program Against Interfaces Principle (a.k.a. Generalized Dependency Inversion Principle)
 
 > ***Do not write programs where internal dependencies are concrete object types—instead, program against interfaces.***
-> ***Exceptions to this rule are data classes with no behavior (not counting simple getters/setters) and utility classes***.
+> ***Exceptions to this rule are data classes with no behavior (not counting simple getters/setters) and utility classes.***
 
-An interface is used to define an abstract base type. Various implementations that implement the interface can be introduced.
+An interface defines an abstract base type. Various implementations of the interface can be introduced.
 When you want to change the behavior of a program, you create a new class that implements an interface
 and then use an instance of that class. In this way, you can practice the *open-closed principle*.
 You can think of this principle as a prerequisite for using the *open-closed principle* effectively.
@@ -1620,7 +1616,7 @@ public final class ParseUtils {
 }
 ```
 
-The above method implementation is not expected to change in the future. We are not expecting to have different implementations
+The implementation of the above method is not expected to change in the future. We are not expecting to have different implementations
 of parsing an integer. But if we have
 a class for performing application configuration parsing, that functionality *can* change, and the *program
 against interfaces principle* should be applied. We should create a `ConfigParser` interface and then provide one or more
@@ -1629,9 +1625,7 @@ implementations in various implementation classes, like `XyzFormatConfigParser`,
 The *program against interfaces principle* was presented by the *Gang of Four* in their book *Design Patterns* and
 can be seen as a generalization of the *dependency inversion principle* from the SOLID principles:
 
-> The *dependency inversion principle* is a methodology for loosely coupling software classes. When following the principle,
-> the conventional dependency relationships from high-level classes to low-level classes are reversed, thus making the high-level
-> classes independent of the low-level implementation details.
+> The *dependency inversion principle* is a methodology for loosely coupling software classes. When following the principle, the conventional dependency relationships from high-level classes to low-level classes are reversed, making the high-level classes independent of the low-level implementation details.
 
 The *dependency inversion principle* states:
 
@@ -1943,7 +1937,7 @@ public class Bird implements Animal {
 Now, we have the correct object-oriented design and can program against the `Animal` interface. We can call the `move` method
 when we want an animal to move and the `make_sound` method when we want an animal to make a sound.
 
-After realizing that some birds don't fly at all, we can easily enhance our design. We can introduce two different implementations:
+We can easily enhance our design after realizing that some birds don't fly at all. We can introduce two different implementations:
 
 ```java
 public abstract class AbstractBird implements Animal {
@@ -2043,8 +2037,9 @@ public class Bird implements Animal {
 }
 ```
 
-As you can see above, adding the design pattern name made many names longer without adding any significant value.
-We should try to keep names as short as possible to enhance readability.
+As you can see above, adding the design pattern name made many names longer without adding significant value.
+We should keep names as short as possible to enhance readability.
+
 Now, we can create birds with various behaviors for moving and making sounds. We can use the *factory pattern* to
 create different birds. The *factory pattern* is described in more detail later in this chapter. Let's introduce
 three different moving and sound-making behaviors and a factory to make three kinds of birds: goldfinches, ostriches,
@@ -2131,7 +2126,7 @@ public class BirdFactory {
 
 Clean microservice design focuses on creating a microservice core (the model, business logic) that is devoid of technological concerns, pushing those to an outer input/output interface adaptation layer
 that includes, e.g., the persistence mechanism (an output interface adapter) and controller (an input interface adapter), which can be considered as technological details that
-have nothing to do with the microservice core. The benefit of this approach is that you can modify technological details without affecting the microservice core. Microservice's input comes from its clients and
+have nothing to do with the microservice core. The benefit of this approach is that you can modify technological details without affecting the microservice core. Microservice's input comes from its clients, and
 output is anything external the microservice needs to access to fulfill requests from the input.
 
 *Robert C. Martin a.k.a. Uncle Bob* uses the term *clean architecture* in his book *Clean Architecture* for this same principle. I do not use
@@ -2162,14 +2157,14 @@ A clean API microservice design consists of the following layers:
 - Use cases (i.e., the features the microservice exposes outside)
 - (Business) Entities
 
-Use cases and entities together form the *core* or *model* of the service, also called the *business logic*.
-The outermost layer of the use case layer usually contains application service classes that implement the use cases. For example, one method
+Use cases and entities together form the service's *core* or *model*, also called the *business logic*.
+The outermost use case layer usually contains application service classes implementing the use cases. For example, one method
 in a service class implements one use case. The use case layer can contain other layers of software needed to implement the
-use cases. The service classes serve as a facade to those other layers. The service classes (i.e., the facade) are meant to be used by the *input
+use cases. The application service classes serve as a facade to those other layers. The application service classes (i.e., the facade) are meant to be used by the *input
 interface adapters*, i.e., the *controllers*. A controller is a common term used to describe an input interface adapter.
 The controller should delegate to application service classes. It coordinates and controls the activity but should not do much work itself.
 *Controller* is a pattern from GRASP principles. Similarly, a repository
-is a common term used to describe an output interface adapter that stores information, usually in persistent storage.
+is a common term for an output interface adapter that stores and retrieves information, usually in/from persistent storage.
 
 ![Clean Microservice Design](resources/chapter2/images/clean_arch.png)
 
@@ -2181,7 +2176,7 @@ The most stable part of the software is located at the center (entities).
 
 Let's have an example of an entity: a bank account.
 We know it is something that doesn't change often. It has a couple of key attributes: owner, account number, interest rate, and balance (and probably some other attributes),
-but what a bank account is or does has remained the same for tens of years. But we cannot say the same for API technologies or database technologies.
+but what a bank account is or does has remained the same for tens of years. However, we cannot say the same for API or database technologies.
 Those are things that change at a much faster pace compared to bank accounts.
 Because of the direction of dependencies,
 changes in the outer layers do not affect the inner layers. The clean microservice design allows for easy API technology
@@ -2190,12 +2185,13 @@ without affecting the business logic (use case and entities layers).
 
 Entity classes do not depend on anything except other entities to create hierarchical entities (aggregates). For example, the `Order`
 entity consists of `OrderItem` entities.
+
 Put entity-related business rules into entity classes. A `BankAccount` entity class should have
 a method for withdrawing money from the account. That method should enforce a business rule: Withdrawal is possible only if the account has enough funds.
 Don't put the withdrawal functionality into a service class and use `BankAccount`'s `get_balance` and `set_balance` accessors to perform the withdrawal
 procedure in the service class. That would be against the *tell, don't ask principle* discussed later in this chapter.
-Also, don't allow service classes to access sub-entities (and their methods) a `BankAccount` possibly contains.
-That would be against DDD principles and the *law of demeter* (discussed later in this chapter).
+Also, don't allow service classes to access sub-entities (and their methods) that a `BankAccount` may contain.
+That would be against DDD principles and the *law of Demeter* (discussed later in this chapter).
 DDD states that you should access an aggregate (`BankAccount`)  by its root only, not directly accessing any sub-entities.
 
 Services orchestrate operations on one or more entities, e.g., a `BacklogItemService` can
@@ -2295,7 +2291,7 @@ for standard input (stdin) or command line interface (CLI). A CLI controller rea
 Remember that you can have multiple controllers active in the same microservice. Your microservice could be used by frontend clients using a REST controller,
 or it could be used on the command line using its CLI controller.
 
-Below is a partial implementation of a GraphQL controller:
+Below is an implementation of a GraphQL controller:
 
 {title: "GraphQlOrderController.java"}
 ```java
@@ -2341,7 +2337,7 @@ public class GraphQlOrderController {
 The `RestOrderController` and `GraphQlOrderController` classes depend on the `OrderService` interface, which is
 part of the use case layer. Notice that the controllers do not rely on a concrete implementation of the use
 cases but depend on an interface according to the *dependency inversion principle*. Below is the definition for
-the `OrderService` protocol:
+the `OrderService` interface:
 
 {title: "OrderService.java"}
 ```java
@@ -2459,7 +2455,7 @@ The `OrderServiceImpl` class has a dependency on an order repository. This depen
 Note that there is no direct dependency on a database. The term *repository* is abstract. It only means a place where data (entities) are stored. So the
 repository can be implemented by a relational database, NoSQL database, file system, in-memory cache, message queue, or another microservice, to name a few.
 
-Below is the `OrderRepository` protocol:
+Below is the `OrderRepository` interface:
 
 {title: "OrderRepository.java"}
 ```java
@@ -2515,9 +2511,9 @@ public interface MongoDbOrderRepository extends MongoRepository<DbOrder, String>
 ![Clean Microservice Design for Order Service](resources/chapter2/images/04-05.png)
 
 When implementing a clean microservice design, everything is wired together using configuration and dependency injection.
-For example, an instance implementing the `OrderRepository` interface is created according to configuration and injected into an `OrderServiceImpl` instance by the Spring framework.
-In the case of Spring, the dependency injector is configured using a configuration file and annotations. The configuration file
-can be used to configure what database is used. Additionally, the Spring dependency injector creates an instance of the `OrderServiceImpl` class
+For example, the Spring framework creates an instance implementing the `OrderRepository` interface according to configuration and injects it into an `OrderServiceImpl` instance.
+In the case of Spring, the dependency injector is configured using a configuration file and annotations. The configuration file or annotations
+can be used to configure the database used. Additionally, the Spring dependency injector creates an instance of the `OrderServiceImpl` class
 and injects it where an `OrderService` object is wanted.
 
 The dependency injector is the only place in a microservice that contains references to concrete implementations. In many
@@ -2574,19 +2570,18 @@ public class ShoppingCartEmptyingOrderService implements OrderService {
 
 As you can see from the above code, the `ShoppingCartEmptyingOrderService` class does not depend on any concrete implementation of the
 shopping cart service. We can create an *output interface adapter* class that is a concrete implementation of the `ShoppingCartService` interface.
-For example, that interface adapter class connects to a particular external shopping cart service via a REST API. Once again,
-the dependency injector will inject a concrete `ShoppingCartService` implementation to an instance of the `ShoppingCartEmptyingOrderService` class.
+For example, that interface adapter class connects to a particular external shopping cart service via a REST API. Once again, the dependency injector will inject a concrete `ShoppingCartService` implementation to an instance of the `ShoppingCartEmptyingOrderService` class.
 
 Note that the above `createOrder` method is not production quality because it lacks a transaction.
 
 {aside}
 Only the most relevant source code files were listed above to keep the example short enough.
-Complete example is available [here](https://github.com/pksilen/clean-code-principles-code/tree/main/chapter2/orderservice).
-The example shows how to use DTOs, domain and database entities and how to generate UUIDs both on the server and the client
-side. For ultimate security, consider generating all identifiers on the server side only. These things are covered in detail
-in later chapters of this book. The given example is not production quality because it is missing things like detailed error
-handling, logging, audit logging, authorization, observability. All of these aspects are discussed by the end of this book
-when you should have learned how to craft production quality software.
+The complete example is available [here](https://github.com/pksilen/clean-code-principles-code/tree/main/chapter2/orderservice).
+The example shows how to use DTOs, domain and database entities, and how to generate UUIDs both on the server and the client
+side. For ultimate security, consider generating all identifiers only on the server side. These things are covered in detail
+in later chapters of this book. The given example is not production quality because it lacks detailed error
+handling, logging, audit logging, authorization, and observability. These aspects are discussed by the end of this book
+when you should have learned how to craft production-quality software.
 {/aside}
 
 Now we have seen examples of the following benefits of clean microservice design:
@@ -2610,7 +2605,7 @@ to a *Flask*-based microservice. In that example, we can change the used web fra
 Thus, we can be confident that we do not break any existing functionality. We successfully apply the *open-closed principle* to our software.
 
 It should be noted that the clean microservice design principle applies to other microservices with input or output, not just API microservices. We will have an example of this later in this chapter.
-One additional benefit of the clean microservice design that has not been mentioned yet is that you can write component tests that test the software component's business logic (or the model) using fake input and output adapters instead of the real ones. Let's take a data exporter microservice as an example. It reads data from an input source (e.g., Apache Kafka) and transforms it in various ways before writing to an output destination (e.g., Apache Pulsar).
+Another benefit of the clean microservice design that has not been mentioned yet is that you can write component tests that test the software component's business logic (or the model) using fake input and output adapters instead of the real ones. Let's take a data exporter microservice as an example. It reads data from an input source (e.g., Apache Kafka) and transforms it in various ways before writing to an output destination (e.g., Apache Pulsar).
 We can test the transformation business logic using a fake input and output adapter injected into the software component.
 Running the tests will be fast because there is no need to spin up an instance of Kafka and Pulsar. Later, we can augment
 the component tests with some integration tests that test the integration to real input and output. We will talk more about component and integration tests in a later chapter.
