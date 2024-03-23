@@ -9496,7 +9496,7 @@ export class AppModule {
 > ***Template method pattern allows you to define a *template method* in a base class, and subclasses define the final***
 > ***implementation of that method. The template method contains one or more calls to abstract methods implemented in the subclasses.***
 
-In the below example, the `AbstractDrawing` class contains a template method, `draw`. This method includes a call to
+In the example below, the `AbstractDrawing` class contains a template method called `draw`. This method includes a call to
 the `getShapeRenderer` method,
 an abstract method implemented in the subclasses of the `AbstractDrawing` class. The `draw` method is a template method,
 and a subclass defines how to draw a single shape.
@@ -9560,8 +9560,7 @@ method behavior in the two subclasses.
 > ***The memento pattern can be used to save the internal state of an object to another object called the *memento* object.***
 
 Let's have a Java example with a `TextEditor` class. First, we define a `TextEditorState` interface and its implementation.
-Then we define a `TextEditorStateMemento` class for storing a memento of the text editor's state.
-
+Then, we define a `TextEditorStateMemento` class for storing a memento of the text editor's state.
 
 ```java
 public interface TextEditorState {
@@ -9675,7 +9674,6 @@ public class RectangleShape implements Shape {
 Let's assume we need to calculate the total area of shapes in a drawing. Currently, we are in a situation where
 we can modify the shape classes, so let's add `calculateArea` methods to the classes:
 
-
 ```java
 public interface Shape {
   // ...
@@ -9748,7 +9746,7 @@ The above solution is complicated and needs updating every time a new type of sh
 The above example does not follow object-oriented design principles: it contains an if/else-if structure with `instanceof` checks.
 
 We can use the visitor pattern to replace the above conditionals with polymorphism. First, we introduce a visitor interface that can be used to provide
-additional behavior to the shape classes. Then we introduce an `execute` method in the `Shape` interface. And in the shape classes, we implement the `execute` methods so that additional
+additional behavior to the shape classes. Then, we introduce an `execute` method in the `Shape` interface. In the shape classes, we implement the `execute` methods so that additional
 behavior provided by a concrete visitor can be executed:
 
 ```java
@@ -9861,7 +9859,7 @@ Notice that we did not need to use the _visitor_ term in our code examples. Addi
 software entities (class/function names, etc.) often does not bring any real benefit but makes the names longer. However, there are some design patterns,
 like the _factory pattern_ and _builder pattern_ where you always use the design pattern name in a class name.
 
-If you develop a third-party library and want the behavior of its classes to be extended by its users, you should make your library classes accept visitors who can perform additional behavior. Using the visitor pattern allows to add behavior to existing classes without modifying them, i.e., in accordance with the open-closed principle. However, there is one drawback to using the visitor pattern. You must create getters and setters for class attributes to allow visitors to add behavior. Adding getters and setters breaks the class encapsulation, as was discussed earlier in this chapter.
+If you develop a third-party library and want the behavior of its classes to be extended by its users, you should make your library classes accept visitors who can perform additional behavior. Using the visitor pattern allows for adding behavior to existing classes without modifying them, i.e., in accordance with the open-closed principle. However, there is one drawback to using the visitor pattern. You must create getters and setters for class attributes to allow visitors to add behavior. Adding getters and setters breaks the class encapsulation, as was discussed earlier in this chapter.
 
 #### Null Object Pattern
 
@@ -9986,7 +9984,7 @@ public class ThreeDShapeUtils {
 }
 ```
 
-Now our `calculateTotalVolume` method is not asking anything about a cube object. It just tells a cube object
+Now, our `calculateTotalVolume` method does not ask anything about a cube object. It just tells a cube object
 to calculate its volume. We also removed the _asking_ methods (getters) from the `Cube3DShape` class because
 they are no longer needed.
 
@@ -10014,7 +10012,8 @@ void AnomalyDetectionEngine::runEngine()
 ```
 
 In the above example, we ask the anomaly detector if we should detect anomalies now. Then, depending
-on the result, we call another method on the anomaly detector to detect anomalies. This could be simplified by making the `detectAnomalies` method to check if anomalies should be detected using the `shouldDetectAnomalies` method. Then the `shouldDetectAnomalies` method can be made private, and we can simplify the above code as follows:
+on the result, we call another method on the anomaly detector to detect anomalies. This could be simplified by making the `detectAnomalies` method to check if anomalies should be detected using the `shouldDetectAnomalies` method.
+Then, the `shouldDetectAnomalies` method can be made private, and we can simplify the above code as follows:
 
 ```cpp
 using namespace std::chrono_literals;
@@ -10031,9 +10030,9 @@ void AnomalyDetectionEngine::runEngine()
 ```
 
 Following the *tell, don't ask principle* is a great way to reduce coupling in your software component. In the above example,
-we reduced the number of methods the `calculate_total_volume` method is dependent on from three to one. Following the principle
+we reduced the number of methods the `calculateTotalVolume` method depends on from three to one. Following the principle
 also contributed to higher cohesion in the software component because operations related to a cube are now inside the
-`Cube` class and not scattered around in the code base. The *tell, don't ask principle* is the same as the *information
+`Cube` class and are not scattered around in the code base. The *tell, don't ask principle* is the same as the *information
 expert* from the GRASP principles. The information expert principle says to put behavior in a class with the most information required
 to implement the behavior. In the above example, the `Cube` class clearly has the most information needed (width, height, and depth) to calculate a cube's area.
 
@@ -10063,9 +10062,9 @@ In the above example, the `User` class is a facade in front of the `Account` cla
 access directly from our object.
 
 However, you should always check if the first solution alternative could be used instead. It makes the
-code more object-oriented and does not require creating additional methods.
+code more object-oriented and does not require the introduction of additional methods.
 
-Below is a Java example that uses `User` and `SalesItem` entities and is not obeying the law of Demeter:
+Below is a Java example that uses `User` and `SalesItem` entities and does not obey the law of Demeter:
 
 ```java
 void purchase(final User user, final SalesItem salesItem) {
@@ -10124,8 +10123,7 @@ You have to implement the validation logic in your function.
 Suppose you accept an integer parameter for a port number in a function.
 In that case, you might get any integer value as the parameter value,
 even though the valid port numbers are from 1 to 65535. Suppose you also had other functions in the same codebase
-accepting a port number as a parameter. In that case, you could end up doing the same validation logic in multiple places and have
-thus duplicate code in your codebase.
+accepting a port number as a parameter. In that case, you could end up using the same validation logic code in multiple places and thus have duplicate code in your codebase.
 
 Let's have a simple Java example of using this principle:
 
@@ -10216,7 +10214,7 @@ public void doSomething(final String namespacedName, ...) {
 }
 ```
 
-The above function signature allows function callers to supply a non-namespaced name accidentally.
+The above function signature allows function callers to accidentally supply a non-namespaced name.
 By using a custom type for the namespaced name, we can formulate the above function signature to the following:
 
 ```java
@@ -10490,7 +10488,7 @@ useInt(maybeInt ?? VInt.tryCreate('1,10', 10));
 const int2: VInt<'1,10'> = VInt.tryCreate('1,10', 500);
 ```
 
-The below example defines a `Url` type which contains six validations that validate a string matching the following criteria:
+The below example defines an `Url` type that contains six validations that validate a string matching the following criteria:
 
 - is at least one character long
 - is at most 1024 characters long
@@ -10600,7 +10598,7 @@ myFunc(new SemType('isSomethingElse', true),
 When using dependency injection, the dependencies are injected only after the application startup. The application can
 first read its configuration and then decide what objects are created for the application. In many languages,
 dependency injection is crucial for unit tests, too. When executing a unit test using DI, you can inject mock
-dependencies into the tested code instead of using the standard dependencies of the application.
+dependencies into the tested code instead of using the application's standard dependencies.
 
 Below is a C++ example of using the singleton pattern without dependency injection:
 
@@ -10997,7 +10995,7 @@ export default class Controller {
 ```
 
 {aside}
-An example of using dependency injection with *noicejs* library is available [here](https://github.com/pksilen/clean-code-principles-python-code/tree/main/chapter2/mvvm_di).
+An example of using dependency injection with *noicejs* library is available [here](https://github.com/pksilen/clean-code-principles-code/tree/main/chapter2/mvvm_di).
 {/aside}
 
 ## Avoid Code Duplication Principle
@@ -11022,7 +11020,6 @@ public:
 ```
 
 {title: "AvroBinaryKafkaInputMessage.h"}
-
 ```cpp
 class AvroBinaryKafkaInputMessage : public InputMessage
 {
@@ -11191,7 +11188,7 @@ You would have to remember to add the `chart-icon` class name to all places in t
 <span class="icon chart-icon pie-chart-icon">...</span>
 ```
 
-The above-described approach is very error-prone. What you should do is introduce proper object-oriented design.
+The above-described approach is very error-prone. You should introduce proper object-oriented design.
 You need a CSS preprocessor that makes extending CSS classes possible. In the below example, I am using [SCSS](https://sass-lang.com/guide/):
 
 ```html
