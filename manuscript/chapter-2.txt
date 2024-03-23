@@ -8016,7 +8016,7 @@ class ParserTests {
 }
 ```
 
-The above test passes without code modification. Let's add a test:
+The above test passes without implementation code modification. Let's add a test:
 
 ```java
 class ParserTests {
@@ -8227,7 +8227,6 @@ class ParserTests {
 In the above example, I added new tests to existing methods. You can also put each test into a separate test method.
 I didn't do that because most test methods would have been only 1-2 statements long.
 
-
 {aside}
 If you are interested in creating a parser, read about [Recursive descent parser](https://en.wikipedia.org/wiki/Recursive_descent_parser).
 {/aside}
@@ -8295,9 +8294,8 @@ public class UserStory {
 ```
 
 The above solution is not an object-oriented one. We should replace the conditionals (switch-case statement) with a polymorphic design.
-This can be done by introducing state objects. In the state pattern, the state of an object is represented with an object instead of an enum value.
+This can be done by introducing state objects. In the state pattern, an object's state is represented with an object instead of an enum value.
 Below is the above code modified to use the state pattern:
-
 
 ```java
 public interface UserStoryState {
@@ -8369,7 +8367,7 @@ public class UserStory {
 ```
 
 Let's have another example with an `Order` class. An order can have a state, like paid, packaged, delivered, etc.
-Below we implement the order states as classes:
+Below, we implement the order states as classes:
 
 ```java
 public interface OrderState {
@@ -8430,7 +8428,7 @@ the view to be shown in the client device (web browser). With the advent of [sin
 
 ![Model-View-Controller](resources/chapter2/images/03-06.png)
 
-In the below picture, you can see how dependency inversion is used, and none of the implementation classes depend on concrete implementations.
+In the picture below, you can see how dependency inversion is used. None of the implementation classes depend on concrete implementations.
 You can easily change any implementation class to a different one without the need to modify any other implementation class.
 Notice how the `ControllerImpl` class uses the *bridge pattern* and implements two bridges, one towards the model and the other towards the view.
 
@@ -8441,7 +8439,7 @@ latter principles, the software becomes orthogonal.
 
 The picture below shows that the controller can also be used as a bridge adapter. The controller can be modified to
 adapt to changes in the view layer (`View2` instead of `View`) without changing the model layer.
-The modified modules are shown with a gray background in the picture. Similarly, the controller can be modified to adapt to
+The modified modules are shown in the picture with a gray background. Similarly, the controller can be modified to adapt to
 changes in the model layer without changing the view layer (not shown in the picture).
 
 ![Adapting to Changes in MVC pattern](resources/chapter2/images/04-07.png)
@@ -8524,7 +8522,7 @@ public class TodoViewImpl implements TodoView {
 }
 ```
 
-Then we implement a generic `Controller` class that acts as a base class for concrete controllers:
+Then, we implement a generic `Controller` class that acts as a base class for concrete controllers:
 
 {title: "Controller.java"}
 ```java
@@ -8960,27 +8958,25 @@ Model-View-ViewModel (MVVM). In the MVVM pattern, the controller is called the v
 generic term _controller_ in the below example, though. The main difference between the view model and the presenter
 in the MVP pattern is that in the MVP pattern, the presenter has a reference to the view, but the view model does not.
 
-MVVM is an application of *clean microservice design (or architecture)*. As can be seen in the below picture, the
-dependencies goes from views to view models to the model (actions and entities). Similarly, the model does not depend
-on particular services, but service interfaces which concrete services implement. For example, if you have a weather forecast web
+MVVM is an application of *clean microservice design (or architecture)*. As seen in the picture below, the dependencies go from views to view models to the model (actions and entities). Similarly, the model does not depend
+on particular services but on service interfaces that concrete services implement. For example, if you have a weather forecast web
 application, the model of the application should define a weather forecast API service interface for fetching weather information.
 The model should not depend on any particular weather forecast API. If you want to integrate your application with a new weather
 forecast API, you should be able to do it by defining a new service class that implements the weather forecast API service interface.
 Next, in the dependency injection container, you can define that you want to use the new service implementation instead of some old
-implementation. Now you have successfully modified your web application using the *open-closed principle*. You can apply the *open-closed principle*,
-when you introduce various views that use existing view models. For example, in a todo application, you could introduce
-todo list, todo table and todo grid views that all use the same todo view model.
+implementation. Now, you have successfully modified your web application using the *open-closed principle*. You can apply the *open-closed principle* as you introduce various views that use existing view models. For example, in a todo application, you could introduce
+todo list, todo table, and todo grid views that all use the same todo view model.
 
 ![Clean Architecture with MVVM](resources/chapter2/images/mvvm_clean_arch.png)
 
 The view model provides bindings between the view's events and actions in the model. This can happen so that the view model
-adds action dispatcher functions as properties of the view. And in the other direction, the view model
+adds action dispatcher functions as properties of the view. In the other direction, the view model
 maps the model's state to the properties of the view. When using React and Redux, for example, you can connect the view to the model
 using the `mapDispatchToProps` function and connect the model to the view using the `mapStateToProps` function.
 These two mapping functions form the view model (or the controller) that binds the view and model together.
 
 Let's first implement the todo example with React and Redux and later show how the React view can be replaced
-with an Angular view without any modification to the controller or the model layer. Note that the code for some classes
+with an Angular view without modifying the controller or the model layer. Note that the code for some classes
 is not listed below. You can assume those classes are the same as defined in _command/action pattern_ examples.
 
 {aside}
@@ -9115,7 +9111,7 @@ export default class StartFetchTodosAction extends AbstractTodoAction {
 }
 ```
 
-Now we can introduce a new view for todos, a `TodoTableView` which can utilize the same controller as the
+Now we can introduce a new view for todos, a `TodoTableView`, which can utilize the same controller as the
 `TodosListView`.
 
 {title: "TodoTableView.tsx"}
@@ -9251,8 +9247,8 @@ export default function TableRowTodoView({
 }
 ```
 
-In the above `TodosView.tsx` we used a conditional statement for rendering the component.
-As was told earlier, we should limit this kind of code mostly to factories only. Let's create
+In the above `TodosView.tsx`, we used a conditional statement to render the component.
+As said earlier, we should limit this kind of code primarily to factories only. Let's create
 a view factory method and make the `TodosView.tsx` to use it:
 
 {title: "createTodosView.tsx"}
@@ -9320,7 +9316,7 @@ export default function afterMount(func: () => void) {
 }
 ```
 
-Note that you will get a React Hooks linter error from the above code, because the hook function name
+Note that you will get a React Hooks linter error from the above code because the hook function name
 does not begin with "use". Disable that rule or rename the function to `useAfterMount`. I prefer the first alternative.
 
 {title: "TodosView.tsx"}
@@ -9357,7 +9353,7 @@ export default connect(controller.getState, () =>
 )(TodosView);
 ```
 
-In the `App` component, we can decide how to render todos:
+In the `AppView` component, we can decide how to render todos:
 
 {title: "AppView.tsx"}
 ```tsx
@@ -9385,7 +9381,7 @@ export default AppView;
 
 ![Figure 3.10 Frontend MVC Architecture with Redux + Backend](images/03-08.png)
 
-In most cases, you should not store state in a view even if the state is for that particular view only. Instead, when you store it in the model, it brings
+In most non-trivial projects, you should not store the state in a view, even if the state is for that particular view only. Instead, when you store it in the model, it brings
 the following benefits:
 
 - Possibility to easily persist state either in the browser or in the backend
@@ -9396,6 +9392,7 @@ the following benefits:
 
 We can also change the view implementation from React to Angular without modifying the controller
 or model layer. This can be done, for example, using the [@angular-redux2/store](https://www.npmjs.com/package/@angular-redux2/store) library.
+Let's have an example of that next.
 
 {aside}
 Source code for the below example is available [here](https://github.com/pksilen/clean-code-principles-code/tree/main/chapter2/mvvm_angular).
