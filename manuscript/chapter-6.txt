@@ -3139,7 +3139,7 @@ public class TripUseCasesImpl implements TripUseCases {
 {title: "TripRepository.java"}
 ```java
 public interface TripRepository {
-  class Error extends TripBookingServiceError {
+  public static class Error extends TripBookingServiceError {
     // ...
   }
 
@@ -3214,7 +3214,7 @@ public class Trip {
 {title: "Reservation.java"}
 ```java
 public interface Reservation {
-  class MakeError extends TripBookingServiceError {
+  public static class MakeError extends TripBookingServiceError {
     // ...
   }
 
@@ -3224,7 +3224,7 @@ public interface Reservation {
 
   void make();
 
-  class CancelError extends TripBookingServiceError {
+  public static class CancelError extends TripBookingServiceError {
     // ...
   }
 
@@ -3264,8 +3264,8 @@ public abstract class AbstractReservation implements Reservation {
 }
 ```
 
-{title: "FlightReservation.py"}
-```python
+{title: "FlightReservation.java"}
+```java
 public class FlightReservation extends AbstractReservation {
   private final FlightReservationService flightReservationService;
 
@@ -3294,130 +3294,141 @@ public class FlightReservation extends AbstractReservation {
 
 ```
 
-{title: "HotelReservation.py"}
-```python
-class HotelReservation(AbstractReservation):
-    __hotel_reservation_service: HotelReservationService = Provide['hotel_reservation_service']
+{title: "HotelReservation.java"}
+```java
+public class HotelReservation extends AbstractReservation {
+  private final HotelReservationService hotelReservationService;
 
-    def __init__(self, ...):
-        # Set hotel reservation related attributes ...
+  public HotelReservation(/* ... */) {
+    super(Optional.empty());
+  }
 
-    def make(self) -> None:
-        self._assert_is_not_reserved()
+  @Override
+  public void make() {
+    assertIsNotReserved();
 
-        try:
-            self.id = self.__hotel_reservation_service.reserve_hotel(...)
-        except self.__hotel_reservation_service.ReserveHotelError as error:
-            raise self.MakeError(error)
+    try {
+      this.setId(hotelReservationService.reserveHotel(/* ... */));
+    } catch (final HotelReservationService.ReserveHotelError error) {
+      throw new MakeError( error);
+    }
+  }
 
-    def cancel(self) -> None:
-        self._cancel_using(self.__hotel_reservation_service)
+  @Override
+  public void cancel() {
+    cancelUsing(hotelReservationService);
+  }
+}
 ```
 
-{title: "RentalCarReservation.py"}
-```python
-class RentalCarReservation(AbstractReservation):
-    __rental_car_reservation_service: RentalCarReservationService = Provide['rental_car_reservation_service']
+{title: "RentalCarReservation.java"}
+```java
+public class RentalCarReservation extends AbstractReservation {
+  private final RentalCarReservationService rentalCarReservationService;
 
-     def __init__(self, ...):
-         # Set rental car reservation related attributes ...
+  public RentalCarReservation(/* ... */) {
+    super(Optional.empty());
+  }
 
-    def make(self) -> None:
-        self._assert_is_not_reserved()
+  @Override
+  public void make() {
+    assertIsNotReserved();
 
-        try:
-            self.id = self.__rental_car_reservation_service.reserve_car(...)
-        except self.__rental_car_reservation_service.ReserveCarError as error:
-            raise self.MakeError(error)
+    try {
+      this.setId(rentalCarReservationService.reserveCar(/* ... */));
+    } catch (final RentalCarReservationService.ReserveCarError error) {
+      throw new MakeError( error);
+    }
+  }
 
-    def cancel(self) -> None:
-        self._cancel_using(self.__rental_car_reservation_service)
+  @Override
+  public void cancel() {
+    cancelUsing(rentalCarReservationService);
+  }
+}
 ```
 
-{title: ReservationService.py}
-```python
-class ReservationService(Protocol):
-    class CancelReservationError(TripBookingServiceError):
-        pass
+{title: ReservationService.java}
+```java
+public interface ReservationService {
+  class CancelReservationError extends TripBookingServiceError {
+   // ...
+  }
 
-    def cancel_reservation(self, id_: str) -> None:
-        pass
+  void cancelReservation(final String id);
+}
 ```
 
-{title: FlightReservationService.py}
-```python
-class FlightReservationService(ReservationService):
-    class ReserveFlightError(TripBookingServiceError):
-        pass
+{title: FlightReservationService.java}
+```java
+public interface FlightReservationService extends ReservationService {
+  public static class ReserveFlightError extends TripBookingServiceError {
+    // ...
+  }
 
-    def reserve_flight(self, ...) -> None:
-        pass
+  String reserveFlight(...);
+}
 ```
 
-{title: GalileoFlightReservationService.py}
-```python
-class GalileoFlightReservationService(FlightReservationService):
-    def reserve_flight(self, ...) -> None:
-        # ...
+{title: GalileoFlightReservationService.java}
+```java
+public class GalileoFlightReservationService implements FlightReservationService {
+   String reserveFlight(...) {
+     // ...
+   }
 
-    def cancel_reservation(self, id_: str) -> None:
-        # ...
+  void cancelReservation(final String id) {
+    // ...
+  }
+}
 ```
 
-{title: HotelReservationService.py}
-```python
-class HotelReservationService(ReservationService):
-    class ReserveHotelError(TripBookingServiceError):
-        pass
+{title: HotelReservationService.java}
+```java
+public interface HotelReservationService extends ReservationService {
+  public static class ReserveHotelError extends TripBookingServiceError {
+    // ...
+  }
 
-    def reserve_hotel(self, ...) -> None:
-        pass
+  String reserveHotel(...);
+}
 ```
 
-{title: AmadeusHotelReservationService.py}
-```python
-class AmadeusHotelReservationService(HotelReservationService):
-    def reserve_hotel(self, ...) -> None:
-        # ...
+{title: AmadeusHotelReservationService.java}
+```java
+public class AmadeusHotelReservationService implements HotelReservationService {
+   String reserveHotel(...) {
+     // ...
+   }
 
-    def cancel_reservation(self, id_: str) -> None:
-        # ...
+  void cancelReservation(final String id) {
+    // ...
+  }
+}
 ```
 
-{title: RentalCarReservationService.py}
-```python
-class RentalCarReservationService(ReservationService):
-    class ReserveCarError(TripBookingServiceError):
-        pass
+{title: RentalCarReservationService.java}
+```java
+public interface RentalCarReservationService extends ReservationService {
+  public static class ReserveCarError extends TripBookingServiceError {
+    // ...
+  }
 
-    def reserve_car(self, ...) -> None:
-        pass
+  String reserveCar(...);
+}
 ```
 
-{title: HertzRentalCarReservationService.py}
-```python
-class HertzRentalCarReservationService(RentalCarReservationService):
-    def reserve_car(self, ...) -> None:
-        # ...
+{title: HertzRentalCarReservationService.java}
+```java
+public class HertzRentalCarReservationService implements RentalCarReservationService {
+   String reserveCar(...) {
+     // ...
+   }
 
-    def cancel_reservation(self, id_: str) -> None:
-        # ...
-```
-
-{title: "DiContainer.py"}
-```python
-class DiContainer(containers.DeclarativeContainer):
-    wiring_config = containers.WiringConfiguration(
-        modules=[
-            # ...
-        ]
-    )
-
-    trip_booking_use_cases = providers.Singleton(TripUseCasesImpl)
-    trip_repository = providers.Singleton(MongoDbTripRepository)
-    flight_reservation_service = providers.Singleton(GalileoFlightReservationService)
-    hotel_reservation_service = providers.Singleton(AmadeusHotelReservationService)
-    rental_car_reservation_service = providers.Singleton(HertzRentalCarReservationService)
+  void cancelReservation(final String id) {
+    // ...
+  }
+}
 ```
 
 Let's see how we can further develop the trip booking service. Let's assume that product management requests us
@@ -3429,105 +3440,99 @@ the newly created tour and activities reservation entity class.
 After booking a trip, product management wants users to be able to modify their reservations, like adding, replacing, and
 removing reservations. Let's have an example of a feature for adding a rental car reservation to an existing trip.
 
-{title: "RestTripBookingController"}
-```python
-class RestTripBookingController:
-    __trip_booking_use_cases: TripUseCases = Provide['trip_booking_use_cases']
+{title: "RestTripBookingController.java"}
+```java
+@RestController
+@RequestMapping("/trips")
+public class RestTripBookingController {
+  @Autowired
+  private TripBookingUseCases tripBookingUsesCases;
 
-    def __init__(self):
-       self.__router = APIRouter()
+  // ...
 
-       # ...
-
-       self.__router.add_api_route(
-            '/trips/{trip_id}/rental-car-reservations',
-            self.add_rental_car_reservation,
-            methods=['POST'],
-            status_code=201,
-            response_model=OutputRentalCarReservation,
-        )
-
-    # ...
-
-    def add_rental_car_reservation(
-        self, trip_id: str, input_rental_car_reservation: InputRentalCarReservation
-    ) -> OutputRentalCarReservation:
-        return self.__trip_booking_use_cases.add_rental_car_reservation(
-            trip_id,
-            input_rental_car_reservation
-        )
+  @PostMapping("/{tripId}/rental-car-reservations")
+  @ResponseStatus(HttpStatus.CREATED)
+  public OutputRentalCarReservation addRentalCarReservation(
+      @PathVariable String tripId,
+      @RequestBody InputRentalCarReservation inputRentalCarReservation
+  ) {
+    return tripBookingUseCase.addRentalCarReservation(
+      tripId,
+      inputRentalCarReservation
+    );
+  }
+}
 ```
 
-{title: "TripBookingUseCasesImpl"}
-```python
-class TripBookingUseCasesImpl(TripBookingUseCases):
-    # ...
+{title: "TripBookingUseCasesImpl.java"}
+```java
+@Service
+public class TripBookingUseCasesImpl implements TripBookingUseCases {
+  @Autowired
+  private TripRepository tripRepository;
 
-    def add_rental_car_reservation(
-        self,
-        trip_id: str,
-        input_rental_car_reservation: InputRentalCarReservation
-    ) -> OutputRentalCarReservation:
-        # Get existing trip domain entity
-        trip = self.__trip_repository.find(trip_id)
+  @Override
+  @Transactional
+  public OutputRentalCarReservation addRentalCarReservation(
+    final String tripId,
+    final InputRentalCarReservation inputRentalCarReservation
+  ) {
+    // Retrieve the Trip entity
+    final var trip = tripRepository.findById(tripId)
+               .orElseThrow(() -> new EntityNotFoundError("Trip", tripId));
 
-        if trip is None:
-            raise EntityNotFoundError('Trip', trip_id)
+    // Create RentalCarReservation domain object
+    final var rentalCarReservation =
+      RentalCarReservation.from(inputRentalCarReservation);
 
-        # Below factory method creates a validated domain entity
-        rental_car_reservation = RentalCarReservation.create_from(input_rental_car_reservation)
+    trip.add(rentalCarReservation);
 
-        # Distributed transaction begins
-        trip.add(rental_car_reservation)
+    try {
+      tripRepository.save(trip);
+    } catch (final TripRepository.Error error) {
+      trip.remove(rentalCarReservation);
+      throw error
+    }
 
-        try:
-            self.__trip_repository.update(trip)
-        except self.__trip_repository.Error as error:
-           # Compensating action
-           trip.remove(rental_car_reservation)
-           raise error
-
-        # Distributed transaction ends
-
-       return OutputRentalCarReservation.model_validate(rental_car_reservation)
+    return OutputRentalCarReservation.from(rentalCarReservation);
+  }
+}
 ```
 
-{title: "TripRepository"}
-```python
-class TripRepository(Protocol):
-    # ...
+{title: "TripRepository.java"}
+```java
+public interface TripRepository {
+  // ...
 
-    def update(self, trip: Trip) -> None:
-        pass
+  Optional<Trip> findById(final String id);
+  void update(final Trip trip);
 ```
 
-{title: "MongoDbTripRepository"}
-```python
-class MongoDbTripRepository(TripRepository):
-    # ...
+{title: "Trip.java"}
+```java
+public class Trip {
+  private final List<Reservation> reservations = new ArrayList<>();
 
-    def update(self, trip: Trip) -> None:
-        # ...
-```
+  // ...
 
-{title: "Trip.py"}
-```python
-class Trip:
-    # ...
+  public void add(final Reservation reservation) {
+    reservation.make();
+    reservations.add(reservation);
+  }
 
-    def add(self, reservation: Reservation) -> None:
-        reservation.make()
-        self.__reservations.append(reservation)
+  public void remove(final Reservation reservation) {
+    while (true) {
+      try {
+        reservation.cancel();
+        break;
+      } catch (final Reservation.CancelError error) {
+        // Intentionally no operation
+      }
+    }
 
-    def remove(self, reservation: Reservation) -> None:
-        while True:
-           try:
-                reservation.cancel()
-                break
-           except reservation.CancelError:
-                pass
-
-        self.__reservations.remove(reservation)
+    reservations.remove(reservation);
+  }
+}
 ```
 
 In the above examples, we did not use the convention of adding a *try*-prefix to a method that can raise an error.
