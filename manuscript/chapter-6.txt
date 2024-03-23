@@ -3539,5 +3539,5 @@ In the above examples, we did not use the convention of adding a *try*-prefix to
 However, it could have been beneficial in this case due to distributed transactions. *Try*-prefixed methods would have clarified where our distributed transactions can fail and execution of, e.g., compensating actions, is required.
 
 We could add many other features to the trip booking service, like getting trips or a single trip, canceling a trip, making/replacing/canceling various types of reservations, etc.
-However, we should not put all those features in a single controller, service, and repository class. We should implement the *vertical slice architecture* as presented in the earlier *object-oriented design principles chapter*.
-We should create separate subdirectories for each feature (or feature set or subdomain). Each subdirectory should have a controller, service, and repository class containing functionality related to that particular feature (or feature set or subdomain) only.
+However, we should not put all those features in a single controller, use cases, and repository class. We should implement the *vertical slice architecture* as presented in the earlier *object-oriented design principles chapter*.
+We should create separate subdirectories for each feature (or feature set or subdomain). Each subdirectory should have a controller, use cases, and repository class containing functionality related to that particular feature (or feature set or subdomain) only.
