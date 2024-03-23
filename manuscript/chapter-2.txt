@@ -703,7 +703,7 @@ a bug that can be hard to find in unit tests. This example showed that modifying
 We modified an existing class and accidentally broke it.
 
 A better solution to introduce support for square shapes is to use the *open-closed principle* and create a new class
-that implements the `Shape` protocol. Then, we don't have to modify any existing class, and there is no risk of accidentally
+that implements the `Shape` interface. Then, we don't have to modify any existing class, and there is no risk of accidentally
 breaking something in the existing code. Below is the new `SquareShape` class:
 
 ```java
@@ -796,8 +796,8 @@ In the future, if a new literal is added to the `FilterType` type and you forget
 get an exception thrown instead of silently passing through the if-statement without any action.
 
 We can notice from the above examples that if/else if structures could be avoided
-with a better object-oriented design. For instance, we could create a `Filter` protocol and two separate classes,
-`IncludeFilter` and `ExcludeFilter`. The classes implement the `Filter` protocol. Using object-oriented design allows us
+with a better object-oriented design. For instance, we could create a `Filter` interface and two separate classes,
+`IncludeFilter` and `ExcludeFilter`. The classes implement the `Filter` interface. Using object-oriented design allows us
 to eliminate the `FilterType` enum and the if/else if structure.
 This is known as the *replace conditionals with polymorphism* refactoring technique. Refactoring is discussed more
 in the next chapter. Below is the above example refactored to be more object-oriented:
@@ -1129,7 +1129,7 @@ public class ClassC {
   private final InterfaceA someAttribute;
 
   // Depends on InterfaceA and
-  // uses all methods from the ProtocolA
+  // uses all methods from the InterfaceA
 }
 ```
 
@@ -2356,7 +2356,7 @@ public interface OrderService {
 }
 ```
 
-The below `OrderServiceImpl` class implements the `OrderService` protocol:
+The below `OrderServiceImpl` class implements the `OrderService` interface:
 
 {title: "OrderServiceImpl.java"}
 package com.example.orderservice.services.application;
@@ -3044,7 +3044,7 @@ often, and if the functions are methods, they are used in conjunction with an ob
 code is more often read than written). Only use abbreviations that are widely used and understandable for other developers.
 If a word does not have a good abbreviation, don't abbreviate.
 
-Below is an example of a protocol containing two methods named with simple verbs only. It is not necessary to name the methods as
+Below is an example of an interface containing two methods named with simple verbs only. It is not necessary to name the methods as
 `startThread` and `stopThread` because the methods are already part of the `Thread` interface, and it is self-evident what the `start` method
 starts and what the `stop` method ends. You don't need to repeat the class name in the method name.
 
@@ -6106,7 +6106,7 @@ public class VectorDrawing extends AbstractDrawing {
   }
 }
 
-In the above example, we have delegated the rendering behavior of the shape classes to concrete classes implementing the `ShapeRenderer` protocol.
+In the above example, we have delegated the rendering behavior of the shape classes to concrete classes implementing the `ShapeRenderer` interface.
 The `Shape` classes only represent a shape but don't render the shape. They have a single responsibility of representing
 a shape. Regarding rendering, the shape classes are "abstractions" because they delegate the rendering to another class responsible for rendering different shapes.
 
@@ -6160,7 +6160,7 @@ public class ConfigReader {
 
 Using the strategy pattern, we can change the functionality of a `ConfigReader` instance by changing
 the `config_parser` attribute value. For example, there could be the following classes available that
-implement the `ConfigParser` protocol:
+implement the `ConfigParser` interface:
 
 - `JsonConfigParser`
 - `YamlConfigParser`
