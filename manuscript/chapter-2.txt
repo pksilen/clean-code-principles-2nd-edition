@@ -2615,7 +2615,7 @@ the component tests with some integration tests that test the integration to rea
 *Vertical slice design* is also known as *vertical slice architecture*. Vertical slice design divides individual features into separate vertical slices.
 In the source code repository, this means a separate directory for each vertical slice (feature).
 You can also group these single feature directories under a domain directory. This makes navigating the code-base a breeze and finding a particular feature easy.
-The main benefit of vertical slice design is that you can follow the open-closed principle when adding new features. There is no need to modify existing code and no risk of breaking existing functionality.
+The main benefit of vertical slice design is that it allows you to follow the open-closed principle when adding new features. There is no need to modify existing code and no risk of breaking existing functionality.
 You can implement a vertical slice (a feature) as you wish, which is a clear benefit when different features have divergent requirements.
 So, a vertical slice can contain a single class or multiple classes that form a layered design. Vertical slice design does not enforce any specific way.
 However, using some design principles for a vertical slice implementation is good practice. I suggest to use the *clean microservice design*.
@@ -2685,7 +2685,7 @@ we can define our features using that language. We can end up with the following
     - Remove flight reservation from a trip
 - Rental Car Reservation
     - Add rental car reservation to a trip
-    - Replace rental car reservatin to a trip
+    - Replace rental car reservation for a trip
     - Remove rental car reservation from a trip
 
 Let's use the *vertical slice design principle* and layout the directory structure for our microservice:
@@ -2780,7 +2780,7 @@ travel-booking-service
         └── RemoveRentalCarReservationUseCase.py
 ```
 
-As can been seen from the above example, *vertical slice design* creates a very understandable and easily navigatable directory structure
+As can be seen from the above example, *vertical slice design* creates a very understandable and easily navigatable directory structure
 for the microservice source code.
 
 ## Class Organization Principle
@@ -2880,7 +2880,7 @@ class Circle {
 
 > ***Use the maximum number of items (5-9) that can be stored in the short-term memory as the maximum size for a package/directory, class, or function.***
 
-A package (or directory) should have a maximum of 5-9 modules. This allows you to find a specific module (file) in the package quickly.
+A package (or directory) should have a maximum of 5-9 modules. This allows you to quickly find a specific module (file) in the package.
 If you have a package with many modules, it can be hard to find a specific module because they are listed in alphabetical order, and
 you cannot apply any logical order to them. I usually create packages that may only contain 2 or 3 modules. For example, I could have
 a *config* directory that has a *Config.java* module, and under the *config* directory, I could have a *parser* subdirectory that has the
@@ -2950,7 +2950,7 @@ meaning that the total number of classes in the software component should be at 
 
 A function should have a maximum of 5-9 statements. If you have a longer function, extract a function or functions that the original function calls.
 If you have a public method that calls several private methods, keep the number of those private methods small, preferably only one or two.
-This is because if you write a unit test for the public method, testing becomes more complex the more private methods also need to be tested indirectly.
+This is because when you write a unit test for the public method, testing becomes more complex if many private methods also need to be tested indirectly.
 More about this topic also in the coming *testing principles* chapter.
 
 A function should have a maximum of 5-9 parameters. You should prefer limiting the maximum number of parameters closer to 5 instead of 9.
@@ -2964,7 +2964,7 @@ This section presents conventions for uniformly naming interfaces, classes, and 
 
 ### Naming Interfaces and Classes
 
-> ***Classes represent a thing or an actor. They should be named consistently so the class name ends with a noun. An interface represents an abstract thing, actor, or capability. Interfaces representing a thing or an actor should be named like classes but using an abstract noun. Interfaces representing a capability should be named according to the capability.***
+> ***A class represents a thing or an actor. Classes should be named consistently so the class name ends with a noun. An interface represents an abstract thing, actor, or capability. Interfaces representing a thing or an actor should be named like classes but using an abstract noun. Interfaces representing a capability should be named according to the capability.***
 
 When an interface represents an abstract thing, name it according to that abstract thing. For example, if you have a drawing application with
 various geometrical objects, name the geometrical object interface `Shape`. It is a simple abstract noun.
@@ -2987,7 +2987,7 @@ class names to distinguish a class from an interface, but only when needed. For 
 `ConfigParser` and you have a concrete class implementing the interface and parsing configuration in JSON format,
 name the class `JsonConfigParser`, not `JsonConfigParserImpl`, because the `Impl` prefix is not needed to distinguish between
 the interface and implementing class. Remember that you should be programming against
-interfaces, and if every interface has its name prefixed with an *I*, it just adds unnecessary noise to the code.
+interfaces, and if every interface has its name prefixed with an *I*, it just adds unnecessary noise to the code. You can use the *I* prefix if it is a strong language convention.
 
 Some examples of class names representing a thing are: `Account`, `Order`, `RectangleShape`, and `CircleShape`. In a class
 inheritance hierarchy, the names of classes usually refine the interface name or the base class name. For example,
@@ -3021,7 +3021,7 @@ The problem with nested classes is that they can make the module too large.
 
 If you have related classes and one or more class names require shortening, you should shorten all related class names
 to keep the naming uniform. For example, if you have two classes, `ConfigurationParser` and `JsonConfigurationParser`, you
-should shorten the names of both classes, not only the one longer than 19 characters. The new class names would be `ConfigParser` and `JsonConfigParser`.
+should shorten the names of both classes, not only the ones longer than 19 characters. The new class names would be `ConfigParser` and `JsonConfigParser`.
 
 If an interface or class name is less than 20 characters long, there is usually no need to shorten it.
 
@@ -3040,7 +3040,7 @@ looking at the class implementation will finally reveal it.
 The general rule is to name a function so that the purpose of the function is clear. A good function name should not
 make you think. If a function name is *20 or more characters long*, consider abbreviating one or more words in the name.
 The reason for this is to keep the code readable. The maximum length of function names should be lower than the maximum length of interface/class names because function names are used more
-often and if the functions are methods they are used in conjunction with an object name. Very long names are harder to read and slow a developer down. (Remember that
+often, and if the functions are methods, they are used in conjunction with an object name. Very long names are harder to read and slow a developer down. (Remember that
 code is more often read than written). Only use abbreviations that are widely used and understandable for other developers.
 If a word does not have a good abbreviation, don't abbreviate.
 
@@ -3062,7 +3062,7 @@ grpcChannel.shutdown().awaitTermination(30, TimeUnit.SECONDS);
 ```
 
 The above example has two issues with the `shutdown` function. Most people probably assume that calling the `shutdown` function will shut down the channel
-and return after the channel is shut down without any return value. But now the `shutdown` function is returning something. It is not necessarily self-evident what it returns. But we can notice that the `shutdown` function does not wait for the channel termination.
+and return after the channel is shut down without any return value. But now the `shutdown` function is returning something. It is not necessarily self-evident what it returns. However, we noticed that the `shutdown` function does not wait for the channel termination.
 
 It would be better to rename the `shutdown` function as `requestShutdown` because it better describes what the function does. Also, we should
 name the `awaitTermination` to `awaitShutdown` because we should not use two different terms _shutdown_ and _termination_
@@ -3080,11 +3080,11 @@ fetch(url).then(response => response.json()).then(...);
 ```
 
 In the above example, we have the following issue: the `fetch` function does not properly describe what it does.
-According to the documentation, it fetches a resource. But it does not return a resource. It returns a response object.
+According to the documentation, it fetches a resource, but it does not return a resource. Instead, it returns a response object.
 Whenever possible, the function name should indicate what the function returns. The `fetch` performs an action on a resource and does not always return a resource.
 The action is specified by giving an HTTP verb as a parameter to the function (GET is the default HTTP verb). The most common
-actions are `GET`, `POST`, `PUT` and `DELETE`. If you issue a `PUT` request for a REST API, you don't usually get the resource back.
-The same is, of course, valid for a `DELETE` request. You cannot get the resource back because it was just deleted.
+actions are `GET`, `POST`, `PUT`, and `DELETE`. If you issue a `PUT` request for a REST API, you don't usually get the resource back.
+Of course, the same is valid for a `DELETE` request. You cannot get the resource back because it was just deleted.
 
 We could name the function `performActionOnResource,` but that is a pretty long name and does not communicate the return value type.
 We should name the `fetch` function
@@ -3105,13 +3105,12 @@ makeHttpRequest(url).then(response =>
 Many languages offer streams that can be written to, like the standard output stream. Streams are
 usually buffered, and the actual writing to the stream does not happen immediately. For example, the below
 statement does not necessarily write to the standard output stream immediately. It buffers the text to be written later
-when the buffer is flushed to the stream. This can happen when the buffer is full, when some
-time has elapsed since the last flush or when the stream is closed.
+when the buffer is flushed to the stream. This can happen when the buffer is full, some
+time has elapsed since the last flush, or when the stream is closed.
 
 ```js
 stdOutStream.write(...);
 ```
-</div>
 
 The above statement is misleading and could be corrected by renaming the function to describe what it actually does:
 
@@ -3119,7 +3118,7 @@ The above statement is misleading and could be corrected by renaming the functio
 stdOutStream.writeOnFlush(...);
 ```
 
-The above function name immediately tells a developer that writing happens only on flush, and the developer can consult the function documentation to determine when the flushing happens.
+The above function name immediately tells a developer that writing happens only on flush. The developer can consult the function documentation to determine when the flushing happens.
 
 You can introduce a convenience method to perform a write with an immediate flush:
 
@@ -3132,7 +3131,7 @@ stdOutStream.flush();
 stdOutStream.writeWithFlush(...);
 ```
 
-Many times function's action is associated with a target, for example:
+Many times, a function's action is associated with a target, for example:
 
 ```java
 public interface ConfigParser {
@@ -3143,9 +3142,9 @@ public interface ConfigParser {
 When a function's action has a target, it is useful to name the function using the following pattern: `<action-verb>` +
 `<action-target>`, for example, `parse` + `config` = `parseConfig`.
 
-We can drop the action target from the function name if the function's first parameter describes the action target. It is not wrong to keep the action target in the function name, though. But if it can be dropped, it usually
-makes the function call statements read better. In the below example, the word "config" appears repeated: `tryParseConfig(configJson)`,
-which makes the function call statement read a bit clumsy.
+We can drop the action target from the function name if the function's first parameter describes the action target. However, keeping the action target in the function name is not wrong. But if it can be dropped, it usually
+makes the function call statements read better. In the example below, the word "config" appears to be repeated: `tryParseConfig(configJson)`,
+making the function call statement read slightly clumsy.
 
 ```java
 final var configuration = configParser.tryParseConfig(configJson);
@@ -3214,7 +3213,7 @@ You don't need to add a preposition to a function name if the preposition can be
 In many cases, only one preposition can be assumed. If you have a function named `wait`, the preposition `for` can be assumed,
 and if you have a function named `subscribe`, the preposition `to` can be assumed. We don't need to use function names `waitFor` and `subscribeTo`.
 
-Suppose a function is named `laugh(person: Person)`. Now we have to add a preposition because none can be assumed.
+Suppose a function is named `laugh(person: Person)`. Now, we have to add a preposition because none can be assumed.
 We should name the function either `laughWith(person: Person)` or `laughAt(person: Person)`.
 
 The following sections present examples of better naming some existing functions in programming languages.
@@ -3230,7 +3229,7 @@ does not say anything. There are three possibilities:
 
 Most definitely, it is not the second one, but it still leaves two possibilities. Most people correctly guess that it
 pushes elements to the end. To make it 100% clear where the elements are pushed, this function should be named `pushBack`.
-Then it does not make anybody think where the elements are pushed. Remember that a good function name does not make you think.
+Then, it does not make anybody think where the elements are pushed. Remember that a good function name does not make you think.
 
 Popping an element from an array is done with the `pop` method. But where does it pop from? If you read the method description,
 it tells that the element is popped at the back. To make it 100% clear, this method should be named `popBack`.
@@ -3304,9 +3303,9 @@ Here is a non-comprehensive list of some method names that come in pairs:
 - launch/terminate
 - publish/subscribe
 - join/detach
-- &lt;something&gt;/un&lt;something&gt;, e.g. assign/unassign, install/uninstall, subscribe/unsubscribe, follow/unfollow
-- &lt;something&gt;/de&lt;something&gt;, e.g. serialize/deserialize, allocate/deallocate
-- &lt;something&gt;/dis&lt;something&gt;, e.g. connect/disconnect
+- &lt;something&gt;/un&lt;something&gt;, e.g., assign/unassign, install/uninstall, subscribe/unsubscribe, follow/unfollow
+- &lt;something&gt;/de&lt;something&gt;, e.g., serialize/deserialize, allocate/deallocate
+- &lt;something&gt;/dis&lt;something&gt;, e.g., connect/disconnect
 
 The `apt` tool in Debian/Ubuntu-based Linux has an `install` command to install a package, but the
 command for uninstalling a package is `remove`. It should be `uninstall`. The Kubernetes package manager Helm has this correct.
@@ -3317,7 +3316,7 @@ It has an `install` command to install a Helm release and an `uninstall` command
 > ***The naming of boolean functions (predicates) should be such that when reading the function call statement,***
 > ***it reads as a boolean statement that can be true or false.***
 
-In this section, we consider naming functions that are predicates and return a boolean value. Here I don't mean functions that
+In this section, we consider naming functions that are predicates and return a boolean value. Here, I don't mean functions that
 return true or false based on the success of the executed action, but cases where the function call is used
 to evaluate a statement as true or false. The naming of boolean functions should be such that when
 reading the function call statement, it makes a statement that can be true or false. Below are some Java examples:
@@ -3492,8 +3491,8 @@ public class DatabaseOperation {
 
 #### Naming Builder Methods
 
-A builder class is used to create builder objects that build a new object of a particular type. If you wanted to
-construct a URL, a _UrlBuilder_ class could be used for that purpose. Builder class methods add properties to the
+A builder class is used to create builder objects that build a new object of a particular type. If you want to
+construct a URL, you can introduce a _UrlBuilder_ class for that purpose. Builder class methods add properties to the
 built object. For this reason, it is recommended to name builder class methods starting with the verb _add_. The method that
 finally builds the wanted object should be named simply _build_ or _build + &lt;build-target&gt;_, for example, _buildUrl_.
 I prefer the longer form to remind the reader what is being built.
@@ -3544,7 +3543,7 @@ final var url = new UrlBuilder()
 
 #### Naming Methods with Implicit Verbs
 
-Factory method names usually start with the verb _create_. Factory methods can be named so that the _create_ verb is implicit, for example in Java:
+Factory method names usually start with the verb _create_. Factory methods can be named so that the _create_ verb is implicit, for example, in Java:
 
 ```java
 Optional.of(final T value)
@@ -3594,13 +3593,13 @@ final var value = Long.from(longString);
 ```
 
 You can access a collection element in some languages using the method `at(index)`.
-Here the implicit verb is `get`. I recommend using method names with implicit verbs sparingly and only in circumstances where
+Here, the implicit verb is `get`. I recommend using method names with implicit verbs sparingly and only in circumstances where
 the implicit verb is self-evident and does not force a developer to think.
 
 #### Naming Property Getter Functions
 
 Property getter functions are usually named `get` + `<property-name>`.
-It is also possible to name a property getter that does not have a respective setter using just the property name. This is acceptable in cases where the property name cannot be confused with a verb.
+It is also possible to name a property getter without a respective setter using just the property name. This is acceptable in cases where the property name cannot be confused with a verb.
 Below is a Java example of property getters:
 
 ```java
@@ -3633,12 +3632,12 @@ generic type parameters from similar class names, like `Key`, `Value`, or `State
 #### Naming Function Parameters
 
 Naming rules for function parameters are mostly the same as for variables. _Uniform naming principle_ for variables
-is described in the next chapter in more detail.
+is described in more detail in the next chapter.
 
 There are some exceptions, like naming object parameters. When a function parameter is an object, the name of the object class can be left out from
 the parameter name when the parameter name and the function name implicitly describe the class of the parameter. This exception is acceptable because the function parameter type
 can always be easily checked by looking at the function signature.
-And this should be easily done with a glance because a function should be short (a maximum of 5-7 statements).
+This should be easily done at a glance because a function should be short (a maximum of 5-7 statements).
 Below is a TypeScript example of naming object type parameters:
 
 ```ts
@@ -3651,7 +3650,7 @@ drive(startLocation: Location, destinationLocation: Location): void
 drive(start: Location, destination: Location): void
 ```
 
-Some programming languages like Swift allow adding so-called _external names_ to function parameters. Using external names
+Some programming languages like Swift allow the addition of so-called _external names_ to function parameters. Using external names
 can make a function call statement read better, as shown below:
 
 ```swift
@@ -3679,8 +3678,8 @@ send(message, from: person, to: anotherPerson);
 ```
 
 Always make the function call expression such that it has maximum readability: e.g., `copy(source, target)` not `copy(target, source)`
-or `write(line, file)` not `write(file, line)` or `decode(inputMessage, internalMessage)` and `encode(internalField, outputMessage)`. The examples contain implicit articles and prepositions. You can
-easily imagine the missing articles and prepositions, e.g., *copy from a source to a target*, *write a line to a file* or *encode an internal field to an output message*.
+or `write(line, file)` not `write(file, line)` or `decode(inputMessage, internalMessage)` and `encode(field, outputMessage)`. The examples contain implicit articles and prepositions. You can
+easily imagine the missing articles and prepositions, e.g., *copy from a source to a target*, *write a line to a file* or *encode a field to an output message*.
 
 How would you name a UI function that closes a collapsible panel after a timeout if the panel is open?
 Inside the collapsible panel component, we could specify
@@ -3691,7 +3690,7 @@ function closeAfterTimeout(closeTimeoutInMs: number, isOpen: boolean): void {
 }
 ```
 
-The above is not the best, because `close` and `timeout` are repeated twice. Let's modify the function definition by dropping
+The above is not the best because `close` and `timeout` are repeated twice. Let's modify the function definition by dropping
 one `close` and one `timeout` to avoid repetition:
 
 ```ts
@@ -3708,9 +3707,9 @@ function closeAfterIf(timeoutInMs: number, isOpen: boolean): void {
 }
 ```
 
-Now we read the function definition in plain English: *close [this] after timeout in milliseconds if [this] is open*.
-And the `[this]` of course means the current collapsible panel object, so we could read:
-*close [the panel] after timeout in milliseconds if [the panel] is open*.
+Now we read the function definition in plain English: *close [this] after [a] timeout in milliseconds if [this] is open*.
+And the *[this]*, of course, means the current collapsible panel object so that we could read:
+*close [the panel] after a timeout in milliseconds if [the panel] is open*.
 
 We could write the above function definition in a very readable manner in Swift:
 
@@ -3779,10 +3778,18 @@ const values = [1, 2, 3, 4, 5];
 const copyOfValues = [...values];
 ```
 
+And in Java:
+
+```js
+final var values = new ArrayList<Integer>();
+// ...
+final var copyOfValues = List.copyOf(values);
+```
+
 The second approach requires you to create an unmodifiable version of a modifiable object and return
 that unmodifiable object. Some languages offer an easy way to create unmodifiable versions of certain objects.
 In Java, you can create an unmodifiable version of a `List`, `Map`, or `Set` using `Collections.unmodifiableList`,
-`Collections.unmodifiableMap`, or `Collections.unmodifiableSet` factory method, respectively.
+`Collections.unmodifiableMap` or `Collections.unmodifiableSet` factory method, respectively.
 
 You can also create an unmodifiable version of a class by yourself. Below is an example in Java:
 
@@ -3817,26 +3824,23 @@ and partially allowing access to the `MyList` class methods.
 
 In C++, you can return an unmodifiable version by declaring the return type as _const_, for example:
 
-<div class="sourceCodeWithoutLabel">
-
 ```cpp
 std::shared_ptr<const std::vector<std::string>>
 getStringValues() const;
 ```
 
-Now callers of the `getStringValues` method cannot modify the returned vector of strings because it is declared
+Now, callers of the `getStringValues` method cannot modify the returned vector of strings because it is declared
 const.
 
 Unmodifiable and immutable objects are slightly different. No one can modify an immutable object, but when you return an
 unmodifiable object from a class method, that object can still be modified by the owning class, and modifications are visible to
-everyone that has received an unmodifiable version of the object. If this is something undesirable, you should use
+everyone who has received an unmodifiable version of the object. If this is something undesirable, you should use
 a copy instead.
 
 ### Don't Assign From a Method Parameter to a Modifiable Attribute
 
-If a class receives modifiable objects as constructor or method arguments, it is typically best practice not to
-assign those arguments to the internal state directly. If they are assigned directly, the class can,
-on purpose or accidentally modify those argument objects, which is probably not what the constructor or method caller
+If a class receives modifiable objects as a constructor or method arguments, it is typically best practice not to
+directly assign those arguments to the internal state. If they are assigned directly, the class can purposely or accidentally modify those argument objects, which is probably not what the constructor or method caller
 expects.
 
 There are two ways to handle this situation:
@@ -4097,21 +4101,20 @@ class DonutChart extends PieChart {
 The above class hierarchy looks manageable: there should not be too many subclasses that need to be defined. We can, of course, think of new chart types, like a geographical map or data table
 for which we could add subclasses. One problem with a deep class hierarchy arises when you need to change or
 correct something related to a particular chart type. Let's say you want to change or correct some behavior
-related to a pie chart. You will first check the `PieChart` class if the behavior is defined there. If
-you can't find what you are looking for, you need to navigate to the base class of the `PieChart` class (`NonAxisChart`) and look there. And
-you might need to continue this navigation until you reach the base class where the behavior you want to
+related to a pie chart. You will first check the `PieChart` class to see if the behavior is defined there. If
+you can't find what you are looking for, you need to navigate to the base class of the `PieChart` class (`NonAxisChart`) and look there.
+You need to continue this navigation until you reach the base class where the behavior you want to
 change or correct is located. Of course, if you are incredibly familiar with the codebase, you might be able to locate the
 correct subclass on the first try. But in general, this is not a straightforward task.
 
 Using class inheritance can
 introduce class hierarchies where some classes have significantly more methods than other classes.
 For example, in the chart inheritance chain, the `AbstractChart` class probably has significantly more methods than
-classes at the end of the inheritance chain. This class size difference creates an imbalance between classes making it hard to reason about
-what functionality each class provides.
+classes at the end of the inheritance chain. This class size difference creates an imbalance between classes, making it hard to reason about
+the functionality each class provides.
 
-Even if the above class hierarchy might look okay at first sight, currently, there lies one problem. We have
-hardcoded what kind of chart view we are rendering. We are using the _XYZ_ chart library and rendering `XYZChart`
-views. Let's say we would like to introduce another chart library called _ABC_. We want to use both chart libraries
+Even if the above class hierarchy might look okay at first sight, there currently lies one problem. We have
+hardcoded the kind of chart view we are rendering. We use the _XYZ_ chart library and render `XYZChart` views. Let's say we would like to introduce another chart library called _ABC_. We want to use both chart libraries
 in parallel so that the open-source version of our data visualization application uses the _XYZ_ chart library, which is open
 source. The paid version of our application uses the commercial _ABC_ chart library. When using class inheritance,
 we must create new classes for each concrete chart type for the _ABC_ chart library.
@@ -4270,8 +4273,7 @@ class XYZChartFactory implements ChartFactory {
 }
 ```
 
-The `XYZPieChartViewRenderer` and `ABCPieChartViewRenderer` classes use the _adapter pattern_ as they convert
-the supplied data and options to an implementation (ABC or XYZ chart library) specific interface.
+The `XYZPieChartViewRenderer` and `ABCPieChartViewRenderer` classes use the _adapter pattern_ to convert the supplied data and options to an implementation (ABC or XYZ chart library) specific interface.
 
 We can easily add more functionality by composing the `ChartImpl` class of more classes. There could be, for example, a title
 formatter, tooltip formatter class, y/x-axis label formatter, and event handler classes.
@@ -4330,13 +4332,13 @@ class ABCChartFactory implements ChartFactory {
 
 ## Tactical Domain-Driven Design Principle
 
-> ***In Tactical DDD you define your domain models in more details. Tactical DDD is applied within a single bounded context.***
+> ***In Tactical DDD, you define your domain models in more detail. Tactical DDD is applied within a single bounded context.***
 
-We continue here where we left with strategical DDD in the last chapter. Strategic DDD was about dividing a software system to subdomains and bounded contexts (microservices).
+We continue here where we left off with strategic DDD in the last chapter. Strategic DDD was about dividing a software system into subdomains and bounded contexts (microservices).
 Tactical DDD is about implementing a single bounded context.
 Tactical DDD means that the structure of a bounded context and the names appearing in the code (interface, class, function, and variable names)
 should match the domain's vocabulary and the ubiquitous language. For example, names like *Account*, *withdraw*, *deposit*,
-*make_payment* should be used in a *payment-service* bounded context.
+*makeMayment* should be used in a *payment-service* bounded context.
 
 ### Tactical DDD Concepts
 
@@ -4360,11 +4362,11 @@ attribute of the entity.
 #### Value Objects
 
 Value objects are domain objects that don't have an identity. Examples of value objects are an address or a price object.
-The price object can have two attributes: *amount* and *currency*, but it does not have an identity. Similarly an address
+The price object can have two attributes: *amount* and *currency*, but it does not have an identity. Similarly, an address
 object can have the following attributes: *street address*, *postal code*, *city* and *country*. Value objects can and many times
-should have behavior in them. For example a *price* value object can have a validation rule for accepted currencies. You can
-also put behavior, like converting a price object to another price object with different currency, into the `Price` value object class.
-So, value objects are not just holders for a set of primitive values.
+should have behavior in them. For example, a *price* value object can have a validation rule for accepted currencies. You can
+also put behavior, like converting a price object to another price object with a different currency, into the `Price` value object class.
+So, it should be remembered that value objects are not just holders of a set of primitive values.
 
 #### Aggregates
 
@@ -4380,7 +4382,7 @@ not have a parent entity. But an *order item* entity is not an aggregate root wh
 serve as facade objects. Operations should be performed on the aggregate root objects, not directly accessing the
 objects behind the facade (e.g., not directly accessing the individual order items, but performing operations on order objects). For example, if you have an aggregate car object containing wheels, you don't operate the wheels outside of the car object. The car
 object provides a facade like a *turn* method, and the car object internally operates the wheels, making the car object
-an aggregate root. More about the *facade pattern* in a later section of this chapter.
+an aggregate root. The *facade pattern* will be discussed later in this chapter.
 
 Let's have an example of aggregate roots in a microservice architecture. Suppose we have a bank account, an aggregate root containing transaction entities. The bank account and transaction entities can be handled in different microservices (*account-service*
 and *account-transaction-service*), but only the *account-service* can  directly access and modify the transaction entities using
@@ -4391,7 +4393,7 @@ the *account-transaction-service*. Our bounded context is the *account-service*.
 
 You can easily split an aggregate root into more entities. For example, the bank account aggregate root
 could contain balance and transaction entities. The balance entity could be handled by a separate *account-balance-service*.
-Still, all bank account operations must be made to the *bank-account-service*, which will orchestrate, e.g., *withdraw* and
+Still, all bank account operations must be made to the *account-service*, which will orchestrate, e.g., *withdraw* and
 *deposit* operations using the *account-balance-service* and *account-transaction-service*. We can even split the *account-service*
 to two separate microservices: *account-service* for account CRUD operations (excluding updates related to balance) and
 *account-money-transfer-service* that will handle *withdraw* and *deposit* operations using the two lower-level microservices:
@@ -4400,15 +4402,14 @@ we discussed distributed transactions.
 
 #### Actors
 
-Actors perform commands. End-users are actors, but also services can be actors.
+Actors perform commands. End-users are actors in the strategic DDD, but services can be actors in tactical DDD.
 For example, in a data exporter microservice, there can be an input message consumer service that has a command
 to consume a message from a data source.
 
 #### Factories
 
-In domain-driven design, the creation of domain objects can be separated from the object classes to factories. Factories are
+In domain-driven design, the creation of domain objects can be separated from the domain object classes to factories. Factories are
 objects that are dedicated to creating objects of a particular type. Instead of creating a separate factory class, you can create a factory method in the domain entity class.
-Domain object factories can be created using the *factory patterns* which are described in a later section of this chapter.
 
 #### Repositories
 
@@ -4418,7 +4419,7 @@ Typically, there is one repository for each aggregate root, e.g., an *order repo
 #### Services
 
 Services can be divided into *domain* and *application* services. Application services are used to implement business use cases. External clients connect to the application services via input interface adapters.
-Domain services contain functionality that is not directly part of any specific object. A domain service is a class that does not represent a
+Domain services contain functionality that is not directly part of any specific domain object. A domain service is a class that does not represent a
 concept in the problem domain. It is also called *pure fabrication* according to [GRASP](https://en.wikipedia.org/wiki/GRASP_(object-oriented_design)) principles.
 Services orchestrate operations on aggregate roots. For example, an `OrderService` orchestrates operations on order entities.
 An application service typically uses a related repository to perform persistence-related operations. A service can also be seen as an actor with specific command(s).
@@ -4431,17 +4432,17 @@ layer can have several variations. A single application service (or service clas
 sprint object also given as a parameter in addition to the updated backlog item DTO. The factory should validate if the sprint is valid (a current or a future sprint, not a past one).
 The factory can be implemented in various ways, using one of the *factory patterns*, e.g., a separate factory class or a factory method in the entity class.
 Factory can create different variants of backlog item entities if needed. For example, the factory can create various objects based on the backlog item type, like a `TeamBacklogItem` or `ProductBacklogItem` object.
-After the backlog item is created using the factory, it can be persisted using a repository's update method. In this simple example, there is no need for domain services. In more complex cases, the model usually has domain services to which application services delegate for more complex operations.
+After the backlog item is created using the factory, it can be persisted using a repository's update method. In this simple example, domain services are not needed. In more complex cases, the model usually has domain services to which application services delegate for more complex operations.
 
 #### Events
 
 Events are operations on entities and form the business use cases. Services usually handle events. For example, there could be the following events related to order entities: create, update, and cancel an order. These
-events can be implemented by having an `OrderService` with the following methods: `create_order`, `update_order`, and
-`cancel_order`.
+events can be implemented by having an `OrderService` with the following methods: `createOrder`, `updateOrder`, and
+`cancelOrder`.
 
 #### Design-Level Event Storming
 
-*Design-level event storming* is a lightweight method (a workshop), a team can use to discover DDD-related concepts in a bounded context.
+*Design-level event storming* is a lightweight method (a workshop) that a team can use to discover DDD-related concepts in a bounded context.
 The event storming process typically follows the below steps:
 
 1) Figure out *domain events* (events are usually written in past tense)
@@ -4449,8 +4450,8 @@ The event storming process typically follows the below steps:
 3) Add *actors*/*services* that execute the *commands*
 4) Figure out related *entities*
 
-In event storming workshop, the different DDD concepts like events, commands, actors, and entities are represented with sticky notes in different colors.
-These sticky notes are put on a wall, and related sticky notes are grouped together, like the actor, the command, and entity/entities for a specific
+In the event storming workshop, the different DDD concepts, such as events, commands, actors, and entities, are represented with sticky notes in different colors.
+These sticky notes are put on a wall, and related sticky notes are grouped together, like the actor, the command, and entity/entities related to a specific
 domain event. If you are interested in details of the event storming process, there is a book named *Introducing EventStorming* by *Alberto Brandolini*.
 
 ### Tactical DDD Example 1: Data Exporter Microservice
@@ -4522,24 +4523,24 @@ Below is the list of sub-domains, interfaces, and classes in the *Input* domain:
 
 - Input message
     - Contains the message consumed from the input data source
-    - `InputMessage` is a protocol that can have several concrete implementations, like `KafkaInputMessage` representing
+    - `InputMessage` is an interface that can have several concrete implementations, like `KafkaInputMessage` representing
       an input message consumed from a Kafka data source
 - Input message consumer
     - Consumes messages from the input data source and creates `InputMessage` instances
-    - `InputMessageConsumer` is a protocol that can have several concrete implementations, like `KafkaInputMessageConsumer` for consuming messages from a Kafka data source
+    - `InputMessageConsumer` is an interface that can have several concrete implementations, like `KafkaInputMessageConsumer` for consuming messages from a Kafka data source
 - Input Message decoder
     - Decodes input messages into internal messages
-    - `InputMessageDecoder` is a protocol that can have several concrete implementations, like `AvroBinaryInputMessageDecoder`,
-      which decodes input messages encoded in Avro binary format. (If you provide multiple implementations for the `InputMessageDecoder` protocol, you must also create a factory class that can create different kinds of input message decoders).
+    - `InputMessageDecoder` is an interface with several concrete implementations, like `AvroBinaryInputMessageDecoder`,
+      which decodes input messages encoded in Avro binary format. (If you provide multiple implementations for the `InputMessageDecoder` interface, you must also create a factory class to create different kinds of input message decoders).
 - Input configuration
     - Input configuration reader
         - Reads the domain's configuration
-        - `InputConfigReader` is a protocol that can have several concrete implementations, like
+        - `InputConfigReader` is an interface that can have several concrete implementations, like
           `LocalFileSystemInputConfigReader` or `HttpRemoteInputConfigReader`
     - Input configuration parser
         - Parses the read configuration to produce an `InputConfig` instance
-        - `InputConfigParser` is a protocol that can have several concrete implementations, like `JsonInputConfigParser` or `YamlInputConfigParser`
-    - `InputConfig` instance contains parsed configuration for the domain, like the input data source type, host, port, and input data format.
+        - `InputConfigParser` is an interface that can have several concrete implementations, like `JsonInputConfigParser` or `YamlInputConfigParser`
+    - `InputConfig` instance contains parsed configuration for the domain, lsuch asthe input data source type, host, port, and input data format.
 
 ![Input Subdomain](resources/chapter2/images/04-02.png)
 
@@ -4586,18 +4587,18 @@ Below is the list of sub-domains, interfaces, and classes in the *Transform* dom
 - Field transformer
     - `FieldTransformers` is a collection of `FieldTransformer` objects
     -  A Field transformer transforms the value of an internal field into the value of an output message field
-    - `FieldTransformer` is a protocol that can have several concrete implementations, like
+    - `FieldTransformer` is an interface that can have several concrete implementations, like
       `FilterFieldTransformer`, `CopyFieldTransformer`, `TypeConversionFieldTransformer` and `ExpressionTransformer`
 - Message Transformer
     - `MessageTransformer` takes an internal message and transforms it using field transformers
 - Transformer configuration
     - Transformer configuration reader
         - Reads the domain's configuration
-        - `TransformerConfigReader` is a protocol that can have several concrete implementations,
+        - `TransformerConfigReader` is an interface that can have several concrete implementations,
           like `LocalFileSystemTransformerConfigReader`
     - Transformer configuration parser
         - Parses read configuration to produce a `TransformerConfig` instance
-        - `TransformerConfigParser` is a protocol that can have several concrete implementations,
+        - `TransformerConfigParser` is an interface that can have several concrete implementations,
           like `JsonTransformerConfigParser`
     - `TransformerConfig` instance contains parsed configuration for the *Transformer* domain
 
@@ -4629,21 +4630,21 @@ Below is the list of sub-domains, interfaces, and classes in the *Output* domain
 
 - Output Message encoder
     - Encodes transformed message to an output message with a specific data format
-    - `OutputMessageEncoder` is a protocol that can have several concrete implementations, like `CsvOutputMessageEncoder`,
+    - `OutputMessageEncoder` is an interface that can have several concrete implementations, like `CsvOutputMessageEncoder`,
       `JsonOutputMessageEncoder`, `AvroBinaryOutputMessageEncoder`
 - Output message
     - `OutputMessage` is a container for an output byte sequence
 - Output message producer
     - Produces output messages to the output destination
-    - `OutputMessageProducer` is a protocol that can have several concrete implementations, like `KafkaOutputMessageProducer`
+    - `OutputMessageProducer` is an interface that can have several concrete implementations, like `KafkaOutputMessageProducer`
 - Output configuration
     - Output configuration reader
         - Reads the domain's configuration
-        - `OutputConfigReader` is a protocol that can have several concrete implementations,
+        - `OutputConfigReader` is an interface that can have several concrete implementations,
           like `LocalFileSystemOutputConfigReader`
     - Output configuration parser
         - Parse the read configuration to an `OutputConfig` instance
-        - `OutputConfigParser` is a protocol that can have several concrete implementations, like `JsonOutputConfigParser`
+        - `OutputConfigParser` is an interface that can have several concrete implementations, like `JsonOutputConfigParser`
     - `OutputConfig` instance contains parsed configuration for the domain, like output destination type, host, port, and the output data format
 
 ![Output Subdomain](resources/chapter2/images/output_subdomain.png)
@@ -4822,7 +4823,7 @@ to fetch data for a particular measurement from a particular data source. The de
 anomaly and measurement domains can be further split to achieve even more development parallelization. For example,
 one developer could work with anomaly detection, another with anomaly model training, and the third with anomaly indicators.
 
-If you want to know more about DDD, I suggest you to read *Implementing Domain-Driven Design* by *Vaughn Vernon*.
+If you want to know more about DDD, I suggest you read the *Implementing Domain-Driven Design* book by Vaughn Vernon.
 
 ## Design Patterns
 
