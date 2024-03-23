@@ -3022,7 +3022,8 @@ the `salesItemCreated` event contains an additional `id` property.
 ## API Design Example
 
 Let's have a concrete example of designing an API for a trip booking service.
-The first feature, as presented by product management, is for a user to be able to *book a trip*. We do not concern ourselves with frontend development here; we only focus on the backend (API) side.
+The first feature, as presented by product management, is for a user to be able to *book a trip*.
+We do not concern ourselves with frontend development here; we only focus on the backend (API) side.
 
 The team uses domain-driven design and starts with an event-storming session, which results in the following output.
 
@@ -3043,40 +3044,40 @@ trip-booking-service
     └── trip
         ├── model
         │   ├── dtos
-        │   │   ├── InputTrip.py
-        │   │   ├── InputFlightReservation.py
-        │   │   ├── InputHotelReservation.py
-        │   │   ├── InputRentalCarReservation.py
-        │   │   ├── OutputTrip.py
-        │   │   ├── OutputFlightReservation.py
-        │   │   ├── OutputHotelReservation.py
-        │   │   └── OutputRentalCarReservation.py
+        │   │   ├── InputTrip.java
+        │   │   ├── InputFlightReservation.java
+        │   │   ├── InputHotelReservation.java
+        │   │   ├── InputRentalCarReservation.java
+        │   │   ├── OutputTrip.java
+        │   │   ├── OutputFlightReservation.java
+        │   │   ├── OutputHotelReservation.java
+        │   │   └── OutputRentalCarReservation.java
         │   ├── entities
-        │   │   ├── FlightReservation.py
-        │   │   ├── HotelReservation.py
-        │   │   ├── RentalCarReservation.py
-        │   │   └── Trip.py
+        │   │   ├── FlightReservation.java
+        │   │   ├── HotelReservation.java
+        │   │   ├── RentalCarReservation.java
+        │   │   └── Trip.java
         │   ├── errors
-        │   │   ├── TripBookingServiceError.py
+        │   │   ├── TripBookingServiceError.java
         │   │   └── ...
         │   ├── repositories
-        │   │   └── TripRepository.py
+        │   │   └── TripRepository.java
         │   ├── services
-        │   │   ├── FlightReservationService.py
-        │   │   ├── HotelReservationService.py
-        │   │   └── RentalCarReservationService.py
+        │   │   ├── FlightReservationService.java
+        │   │   ├── HotelReservationService.java
+        │   │   └── RentalCarReservationService.java
         │   └── usecases
-        │       ├── TripBookingUseCases.py
-        │       └── TripBookingUseCasesImpl.py
+        │       ├── TripBookingUseCases.java
+        │       └── TripBookingUseCasesImpl.java
         └── ifadapters
             ├── controllers
-            │   └── RestTripBookingController.py
+            │   └── RestTripBookingController.java
             ├── repositories
-            │   └── MongoDbTripRepository.py
+            │   └── MongoDbTripRepository.java
             └── services
-                ├── GalileoFlightReservationService.py
-                ├── AmadeusHotelReservationService.py
-                └── HertzRentalCarReservationService.py
+                ├── GalileoFlightReservationService.java
+                ├── AmadeusHotelReservationService.java
+                └── HertzRentalCarReservationService.java
 ```
 
 Next, we should use BDD and ATDD to define acceptance tests for the trip booking feature. We will skip that step
@@ -3084,177 +3085,183 @@ here because it was already well covered in the testing principles chapter.
 
 After we have implemented our acceptance tests, we need to start implementing our API microservice to get those
 acceptance tests passed. For the implementation, we should use either Detroit/Chicago or London-style TDD. We choose the London
-style and start from the outer layer, i.e., from the controller. I am not presenting the TDD steps here; I am only presenting the implementation. We have already covered the TDD in several examples.
+style and start from the outer layer, i.e., from the controller. I am not presenting the TDD steps here;
+I am only presenting the implementation. We have already covered the TDD in several examples.
 We should use the bounded context-specific ubiquitous language in our code. For example, instead of speaking about creating a trip, we
-use the term "book a trip".
-
-{aside}
-Source code for the below example is available [here](https://github.com/pksilen/clean-code-principles-python-code/tree/main/chapter6/apidesign).
-{/aside}
+use the term "book a trip". Below are the most important parts of the source written in Java using Spring Boot.
 
 The controller method for booking a trip should be simple and delegate to a business use case.
 
-{title: "RestTripBookingController"}
-```python
-class RestTripBookingController:
-    __trip_booking_use_cases: TripUseCases = Provide['trip_use_cases']
+{title: "RestTripBookingController.java"}
+```java
+@RestController
+@RequestMapping("/trips")
+public class RestTripBookingController {
+  @Autowired
+  private TripBookingUseCases tripBookingUseCases;
 
-    def __init__(self):
-        self.__router = APIRouter()
-
-        self.__router.add_api_route(
-            '/trips/',
-            self.book_trip,
-            methods=['POST'],
-            status_code=201,
-            response_model=OutputTrip,
-        )
-
-    @property
-    def router(self):
-        return self.__router
-
-    def book_trip(self, input_trip: InputTrip) -> OutputTrip:
-        return self.__trip_booking_use_cases.book_trip(input_trip)
+  @PostMapping
+  @ResponseStatus(HttpStatus.CREATED)
+  public OutputTrip bookTrip(@RequestBody InputTrip inputTrip) {
+      return tripBookingUseCases.bookTrip(inputTrip);
+  }
+}
 ```
 
 Notice below how we put behavior into domain entities, and our use case class is not crowded
 with business logic code but delegate to entity class and repository to achieve a business use case.
 
-{title: "TripBookingUseCasesImpl"}
-```python
-class TripUseCasesImpl(TripUseCases):
-    __trip_repository: TripRepository = Provide['trip_repository']
+{title: "TripBookingUseCasesImpl.java"}
+```java
+@Service
+public class TripUseCasesImpl implements TripUseCases {
+  @Autowired
+  private TripRepository tripRepository;
 
-    def book_trip(self, input_trip: InputTrip) -> OutputTrip:
-        # Below factory method creates a validated domain entity
-        trip = Trip.create_from(input_trip)
+  @Override
+  @Transactional
+  public OutputTrip bookTrip(InputTrip inputTrip) {
+    Trip trip = Trip.from(inputTrip);
+    trip.makeReservations();
 
-        # Distributed transaction starts
-        trip.make_reservations()
+    try {
+      tripRepository.save(trip);
+    } catch (final TripRepository.Error error) {
+      trip.cancelReservations();
+      throw error;
+    }
 
-        try:
-            self.__trip_repository.save(trip)
-        except self.__trip_repository.Error as error:
-           # Compensating action
-           trip.cancel_reservations()
-           raise error
-
-       # Distributed transaction ends
-
-       return OutputTrip.model_validate(trip)
+    return OutputTrip.from(trip);
+  }
+}
 ```
 
-{title: "TripRepository"}
-```python
-class TripRepository(Protocol):
-    class Error(TripBookingServiceError):
-        pass
+{title: "TripRepository.java"}
+```java
+public interface TripRepository {
+  class Error extends TripBookingServiceError {
+    // ...
+  }
 
-    def save(self, trip: Trip) -> None:
-        pass
+  void save(Trip trip);
+}
 ```
 
-{title: "MongoDbTripRepository"}
-```python
-class MongoDbTripRepository(TripRepository):
-    def save(self, trip: Trip) -> None:
-        # ...
+{title: "MongoDbTripRepository.java"}
+```java
+@Repository
+public interface MongoDbTripRepository
+                    extends MongoRepository<Trip, String>, TripRepository {
+  // ...
+}
 ```
 
 Below is the code for the domain entities:
 
-{title: "Trip.py"}
-```python
-class Trip:
-    def __init__(self, reservations: list[Reservation], ...):
-        self.__reservations = reservations
+{title: "Trip.java"}
+```java
+public class Trip {
+  private final List<Reservation> reservations;
 
-    @staticmethod
-    def create_from(input_trip: InputTrip) -> 'Trip':
-        reservations = []
+  public Trip(final List<Reservation> reservations, /* ... other fields */) {
+     this.reservations = reservations;
+  }
 
-        for flight_reservation in input_trip.flight_reservations:
-            reservations.append(FlightReservation(...))
+  public static Trip from(final InputTrip inputTrip) {
+    final List<Reservation> reservations = new ArrayList<>();
 
-        for hotel_reservation in input_trip.hotel_reservations:
-            reservations.append(HotelReservation(...))
+    for (final var flightReservation : inputTrip.getFlightReservations()) {
+      reservations.add(new FlightReservation(/* ... map inputTrip data */));
+    }
 
-        for rental_car_reservation in input_trip.rental_car_reservations:
-            reservations.append(RentalCarReservation(...))
+    // Similar loop as above for hotel reservations and
+    // rental car reservations
 
-        return Trip(reservations, ...)
+    return new Trip(reservations, /* ... other fields */);
+  }
 
-    def make_reservations(self) -> None:
-        try:
-            for reservation in self.__reservations:
-                reservation.make()
-        except Reservation.MakeError as error:
-            # We are inside a distributed transaction
-            # Compensating actions
-            self.cancel_reservations()
-            raise error
+  public void makeReservations() {
+    for (final var reservation : reservations) {
+      try {
+        reservation.make();
+      } catch (final Reservation.MakeError error) {
+        this.cancelReservations();
+        throw error;
+      }
+    }
+  }
 
-    def cancel_reservations(self) -> None:
-        # In production code, this loop cannot be forever but should be
-        # replaced with more robust and complex error handling as described
-        # earlier in first chapter when discussing distributed transactions
-        while self.__reservations:
-            try:
-                for reservation in self.__reservations:
-                    reservation.cancel()
-                    self.__reservations.remove(reservation)
-                    break
-            except Reservation.CancelError:
-                pass
+  public void cancelReservations() {
+    // In production code, this loop cannot be forever but should be
+    // replaced with more robust and complex error handling as described
+    // earlier in first chapter when discussing distributed transactions
+
+    while (!reservations.isEmpty()) {
+      for (final var reservation : reservations) {
+        try {
+          reservation.cancel();
+          reservations.remove(reservation);
+          break;
+        } catch (final Reservation.CancelError error) {
+          // Intentionally no operation
+        }
+      }
+    }
+  }
+}
 ```
 
-{title: "Reservation.py"}
-```python
-class Reservation(Protocol):
-    class MakeError(TripBookingServiceError):
-        pass
+{title: "Reservation.java"}
+```java
+public interface Reservation {
+  class MakeError extends TripBookingServiceError {
+    // ...
+  }
 
-   class AlreadyReservedError(MakeError):
-           pass
+  class AlreadyReservedError extends MakeError {
+    // ...
+  }
 
-    def make(self) -> None:
-        pass
+  void make();
 
-    class CancelError(TripBookingServiceError):
-        pass
+  class CancelError extends TripBookingServiceError {
+    // ...
+  }
 
-    def cancel(self) -> None:
-        pass
+  void cancel();
+}
 ```
 
-{title: "AbstractReservation.py"}
-```python
-class AbstractReservation(Reservation):
-    def __init__(self, id_: str):
-        self.__id = id_
+{title: "AbstractReservation.java"}
+```java
+public abstract class AbstractReservation implements Reservation {
+  private Optional<String> maybeId;
 
-    @property
-    def id(self) -> str:
-        return self.__id
+  public AbstractReservation(final Optional<String> maybeId) {
+    this.maybeId = maybeId;
+  }
 
-    @id.setter
-    def id(self, id_: str) -> None:
-        self.__id = id_
+  public void setId(final String id) {
+    this.id = Optional.of(id);
+  }
 
-    def _assert_is_not_reserved(self) -> None:
-        if self.__id is not None:
-            raise self.AlreadyReservedError()
+  protected void assertIsNotReserved() {
+    if (maybeId.isPresent()) {
+      throw new AlreadyReservedError("Reservation already exists");
+    }
+  }
 
-    def _cancel_using(self, reservation_service: ReservationService) -> None:
-        if self.__id is None:
-            return
-
-        try:
-            reservation_service.cancel_reservation(self.__id)
-            self.__id = None
-        except reservation_service.CancelReservationError as error:
-            raise self.CancelError(error)
+  protected void cancelUsing(final ReservationService reservationService) {
+    maybeId.ifPresent((id) -> {
+      try {
+        reservationService.cancelReservation(id);
+        id = null;
+      } catch (final ReservationService.CancelReservationError error) {
+        throw new CancelError(error);
+      }
+    });
+  }
+}
 ```
 
 {title: "FlightReservation.py"}
@@ -3515,3 +3522,7 @@ class Trip:
 
 In the above examples, we did not use the convention of adding a *try*-prefix to a method that can raise an error.
 However, it could have been beneficial in this case due to distributed transactions. *Try*-prefixed methods would have clarified where our distributed transactions can fail and execution of, e.g., compensating actions, is required.
+
+We could add many other features to the trip booking service, like getting trips or a single trip, canceling a trip, making/replacing/canceling various types of reservations, etc.
+However, we should not put all those features in a single controller, service, and repository class. We should implement the *vertical slice architecture* as presented in the earlier *object-oriented design principles chapter*.
+We should create separate subdirectories for each feature (or feature set or subdomain). Each subdirectory should have a controller, service, and repository class containing functionality related to that particular feature (or feature set or subdomain) only.
