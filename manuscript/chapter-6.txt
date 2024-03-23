@@ -3266,22 +3266,32 @@ public abstract class AbstractReservation implements Reservation {
 
 {title: "FlightReservation.py"}
 ```python
-class FlightReservation(AbstractReservation):
-    __flight_reservation_service: FlightReservationService = Provide['flight_reservation_service']
+public class FlightReservation extends AbstractReservation {
+  private final FlightReservationService flightReservationService;
 
-    def __init__(self, ...):
-        # Set flight reservation related attributes ...
+  public FlightReservation(
+    final FlightReservationService flightReservationService, /* ... */
+    ) {
+    super(Optional.empty());
+  }
 
-    def make(self) -> None:
-        self._assert_is_not_reserved()
+  @Override
+  public void make() {
+    assertIsNotReserved();
 
-        try:
-            self.id = self.__flight_reservation_service.reserve_flight(...)
-        except self.__flight_reservation_service.ReserveFlightError as error:
-            raise self.MakeError(error)
+    try {
+      this.setId(flightReservationService.reserveFlight(/* ... */));
+    } catch (final FlightReservationService.ReserveFlightError error) {
+      throw new MakeError(error);
+    }
+  }
 
-    def cancel(self) -> None:
-        self._cancel_using(self.__flight_reservation_service)
+  @Override
+  public void cancel() {
+    cancelUsing(flightReservationService);
+  }
+}
+
 ```
 
 {title: "HotelReservation.py"}
