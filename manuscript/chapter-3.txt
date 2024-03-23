@@ -977,7 +977,7 @@ src
     └── message
 ```
 
-We could also structure the code according to the *clean microservice design* in the following way:
+We could also structure the code according to the *clean architecture* in the following way:
 
 ```
 src/main/java
