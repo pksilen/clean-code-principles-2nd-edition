@@ -2687,7 +2687,9 @@ we can define our features using that language. We can end up with the following
     - Replace rental car reservation for a trip
     - Remove rental car reservation from a trip
 
-Let's use the *vertical slice architecture principle* and layout the directory structure for our microservice:
+Let's use the *vertical slice architecture principle* and lay out the directory structure for our microservice.
+As shown below, we can also create vertical slices larger than a single feature, namely vertical slices that can be called *feature sets*
+or *subdomains*. In the example below, we have grouped related hotel, flight, and rental reservation features to own feature sets or subdomains.
 
 ```
 travel-booking-service
