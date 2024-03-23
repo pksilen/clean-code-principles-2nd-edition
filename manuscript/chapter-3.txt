@@ -771,7 +771,7 @@ sales-item-service
                 └── SalesItemController.java
 ```
 
-To highlight the *clean microservice design principle*, we could also use the following kind of directory
+To highlight the *clean architecture principle*, we could also use the following kind of directory
 layout:
 
 ```
@@ -835,7 +835,7 @@ You can even do it like this: *ifadapters/input/controllers* and *ifadapters/out
 uses external services, you can put those in the *ifadapters/output/services* directory. You can also name your application
 services as use cases, e.g., `businesslogic/usescases/SalesItemUseCases[Impl].java`.
 
-If you follow the *clean microservice design* principle and add or change an interface adapter (e.g., a controller or a repository),
+If you follow the *clean architecture principle* and add or change an interface adapter (e.g., a controller or a repository),
 you should not need to make any code changes to the business logic part of the service (the *businesslogic* directory).
 
 Below is the source code directory structure for the data exporter microservice designed in the previous

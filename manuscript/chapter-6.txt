@@ -785,7 +785,7 @@ interactive documentation from the source code.
 #### Implementation Example
 
 Let's implement *sales-item-service* API endpoints for CRUD operations on sales items using FastAPI. We use the
-*clean microservice design principle* introduced earlier and write the API endpoints inside a controller class:
+*clean architecture principle* introduced earlier and write the API endpoints inside a controller class:
 
 {title: "SalesItemController.ts"}
 ```ts
@@ -1028,7 +1028,7 @@ Mapping (ORM), parameterized SQL queries, and MongoDB.
 
 For error handling, we depend on the `catch` block provided by the Nest.js web framework. We could throw
 errors of the Nest.js `HTTPException` type in our business logic, but then we would be coupling our web framework
-with business logic, which is not desired. Remember how in the *clean microservice design principle*, the dependency goes only
+with business logic, which is not desired. Remember how in the *clean architecture principle*, the dependency goes only
 from the web framework (controller) towards business logic, not vice versa. If we used web framework-specific
 error classes in our business and logic, and we would like to migrate the microservice to a different web framework; we would
 have to refactor the whole business logic concerning raised errors.

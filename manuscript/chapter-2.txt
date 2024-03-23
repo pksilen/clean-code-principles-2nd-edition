@@ -6,8 +6,8 @@ This chapter describes principles related to object-oriented design. The followi
 - Programming paradigms
 - Why is object-oriented programming hard?
 - SOLID principles
-- Clean microservice design (architecture) principle
-- Vertical slice design (architecture) principle
+- Clean architecture principle
+- Vertical slice architecture principle
 - Class organization principle
 - Package, class, and function sizing principle
 - Uniform naming principle
@@ -416,9 +416,9 @@ If you have a class that performs user authentication and configuration parsing,
 and has lower cohesion because it has two reasons to change. One great sign of a class possibly having multiple responsibilities is that it can be hard to figure out a good name for the class, or if you could put an *and* word in the class name, like `UserAuthenticatorAndConfigParser`.
 *High cohesion* and *low coupling* are both part of the [GRASP](https://en.wikipedia.org/wiki/GRASP_(object-oriented_design)) principles.
 
-Another great example of the separation of concerns principle is the *clean microservice design (or architecture) principle* where
+Another great example of the separation of concerns principle is the *clean architecture principle* where
 you separate the microservice's business logic from the microservice's input and output. In this way, it is easy to make the microservice
-support various inputs and outputs without modifying the business logic "section". The clean microservice design (or architecture) principle
+support various inputs and outputs without modifying the business logic "section". The clean architecture principle
 is discussed later in this chapter.
 
 Let's get back to the single responsibility principle. Each class should have a single dedicated purpose. A class can represent a single thing, like
@@ -2119,21 +2119,20 @@ public class BirdFactory {
 }
 ```
 
-## Clean Microservice Design Principle
+## Clean Architecture Principle
 
-> ***The clean microservice design promotes object-oriented design with the separation of concerns achieved***
+> ***The clean architecture promotes object-oriented design with the separation of concerns achieved***
 > ***by dividing software into layers using the dependency inversion principle (programming against interfaces).***
 
-Clean microservice design focuses on creating a microservice core (the model, business logic) that is devoid of technological concerns, pushing those to an outer input/output interface adaptation layer
+Clean architecture focuses on creating a microservice core (the model, business logic) that is devoid of technological concerns, pushing those to an outer input/output interface adaptation layer
 that includes, e.g., the persistence mechanism (an output interface adapter) and controller (an input interface adapter), which can be considered as technological details that
 have nothing to do with the microservice core. The benefit of this approach is that you can modify technological details without affecting the microservice core. Microservice's input comes from its clients, and
 output is anything external the microservice needs to access to fulfill requests from the input.
 
-*Robert C. Martin a.k.a. Uncle Bob* uses the term *clean architecture* in his book *Clean Architecture* for this same principle. I do not use
-the term *architecture* because I have reserved that term to designate the design of something larger (i.e., a software system) than a single service. Clean microservice design focuses on designing a single (micro)service conducting OOD in a particular fashion.
+Clean architecture focuses on designing a single (micro)service conducting OOD in a particular fashion.
 
-Clean microservice design is a relatively simple concept. If you have used the single responsibility principle, divided a microservice into layers, and been programming against interfaces (using the dependency inversion
-principle), you may have applied the clean microservice design without knowing it. The clean microservice design principle also employs the *adapter pattern* from design patterns discussed later in this chapter. The adapter pattern is used in input and output interface adapters. We can create separate adapter classes for various input sources and output destinations. Many resources (books, websites, etc.) can explain the clean architecture in rather complex terms.
+Clean architecture is a relatively simple concept. If you have used the single responsibility principle, divided a microservice into layers, and been programming against interfaces (using the dependency inversion
+principle), you may have applied the clean architecture without knowing it. The clean architecture principle also employs the *adapter pattern* from design patterns discussed later in this chapter. The adapter pattern is used in input and output interface adapters. We can create separate adapter classes for various input sources and output destinations. Many resources (books, websites, etc.) can explain the clean architecture in rather complex terms.
 
 {aside}
 If you are interested, there are similar concepts to *clean architecture* called [hexagonal architecture](https://en.wikipedia.org/wiki/Hexagonal_architecture_(software)) (or *ports and adapters architecture*) and *onion architecture*.
@@ -2142,7 +2141,7 @@ software without modifications to the business logic part. They can use differen
 have co-centric hexagons instead of circles like in clean architecture, but the basic idea in all of them is the same.
 {/aside}
 
-Clean microservice design comes with the following benefits for the service:
+Clean architecture comes with the following benefits for the service:
 
 - Not tied to any single framework
 - Not tied to any single API technology like REST or GraphQL
@@ -2166,7 +2165,7 @@ The controller should delegate to application service classes. It coordinates an
 *Controller* is a pattern from GRASP principles. Similarly, a repository
 is a common term for an output interface adapter that stores and retrieves information, usually in/from persistent storage.
 
-![Clean Microservice Design](resources/chapter2/images/clean_arch.png)
+![Clean Architecture](resources/chapter2/images/clean_arch.png)
 
 The direction of dependencies in the above diagrams is shown with arrows. We can see that the microservice's clients depend
 on the input interface adapter or *controller* we create. The controller depends on the use cases. The use case layer depends on (business) entities.
@@ -2179,7 +2178,7 @@ We know it is something that doesn't change often. It has a couple of key attrib
 but what a bank account is or does has remained the same for tens of years. However, we cannot say the same for API or database technologies.
 Those are things that change at a much faster pace compared to bank accounts.
 Because of the direction of dependencies,
-changes in the outer layers do not affect the inner layers. The clean microservice design allows for easy API technology
+changes in the outer layers do not affect the inner layers. The clean architecture allows for easy API technology
 and database change, e.g., from REST to gRPC or SQL to NoSQL database. All these changes can be made
 without affecting the business logic (use case and entities layers).
 
@@ -2508,9 +2507,9 @@ public interface MongoDbOrderRepository extends MongoRepository<DbOrder, String>
 }
 ```
 
-![Clean Microservice Design for Order Service](resources/chapter2/images/04-05.png)
+![Clean Architecture for Order Service](resources/chapter2/images/04-05.png)
 
-When implementing a clean microservice design, everything is wired together using configuration and dependency injection.
+When implementing a clean architecture, everything is wired together using configuration and dependency injection.
 For example, the Spring framework creates an instance implementing the `OrderRepository` interface according to configuration and injects it into an `OrderServiceImpl` instance.
 In the case of Spring, the dependency injector is configured using a configuration file and annotations. The configuration file or annotations
 can be used to configure the database used. Additionally, the Spring dependency injector creates an instance of the `OrderServiceImpl` class
@@ -2584,14 +2583,14 @@ handling, logging, audit logging, authorization, and observability. These aspect
 when you should have learned how to craft production-quality software.
 {/aside}
 
-Now we have seen examples of the following benefits of clean microservice design:
+Now we have seen examples of the following benefits of clean architecture:
 
 - Not tied to any single API technology like REST or GraphQL
 - Not tied to a specific client (works with web, desktop, console, and mobile clients)
 - Not tied to a specific database
 - Not dependent on any specific external service implementation
 
-The final benefit of clean microservice design:
+The final benefit of clean architecture:
 
 - Not tied to any single framework
 
@@ -2604,8 +2603,8 @@ In my other book [Clean Code Principles And Patterns: Python Edition](https://le
 to a *Flask*-based microservice. In that example, we can change the used web framework by introducing two new small modules (application and controller modules). We do not touch any existing modules.
 Thus, we can be confident that we do not break any existing functionality. We successfully apply the *open-closed principle* to our software.
 
-It should be noted that the clean microservice design principle applies to other microservices with input or output, not just API microservices. We will have an example of this later in this chapter.
-Another benefit of the clean microservice design that has not been mentioned yet is that you can write component tests that test the software component's business logic (or the model) using fake input and output adapters instead of the real ones. Let's take a data exporter microservice as an example. It reads data from an input source (e.g., Apache Kafka) and transforms it in various ways before writing to an output destination (e.g., Apache Pulsar).
+It should be noted that the clean architecture principle applies to other microservices with input or output, not just API microservices. We will have an example of this later in this chapter.
+Another benefit of the clean architecture that has not been mentioned yet is that you can write component tests that test the software component's business logic (or the model) using fake input and output adapters instead of the real ones. Let's take a data exporter microservice as an example. It reads data from an input source (e.g., Apache Kafka) and transforms it in various ways before writing to an output destination (e.g., Apache Pulsar).
 We can test the transformation business logic using a fake input and output adapter injected into the software component.
 Running the tests will be fast because there is no need to spin up an instance of Kafka and Pulsar. Later, we can augment
 the component tests with some integration tests that test the integration to real input and output. We will talk more about component and integration tests in a later chapter.
@@ -2618,8 +2617,8 @@ You can also group these single feature directories under a domain directory. Th
 The main benefit of vertical slice design is that it allows you to follow the open-closed principle when adding new features. There is no need to modify existing code and no risk of breaking existing functionality.
 You can implement a vertical slice (a feature) as you wish, which is a clear benefit when different features have divergent requirements.
 So, a vertical slice can contain a single class or multiple classes that form a layered design. Vertical slice design does not enforce any specific way.
-However, using some design principles for a vertical slice implementation is good practice. I suggest to use the *clean microservice design*.
-You can use vertical slice design and clean microservice design principles together. They are not mutually exclusive principles.
+However, using some design principles for a vertical slice implementation is good practice. I suggest to use the *clean architecture principle*.
+You can use vertical slice design and clean architecture principles together. They are not mutually exclusive principles.
 
 If your microservice is a small API, e.g., just containing a handful of simple CRUD operations, you don't necessarily get much benefit from vertical slicing.
 If you are not using the vertical slice design, adding a new CRUD operation requires changes to existing classes. These changes include adding new methods to mostly immutable or stateless classes,
@@ -4654,7 +4653,7 @@ it is pretty much the same as the configuration part in the Input domain.
 
 ![Output Subdomain Class Diagram](resources/chapter2/images/output_domain.svg)
 
-The above design also follows the *clean microservice design* principle. Note that this principle applies to all kinds of microservices with input or output, not just APIs. From the above design, we can discover the following interface adapters that
+The above design also follows the *clean architecture principle*. Note that this principle applies to all kinds of microservices with input or output, not just APIs. From the above design, we can discover the following interface adapters that
 are not part of the business logic of the microservice:
 
 - `InputMessageConsumer` interface implementations

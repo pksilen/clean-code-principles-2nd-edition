@@ -2271,7 +2271,7 @@ test integration to external services. The component tests could be written usin
 I have also worked with the approach of creating just a handful of fast-executing component tests to act as smoke tests (focusing on the most essential part of business logic). All integration tests are written using Behave and Docker Compose.
 I can execute those smoke tests together with unit tests to quickly see if something is broken.
 The Behave + Docker Compose integration tests take longer to start and run, so they are not executed as often.
-Remember that if you want to be able to execute component tests with fake external dependencies, you need to follow the *clean microservice design principle (architecture)* so that you can create fake input/output interface adapter classes used in the tests.
+Remember that if you want to be able to execute component tests with fake external dependencies, you need to follow the *clean architecture principle* so that you can create fake input/output interface adapter classes used in the tests.
 
 When using the Gherkin language, the behavior of a software component is described as features. There should be a separate
 file for each feature. These files have the *.feature* extension. Each feature file
@@ -4731,7 +4731,7 @@ From the above domain events, we can infer the following:
 - Actor: ReadSalesItemsRepository, Command: read_all, Entity: SalesItem
 - Actor: ReadSalesItemsService: Command: read_sales_items, Entities: OutputSalesItem
 
-The team decides to use the *clean microservice design principle*. Thus, interfaces and controller classes should be added for both user stories. The source code directory should look like the following:
+The team decides to use the *clean architecture principle*. Thus, interfaces and controller classes should be added for both user stories. The source code directory should look like the following:
 
 ```
 sales-item-service
