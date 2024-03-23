@@ -2609,19 +2609,19 @@ We can test the transformation business logic using a fake input and output adap
 Running the tests will be fast because there is no need to spin up an instance of Kafka and Pulsar. Later, we can augment
 the component tests with some integration tests that test the integration to real input and output. We will talk more about component and integration tests in a later chapter.
 
-## Vertical Slice Design Principle
+## Vertical Slice Architecture Principle
 
-*Vertical slice design* is also known as *vertical slice architecture*. Vertical slice design divides individual features into separate vertical slices.
+Vertical slice architecture divides individual features into separate vertical slices.
 In the source code repository, this means a separate directory for each vertical slice (feature).
 You can also group these single feature directories under a domain directory. This makes navigating the code-base a breeze and finding a particular feature easy.
-The main benefit of vertical slice design is that it allows you to follow the open-closed principle when adding new features. There is no need to modify existing code and no risk of breaking existing functionality.
+The main benefit of vertical slice architecture is that it allows you to follow the open-closed principle when adding new features. There is no need to modify existing code and no risk of breaking existing functionality.
 You can implement a vertical slice (a feature) as you wish, which is a clear benefit when different features have divergent requirements.
-So, a vertical slice can contain a single class or multiple classes that form a layered design. Vertical slice design does not enforce any specific way.
+So, a vertical slice can contain a single class or multiple classes that form a layered design. Vertical slice architecture does not enforce any specific way.
 However, using some design principles for a vertical slice implementation is good practice. I suggest to use the *clean architecture principle*.
-You can use vertical slice design and clean architecture principles together. They are not mutually exclusive principles.
+You can use vertical slice architecture and clean architecture principles together. They are not mutually exclusive principles.
 
 If your microservice is a small API, e.g., just containing a handful of simple CRUD operations, you don't necessarily get much benefit from vertical slicing.
-If you are not using the vertical slice design, adding a new CRUD operation requires changes to existing classes. These changes include adding new methods to mostly immutable or stateless classes,
+If you are not using the vertical slice architecture, adding a new CRUD operation requires changes to existing classes. These changes include adding new methods to mostly immutable or stateless classes,
 which can be considered extensions instead of modifications and are according to the open-closed principle. Adding a method
 to an immutable or stateless class rarely breaks existing functionality in
 existing methods. This is why I haven't used vertical slicing in the examples in this book.
@@ -2629,7 +2629,7 @@ existing methods. This is why I haven't used vertical slicing in the examples in
 For example, suppose you have an API
 providing CRUD operations on a resource and want to use vertical slicing. In that case, you implement each CRUD operation separately
 in different service/controller/repository classes. Here is an example of the source code directory layout for the *order-service* using
-vertical slice design:
+vertical slice architecture:
 
 ```
 order-service
@@ -2687,7 +2687,7 @@ we can define our features using that language. We can end up with the following
     - Replace rental car reservation for a trip
     - Remove rental car reservation from a trip
 
-Let's use the *vertical slice design principle* and layout the directory structure for our microservice:
+Let's use the *vertical slice architecture principle* and layout the directory structure for our microservice:
 
 ```
 travel-booking-service
@@ -2779,7 +2779,7 @@ travel-booking-service
         └── RemoveRentalCarReservationUseCase.py
 ```
 
-As can be seen from the above example, *vertical slice design* creates a very understandable and easily navigatable directory structure
+As can be seen from the above example, *vertical slice architecture* creates a very understandable and easily navigatable directory structure
 for the microservice source code.
 
 ## Class Organization Principle

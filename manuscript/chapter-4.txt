@@ -4760,7 +4760,7 @@ sales-item-service
 ```
 
 When we continue with DDD for the rest of the user stories, we should eventually have subdirectories for `update` and `delete` features
-like those for `create` and `read` features. What we ended up having is called *vertical slice design or architecture*, which
+like those for `create` and `read` features. What we ended up having is called *vertical slice architecture*, which
 we presented in the second chapter. A different team member can implement each user story, and each team
 member has their own subdirectory (a vertical slice) to work on to minimize merge conflicts. Things common to all features are put into
 the `common` subdirectory. The development continues with each team member conducting TDD for the public methods in the classes.
