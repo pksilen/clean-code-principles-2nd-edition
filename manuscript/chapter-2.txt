@@ -4844,7 +4844,7 @@ This section describes design patterns for creating objects. The following desig
 
 #### Factory Pattern
 
-> ***Factory pattern allows deferring what kind of object will be created to the point of calling the *create*-method of the factory***.
+> ***Factory pattern allows deferring what kind of object will be created to the point of calling the *create*-method of the factory.***
 
 A factory allows a dynamic way of creating objects instead of a static way by directly calling a concrete class constructor. A factory typically consists of precisely one or multiple methods for creating objects of a particular base type. This base type is usually an interface type. The factory decides what concrete type of object will be created. A factory
 separates the logic of creating objects from the objects themselves, which is in accordance with the *single responsibility principle*.
@@ -4949,10 +4949,10 @@ a concrete factory. Then, using the *dependency injection principle*, you can in
 implementation, like `ConfigParserFactoryImpl`.
 
 When unit testing code, you should create mock objects instead of real ones with a
-factory. The abstract factory pattern comes to your help because you can inject a mock instance of the `ConfigParserFactory`
-in the tested code. Then you can expect the mocked `createConfigParser` method to be called and return a mock instance
-of the `ConfigParser` interface. And then, you can expect the `parse` method to be called on the `ConfigParser` mock and return
-a mocked configuration. Below is an example unit test that uses JUnit5 and [JMockit](https://jmockit.github.io/index.html) library.
+factory. The abstract factory pattern comes to your help because you can inject a mock instance of the `ConfigParserFactory` class
+in the tested code. Then, you can expect the mocked `createConfigParser` method to be called and return a mock instance
+of the `ConfigParser` interface. Then, you can expect the `parse` method to be called on the `ConfigParser` mock and return
+a mocked configuration. Below is an example unit test using JUnit5 and [JMockit](https://jmockit.github.io/index.html) library.
 We test the `initialize` method in an `Application` class containing a `ConfigParserFactory` field. The `Application` class
 uses the `ConfigParserFactory` instance to create a `ConfigParser` to parse the application configuration. In the below test, we
 inject a `ConfigParserFactory` mock to an `Application` instance using the `@Injectable` annotation
@@ -5084,7 +5084,7 @@ class Url {
 }
 ```
 
-Returning an optional value from a factory method allows utilizing functional programming techniques. Here is an
+Returning an optional value from a factory method allows functional programming techniques to be utilized. Here is an
 example in Java:
 
 ```java
@@ -5118,7 +5118,7 @@ maybeUrl.ifPresent(url -> {
 ```
 
 Java's `Optional` class utilizes the static factory method pattern in an exemplary way. It has a private constructor and
-three factory methods `empty`, `of` and `ofNullable` to create different kinds of `Optional` objects. The additional benefit of using the static factory method pattern is that you can name
+three factory methods: `empty`, `of`, and `ofNullable` to create different kinds of `Optional` objects. The additional benefit of using the static factory method pattern is that you can name
 the factory methods descriptively, which you can't do with constructors. The name of the factory method tells what
 kind of object will be created.
 
@@ -5143,7 +5143,7 @@ The builder pattern has the benefit that properties given for the builder can be
 builder's build method return an optional indicating whether the building was successful. Or, you can make the build method throw if you need to return
 an error. Then you should name the build method using a _try_ prefix, for example, `tryBuildUrl`.
 The builder pattern also has the benefit of not needing to add default properties to the builder. For example, _https_ could be
-the default scheme, and if you are building an HTTPS URL, the `addScheme` is not needed to be called. The only problem is
+the default scheme, and if you are building an HTTPS URL, the `addScheme` does not need to be called. The only problem is
 that you must consult the builder documentation to determine the default values.
 
 One drawback with the builder pattern is that you can give the parameters logically in the wrong order like this:
@@ -5155,7 +5155,7 @@ final Optional<Url> url = new UrlBuilder()
   .buildUrl();
 ```
 
-It works but does not look so nice. So if you are using a builder, always try to give the parameters for the builder in a logically correct order if such order exists. The builder pattern works well when there isn't any inherent order among the parameters.
+It works but does not look so nice. So, if you are using a builder, always try to give the parameters for the builder in a logically correct order if such an order exists. The builder pattern works well when there isn't any inherent order among the parameters.
 Below is an example of such a case: A house built with a `HouseBuilder` class.
 
 ```java
@@ -5195,7 +5195,7 @@ class Url {
 }
 ```
 
-In the factory method above, there is clear visibility of what the default values are. Of course, you cannot now
+In the factory method above, the default values are clearly visible. Of course, you cannot now
 give the parameters in a logical order. There is also a greater possibility that you accidentally provide some parameters
 in the wrong order because many of them are of the same type (string). This won't be a potential issue with
 a builder where you use a method with a specific name to give a specific parameter. In modern development environments,
@@ -5224,7 +5224,6 @@ overloaded methods to be introduced, which can be overwhelming for a developer.
 
 You can always use a parameter object, not only in Java but in many other languages, too. Below is an
 example in Java:
-
 
 ```java
 import lombok.Getter;
@@ -5269,7 +5268,7 @@ final var maybeUrl = Url.createUrl(urlParams);
 > ***Singleton pattern defines that a class can have only one instance.***
 
 Singletons are very common in pure object-oriented languages like Java. In many cases, a singleton class can be identified as not having any state.
-And this is why only one instance of the class is needed. There is no point in creating
+This is why only one instance of the class is needed. There is no point in creating
 multiple instances that are the same. In some non-pure object-oriented languages, singletons are not as common as in pure object-oriented languages and
 can often be replaced by just defining functions.
 
@@ -5332,7 +5331,7 @@ public class FileConfigReader
 }
 ```
 
-In the below DI module, we configure a singleton with a lazy binding.
+In the DI module below, we configure a singleton with lazy binding.
 In the lazy binding, the `JsonConfigParser` class is only created
 when needed to be used.
 
@@ -5368,7 +5367,7 @@ public class DiModule extends AbstractModule {
 
 The best way to ensure that only one singleton instance is created is to ensure the DI container is created at the beginning
 of the application initialization (before starting threads) and singletons are created eagerly, not lazily. Eagerly means the singleton is created immediately, and lazily means it is created only when somebody needs it.
-A lazy instantiation is of course possible, but can bring problems in a multi-threaded environment if synchronization is not used when the singleton instance is actually created.
+Of course, lazy instantiation is possible, but it can cause problems in a multi-threaded environment if synchronization is not used when the singleton instance is actually created.
 
 #### Prototype Pattern
 
@@ -5428,7 +5427,7 @@ an existing `DrawnShape` object. An alternative way to use the prototype pattern
 a prototype object and give the position parameter to specify where the new shape should be positioned.
 
 The prototype pattern is also used in JavaScript to implement prototypal inheritance. Since EcmaScript version 6,
-class-based inheritance has been available, and prototypal inheritance is not needed to be used.
+class-based inheritance has been available, and prototypal inheritance does not need to be used.
 
 The idea of prototypal inheritance is that the common parts for the same class objects are stored in a
 prototype instance. These common parts typically mean the shared methods. There is no sense in storing the methods multiple times in each object.
@@ -5471,10 +5470,10 @@ dogNamedLuna.bark(); // Prints 'bark'
 > ***In the object pool pattern, created objects are stored in a pool where objects can be acquired from and returned for reuse. The object pool pattern is an optimization pattern because it allows the reuse of once-created objects.***
 
 If you need to create many short-lived objects, you should utilize an object pool and reduce the need
-for memory allocation and de-allocation, which takes time. In garbage-collected languages, frequent object creation and
-deletion cause extra work for the garbage collector, which consumes CPU time.
+for memory allocation and de-allocation, which takes time. Frequent object creation and
+deletion in garbage-collected languages cause extra work for the garbage collector, which consumes CPU time.
 
-Below is an example object pool implementation in C++. The below `LimitedSizeObjectPool` class implementation uses a spin lock in
+Below is an example of an object pool implementation in C++. The below `LimitedSizeObjectPool` class implementation uses a spin lock in
 its methods to achieve thread safety. More about thread safety in the coming _concurrent programming principles_ chapter.
 
 {title: "ObjectPool.h"}
@@ -5683,7 +5682,7 @@ private:
 ```
 
 In the below example, we create a message pool for a maximum of 5000 output messages.
-We get a shared pointer to an output message from the pool. The pool's concrete class to create
+We get a shared pointer to an output message from the pool. The pool's concrete class for creating
 new objects is `OutputMessageImpl`. When we acquire an output message from the pool, we provide a `size_t` type value (= output message length)
 to the constructor of the `OutputMessageImpl` class. The `OutputMessageImpl` class must be clearable, i.e.,
 it must have a `clear` method returning `void`.
@@ -5797,7 +5796,7 @@ Below is an [Avro](https://avro.apache.org/) record field schema with a nested r
 }
 ```
 
-For parsing an Avro schema, we could define classes for different sub-schemas by the field type. When analyzing the below example, we can
+To parse an Avro schema, we could define classes for different sub-schemas by the field type. When analyzing the example below, we can
 notice that the `RecordAvroFieldSchema` class can contain any `AvroFieldSchema` object, also
 other `RecordAvroFieldSchema` objects, making a `RecordAvroFieldSchema` object a composite object.
 
@@ -5823,9 +5822,7 @@ public class IntAvroFieldSchema implements AvroFieldSchema {
 
 #### Facade Pattern
 
-> ***In the facade pattern, an object on a higher level of abstraction is composed of objects on a lower level of abstraction.***
-> ***The higher-level object acts as a facade in front of the lower-level objects. Lower-level objects behind the facade are***
-> ***either only or mainly only accessible by the facade.***
+> ***In the facade pattern, an object on a higher level of abstraction is composed of objects on a lower level of abstraction. The higher-level object acts as a facade in front of the lower-level objects. Lower-level objects behind the facade are either only or mainly only accessible by the facade.***
 
 Let's use the data exporter microservice as an example. For that microservice, we could create a `Config` interface
 that can be used to obtain configuration for the different parts (input,
@@ -5836,7 +5833,7 @@ because they are just using the interface provided by the facade.
 There can be various classes doing the actual work behind the facade. In the below example, there is a `ConfigReader` class
 that reads configuration from possibly different sources (from a local file or a remote service, for example)
 and there are configuration parsers that can parse a specific part of the configuration, possibly in different data formats like
-JSON or YAML. None of these implementations and details are visible to the user of the facade. Any of these implementations
+JSON or YAML. None of these implementations and details are visible to the facade user. Any of these implementations
 behind the facade can change at any time without affecting the users of the facade because facade users are not coupled to the lower-level implementations.
 
 Below is the implementation of the `Configuration` facade in Java:
@@ -6035,6 +6032,7 @@ public interface Drawing {
   void save();
 }
 
+
 public abstract class AbstractDrawing implements Drawing {
   private final String name;
 
@@ -6060,6 +6058,7 @@ public abstract class AbstractDrawing implements Drawing {
   protected abstract byte[] getData();
 }
 
+
 public class RasterDrawing extends AbstractDrawing {
   private final Canvas canvas = new Canvas();
 
@@ -6082,6 +6081,7 @@ public class RasterDrawing extends AbstractDrawing {
     // get data from the 'canvas' object
   }
 }
+
 
 public class VectorDrawing extends AbstractDrawing {
   private final SvgElement svgRoot = new SvgElement();
@@ -6298,12 +6298,12 @@ public:
 };
 ```
 
-Now we can use Kafka or Pulsar data sources with identical consumer and message interfaces.
+Now, we can use Kafka or Pulsar data sources with identical consumer and message interfaces.
 In the future, it will be easy to integrate a new data source into the system.
 We only need to implement appropriate adapter classes (message and consumer classes) for the new data source. No other code changes are required.
 Thus, we would be following the _open-closed principle_ correctly.
 
-Let's imagine that the API of the used Kafka library changed. We don't need to make changes in many
+Let's imagine that the API of the Kafka library that was used changed. We don't need to make changes in many
 places in the code. We need to create new adapter classes (message and consumer classes) for the new API and use those new adapter classes
 in place of the old adapter classes. All of this work is again following the *open-closed principle*.
 
@@ -6377,8 +6377,8 @@ class SomeClass {
 }
 ```
 
-Suppose that in the future, a better logging library is available called *xyz-logging-library*, and we
-would like to take that into use, but it has a slightly different interface. Its logging instance is called `xyz_log_writer`,
+Suppose that in the future, a better logging library called *xyz-logging-library* is available, and we
+would like to use that, but it has a slightly different interface. Its logging instance is called `xyz_log_writer`,
 the logging method is named differently, and the parameters are given in different order compared to the *abc-logging-library*.
 We can create a `XyzLogger` adapter class for the new logging library and update the `DiContainer`. No other code changes are required elsewhere in the codebase to take the new logging library into use.
 
@@ -6414,9 +6414,9 @@ class DiModule extends Module {
 ```
 
 We didn't have to modify all the places where logging is used in the codebase (and we can be sure that logging is used in many places!).
-We have saved ourselves from a lot of error-prone and unnecessary work, and once again, we have followed the *open-closed principle* successfully.
+We have saved ourselves from a lot of error-prone and unnecessary work, and once again, we have successfully followed the *open-closed principle*.
 
-In some languages where mocking of, e.g., concrete classes is not possible, wrapping a 3rd party library in an adapter class enables you to unit test against the adapter class interface instead of the concrete classes of the 3rd party library.
+In some languages where mocking of concrete classes is not possible, wrapping a third-party library in an adapter class enables you to unit test against the adapter class interface instead of the concrete classes of the third-party library.
 
 #### Proxy Pattern
 
@@ -6475,7 +6475,7 @@ class CachingEntityStore<T> implements EntityStore<T> {
 ```
 
 In the above example, the `CachingEntityStore` class is the proxy class wrapping an `EntityStore`.
-The proxy class is modifying the wrapped class behavior by conditionally delegating to the wrapped class. It
+The proxy class modifies the wrapped class behavior by conditionally delegating it to the wrapped class. It
 delegates to the wrapped class only if an entity is not found in the cache.
 
 Below is another TypeScript example of a proxy class that authorizes a user before performing a service operation:
@@ -6512,12 +6512,11 @@ class AuthorizingUserService implements UserService {
 ```
 
 In the above example, the `AuthorizingUserService` class is a proxy class that wraps a
-`UserService`. The proxy class is modifying the wrapped class behavior by conditionally delegating to the wrapped
+`UserService`. The proxy class modifies the wrapped class behavior by conditionally delegating to the wrapped
 class. It will delegate to the wrapped class only if authorization is successful.
 
-
 As the last example, we could define a `RateLimitedXyzService` proxy class that wraps a `XyzService` class.
-The rate-limited service class delegates to the wrapped class only if the service calling rate limit is not exceeded. The rate-limited service class should raise an error if the rate is exceeded.
+The rate-limited service class delegates to the wrapped class only if the service calling rate limit is not exceeded. It should raise an error if the rate is exceeded.
 
 #### Decorator Pattern
 
@@ -6613,7 +6612,7 @@ const timingAndLoggingSqlStatementExecutor =
 
 You can also use the decorator pattern with functions and methods in TypeScript. Decorators allow us to wrap a function
 to extend its behavior. Decorators are functions that
-take a function as a parameter and return another function that is used in place of the decorated function. Let's have an elementary
+take a function as a parameter and return another function used in place of the decorated function. Let's have an elementary
 example of a function decorator:
 
 ```ts
@@ -7207,7 +7206,7 @@ public class TodosView implements Observer {
 }
 ```
 
-Let's have another example that utilizes the publish-subscribe pattern. Below we define a `MessageBroker` class that contains the following methods: `publish`, `subscribe`, and `unsubscribe`.
+Let's look at another example that utilizes the publish-subscribe pattern. Below, we define a `MessageBroker` class that contains the following methods: `publish`, `subscribe`, and `unsubscribe`.
 
 ```java
 public interface MessagePublisher<T> {
@@ -7339,8 +7338,8 @@ for (final var command : commands) {
 }
 ```
 
-Using actions or commands makes it possible to follow the open-closed principle because every new action or command
-does not modify existing code but adds a new class.
+Using actions or commands makes it possible to follow the open-closed principle because when introducing a new action or command
+existing code is not modified.
 
 Actions and commands can be made undoable, provided that the action/command is undoable. The above print action/command
 is not undoable because you cannot undo print to the console. Let's introduce an undoable action: add an item to a list.
@@ -7469,7 +7468,7 @@ export default class MarkDoneTodoAction {
 }
 ```
 
-Now we can redesign the `todoReducer` to look like the following:
+Now, we can redesign the `todoReducer` to look like the following:
 
 {title: "todoReducer.ts"}
 ```ts
@@ -7531,7 +7530,7 @@ export default class MarkDoneTodoAction extends AbstractTodoAction {
 }
 ```
 
-Then we can introduce a generic function to create a reducer. This function will create a reducer function
+Then, we can introduce a generic function to create a reducer. This function will create a reducer function
 that perform actions for a given action base class:
 
 {title: "createReducer.ts"}
@@ -7573,7 +7572,7 @@ export type TodoState = {
   todos: Todo[];
 }
 
-const initialTodosState = {
+const initialTodoState = {
   todos: []
 } as TodoState
 
@@ -7597,7 +7596,7 @@ const rootReducer = combineReducers({
 export default createStore(rootReducer);
 ```
 
-Now we have an object-oriented solution for dispatching actions in the following way:
+Now, we have an object-oriented solution for dispatching actions in the following way:
 
 ```ts
 dispatch({ type: new AddTodoAction(id, name) });
@@ -7801,7 +7800,7 @@ public class ReverseArrayList<T> extends ArrayList<T>
 }
 ```
 
-Now we can use the new iterator to iterate over a list in reverse order:
+Now, we can use the new iterator to iterate over a list in reverse order:
 
 ```java
 final var reversedNumbers = new ReverseArrayList<Integer>();
